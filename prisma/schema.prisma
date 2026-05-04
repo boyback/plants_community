@@ -1,0 +1,359 @@
+// 肉友社 · 数据库 Schema
+// 数据库:MySQL 8 | ORM:Prisma
+// 设计原则:保持前端现有类型的字段名尽可能一致,便于 API 直接对上。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============== 用户 ==============
+
+model User {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  passwordHash String
+  avatar       String   @default("")
+  bio          String?  @db.Text
+  level        Int      @default(1)
+  joinedAt     DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 签到状态
+  lastSignInAt  DateTime?
+  signInStreak  Int       @default(0)
+
+  // 关系
+  posts           Post[]
+  comments        Comment[]
+  likes           PostLike[]
+  followers       Follow[]        @relation("Followees")  // 被谁关注
+  following       Follow[]        @relation("Followers")  // 关注了谁
+  badges          UserBadge[]
+  notifications   Notification[]  @relation("NotifRecipient")
+  notifFromMe     Notification[]  @relation("NotifSender")
+  sentMessages    Message[]       @relation("MessageFrom")
+  receivedMessages Message[]      @relation("MessageTo")
+  drafts          Draft[]
+  votes           VoteRecord[]
+  collects        PostCollect[]
+  events          EventAttendee[]
+
+  @@map("users")
+}
+
+model Follow {
+  followerId  String
+  followeeId  String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  followee  User @relation("Followees", fields: [followeeId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followeeId])
+  @@index([followeeId])
+  @@map("follows")
+}
+
+// ============== 徽章 ==============
+
+model Badge {
+  id          String @id @default(cuid())
+  slug        String @unique
+  name        String
+  icon        String
+  description String @db.Text
+  orderIdx    Int    @default(0)
+
+  users UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  userId     String
+  badgeId    String
+  obtained   Boolean  @default(false)
+  obtainedAt DateTime?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, badgeId])
+  @@index([badgeId])
+  @@map("user_badges")
+}
+
+// ============== 板块 ==============
+
+model Board {
+  id          String @id @default(cuid())
+  slug        String @unique
+  name        String
+  description String @db.Text
+  cover       String
+  icon        String
+  members     Int    @default(0)
+  orderIdx    Int    @default(0)
+
+  posts Post[]
+
+  @@map("boards")
+}
+
+// ============== 帖子 ==============
+
+enum PostType {
+  rich
+  short
+  vote
+  video
+  event
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  type      PostType
+  title     String
+  content   String   @db.LongText
+  cover     String?
+  images    String?  @db.Text   // JSON array string
+  videoUrl  String?
+  tags      String?  @db.Text   // JSON array string
+  views     Int      @default(0)
+  shares    Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorId String
+  boardId  String
+  author   User  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  board    Board @relation(fields: [boardId], references: [id])
+
+  // 帖子类型扩展
+  vote          Vote?
+  event         Event?
+
+  comments      Comment[]
+  likes         PostLike[]
+  collects      PostCollect[]
+
+  @@index([boardId, createdAt])
+  @@index([authorId])
+  @@map("posts")
+}
+
+model Vote {
+  id        String   @id @default(cuid())
+  postId    String   @unique
+  question  String
+  multi     Boolean  @default(false)
+  deadline  DateTime
+
+  post    Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  options VoteOption[]
+  records VoteRecord[]
+
+  @@map("votes")
+}
+
+model VoteOption {
+  id      String @id @default(cuid())
+  voteId  String
+  label   String
+  votes   Int    @default(0)
+  orderIdx Int   @default(0)
+
+  vote    Vote         @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  records VoteRecord[]
+
+  @@index([voteId])
+  @@map("vote_options")
+}
+
+model VoteRecord {
+  id        String @id @default(cuid())
+  voteId    String
+  optionId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  vote   Vote       @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  option VoteOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([voteId, userId, optionId])
+  @@map("vote_records")
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  postId    String   @unique
+  startAt   DateTime
+  endAt     DateTime
+  location  String
+
+  post      Post            @relation(fields: [postId], references: [id], onDelete: Cascade)
+  attendees EventAttendee[]
+
+  @@map("events")
+}
+
+model EventAttendee {
+  eventId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, userId])
+  @@map("event_attendees")
+}
+
+// ============== 评论 ==============
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  parentId  String?
+  content   String   @db.Text
+  likes     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("Replies", fields: [parentId], references: [id])
+  replies Comment[] @relation("Replies")
+
+  @@index([postId, createdAt])
+  @@map("comments")
+}
+
+// ============== 交互:点赞、收藏 ==============
+
+model PostLike {
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@map("post_likes")
+}
+
+model PostCollect {
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@map("post_collects")
+}
+
+// ============== 私信 ==============
+
+model Message {
+  id        String   @id @default(cuid())
+  fromId    String
+  toId      String
+  text      String   @db.Text
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  from User @relation("MessageFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to   User @relation("MessageTo",   fields: [toId],   references: [id], onDelete: Cascade)
+
+  @@index([fromId, toId, createdAt])
+  @@index([toId, fromId, createdAt])
+  @@map("messages")
+}
+
+// ============== 通知 ==============
+
+enum NotificationType {
+  like
+  comment
+  follow
+  mention
+  system
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  recipientId String
+  fromId    String?
+  type      NotificationType
+  text      String           @db.Text
+  link      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  recipient User  @relation("NotifRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  from      User? @relation("NotifSender",    fields: [fromId],      references: [id])
+
+  @@index([recipientId, createdAt])
+  @@map("notifications")
+}
+
+// ============== 多肉图鉴 ==============
+
+model Plant {
+  id          String @id @default(cuid())
+  slug        String @unique
+  name        String
+  latinName   String
+  family      String
+  cover       String
+  difficulty  Int     @default(1)
+  light       String
+  watering    String
+  hardiness   String
+  description String  @db.Text
+  tips        String  @db.Text   // JSON array
+  gallery     String  @db.Text   // JSON array
+
+  @@map("plants")
+}
+
+// ============== 草稿 ==============
+
+model Draft {
+  id        String   @id @default(cuid())
+  userId    String
+  payload   String   @db.LongText   // 整个草稿表单的 JSON
+  title     String
+  type      PostType
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@map("drafts")
+}
+
+// ============== Banner ==============
+
+model Banner {
+  id        String @id @default(cuid())
+  title     String
+  subtitle  String  @db.Text
+  image     String
+  link      String
+  tint      String
+  orderIdx  Int     @default(0)
+  enabled   Boolean @default(true)
+
+  @@map("banners")
+}

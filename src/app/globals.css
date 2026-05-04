@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --page-bg: #f7faf5;
+}
+
+html,
+body {
+  background-color: var(--page-bg);
+  color: theme('colors.ink.800');
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 滚动条轻量美化 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d8e6dc;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #bdd3c3;
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-2xl shadow-card border border-leaf-100/60;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-leaf-500 text-white hover:bg-leaf-600;
+  }
+  .btn-ghost {
+    @apply btn bg-leaf-50 text-leaf-700 hover:bg-leaf-100;
+  }
+  .btn-outline {
+    @apply btn border border-leaf-200 text-leaf-700 bg-white hover:bg-leaf-50;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs bg-leaf-50 text-leaf-700 border border-leaf-100;
+  }
+  .input {
+    @apply w-full rounded-xl border border-leaf-200 bg-white px-3 py-2 text-sm outline-none focus:border-leaf-400 focus:ring-2 focus:ring-leaf-100;
+  }
+  .link {
+    @apply text-leaf-700 hover:text-leaf-800 hover:underline underline-offset-2;
+  }
+  .divider {
+    @apply h-px bg-leaf-100;
+  }
+}
+
+/* 富文本帖子正文的基础排版 */
+.prose-article p {
+  @apply my-3;
+}
+.prose-article h1,
+.prose-article h2,
+.prose-article h3 {
+  @apply mb-2 mt-5 font-semibold text-ink-800;
+}
+.prose-article h1 {
+  @apply text-xl;
+}
+.prose-article h2 {
+  @apply text-lg;
+}
+.prose-article h3 {
+  @apply text-base;
+}
+.prose-article ol,
+.prose-article ul {
+  @apply my-3 ml-5 space-y-1.5;
+}
+.prose-article ol {
+  @apply list-decimal;
+}
+.prose-article ul {
+  @apply list-disc;
+}
+.prose-article b,
+.prose-article strong {
+  @apply font-semibold text-leaf-800;
+}
+.prose-article a {
+  @apply text-leaf-700 underline underline-offset-2;
+}
+.prose-article blockquote {
+  @apply my-3 border-l-4 border-leaf-300 bg-leaf-50/60 py-1 pl-3 italic text-ink-700/80;
+}
+.prose-article code {
+  @apply rounded bg-leaf-50 px-1 py-0.5 text-[0.9em] text-leaf-700;
+}
+.prose-article img {
+  @apply my-3 rounded-lg;
+}
+
+/* line-clamp utilities backup (Tailwind 3.4 原生已支持) */
