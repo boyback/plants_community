@@ -35,9 +35,10 @@ services:
       - rouyou
 
   # -----------------------------------------------
-  # init:首次起容器时跑 prisma db push + seed,然后退出
+  # init:首次部署用 — `docker compose --profile init up init-db` 单独跑
   # -----------------------------------------------
   init-db:
+    profiles: ["init"]
     image: node:20-alpine
     container_name: rouyou-init
     depends_on:
@@ -82,8 +83,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-      init-db:
-        condition: service_completed_successfully
+      # init-db 是首次启动用,以后只要 mysql healthy 就能启动 next
+      # 第一次部署:先单独跑 init-db 完成 seed,后续 up 不再阻塞
     environment:
       DATABASE_URL: "mysql://root:${MYSQL_ROOT_PASSWORD:-root123456}@mysql:3306/${MYSQL_DATABASE:-plants_community}"
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 必须设置}
@@ -138,8 +139,6 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-      init-db:
-        condition: service_completed_successfully
     environment:
       DATABASE_URL: "mysql://root:${MYSQL_ROOT_PASSWORD:-root123456}@mysql:3306/${MYSQL_DATABASE:-plants_community}"
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 必须设置}
