@@ -156,12 +156,12 @@ services:
       - rouyou
 
   # -----------------------------------------------
-  # Nginx 反代(80/443)
+  # Nginx 反代(可选 — 如果宿主已有 nginx/宝塔/Caddy,可以不启)
+  # 启动:docker compose --profile nginx up -d nginx
   # 用 host 网络模式 — 直接占宿主机端口,绕过 docker-proxy
-  # 注意:host 模式下 nginx 不能用 docker DNS 解析 next/go-server 服务名
-  # 所以必须用 127.0.0.1 + 暴露的端口
   # -----------------------------------------------
   nginx:
+    profiles: ["nginx"]
     image: nginx:1.27-alpine
     container_name: rouyou-nginx
     restart: unless-stopped
