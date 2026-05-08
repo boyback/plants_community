@@ -57,6 +57,7 @@ services:
     command: >
       sh -c "
       apk add --no-cache openssl &&
+      npm config set registry https://registry.npmmirror.com &&
       npm ci --no-audit --prefer-offline &&
       npx prisma db push --skip-generate --accept-data-loss &&
       npx tsx prisma/seed.ts &&

@@ -8,6 +8,8 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache libc6-compat openssl
+# 国内 npm registry(可选;如果你海外服务器或想用官方源,删掉这行)
+RUN npm config set registry https://registry.npmmirror.com
 COPY package.json package-lock.json* ./
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --no-audit --prefer-offline
@@ -16,6 +18,7 @@ RUN --mount=type=cache,target=/root/.npm \
 FROM node:20-alpine AS builder
 WORKDIR /app
 RUN apk add --no-cache libc6-compat openssl
+RUN npm config set registry https://registry.npmmirror.com
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
