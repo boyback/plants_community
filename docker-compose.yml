@@ -76,6 +76,8 @@ services:
       dockerfile: Dockerfile
     image: rouyou-next:local
     container_name: rouyou-next
+    # 不让 docker 覆盖 HOSTNAME(我们要它当成 0.0.0.0 给 Next standalone)
+    hostname: rouyou-next
     restart: unless-stopped
     depends_on:
       mysql:
@@ -101,15 +103,18 @@ services:
       WECHAT_PRIVATE_KEY_PEM: ${WECHAT_PRIVATE_KEY_PEM:-}
       WECHAT_API_V3_KEY: ${WECHAT_API_V3_KEY:-}
       WECHAT_NOTIFY_URL: ${WECHAT_NOTIFY_URL:-}
+      # 强制 Next standalone 绑 0.0.0.0(否则 Docker 把 HOSTNAME 覆盖成容器 ID)
+      HOSTNAME: "0.0.0.0"
     volumes:
       # 用户上传文件:Next.js 写入本地路径,挂 volume 持久化
       - uploads_data:/app/public/uploads
     healthcheck:
-      # node:alpine 没 wget/curl,用 node net 模块 TCP 探活,不依赖 fetch / dns
+      # Next standalone 在容器里把 HOSTNAME 重置成 docker 容器 ID + 绑定该 IP,
+      # 127.0.0.1 反而连不上;改用 0.0.0.0 探所有接口的任一回应
       test:
         - "CMD-SHELL"
         - |
-          node -e "require('net').createConnection(3000, '127.0.0.1').once('connect', function() { this.end(); process.exit(0); }).once('error', function() { process.exit(1); })"
+          node -e "require('net').createConnection(3000, '0.0.0.0').once('connect', function() { this.end(); process.exit(0); }).once('error', function() { process.exit(1); })"
       interval: 10s
       timeout: 5s
       retries: 5
