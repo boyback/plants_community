@@ -105,7 +105,8 @@ services:
       # 用户上传文件:Next.js 写入本地路径,挂 volume 持久化
       - uploads_data:/app/public/uploads
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
+      # node:alpine 镜像里没有 wget/curl,用 node 的 fetch 自检(node 18+ 内置)
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -135,7 +136,8 @@ services:
       AUTH_COOKIE_MAX_AGE: ${AUTH_COOKIE_MAX_AGE:-2592000}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      # alpine 自带 wget(BusyBox 版),用 -O- 拿响应
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:8080/health || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 5
