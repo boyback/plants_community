@@ -4,6 +4,10 @@
 FROM golang:1.22-alpine AS builder
 WORKDIR /src
 
+# 国内 Go module 代理(七牛云 + 阿里云,备用 proxy.golang.org)
+ENV GOPROXY=https://goproxy.cn,https://mirrors.aliyun.com/goproxy/,https://proxy.golang.org,direct
+ENV GOSUMDB=sum.golang.google.cn
+
 COPY go.mod go.sum ./
 RUN go mod download
 
