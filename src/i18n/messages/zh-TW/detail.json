@@ -1,0 +1,85 @@
+{
+  "detail": {
+    "post": {
+      "commentCountLabel": "{n} 則留言",
+      "likeCountLabel": "{n} 人按讚",
+      "commentPlaceholder": "留下你的看法…",
+      "commentSend": "送出",
+      "commentLogin": "登入後參與討論",
+      "reply": "回覆",
+      "report": "檢舉",
+      "deletedByAuthor": "已被作者刪除",
+      "copyLink": "複製連結",
+      "published": "{time} 發佈",
+      "editedAt": "{time} 編輯過",
+      "views": "瀏覽",
+      "postsLabel": "貼文",
+      "followersLabel": "粉絲",
+      "followingLabel": "關注",
+      "related": "本版相關",
+      "commentsAll": "全部留言",
+      "commentsHot": "熱門",
+      "commentsLatest": "最新",
+      "commentPlaceholderTpl": "{name},分享你的看法,可以加粗、列表、貼圖...",
+      "commentEtiquette": "請文明留言,理性交流 🌿",
+      "commentSending": "發送中...",
+      "commentSendFail": "發送失敗",
+      "commentLoginCta": "登入後即可發表留言",
+      "commentsEmpty": "還沒有留言,搶個沙發?",
+      "replyTo": "回覆 @{name}...",
+      "likeAction": "按讚",
+      "collected": "已收藏",
+      "collect": "收藏",
+      "shareTo": "分享到:",
+      "shareToX": "分享到{name}",
+      "shareSuccess": "已分享到「{channel}」🎉",
+      "shareChannels": {
+        "wechat": "微信",
+        "weibo": "微博",
+        "link": "連結"
+      },
+      "opFail": "操作失敗",
+      "collectSuccess": "已收藏 ⭐",
+      "collectUnsetSuccess": "已取消收藏",
+      "cancel": "取消"
+    },
+    "vote": {
+      "multi": "多選",
+      "single": "單選",
+      "title": "🗳️ {mode}投票 · 截止 {date}",
+      "ended": "已結束",
+      "totalParticipants": "共 {n} 人參與",
+      "totalVoters": "共 {n} 人投票",
+      "submitting": "送出中...",
+      "submit": "送出投票",
+      "voteFail": "投票失敗"
+    },
+    "event": {
+      "time": "活動時間",
+      "location": "活動地點",
+      "attended": "已報名",
+      "attendeesCount": "{n} 人",
+      "attendeesShort": "{n} 人參加",
+      "ended": "活動已結束",
+      "ongoing": "活動進行中,歡迎報名!",
+      "processing": "處理中...",
+      "joined": "✓ 已報名 (點擊取消)",
+      "endedLabel": "已結束",
+      "join": "🎉 我要參加"
+    },
+    "gallery": {
+      "imgAlt": "圖 {n}",
+      "close": "關閉"
+    },
+    "board": {
+      "follow": "追蹤版塊",
+      "followShort": "+ 追蹤",
+      "followFull": "+ 追蹤版塊",
+      "following": "✓ 已追蹤",
+      "subBoards": "子版塊",
+      "postCount": "{n} 篇",
+      "memberCount": "{n} 人",
+      "opFail": "操作失敗"
+    }
+  }
+}

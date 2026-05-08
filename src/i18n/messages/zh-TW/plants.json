@@ -1,0 +1,20 @@
+{
+  "plants": {
+    "title": "多肉圖鑑",
+    "subtitle": "收錄常見多肉品種,了解牠們的習性與養護要點",
+    "searchPlaceholder": "搜尋中文/拉丁名...",
+    "familyLabel": "科屬:",
+    "difficultyLabel": "難度:",
+    "all": "全部",
+    "totalCount": "共 {n} 種",
+    "empty": "沒有找到符合的品種",
+    "emptyDesc": "換個關鍵字試試?",
+    "family": {
+      "Crassulaceae": "景天科",
+      "Aizoaceae": "番杏科",
+      "Liliaceae": "百合科",
+      "Cactaceae": "仙人掌科",
+      "Euphorbiaceae": "大戟科"
+    }
+  }
+}

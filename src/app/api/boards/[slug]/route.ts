@@ -1,18 +1,15 @@
 import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
-import { serializeBoard } from '@/lib/serializers';
+import { serializeCategory } from '@/lib/serializers';
 
 export const dynamic = 'force-dynamic';
 
 export const GET = handler(async (req) => {
-  const url = new URL(req.url);
-  const slug = url.pathname.split('/').pop()!;
-
-  const board = await prisma.board.findUnique({
+  const slug = new URL(req.url).pathname.split('/').filter(Boolean).pop()!;
+  const c = await prisma.category.findUnique({
     where: { slug },
-    include: { _count: { select: { posts: true } } },
+    include: { _count: { select: { posts: true, genera: true } } },
   });
-  if (!board) return fail(404, '板块不存在');
-
-  return serializeBoard(board);
+  if (!c) return fail(404, '板块不存在');
+  return serializeCategory(c);
 });

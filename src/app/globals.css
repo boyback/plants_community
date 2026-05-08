@@ -11,6 +11,22 @@ body {
   background-color: var(--page-bg);
   color: theme('colors.ink.800');
   -webkit-font-smoothing: antialiased;
+  /* iOS 灰色点击高亮去掉 */
+  -webkit-tap-highlight-color: transparent;
+  /* 防横向滚动 */
+  overflow-x: hidden;
+}
+
+/* 文字防溢出 */
+img, video, svg {
+  max-width: 100%;
+}
+
+/* 移动端适配:全局 safe-area 留白(只在移动端,desktop 没影响) */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 /* 滚动条轻量美化 */
@@ -102,3 +118,102 @@ body {
 }
 
 /* line-clamp utilities backup (Tailwind 3.4 原生已支持) */
+
+/* TipTap 编辑器内部样式 */
+.rich-editor.ProseMirror {
+  min-height: inherit;
+}
+.rich-editor.ProseMirror:focus {
+  outline: none;
+}
+.rich-editor.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: theme('colors.leaf.300');
+  pointer-events: none;
+  height: 0;
+  float: left;
+}
+.rich-editor.ProseMirror img.ProseMirror-selectednode {
+  outline: 3px solid theme('colors.leaf.400');
+}
+.rich-editor.ProseMirror hr.ProseMirror-selectednode {
+  outline: 2px solid theme('colors.leaf.400');
+}
+.rich-editor.ProseMirror p {
+  margin: 0.5rem 0;
+}
+.rich-editor.ProseMirror :first-child {
+  margin-top: 0;
+}
+
+/* ====== 节日主题:背景粒子飘落 ====== */
+@keyframes rouyou-fall {
+  0%   { transform: translateY(-10vh) rotate(0deg);   opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+}
+.animate-rouyou-fall {
+  animation-name: rouyou-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+/* ====== 支付二维码:扫描线(全尺寸蒙层模式)====== */
+@keyframes rouyou-qr-scan {
+  0%   { top: -10%; opacity: 0.9; }
+  50%  { opacity: 1; }
+  100% { top: 110%; opacity: 0.9; }
+}
+.rouyou-qr-scan::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 20%;
+  background: linear-gradient(
+    to bottom,
+    rgba(102, 185, 133, 0)   0%,
+    rgba(102, 185, 133, 0.6) 50%,
+    rgba(102, 185, 133, 0) 100%
+  );
+  box-shadow: 0 0 16px rgba(102, 185, 133, 0.55);
+  animation: rouyou-qr-scan 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+/* 支付宝蓝色 */
+.rouyou-qr-scan--alipay::after {
+  background: linear-gradient(
+    to bottom,
+    rgba(23, 110, 240, 0)   0%,
+    rgba(23, 110, 240, 0.6) 50%,
+    rgba(23, 110, 240, 0) 100%
+  );
+  box-shadow: 0 0 16px rgba(23, 110, 240, 0.6);
+}
+/* 微信绿色 */
+.rouyou-qr-scan--wechat::after {
+  background: linear-gradient(
+    to bottom,
+    rgba(7, 193, 96, 0)   0%,
+    rgba(7, 193, 96, 0.6) 50%,
+    rgba(7, 193, 96, 0) 100%
+  );
+  box-shadow: 0 0 16px rgba(7, 193, 96, 0.6);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rouyou-qr-scan::after {
+    animation: none;
+    top: 40%;
+  }
+}
+
+/* 支付已成功的绿色圆勾动画 */
+@keyframes rouyou-qr-check {
+  0%   { transform: scale(0.5); opacity: 0; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+.rouyou-qr-check {
+  animation: rouyou-qr-check 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}

@@ -1,0 +1,46 @@
+{
+  "orders": {
+    "title": "注文",
+    "tabBuyer": "購入した",
+    "tabSeller": "販売した",
+    "statusLabel": "ステータス",
+    "statusAll": "すべて",
+    "status": {
+      "pending_payment": "支払い待ち",
+      "pending_ship": "発送待ち",
+      "pending_receipt": "配送中",
+      "pending_review": "評価待ち",
+      "completed": "完了",
+      "cancelled": "キャンセル",
+      "refunded": "返金済み"
+    },
+    "source": {
+      "product": "商品",
+      "auction": "オークション"
+    },
+    "totalAmount": "合計 ¥{yuan}",
+    "orderNo": "注文番号 {no}",
+    "placedAt": "注文日 {time}",
+    "paidAt": "支払い {time}",
+    "shippedAt": "発送 {time}",
+    "receivedAt": "受取 {time}",
+    "shipTo": "お届け先",
+    "tracking": "追跡番号 {no}",
+    "actions": {
+      "pay": "支払う",
+      "cancel": "注文キャンセル",
+      "ship": "発送済みにする",
+      "confirm": "受取確認",
+      "review": "評価する",
+      "viewProduct": "商品を見る",
+      "viewAuction": "オークションを見る"
+    },
+    "empty": "まだ注文がありません、{link} を覗いてみよう",
+    "emptyLinkMarket": "マーケット",
+    "inputTracking": "追跡番号を入力(任意)",
+    "reviewPlaceholder": "率直な感想をどうぞ(任意)",
+    "submitReview": "評価を送信",
+    "pickRating": "評価を選ぶ",
+    "confirmCancel": "この注文をキャンセルしますか?"
+  }
+}

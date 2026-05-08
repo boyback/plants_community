@@ -1,0 +1,68 @@
+{
+  "points": {
+    "title": "积分中心",
+    "loginRequired": "登录后查看积分中心",
+    "balance": "我的积分余额",
+    "balanceDesc": "积分可在皮肤商城兑换专属装扮,或解锁 30 天大会员",
+    "sources": {
+      "tasks": "📝 做任务",
+      "tasksDesc": "每日 / 月度任务",
+      "purchase": "🛍️ 购物返利",
+      "purchaseDesc": "购物可返积分",
+      "exchangeVip": "👑 兑大会员"
+    },
+    "tabs": {
+      "bubble": "💬 评论气泡",
+      "reaction": "👍 点赞按钮",
+      "sticker": "🌱 表情包",
+      "pendant": "👑 头像挂件",
+      "wardrobe": "👗 我的装扮",
+      "ledger": "📜 积分流水"
+    },
+    "ledger": {
+      "types": {
+        "signin": "签到",
+        "post_create": "发帖",
+        "post_liked": "帖子被赞",
+        "comment_create": "评论",
+        "comment_liked": "评论被赞",
+        "followed": "被关注",
+        "task_complete": "任务奖励",
+        "activity_reward": "活跃度奖励",
+        "purchase_back": "购物返利",
+        "recharge": "充值",
+        "exchange_skin": "兑换皮肤",
+        "exchange_vip": "兑换会员",
+        "refund": "退款回收",
+        "admin": "系统调整"
+      },
+      "empty": "还没有积分流水",
+      "loadMore": "加载更多"
+    },
+    "skin": {
+      "equippedBadge": "已装备",
+      "equipped": "✓ 已装备",
+      "equip": "装备",
+      "unequip": "卸下",
+      "exchange": "兑换",
+      "owned": "已拥有",
+      "redeem": "兑换 {n}",
+      "free": "免费",
+      "notEnough": "积分不足",
+      "vipOnly": "大会员专属",
+      "vipLimit": "👑 VIP 限定",
+      "rarity": {
+        "normal": "普通",
+        "rare": "稀有",
+        "epic": "史诗",
+        "legendary": "传说"
+      },
+      "preview": {
+        "bubbleText": "这是 {name} 气泡"
+      },
+      "exchangeConfirm": "确认兑换「{name}」?将扣除 {points} 积分",
+      "exchangeSuccess": "🎉 兑换成功!",
+      "exchangeFail": "兑换失败"
+    }
+  }
+}

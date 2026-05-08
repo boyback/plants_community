@@ -1,0 +1,40 @@
+{
+  "common": {
+    "ok": "OK",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "delete": "削除",
+    "edit": "編集",
+    "confirm": "確認",
+    "back": "戻る",
+    "loading": "読み込み中…",
+    "empty": "まだ何もありません",
+    "retry": "再試行",
+    "search": "検索",
+    "submit": "送信",
+    "copy": "コピー",
+    "copied": "コピーしました",
+    "more": "もっと見る",
+    "close": "閉じる",
+    "yes": "はい",
+    "no": "いいえ",
+    "hours": "時間",
+    "minutes": "分",
+    "days": "日",
+    "points": "ポイント"
+  },
+  "error": {
+    "generic": "問題が発生しました。しばらくしてからもう一度お試しください。",
+    "network": "ネットワークエラー、接続をご確認ください。",
+    "notFound": "見つかりませんでした。",
+    "unauthorized": "ログインしてください",
+    "forbidden": "この操作を行う権限がありません"
+  },
+  "permission": {
+    "loginToUse": "ログインでこの機能を利用できます",
+    "goLogin": "ログインへ",
+    "noPermissionPrefix": "権限不足:",
+    "doTasksToLevel": "タスクでレベルアップ",
+    "openVip": "VIP に加入"
+  }
+}

@@ -40,3 +40,30 @@ export function formatDateTime(iso: string): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+
+/** 把以「分」为单位的金额格式化为 ¥X.XX */
+export function formatPrice(cents: number, withSymbol = true): string {
+  const yuan = (cents / 100).toFixed(2);
+  return (withSymbol ? '¥' : '') + yuan;
+}
+
+/**
+ * 根据 Board.path 拼出板块 URL。
+ * 例如 path = [{slug:'xianrenzhang'},{slug:'astrophytum'}] → '/board/xianrenzhang/astrophytum'
+ */
+export function boardUrl(
+  boardLike: { slug: string; path?: { slug: string }[] }
+): string {
+  if (boardLike.path && boardLike.path.length > 0) {
+    return '/board/' + boardLike.path.map((p) => encodeURIComponent(p.slug)).join('/');
+  }
+  return '/board/' + encodeURIComponent(boardLike.slug);
+}
+
+/** 倒计时:返回 mm:ss */
+export function countdown(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}

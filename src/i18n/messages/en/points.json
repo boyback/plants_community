@@ -1,0 +1,68 @@
+{
+  "points": {
+    "title": "Points",
+    "loginRequired": "Sign in to view your points",
+    "balance": "My points balance",
+    "balanceDesc": "Redeem points for skins/decorations, or a 30-day VIP",
+    "sources": {
+      "tasks": "📝 Quests",
+      "tasksDesc": "Daily / monthly quests",
+      "purchase": "🛍️ Purchase rebate",
+      "purchaseDesc": "Shopping earns points",
+      "exchangeVip": "👑 Redeem VIP"
+    },
+    "tabs": {
+      "bubble": "💬 Comment bubble",
+      "reaction": "👍 Reaction button",
+      "sticker": "🌱 Stickers",
+      "pendant": "👑 Avatar pendant",
+      "wardrobe": "👗 My outfits",
+      "ledger": "📜 Points ledger"
+    },
+    "ledger": {
+      "types": {
+        "signin": "Sign-in",
+        "post_create": "New post",
+        "post_liked": "Post liked",
+        "comment_create": "Comment",
+        "comment_liked": "Comment liked",
+        "followed": "Followed",
+        "task_complete": "Quest reward",
+        "activity_reward": "Activity reward",
+        "purchase_back": "Purchase rebate",
+        "recharge": "Top-up",
+        "exchange_skin": "Redeem skin",
+        "exchange_vip": "Redeem VIP",
+        "refund": "Refund clawback",
+        "admin": "System adjustment"
+      },
+      "empty": "No points transactions yet",
+      "loadMore": "Load more"
+    },
+    "skin": {
+      "equippedBadge": "Equipped",
+      "equipped": "✓ Equipped",
+      "equip": "Equip",
+      "unequip": "Unequip",
+      "exchange": "Redeem",
+      "owned": "Owned",
+      "redeem": "Redeem {n}",
+      "free": "Free",
+      "notEnough": "Not enough points",
+      "vipOnly": "VIP only",
+      "vipLimit": "👑 VIP exclusive",
+      "rarity": {
+        "normal": "Normal",
+        "rare": "Rare",
+        "epic": "Epic",
+        "legendary": "Legendary"
+      },
+      "preview": {
+        "bubbleText": "This is a {name} bubble"
+      },
+      "exchangeConfirm": "Redeem «{name}»? {points} points will be deducted",
+      "exchangeSuccess": "🎉 Redeemed!",
+      "exchangeFail": "Redemption failed"
+    }
+  }
+}

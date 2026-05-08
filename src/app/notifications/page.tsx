@@ -9,6 +9,7 @@ import { Empty } from '@/components/ui/Empty';
 import { cn, timeAgo } from '@/lib/utils';
 import { api, ApiError } from '@/lib/client-api';
 import { useAuth } from '@/context/AuthContext';
+import { usePullToRefresh, PullIndicator } from '@/lib/hooks/usePullToRefresh';
 import type { Notification } from '@/lib/types';
 
 const tabs = [
@@ -36,25 +37,31 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
+  const reload = async () => {
+    try {
+      const res = await api.get<{ items: Notification[]; unread: number }>(
+        '/api/notifications'
+      );
+      setList(res.items);
+      setErr(null);
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : '加载失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
       setLoading(false);
       return;
     }
-    (async () => {
-      try {
-        const res = await api.get<{ items: Notification[]; unread: number }>(
-          '/api/notifications'
-        );
-        setList(res.items);
-      } catch (e) {
-        setErr(e instanceof ApiError ? e.message : '加载失败');
-      } finally {
-        setLoading(false);
-      }
-    })();
+    void reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading]);
+
+  const { bind, status, progress } = usePullToRefresh(reload);
 
   const filtered = list.filter((n) => tab === 'all' || n.type === tab);
 
@@ -88,6 +95,8 @@ export default function NotificationsPage() {
 
   return (
     <Shell>
+      <div {...bind}>
+        <PullIndicator status={status} progress={progress} />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">通知</h1>
@@ -184,6 +193,7 @@ export default function NotificationsPage() {
           })}
         </ul>
       )}
+      </div>
     </Shell>
   );
 }

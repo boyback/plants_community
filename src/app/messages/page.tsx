@@ -9,6 +9,8 @@ import { Icon } from '@/components/ui/Icon';
 import { Empty } from '@/components/ui/Empty';
 import { cn, timeAgo } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
+import { useRealtime, type RealtimePayload } from '@/context/RealtimeContext';
+import { useI18n } from '@/i18n/I18nContext';
 import type { Conversation, Message, User } from '@/lib/types';
 import { api, ApiError } from '@/lib/client-api';
 
@@ -22,6 +24,8 @@ export default function Page() {
 
 function MessagesInner() {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useI18n();
+  const { subscribe } = useRealtime();
   const searchParams = useSearchParams();
   const initialTo = searchParams.get('to');
 
@@ -78,6 +82,43 @@ function MessagesInner() {
     })();
   }, [activePeer]);
 
+  // 实时:收到新私信 → 如果正好是当前会话对方发来,追加;否则刷会话列表
+  useEffect(() => {
+    if (!user) return;
+    const handler = (payload: RealtimePayload) => {
+      const msg = payload.data as {
+        id: string;
+        fromId: string;
+        toId: string;
+        text: string;
+        createdAt: string;
+      } | null;
+      if (!msg) return;
+      if (msg.fromId === activePeer) {
+        setActiveData((prev) =>
+          prev
+            ? {
+                ...prev,
+                messages: [
+                  ...prev.messages,
+                  {
+                    id: msg.id,
+                    from: 'other',
+                    text: msg.text,
+                    at: msg.createdAt,
+                  } satisfies Message,
+                ],
+              }
+            : prev
+        );
+      }
+      // 刷新左侧列表的未读数
+      void loadList();
+    };
+    return subscribe('message', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, activePeer, subscribe]);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -97,7 +138,7 @@ function MessagesInner() {
       // 刷新列表(最新消息时间)
       await loadList();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '发送失败');
+      alert(e instanceof ApiError ? e.message : t('messages.errorSend'));
     } finally {
       setSending(false);
     }
@@ -108,9 +149,9 @@ function MessagesInner() {
       <Shell>
         <div className="card mx-auto max-w-md p-10 text-center">
           <div className="text-4xl">✉️</div>
-          <div className="mt-3 text-lg font-semibold">登录后查看私信</div>
+          <div className="mt-3 text-lg font-semibold">{t('error.unauthorized')}</div>
           <Link href="/login?redirect=/messages" className="btn-primary mt-4 inline-flex">
-            去登录
+            {t('nav.login')}
           </Link>
         </div>
       </Shell>
@@ -119,12 +160,15 @@ function MessagesInner() {
 
   return (
     <Shell withSidebar={false}>
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold">私信</h1>
-        <p className="text-sm text-leaf-700/70">和其他肉友一对一聊聊</p>
+      <div className="mb-4 hidden md:block">
+        <h1 className="text-2xl font-bold">{t('messages.title')}</h1>
       </div>
-      <div className="card flex h-[calc(100vh-200px)] min-h-[500px] overflow-hidden">
-        <aside className="flex w-full max-w-[280px] flex-col border-r border-leaf-100">
+      {/* 移动端单视图切换:没选对话看列表,选了看对话;桌面端并排 */}
+      <div className="card flex h-[calc(100vh-160px)] min-h-[500px] overflow-hidden md:h-[calc(100vh-200px)]">
+        <aside className={cn(
+          'flex w-full flex-col border-r border-leaf-100 md:max-w-[280px]',
+          activePeer ? 'hidden md:flex' : 'flex'
+        )}>
           <div className="border-b border-leaf-100 p-3">
             <div className="relative">
               <Icon
@@ -132,14 +176,14 @@ function MessagesInner() {
                 size={14}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-leaf-500"
               />
-              <input className="input pl-8" placeholder="搜索会话..." />
+              <input className="input pl-8" placeholder={t('messages.search')} />
             </div>
           </div>
           <div className="flex-1 overflow-y-auto">
             {loading ? (
-              <div className="p-6 text-center text-xs text-leaf-700/60">加载中...</div>
+              <div className="p-6 text-center text-xs text-leaf-700/60">{t('common.loading')}</div>
             ) : list.length === 0 ? (
-              <div className="p-6"><Empty icon="💬" title="还没有会话" /></div>
+              <div className="p-6"><Empty icon="💬" title={t('messages.empty')} /></div>
             ) : (
               list.map((c) => (
                 <button
@@ -175,7 +219,15 @@ function MessagesInner() {
 
         {activeData && user ? (
           <section className="flex min-w-0 flex-1 flex-col">
-            <header className="flex items-center gap-3 border-b border-leaf-100 px-5 py-3">
+            <header className="flex items-center gap-2 border-b border-leaf-100 px-3 py-3 md:gap-3 md:px-5">
+              <button
+                type="button"
+                onClick={() => setActivePeer(null)}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-leaf-700 hover:bg-leaf-50 md:hidden"
+                aria-label="返回列表"
+              >
+                <Icon name="arrow-right" size={18} className="rotate-180" />
+              </button>
               <Avatar src={activeData.user.avatar} alt={activeData.user.name} size={36} />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold">{activeData.user.name}</div>
@@ -185,7 +237,7 @@ function MessagesInner() {
                 href={`/user/${activeData.user.id}`}
                 className="btn-outline h-8 !px-3 !text-xs"
               >
-                主页
+                {t('nav.myProfile')}
               </Link>
             </header>
 
@@ -194,7 +246,7 @@ function MessagesInner() {
               className="flex-1 space-y-3 overflow-y-auto bg-leaf-50/30 p-5"
             >
               {activeData.messages.length === 0 ? (
-                <Empty icon="👋" title="打个招呼吧" desc="这里还没有消息" />
+                <Empty icon="👋" title={t('messages.empty')} />
               ) : (
                 activeData.messages.map((m) => (
                   <Bubble
@@ -220,7 +272,7 @@ function MessagesInner() {
                       send();
                     }
                   }}
-                  placeholder="输入消息,Enter 发送"
+                  placeholder={t('messages.inputPlaceholder')}
                   className="input min-h-[40px] resize-none"
                 />
                 <button
@@ -229,16 +281,16 @@ function MessagesInner() {
                   disabled={sending || !draft.trim()}
                   className="btn-primary h-10 !px-4"
                 >
-                  {sending ? '发送中' : '发送'}
+                  {sending ? t('common.loading') : t('messages.send')}
                 </button>
               </div>
             </footer>
           </section>
         ) : (
-          <section className="flex min-w-0 flex-1 items-center justify-center text-sm text-leaf-700/60">
+          <section className="hidden min-w-0 flex-1 items-center justify-center text-sm text-leaf-700/60 md:flex">
             <div className="text-center">
               <div className="text-4xl">💬</div>
-              <div className="mt-2">选择一个会话开始聊天</div>
+              <div className="mt-2">{t('messages.pickConversation')}</div>
             </div>
           </section>
         )}

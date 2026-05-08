@@ -1,0 +1,20 @@
+{
+  "cookie": {
+    "title": "We respect your cookie choices",
+    "desc": "We use cookies to keep RouYou running and to improve it. Strictly necessary cookies can't be turned off; the rest are up to you.",
+    "readPolicy": "Read the full Cookie Policy",
+    "acceptAll": "Accept all",
+    "onlyNecessary": "Only necessary",
+    "customize": "Customise",
+    "customizeTitle": "Choose cookie categories",
+    "saveChoice": "Save choice",
+    "necessary": "Strictly necessary",
+    "necessaryDesc": "Required for sign-in, security and payments — can't be turned off",
+    "preferences": "Preferences",
+    "preferencesDesc": "Remembers your language, theme and draft preferences",
+    "analytics": "Analytics",
+    "analyticsDesc": "Anonymous usage stats to improve the product",
+    "advertising": "Advertising",
+    "advertisingDesc": "We don't run ads today; this is a placeholder"
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "detail": {
+    "post": {
+      "commentCountLabel": "コメント {n} 件",
+      "likeCountLabel": "いいね {n} 件",
+      "commentPlaceholder": "感想をどうぞ…",
+      "commentSend": "送信",
+      "commentLogin": "ログインして会話に参加",
+      "reply": "返信",
+      "report": "通報",
+      "deletedByAuthor": "投稿者により削除されました",
+      "copyLink": "リンクをコピー",
+      "published": "{time} に投稿",
+      "editedAt": "{time} に編集",
+      "views": "閲覧",
+      "postsLabel": "投稿",
+      "followersLabel": "フォロワー",
+      "followingLabel": "フォロー中",
+      "related": "このボードの関連",
+      "commentsAll": "すべてのコメント",
+      "commentsHot": "人気",
+      "commentsLatest": "新着",
+      "commentPlaceholderTpl": "{name} さん、考えを共有しましょう。太字・リスト・画像が使えます",
+      "commentEtiquette": "丁寧に議論しましょう 🌿",
+      "commentSending": "送信中…",
+      "commentSendFail": "送信失敗",
+      "commentLoginCta": "ログインしてコメント",
+      "commentsEmpty": "まだコメントなし、最初のコメンテーターに?",
+      "replyTo": "@{name} に返信…",
+      "likeAction": "いいね",
+      "collected": "保存済み",
+      "collect": "保存",
+      "shareTo": "シェア:",
+      "shareToX": "{name} にシェア",
+      "shareSuccess": "「{channel}」にシェアしました 🎉",
+      "shareChannels": {
+        "wechat": "WeChat",
+        "weibo": "Weibo",
+        "link": "リンク"
+      },
+      "opFail": "操作失敗",
+      "collectSuccess": "保存しました ⭐",
+      "collectUnsetSuccess": "保存を解除",
+      "cancel": "キャンセル"
+    },
+    "vote": {
+      "multi": "複数選択",
+      "single": "単一選択",
+      "title": "🗳️ {mode}投票 · 締切 {date}",
+      "ended": "終了",
+      "totalParticipants": "計 {n} 名参加",
+      "totalVoters": "計 {n} 票",
+      "submitting": "送信中…",
+      "submit": "投票を送信",
+      "voteFail": "投票失敗"
+    },
+    "event": {
+      "time": "開催時刻",
+      "location": "会場",
+      "attended": "参加者",
+      "attendeesCount": "{n} 名",
+      "attendeesShort": "{n} 名参加",
+      "ended": "終了したイベント",
+      "ongoing": "開催中、ぜひ参加を!",
+      "processing": "処理中…",
+      "joined": "✓ 参加済み (タップでキャンセル)",
+      "endedLabel": "終了",
+      "join": "🎉 参加する"
+    },
+    "gallery": {
+      "imgAlt": "画像 {n}",
+      "close": "閉じる"
+    },
+    "board": {
+      "follow": "ボードをフォロー",
+      "followShort": "+ フォロー",
+      "followFull": "+ ボードをフォロー",
+      "following": "✓ フォロー中",
+      "subBoards": "サブボード",
+      "postCount": "{n} 件",
+      "memberCount": "{n} 人",
+      "opFail": "操作失敗"
+    }
+  }
+}

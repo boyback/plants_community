@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useI18n } from '@/i18n/I18nContext';
 
 const topics = [
   { tag: '度夏', count: 1243, hot: true },
@@ -12,17 +15,18 @@ const topics = [
 ];
 
 export function TopicsCard() {
+  const { t } = useI18n();
   return (
     <div className="card p-4">
       <div className="mb-3 flex items-center justify-between">
-        <div className="text-sm font-semibold text-ink-800">🔥 热门话题</div>
+        <div className="text-sm font-semibold text-ink-800">🔥 {t('home.topics.title')}</div>
         <Link href="/board" className="text-[11px] text-leaf-700 hover:underline">
-          更多 →
+          {t('home.topics.moreLink')}
         </Link>
       </div>
       <ul className="space-y-1.5">
-        {topics.map((t, i) => (
-          <li key={t.tag}>
+        {topics.map((item, i) => (
+          <li key={item.tag}>
             <Link
               href={`/board`}
               className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-leaf-50"
@@ -37,12 +41,12 @@ export function TopicsCard() {
                 >
                   {i + 1}
                 </span>
-                <span>#{t.tag}</span>
-                {t.hot && (
+                <span>#{item.tag}</span>
+                {item.hot && (
                   <span className="rounded bg-rose-50 px-1 text-[10px] text-rose-600">HOT</span>
                 )}
               </span>
-              <span className="text-[11px] text-leaf-600/70">{t.count}</span>
+              <span className="text-[11px] text-leaf-600/70">{item.count}</span>
             </Link>
           </li>
         ))}

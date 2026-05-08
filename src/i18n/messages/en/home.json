@@ -1,0 +1,34 @@
+{
+  "home": {
+    "signIn": {
+      "welcomeTitle": "Welcome to RouYou 🌵",
+      "welcomeSub": "Sign in to post, comment, check in for badges, and access messages and notifications.",
+      "login": "Sign in",
+      "register": "Sign up",
+      "userMeta": "Lv.{level} · {posts} posts · {followers} fans",
+      "streakLabel": "Check-in streak",
+      "daysSuffix": "days",
+      "signedToday": "Checked in",
+      "signInNow": "Check in now",
+      "tip": "💡 Check in for 7 days straight to earn the «Sunshine» badge",
+      "weekDays": "Mon,Tue,Wed,Thu,Fri,Sat,Sun"
+    },
+    "topics": {
+      "title": "Hot topics",
+      "moreLink": "View all →",
+      "empty": "No topics yet"
+    },
+    "recommend": {
+      "title": "Suggested users",
+      "refresh": "Shuffle",
+      "followBtn": "+ Follow",
+      "followedBtn": "Following"
+    },
+    "feedTabs": {
+      "recommend": "For you",
+      "following": "Following",
+      "hot": "Hot",
+      "latest": "Latest"
+    }
+  }
+}

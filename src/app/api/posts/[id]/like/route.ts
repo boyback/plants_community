@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
+import { emitEvent } from '@/lib/events';
+import { emitNotification } from '@/lib/realtime/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,7 +45,7 @@ export const POST = handler(async (req) => {
   } else {
     await prisma.postLike.create({ data: { userId: me.id, postId } });
     if (post.authorId !== me.id) {
-      await prisma.notification.create({
+      const notif = await prisma.notification.create({
         data: {
           recipientId: post.authorId,
           fromId: me.id,
@@ -51,6 +53,14 @@ export const POST = handler(async (req) => {
           text: `赞了你的帖子《${post.title.slice(0, 24)}》`,
           link: `/post/${post.id}`,
         },
+      });
+      emitNotification(post.authorId, { id: notif.id, type: notif.type, text: notif.text, link: notif.link });
+      // 给帖子作者加奖励
+      await emitEvent({
+        kind: 'post_liked',
+        userId: post.authorId,
+        postId: post.id,
+        fromId: me.id,
       });
     }
   }

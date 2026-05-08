@@ -1,0 +1,49 @@
+{
+  "board": {
+    "title": "모든 게시판",
+    "subtitle": "과 / 속 / 품종 3단 분류 또는 토론 게시판",
+    "groups": {
+      "family": "식물 분류 (과 · 속 · 품종)",
+      "familyHint": "과를 선택한 뒤 속으로 들어가세요",
+      "discussion": "토론 게시판",
+      "discussionHint": "품종과 무관한 일반 주제",
+      "market": "마켓 · 이벤트",
+      "marketHint": "거래, 이벤트, 오프라인 모임"
+    },
+    "stats": {
+      "members": "멤버 {n} 명",
+      "posts": "{n} 개",
+      "genera": "{n} 속",
+      "species": "{n} 품종"
+    },
+    "allBoards": "모든 게시판",
+    "backToAll": "전체 게시판으로",
+    "newPost": "글쓰기",
+    "postInCategory": "이 게시판에 글쓰기",
+    "postInGenus": "이 속에 글쓰기",
+    "postInSpecies": "이 품종에 글쓰기",
+    "hotInCategory": "{name} 최신글",
+    "hotInGenus": "이 속의 최신글",
+    "hotInSpecies": "「{name}」관련 토론",
+    "emptyPostsCategory": "아직 게시글이 없어요",
+    "emptyPostsCategoryHint": "첫 공유자가 되어 보세요",
+    "emptyPostsGenus": "이 속에 아직 게시글이 없어요",
+    "emptyPostsSpecies": "이 품종에 아직 게시글이 없어요",
+    "generaListHint": "아래 속 이름을 눌러 2단계로 이동",
+    "generaCount": "{n} 속",
+    "speciesCount": "{n} 품종",
+    "species": {
+      "alias": "별명",
+      "difficulty": "난이도",
+      "hardiness": "내한성",
+      "careTitle": "재배 포인트",
+      "gallery": "갤러리",
+      "careData": "재배 데이터",
+      "light": "광량",
+      "watering": "물주기",
+      "bloom": "개화기",
+      "stats": "통계",
+      "postCount": "이 품종의 게시글"
+    }
+  }
+}

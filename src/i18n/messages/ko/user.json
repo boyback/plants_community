@@ -1,0 +1,70 @@
+{
+  "user": {
+    "tabs": {
+      "posts": "게시글",
+      "likes": "좋아요",
+      "collects": "저장",
+      "following": "팔로잉",
+      "followers": "팔로워",
+      "followedBoards": "팔로우한 게시판",
+      "badges": "배지",
+      "about": "프로필"
+    },
+    "noBio": "아직 자기소개가 없어요…",
+    "expToNext": "Lv.{level} 까지 {need} EXP",
+    "joinedAt": "{date} 가입",
+    "stats": {
+      "posts": "게시글",
+      "followers": "팔로워",
+      "following": "팔로잉",
+      "totalPosts": "총 게시글",
+      "badgesEarned": "획득 배지"
+    },
+    "vip": {
+      "lifetime": "평생 대회원",
+      "remainDays": "대회원 · {days} 일 남음",
+      "member": "대회원"
+    },
+    "actions": {
+      "privacy": "🔒 프라이버시",
+      "editProfile": "프로필 수정",
+      "editProfileUnavailable": "수정 준비 중",
+      "message": "쪽지",
+      "follow": "+ 팔로우",
+      "unfollow": "✓ 팔로잉"
+    },
+    "empty": {
+      "posts": "아직 게시글이 없어요",
+      "likes": "좋아요한 게시글이 없어요",
+      "collects": "저장한 게시글이 없어요",
+      "following": "아직 팔로우한 사람이 없어요",
+      "followers": "팔로워가 없어요",
+      "followedBoards": "팔로우한 게시판이 없어요",
+      "followedBoardsHint": "게시판 페이지에서 「+ 팔로우」를 눌러 저장"
+    },
+    "badges": {
+      "featured": "🏆 주요 배지",
+      "viewAll": "모든 배지 보기 →",
+      "activityData": "📊 활동",
+      "obtainedCount": "획득 · {n}",
+      "completionRate": "완료 {percent}%",
+      "lockedCount": "미획득 · {n}"
+    },
+    "info": {
+      "username": "아이디",
+      "userId": "사용자 ID",
+      "level": "레벨",
+      "joinDate": "가입일",
+      "bio": "소개",
+      "empty": "—"
+    },
+    "hidden": {
+      "following": "이 사용자는 팔로잉 목록을 숨겼습니다",
+      "followers": "이 사용자는 팔로워 목록을 숨겼습니다",
+      "goToSettings": "설정으로 →"
+    },
+    "privateBoards": "나만 볼 수 있음",
+    "privateBoardsHint": "팔로우한 게시판 목록은 본인만 볼 수 있으며, 다른 사용자의 목록은 확인할 수 없습니다.",
+    "totalCount": "총 {n} 명"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "orders": {
+    "title": "我的订单",
+    "tabBuyer": "我购买的",
+    "tabSeller": "我出售的",
+    "statusLabel": "订单状态",
+    "statusAll": "全部",
+    "status": {
+      "pending_payment": "待付款",
+      "pending_ship": "待发货",
+      "pending_receipt": "待收货",
+      "pending_review": "待评价",
+      "completed": "已完成",
+      "cancelled": "已取消",
+      "refunded": "已退款"
+    },
+    "source": {
+      "product": "商品",
+      "auction": "拍卖"
+    },
+    "totalAmount": "合计 ¥{yuan}",
+    "orderNo": "订单号 {no}",
+    "placedAt": "下单于 {time}",
+    "paidAt": "已付款 {time}",
+    "shippedAt": "发货于 {time}",
+    "receivedAt": "收货于 {time}",
+    "shipTo": "收件地址",
+    "tracking": "物流单号 {no}",
+    "actions": {
+      "pay": "去付款",
+      "cancel": "取消订单",
+      "ship": "卖家发货",
+      "confirm": "确认收货",
+      "review": "评价",
+      "viewProduct": "查看商品",
+      "viewAuction": "查看拍卖"
+    },
+    "empty": "暂无订单,去 {link} 看看吧",
+    "emptyLinkMarket": "交易区",
+    "inputTracking": "输入物流单号(可选)",
+    "reviewPlaceholder": "写点对商品的真实感受(可选)",
+    "submitReview": "提交评价",
+    "pickRating": "选择评分",
+    "confirmCancel": "确定要取消这个订单吗?"
+  }
+}

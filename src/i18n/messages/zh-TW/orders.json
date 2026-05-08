@@ -1,0 +1,46 @@
+{
+  "orders": {
+    "title": "我的訂單",
+    "tabBuyer": "我購買的",
+    "tabSeller": "我出售的",
+    "statusLabel": "訂單狀態",
+    "statusAll": "全部",
+    "status": {
+      "pending_payment": "待付款",
+      "pending_ship": "待出貨",
+      "pending_receipt": "待收貨",
+      "pending_review": "待評價",
+      "completed": "已完成",
+      "cancelled": "已取消",
+      "refunded": "已退款"
+    },
+    "source": {
+      "product": "商品",
+      "auction": "拍賣"
+    },
+    "totalAmount": "合計 NT${yuan}",
+    "orderNo": "訂單編號 {no}",
+    "placedAt": "下單於 {time}",
+    "paidAt": "已付款 {time}",
+    "shippedAt": "出貨於 {time}",
+    "receivedAt": "收貨於 {time}",
+    "shipTo": "收件地址",
+    "tracking": "物流單號 {no}",
+    "actions": {
+      "pay": "去付款",
+      "cancel": "取消訂單",
+      "ship": "賣家出貨",
+      "confirm": "確認收貨",
+      "review": "評價",
+      "viewProduct": "查看商品",
+      "viewAuction": "查看拍賣"
+    },
+    "empty": "暫無訂單,去 {link} 逛逛吧",
+    "emptyLinkMarket": "交易區",
+    "inputTracking": "輸入物流單號(可選)",
+    "reviewPlaceholder": "留點對商品的真實感受(可選)",
+    "submitReview": "送出評價",
+    "pickRating": "選擇評分",
+    "confirmCancel": "確定要取消這筆訂單嗎?"
+  }
+}

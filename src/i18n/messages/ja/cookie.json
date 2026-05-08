@@ -1,0 +1,20 @@
+{
+  "cookie": {
+    "title": "Cookie の設定について",
+    "desc": "RouYou を正しく動かし、改善するために Cookie を使用しています。必須 Cookie は無効にできません。他のカテゴリは自由に選べます。",
+    "readPolicy": "Cookie ポリシーを読む",
+    "acceptAll": "すべて受け入れる",
+    "onlyNecessary": "必須のみ",
+    "customize": "カスタマイズ",
+    "customizeTitle": "Cookie カテゴリを選ぶ",
+    "saveChoice": "選択を保存",
+    "necessary": "必須",
+    "necessaryDesc": "ログイン・セキュリティ・決済などに必要 — オフにできません",
+    "preferences": "機能",
+    "preferencesDesc": "言語・テーマ・下書きの保存",
+    "analytics": "分析",
+    "analyticsDesc": "品質改善のための匿名統計",
+    "advertising": "広告",
+    "advertisingDesc": "現在広告は配信していません(プレースホルダー)"
+  }
+}

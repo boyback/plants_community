@@ -1,0 +1,20 @@
+{
+  "plants": {
+    "title": "다육이 도감",
+    "subtitle": "흔히 보는 다육이 품종과 관리 팁",
+    "searchPlaceholder": "이름 / 학명으로 검색…",
+    "familyLabel": "과:",
+    "difficultyLabel": "난이도:",
+    "all": "전체",
+    "totalCount": "총 {n} 종",
+    "empty": "일치하는 품종이 없습니다",
+    "emptyDesc": "다른 키워드로 시도해보세요",
+    "family": {
+      "Crassulaceae": "돌나물과",
+      "Aizoaceae": "번행초과",
+      "Liliaceae": "백합과",
+      "Cactaceae": "선인장과",
+      "Euphorbiaceae": "대극과"
+    }
+  }
+}

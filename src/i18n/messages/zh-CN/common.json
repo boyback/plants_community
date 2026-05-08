@@ -1,0 +1,40 @@
+{
+  "common": {
+    "ok": "确定",
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "confirm": "确认",
+    "back": "返回",
+    "loading": "加载中…",
+    "empty": "暂无内容",
+    "retry": "重试",
+    "search": "搜索",
+    "submit": "提交",
+    "copy": "复制",
+    "copied": "已复制",
+    "more": "更多",
+    "close": "关闭",
+    "yes": "是",
+    "no": "否",
+    "hours": "小时",
+    "minutes": "分钟",
+    "days": "天",
+    "points": "积分"
+  },
+  "error": {
+    "generic": "哎呀出了点问题,请稍后再试",
+    "network": "网络异常,请检查后重试",
+    "notFound": "没有找到相关内容",
+    "unauthorized": "请先登录",
+    "forbidden": "你没有权限进行这个操作"
+  },
+  "permission": {
+    "loginToUse": "登录后可使用此功能",
+    "goLogin": "去登录",
+    "noPermissionPrefix": "权限不足:",
+    "doTasksToLevel": "做任务升级",
+    "openVip": "开通大会员"
+  }
+}

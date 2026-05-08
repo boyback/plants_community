@@ -1,0 +1,85 @@
+{
+  "detail": {
+    "post": {
+      "commentCountLabel": "{n} 条评论",
+      "likeCountLabel": "{n} 人点赞",
+      "commentPlaceholder": "留下你的看法…",
+      "commentSend": "发送",
+      "commentLogin": "登录后参与讨论",
+      "reply": "回复",
+      "report": "举报",
+      "deletedByAuthor": "已被作者删除",
+      "copyLink": "复制链接",
+      "published": "{time} 发布",
+      "editedAt": "{time} 编辑过",
+      "views": "阅读",
+      "postsLabel": "帖子",
+      "followersLabel": "粉丝",
+      "followingLabel": "关注",
+      "related": "本版相关",
+      "commentsAll": "全部评论",
+      "commentsHot": "热门",
+      "commentsLatest": "最新",
+      "commentPlaceholderTpl": "{name},分享你的看法,可以加粗、列表、贴图...",
+      "commentEtiquette": "请文明评论,理性交流 🌿",
+      "commentSending": "发送中...",
+      "commentSendFail": "发送失败",
+      "commentLoginCta": "登录后即可发表评论",
+      "commentsEmpty": "还没有评论,抢个沙发?",
+      "replyTo": "回复 @{name}...",
+      "likeAction": "点赞",
+      "collected": "已收藏",
+      "collect": "收藏",
+      "shareTo": "分享到:",
+      "shareToX": "分享到{name}",
+      "shareSuccess": "已分享到「{channel}」🎉",
+      "shareChannels": {
+        "wechat": "微信",
+        "weibo": "微博",
+        "link": "链接"
+      },
+      "opFail": "操作失败",
+      "collectSuccess": "已收藏 ⭐",
+      "collectUnsetSuccess": "已取消收藏",
+      "cancel": "取消"
+    },
+    "vote": {
+      "multi": "多选",
+      "single": "单选",
+      "title": "🗳️ {mode}投票 · 截止 {date}",
+      "ended": "已结束",
+      "totalParticipants": "共 {n} 人参与",
+      "totalVoters": "共 {n} 人投票",
+      "submitting": "提交中...",
+      "submit": "提交投票",
+      "voteFail": "投票失败"
+    },
+    "event": {
+      "time": "活动时间",
+      "location": "活动地点",
+      "attended": "已报名",
+      "attendeesCount": "{n} 人",
+      "attendeesShort": "{n} 人参加",
+      "ended": "活动已结束",
+      "ongoing": "活动进行中,欢迎报名!",
+      "processing": "处理中...",
+      "joined": "✓ 已报名 (点击取消)",
+      "endedLabel": "已结束",
+      "join": "🎉 我要参加"
+    },
+    "gallery": {
+      "imgAlt": "图 {n}",
+      "close": "关闭"
+    },
+    "board": {
+      "follow": "关注板块",
+      "followShort": "+ 关注",
+      "followFull": "+ 关注板块",
+      "following": "✓ 已关注",
+      "subBoards": "子板块",
+      "postCount": "{n} 帖",
+      "memberCount": "{n} 人",
+      "opFail": "操作失败"
+    }
+  }
+}

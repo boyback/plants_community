@@ -1,11 +1,13 @@
+import type { ReactNode } from 'react';
+
 export function Empty({
   icon = '🌵',
   title = '这里什么都没有',
   desc,
 }: {
   icon?: string;
-  title?: string;
-  desc?: string;
+  title?: ReactNode;
+  desc?: ReactNode;
 }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-leaf-200 bg-white/50 py-14 text-center">

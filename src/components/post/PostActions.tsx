@@ -7,6 +7,7 @@ import { cn, formatNumber } from '@/lib/utils';
 import type { Post } from '@/lib/types';
 import { api, ApiError } from '@/lib/client-api';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/i18n/I18nContext';
 
 export function PostActions({
   post,
@@ -18,6 +19,7 @@ export function PostActions({
   initialCollected?: boolean;
 }) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
   const [liked, setLiked] = useState(initialLiked);
   const [saved, setSaved] = useState(initialCollected);
@@ -46,7 +48,7 @@ export function PostActions({
       setLiked(res.liked);
       setLikes(res.total);
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : '操作失败');
+      showToast(e instanceof ApiError ? e.message : t('detail.post.opFail'));
     }
   };
 
@@ -57,21 +59,21 @@ export function PostActions({
         `/api/posts/${post.id}/collect`
       );
       setSaved(res.collected);
-      showToast(res.collected ? '已收藏 ⭐' : '已取消收藏');
+      showToast(res.collected ? t('detail.post.collectSuccess') : t('detail.post.collectUnsetSuccess'));
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : '操作失败');
+      showToast(e instanceof ApiError ? e.message : t('detail.post.opFail'));
     }
   };
 
-  const share = (channel: string) => {
-    if (channel === '链接' && typeof navigator !== 'undefined') {
+  const share = (channelKey: 'wechat' | 'weibo' | 'link') => {
+    if (channelKey === 'link' && typeof navigator !== 'undefined') {
       navigator.clipboard?.writeText(window.location.href).catch(() => null);
     }
-    showToast(`已分享到「${channel}」🎉`);
+    showToast(t('detail.post.shareSuccess', { channel: t(`detail.post.shareChannels.${channelKey}`) }));
   };
 
   return (
-    <div className="relative">
+    <div className="relative hidden md:block">
       <div className="card flex items-center justify-between gap-3 p-3">
         <div className="flex items-center gap-3">
           <ActionBtn
@@ -86,26 +88,26 @@ export function PostActions({
             active={saved}
             onClick={toggleCollect}
             icon="star"
-            label={saved ? '已收藏' : '收藏'}
+            label={saved ? t('detail.post.collected') : t('detail.post.collect')}
             activeCls="text-amber-500 bg-amber-50"
           />
         </div>
         <div className="flex items-center gap-1">
-          <span className="mr-2 hidden text-xs text-leaf-700/70 md:inline">分享到:</span>
-          {[
-            { k: 'wechat', emoji: '💬', name: '微信' },
-            { k: 'weibo', emoji: '🌐', name: '微博' },
-            { k: 'link', emoji: '🔗', name: '链接' },
-          ].map((c) => (
-            <button
-              key={c.k}
-              onClick={() => share(c.name)}
-              className="grid h-9 w-9 place-items-center rounded-lg text-base hover:bg-leaf-50"
-              title={`分享到${c.name}`}
-            >
-              {c.emoji}
-            </button>
-          ))}
+          <span className="mr-2 hidden text-xs text-leaf-700/70 md:inline">{t('detail.post.shareTo')}</span>
+          {(['wechat', 'weibo', 'link'] as const).map((k) => {
+            const emoji = k === 'wechat' ? '💬' : k === 'weibo' ? '🌐' : '🔗';
+            const name = t(`detail.post.shareChannels.${k}`);
+            return (
+              <button
+                key={k}
+                onClick={() => share(k)}
+                className="grid h-9 w-9 place-items-center rounded-lg text-base hover:bg-leaf-50"
+                title={t('detail.post.shareToX', { name })}
+              >
+                {emoji}
+              </button>
+            );
+          })}
         </div>
       </div>
 

@@ -1,0 +1,49 @@
+{
+  "board": {
+    "title": "すべてのボード",
+    "subtitle": "科 / 属 / 品種の三層分類、または総合討論ボードへ",
+    "groups": {
+      "family": "植物学分類(科 · 属 · 品種)",
+      "familyHint": "科をタップして、属ごとに掘り下げる",
+      "discussion": "討論ボード",
+      "discussionHint": "品種に紐付かない一般トピック",
+      "market": "マーケット · イベント",
+      "marketHint": "取引、イベント、オフライン集会"
+    },
+    "stats": {
+      "members": "メンバー {n} 名",
+      "posts": "{n} 件",
+      "genera": "{n} 属",
+      "species": "{n} 品種"
+    },
+    "allBoards": "すべてのボード",
+    "backToAll": "ボード一覧に戻る",
+    "newPost": "投稿",
+    "postInCategory": "このボードで投稿",
+    "postInGenus": "この属で投稿",
+    "postInSpecies": "この品種で投稿",
+    "hotInCategory": "{name} の最新",
+    "hotInGenus": "この属の最新",
+    "hotInSpecies": "「{name}」についての議論",
+    "emptyPostsCategory": "まだ投稿がありません",
+    "emptyPostsCategoryHint": "最初の投稿者になろう",
+    "emptyPostsGenus": "この属にまだ投稿がありません",
+    "emptyPostsSpecies": "この品種にまだ投稿がありません",
+    "generaListHint": "下の属名をタップして二次ボードへ",
+    "generaCount": "{n} 属",
+    "speciesCount": "{n} 品種",
+    "species": {
+      "alias": "別名",
+      "difficulty": "難易度",
+      "hardiness": "耐寒性",
+      "careTitle": "育て方",
+      "gallery": "ギャラリー",
+      "careData": "栽培データ",
+      "light": "日当たり",
+      "watering": "水やり",
+      "bloom": "開花期",
+      "stats": "統計",
+      "postCount": "この品種の投稿"
+    }
+  }
+}

@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
+import { emitEvent } from '@/lib/events';
+import { emitNotification } from '@/lib/realtime/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +31,7 @@ export const POST = handler(async (req) => {
     await prisma.follow.create({
       data: { followerId: me.id, followeeId: targetId },
     });
-    await prisma.notification.create({
+    const notif = await prisma.notification.create({
       data: {
         recipientId: targetId,
         fromId: me.id,
@@ -38,6 +40,8 @@ export const POST = handler(async (req) => {
         link: `/user/${me.id}`,
       },
     });
+    emitNotification(targetId, { id: notif.id, type: notif.type, text: notif.text, link: notif.link });
+    await emitEvent({ kind: 'followed', userId: targetId, followerId: me.id });
   }
 
   const followers = await prisma.follow.count({ where: { followeeId: targetId } });

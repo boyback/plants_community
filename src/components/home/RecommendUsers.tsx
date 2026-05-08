@@ -6,10 +6,12 @@ import { Avatar } from '@/components/ui/Avatar';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/client-api';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/i18n/I18nContext';
 import type { User } from '@/lib/types';
 
 export function RecommendUsers({ users }: { users: User[] }) {
   const { user: me } = useAuth();
+  const { t } = useI18n();
   const list = users.filter((u) => !me || u.id !== me.id).slice(0, 5);
   const [followed, setFollowed] = useState<Record<string, boolean>>({});
 
@@ -29,9 +31,9 @@ export function RecommendUsers({ users }: { users: User[] }) {
   return (
     <div className="card p-4">
       <div className="mb-3 flex items-center justify-between">
-        <div className="text-sm font-semibold text-ink-800">🌱 推荐肉友</div>
+        <div className="text-sm font-semibold text-ink-800">🌱 {t('home.recommend.title')}</div>
         <Link href="/board" className="text-[11px] text-leaf-700 hover:underline">
-          换一批
+          {t('home.recommend.refresh')}
         </Link>
       </div>
       <ul className="space-y-2.5">
@@ -56,7 +58,7 @@ export function RecommendUsers({ users }: { users: User[] }) {
               )}
               onClick={() => toggle(u.id)}
             >
-              {followed[u.id] ? '已关注' : '+ 关注'}
+              {followed[u.id] ? t('home.recommend.followedBtn') : t('home.recommend.followBtn')}
             </button>
           </li>
         ))}

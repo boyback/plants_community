@@ -8,8 +8,10 @@ import { Shell } from '@/components/layout/Shell';
 import { TypePicker } from '@/components/post/TypePicker';
 import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/i18n/I18nContext';
 import { cn } from '@/lib/utils';
 import { api, ApiError } from '@/lib/client-api';
+import { RichTextEditor } from '@/components/richtext/RichTextEditor';
 
 interface Draft {
   id: string;
@@ -31,12 +33,21 @@ function EditorInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useI18n();
 
-  const [boards, setBoards] = useState<Board[]>([]);
+  const [categories, setCategories] = useState<Board[]>([]);
+  const [generaList, setGeneraList] = useState<Board[]>([]);
+  const [speciesList, setSpeciesList] = useState<Board[]>([]);
   const [type, setType] = useState<PostType>('rich');
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [boardSlug, setBoardSlug] = useState(searchParams.get('board') ?? '');
+  const [content, setContent] = useState(''); // 用于 short/video/vote 的纯文本说明
+  const [contentJson, setContentJson] = useState<unknown>(null); // 用于 rich/event 的 ProseMirror JSON
+  // 三级板块 slug(独立,提交时取最细粒度)
+  const [categorySlug, setCategorySlug] = useState(
+    searchParams.get('category') ?? searchParams.get('board') ?? ''
+  );
+  const [genusSlug, setGenusSlug] = useState(searchParams.get('genus') ?? '');
+  const [speciesSlug, setSpeciesSlug] = useState(searchParams.get('species') ?? '');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
@@ -53,14 +64,45 @@ function EditorInner() {
   const [toast, setToast] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // 拉板块
+  // 拉一级(科)
   useEffect(() => {
-    api.get<Board[]>('/api/boards').then((list) => {
-      setBoards(list);
-      if (!boardSlug && list[0]) setBoardSlug(list[0].slug);
-    }).catch(() => null);
+    api
+      .get<Board[]>('/api/categories')
+      .then((list) => {
+        setCategories(list);
+        if (!categorySlug && list[0]) setCategorySlug(list[0].slug);
+      })
+      .catch(() => null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 科变化 → 拉属列表
+  useEffect(() => {
+    if (!categorySlug) {
+      setGeneraList([]);
+      setGenusSlug('');
+      return;
+    }
+    api
+      .get<{ genera: Board[] }>(`/api/categories/${encodeURIComponent(categorySlug)}`)
+      .then((r) => setGeneraList(r.genera ?? []))
+      .catch(() => setGeneraList([]));
+  }, [categorySlug]);
+
+  // 属变化 → 拉品种列表
+  useEffect(() => {
+    if (!genusSlug) {
+      setSpeciesList([]);
+      setSpeciesSlug('');
+      return;
+    }
+    api
+      .get<{ species: Board[] }>(
+        `/api/genera/${encodeURIComponent(genusSlug)}?category=${encodeURIComponent(categorySlug)}`
+      )
+      .then((r) => setSpeciesList(r.species ?? []))
+      .catch(() => setSpeciesList([]));
+  }, [genusSlug, categorySlug]);
 
   // 拉草稿
   const loadDrafts = async () => {
@@ -87,7 +129,10 @@ function EditorInner() {
     type,
     title,
     content,
-    boardSlug,
+    contentJson,
+    categorySlug,
+    genusSlug,
+    speciesSlug,
     tags,
     images,
     videoUrl,
@@ -98,23 +143,34 @@ function EditorInner() {
     eventStartAt,
   });
 
+  // 根据当前类型判断"内容是否非空"
+  const hasContent = () => {
+    if (type === 'rich' || type === 'event') {
+      // 检查 ProseMirror JSON 是否含实际节点(非空段落)
+      const j = contentJson as { content?: unknown[] } | null;
+      if (!j || !Array.isArray(j.content) || j.content.length === 0) return false;
+      return true;
+    }
+    return !!content.trim();
+  };
+
   const onSaveDraft = async () => {
-    if (!title.trim() && !content.trim()) {
-      showToast('草稿内容不能为空');
+    if (!title.trim() && !hasContent()) {
+      showToast(t('editor.errors.contentRequired'));
       return;
     }
     try {
       const res = await api.post<{ id: string; savedAt: string }>('/api/drafts', {
         id: currentDraftId ?? undefined,
-        title: title || '(未命名)',
+        title: title || '(untitled)',
         type,
         payload: buildPayload(),
       });
       setCurrentDraftId(res.id);
       await loadDrafts();
-      showToast('草稿已保存 💾');
+      showToast(t('editor.draftSaved') + ' 💾');
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : '保存失败');
+      showToast(e instanceof ApiError ? e.message : t('common.retry'));
     }
   };
 
@@ -123,7 +179,10 @@ function EditorInner() {
     setType((p.type as PostType) ?? d.type);
     setTitle(p.title ?? d.title ?? '');
     setContent(p.content ?? '');
-    setBoardSlug(p.boardSlug ?? boardSlug);
+    setContentJson(p.contentJson ?? null);
+    setCategorySlug(p.categorySlug ?? p.boardSlug ?? categorySlug);
+    setGenusSlug(p.genusSlug ?? '');
+    setSpeciesSlug(p.speciesSlug ?? '');
     setTags(p.tags ?? []);
     setImages(p.images ?? []);
     setVideoUrl(p.videoUrl ?? '');
@@ -133,7 +192,7 @@ function EditorInner() {
     setEventLocation(p.eventLocation ?? '');
     setEventStartAt(p.eventStartAt ?? '');
     setCurrentDraftId(d.id);
-    showToast('草稿已载入');
+    showToast(t('editor.draftSaved'));
   };
 
   const onDeleteDraft = async (id: string) => {
@@ -143,24 +202,37 @@ function EditorInner() {
   };
 
   const onPublish = async () => {
-    if (!title.trim()) return showToast('请输入标题');
-    if (type === 'short' && !content.trim()) return showToast('请填写内容');
-    if (type === 'rich' && !content.trim()) return showToast('请填写正文');
-    if (type === 'video' && !videoUrl.trim()) return showToast('请填写视频链接');
+    if (!title.trim()) return showToast(t('editor.errors.titleRequired'));
+    if (type === 'short' && !content.trim()) return showToast(t('editor.errors.contentRequired'));
+    if (type === 'rich' && !hasContent()) return showToast(t('editor.errors.contentRequired'));
+    if (type === 'event' && !hasContent()) return showToast(t('editor.errors.contentRequired'));
+    if (type === 'video' && !videoUrl.trim()) return showToast(t('editor.errors.videoUrlRequired'));
     if (type === 'vote' && voteOptions.filter((x) => x.trim()).length < 2)
-      return showToast('至少要有 2 个投票选项');
+      return showToast(t('editor.errors.voteOptionsMin'));
     if (type === 'vote' && !voteDeadline)
-      return showToast('请选择投票截止时间');
+      return showToast(t('editor.voteDeadline'));
     if (type === 'event' && (!eventLocation.trim() || !eventStartAt))
-      return showToast('请填写活动地点和时间');
+      return showToast(t('editor.event'));
+
+    const isRich = type === 'rich' || type === 'event';
+
+    if (!categorySlug && !genusSlug && !speciesSlug) return showToast(t('editor.chooseBoard'));
 
     setSubmitting(true);
     try {
       const body: any = {
         type,
-        boardSlug,
+        // 优先传最细粒度的 slug
+        ...(speciesSlug
+          ? { speciesSlug }
+          : genusSlug
+          ? { genusSlug }
+          : { categorySlug }),
         title,
-        content,
+        // rich/event 用 contentJson 字段;short/video/vote 用纯文本
+        ...(isRich
+          ? { contentJson }
+          : { content }),
         tags,
         ...(images.length > 0 && { images }),
         ...(type === 'video' && { videoUrl }),
@@ -186,10 +258,10 @@ function EditorInner() {
       if (currentDraftId) {
         await api.delete(`/api/drafts/${currentDraftId}`).catch(() => null);
       }
-      showToast('🎉 发布成功!正在跳转...');
+      showToast('🎉 ' + t('editor.submit'));
       setTimeout(() => router.push(`/post/${created.id}`), 800);
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : '发布失败');
+      showToast(e instanceof ApiError ? e.message : t('error.generic'));
     } finally {
       setSubmitting(false);
     }
@@ -200,16 +272,16 @@ function EditorInner() {
       <Shell>
         <div className="card mx-auto max-w-md p-10 text-center">
           <div className="text-4xl">✍️</div>
-          <div className="mt-3 text-lg font-semibold">登录后才能发帖</div>
-          <p className="mt-1 text-xs text-leaf-700/70">
-            和所有肉友一起分享你的养肉心得吧
+          <div className="mt-3 text-lg font-semibold">{t('error.unauthorized')}</div>
+          <p className="mt-1 text-sm text-leaf-700/70">
+            {t('editor.title')}
           </p>
           <div className="mt-5 flex justify-center gap-2">
             <Link href="/login?redirect=/editor" className="btn-primary">
-              去登录
+              {t('nav.login')}
             </Link>
             <Link href="/register" className="btn-outline">
-              注册
+              {t('nav.register')}
             </Link>
           </div>
         </div>
@@ -222,33 +294,84 @@ function EditorInner() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_280px]">
         <div className="min-w-0 space-y-5">
           <div className="card p-6">
-            <h1 className="mb-4 text-xl font-semibold">发布新帖</h1>
+            <h1 className="mb-4 text-xl font-semibold">{t('editor.title')}</h1>
             <div className="mb-5">
-              <div className="mb-2 text-xs font-medium text-leaf-700/80">帖子类型</div>
+              <div className="mb-2 text-xs font-medium text-leaf-700/80">{t('editor.pickType')}</div>
               <TypePicker value={type} onChange={setType} />
             </div>
 
             <div className="space-y-4">
-              <Row label="板块">
-                <select
-                  value={boardSlug}
-                  onChange={(e) => setBoardSlug(e.target.value)}
-                  className="input"
-                >
-                  {boards.map((b) => (
-                    <option key={b.id} value={b.slug}>
-                      {b.icon} {b.name}
+              <Row label={t('editor.chooseBoard')}>
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                  <select
+                    value={categorySlug}
+                    onChange={(e) => {
+                      setCategorySlug(e.target.value);
+                      setGenusSlug('');
+                      setSpeciesSlug('');
+                    }}
+                    className="input"
+                  >
+                    <option value="">-- {t('editor.chooseBoard')} --</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.slug}>
+                        {c.icon} {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={genusSlug}
+                    onChange={(e) => {
+                      setGenusSlug(e.target.value);
+                      setSpeciesSlug('');
+                    }}
+                    className="input"
+                    disabled={!categorySlug || generaList.length === 0}
+                  >
+                    <option value="">
+                      {!categorySlug
+                        ? t('editor.chooseBoard')
+                        : generaList.length === 0
+                        ? t('common.empty')
+                        : '-- ' + t('editor.chooseBoard') + ' --'}
                     </option>
-                  ))}
-                </select>
+                    {generaList.map((g) => (
+                      <option key={g.id} value={g.slug}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={speciesSlug}
+                    onChange={(e) => setSpeciesSlug(e.target.value)}
+                    className="input"
+                    disabled={!genusSlug || speciesList.length === 0}
+                  >
+                    <option value="">
+                      {!genusSlug
+                        ? t('editor.chooseBoard')
+                        : speciesList.length === 0
+                        ? t('common.empty')
+                        : '-- ' + t('editor.chooseBoard') + ' --'}
+                    </option>
+                    {speciesList.map((s) => (
+                      <option key={s.id} value={s.slug}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mt-1 text-[10px] text-leaf-700/60">
+                  {t('editor.chooseBoard')}
+                </div>
               </Row>
 
-              <Row label="标题">
+              <Row label={t('editor.placeholderTitle')}>
                 <input
                   className="input"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="一个吸引人的标题..."
+                  placeholder={t('editor.placeholderTitle')}
                   maxLength={60}
                 />
                 <div className="mt-1 text-right text-[11px] text-leaf-700/60">
@@ -257,21 +380,22 @@ function EditorInner() {
               </Row>
 
               {type === 'rich' && (
-                <Row label="正文 (支持 HTML 标签)">
-                  <textarea
-                    className="input min-h-[260px] font-mono text-sm"
-                    placeholder="<p>来写点什么吧...</p>&#10;支持 &lt;b&gt;加粗&lt;/b&gt;、&lt;ol&gt;列表&lt;/ol&gt;、&lt;blockquote&gt;引用&lt;/blockquote&gt;..."
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
+                <Row label={t('editor.placeholderRich')}>
+                  <RichTextEditor
+                    value={contentJson}
+                    onChange={setContentJson}
+                    placeholder={t('editor.placeholderRich')}
+                    minHeight={300}
+                    charLimit={20000}
                   />
                 </Row>
               )}
 
               {type === 'short' && (
-                <Row label="正文">
+                <Row label={t('editor.placeholderShort')}>
                   <textarea
                     className="input min-h-[140px]"
-                    placeholder="简短地说两句..."
+                    placeholder={t('editor.placeholderShort')}
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     maxLength={500}
@@ -284,20 +408,20 @@ function EditorInner() {
 
               {type === 'video' && (
                 <>
-                  <Row label="视频链接">
+                  <Row label={t('editor.video')}>
                     <input
                       className="input"
                       value={videoUrl}
                       onChange={(e) => setVideoUrl(e.target.value)}
-                      placeholder="https://... (mp4 或 hls)"
+                      placeholder={t('editor.videoUrlPlaceholder')}
                     />
                   </Row>
-                  <Row label="视频描述">
+                  <Row label={t('editor.video')}>
                     <textarea
                       className="input min-h-[100px]"
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
-                      placeholder="对视频做一些说明..."
+                      placeholder={t('editor.placeholderShort')}
                     />
                   </Row>
                 </>
@@ -305,15 +429,15 @@ function EditorInner() {
 
               {type === 'vote' && (
                 <>
-                  <Row label="投票说明">
+                  <Row label={t('editor.vote')}>
                     <textarea
                       className="input min-h-[80px]"
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
-                      placeholder="为什么发起这个投票?"
+                      placeholder={t('editor.voteQuestion')}
                     />
                   </Row>
-                  <Row label="投票选项">
+                  <Row label={t('editor.vote')}>
                     <div className="space-y-2">
                       {voteOptions.map((o, i) => (
                         <div key={i} className="flex gap-2">
@@ -325,7 +449,7 @@ function EditorInner() {
                               next[i] = e.target.value;
                               setVoteOptions(next);
                             }}
-                            placeholder={`选项 ${i + 1}`}
+                            placeholder={`${t('editor.voteAddOption')} ${i + 1}`}
                           />
                           {voteOptions.length > 2 && (
                             <button
@@ -347,13 +471,13 @@ function EditorInner() {
                           onClick={() => setVoteOptions([...voteOptions, ''])}
                         >
                           <Icon name="plus" size={14} />
-                          添加选项
+                          {t('editor.voteAddOption')}
                         </button>
                       )}
                     </div>
                   </Row>
                   <div className="grid grid-cols-2 gap-4">
-                    <Row label="投票类型">
+                    <Row label={t('editor.voteMulti')}>
                       <label className="flex items-center gap-2 text-sm">
                         <input
                           type="checkbox"
@@ -361,10 +485,10 @@ function EditorInner() {
                           onChange={(e) => setVoteMulti(e.target.checked)}
                           className="h-4 w-4 accent-leaf-500"
                         />
-                        允许多选
+                        {t('editor.voteMulti')}
                       </label>
                     </Row>
-                    <Row label="截止时间">
+                    <Row label={t('editor.voteDeadline')}>
                       <input
                         type="datetime-local"
                         className="input"
@@ -378,24 +502,25 @@ function EditorInner() {
 
               {type === 'event' && (
                 <>
-                  <Row label="活动描述">
-                    <textarea
-                      className="input min-h-[140px]"
-                      value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                      placeholder="介绍一下这次活动..."
+                  <Row label={t('editor.event')}>
+                    <RichTextEditor
+                      value={contentJson}
+                      onChange={setContentJson}
+                      placeholder={t('editor.event')}
+                      minHeight={200}
+                      charLimit={5000}
                     />
                   </Row>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <Row label="活动地点">
+                    <Row label={t('editor.eventLocation')}>
                       <input
                         className="input"
                         value={eventLocation}
                         onChange={(e) => setEventLocation(e.target.value)}
-                        placeholder="如:北京朝阳区某咖啡馆"
+                        placeholder={t('editor.eventLocation')}
                       />
                     </Row>
-                    <Row label="开始时间">
+                    <Row label={t('editor.eventStartAt')}>
                       <input
                         type="datetime-local"
                         className="input"
@@ -407,7 +532,7 @@ function EditorInner() {
                 </>
               )}
 
-              <Row label="图片(URL,回车添加)">
+              <Row label={t('editor.images')}>
                 <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-leaf-200 bg-white p-2">
                   {images.map((src, i) => (
                     <span
@@ -438,24 +563,24 @@ function EditorInner() {
                       }
                     }}
                     placeholder={
-                      images.length >= 9 ? '最多 9 张' : '粘贴图片 URL,回车添加'
+                      images.length >= 9 ? t('editor.imagesHint') : t('editor.images')
                     }
                     disabled={images.length >= 9}
                   />
                 </div>
               </Row>
 
-              <Row label="标签 (回车添加)">
+              <Row label={t('editor.tags')}>
                 <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-leaf-200 bg-white p-2">
-                  {tags.map((t) => (
+                  {tags.map((tag) => (
                     <span
-                      key={t}
+                      key={tag}
                       className="inline-flex items-center gap-1 rounded-full bg-leaf-100 px-2 py-0.5 text-xs text-leaf-700"
                     >
-                      #{t}
+                      #{tag}
                       <button
                         type="button"
-                        onClick={() => setTags(tags.filter((x) => x !== t))}
+                        onClick={() => setTags(tags.filter((x) => x !== tag))}
                         className="text-leaf-600 hover:text-leaf-800"
                       >
                         ×
@@ -476,7 +601,7 @@ function EditorInner() {
                         setTagInput('');
                       }
                     }}
-                    placeholder={tags.length >= 6 ? '最多 6 个' : '输入标签后回车'}
+                    placeholder={tags.length >= 6 ? t('editor.tagsHint') : t('editor.tags')}
                     disabled={tags.length >= 6}
                   />
                 </div>
@@ -485,12 +610,12 @@ function EditorInner() {
 
             <div className="mt-6 flex items-center justify-between border-t border-leaf-100 pt-4">
               <div className="text-xs text-leaf-700/70">
-                {currentDraftId ? '正在编辑草稿' : '新帖子'}
+                {currentDraftId ? t('editor.saveDraft') : t('editor.title')}
               </div>
               <div className="flex gap-2">
                 <button type="button" onClick={onSaveDraft} className="btn-outline">
                   <Icon name="edit" size={14} />
-                  保存草稿
+                  {t('editor.saveDraft')}
                 </button>
                 <button
                   type="button"
@@ -499,7 +624,7 @@ function EditorInner() {
                   className="btn-primary"
                 >
                   <Icon name="check" size={14} />
-                  {submitting ? '发布中...' : '发布'}
+                  {submitting ? t('editor.submitting') : t('editor.submit')}
                 </button>
               </div>
             </div>
@@ -509,14 +634,12 @@ function EditorInner() {
         <div className="space-y-4">
           <div className="card p-4">
             <div className="mb-3 flex items-center justify-between">
-              <div className="text-sm font-semibold text-ink-800">📦 草稿箱</div>
-              <span className="text-[11px] text-leaf-700/70">{drafts.length} 份</span>
+              <div className="text-sm font-semibold text-ink-800">📦 {t('editor.saveDraft')}</div>
+              <span className="text-[11px] text-leaf-700/70">{drafts.length}</span>
             </div>
             {drafts.length === 0 ? (
               <p className="text-center text-xs text-leaf-700/60 py-4">
-                暂无草稿
-                <br />
-                写到一半时可随时保存
+                {t('common.empty')}
               </p>
             ) : (
               <ul className="space-y-2">
@@ -536,17 +659,17 @@ function EditorInner() {
                       className="block w-full text-left"
                     >
                       <div className="truncate text-sm font-medium text-ink-800">
-                        {d.title || '(无标题)'}
+                        {d.title || t('common.empty')}
                       </div>
                       <div className="mt-0.5 text-[10px] text-leaf-700/70">
-                        {typeLabel(d.type)} · {new Date(d.savedAt).toLocaleString()}
+                        {t(`post.types.${d.type}`)} · {new Date(d.savedAt).toLocaleString()}
                       </div>
                     </button>
                     <button
                       type="button"
                       onClick={() => onDeleteDraft(d.id)}
                       className="absolute right-1.5 top-1.5 opacity-0 transition-opacity group-hover:opacity-100 text-leaf-600 hover:text-rose-500"
-                      aria-label="删除草稿"
+                      aria-label={t('common.delete')}
                     >
                       <Icon name="trash" size={14} />
                     </button>
@@ -557,12 +680,12 @@ function EditorInner() {
           </div>
 
           <div className="card p-4 text-xs text-leaf-700/80">
-            <div className="mb-2 font-semibold text-ink-800">💡 发帖小贴士</div>
+            <div className="mb-2 font-semibold text-ink-800">{t('editor.tips.title')}</div>
             <ul className="ml-4 list-disc space-y-1">
-              <li>标题清晰,正文条理</li>
-              <li>配图请提供清晰大图</li>
-              <li>勿发广告,严禁违法内容</li>
-              <li>合理打 #标签# 便于检索</li>
+              <li>{t('editor.tips.item1')}</li>
+              <li>{t('editor.tips.item2')}</li>
+              <li>{t('editor.tips.item3')}</li>
+              <li>{t('editor.tips.item4')}</li>
             </ul>
           </div>
         </div>
@@ -586,6 +709,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-function typeLabel(t: PostType) {
-  return { rich: '富文本', short: '短内容', vote: '投票', video: '视频', event: 'EVENT' }[t];
+/** 不再用硬编码映射 — 改为在调用处用 t('post.types.<key>') */
+function typeLabel(postType: PostType) {
+  return postType; // fallback: 返回类型 key 本身,调用处再翻译
 }

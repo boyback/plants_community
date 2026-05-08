@@ -1,0 +1,46 @@
+{
+  "levels": {
+    "name": {
+      "1": "Seedling",
+      "2": "Sprout",
+      "3": "Juvenile",
+      "4": "Youngster",
+      "5": "Mature",
+      "6": "Thriving",
+      "7": "Veteran",
+      "8": "Horticulturist",
+      "9": "Master",
+      "10": "Grandmaster"
+    },
+    "perks": {
+      "1": "Comment · Short posts",
+      "2": "Collect posts",
+      "3": "Rich text posts",
+      "4": "Images in posts",
+      "5": "Video posts · Buy in market",
+      "6": "Create polls",
+      "7": "Create events",
+      "8": "Sell in market",
+      "9": "Request pinning",
+      "10": "Choose showcase badge"
+    },
+    "permission": {
+      "comment": "Comment",
+      "post:rich": "Rich text post",
+      "post:short": "Short post",
+      "post:image": "Image in post",
+      "post:video": "Video post",
+      "post:vote": "Poll post",
+      "post:event": "Event post",
+      "post:collect": "Collect posts",
+      "market:buy": "Buy in market",
+      "market:sell": "Sell in market",
+      "market:pin": "Request pinning",
+      "badge:choose": "Choose badge"
+    },
+    "hint": {
+      "notEnough": "Permission required",
+      "needLevel": "Requires Lv.{level} «{name}» or VIP"
+    }
+  }
+}

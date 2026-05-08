@@ -1,16 +1,20 @@
 import type { PostType } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { I18nText } from '@/components/ui/I18nText';
 
-const map: Record<PostType, { label: string; emoji: string; color: string }> = {
-  rich: { label: '富文本', emoji: '📝', color: 'bg-leaf-50 text-leaf-700 border-leaf-100' },
-  short: { label: '短内容', emoji: '💬', color: 'bg-sand-50 text-sand-300 border-sand-100' },
-  vote: { label: '投票', emoji: '🗳️', color: 'bg-amber-50 text-amber-700 border-amber-100' },
-  video: { label: '视频', emoji: '🎬', color: 'bg-rose-50 text-rose-700 border-rose-100' },
-  event: { label: '活动', emoji: '🎉', color: 'bg-violet-50 text-violet-700 border-violet-100' },
+const META: Record<PostType, { emoji: string; color: string; zh: string }> = {
+  rich: { emoji: '📝', color: 'bg-leaf-50 text-leaf-700 border-leaf-100', zh: '富文本' },
+  short: { emoji: '💬', color: 'bg-sand-50 text-sand-300 border-sand-100', zh: '短内容' },
+  vote: { emoji: '🗳️', color: 'bg-amber-50 text-amber-700 border-amber-100', zh: '投票' },
+  video: { emoji: '🎬', color: 'bg-rose-50 text-rose-700 border-rose-100', zh: '视频' },
+  event: { emoji: '🎉', color: 'bg-violet-50 text-violet-700 border-violet-100', zh: '活动' },
+  help: { emoji: '🆘', color: 'bg-blue-50 text-blue-700 border-blue-100', zh: '求助' },
 };
 
+const FALLBACK = { emoji: '📄', color: 'bg-leaf-50 text-leaf-700 border-leaf-100', zh: '' };
+
 export function PostTypeBadge({ type, className }: { type: PostType; className?: string }) {
-  const m = map[type];
+  const m = META[type] ?? FALLBACK;
   return (
     <span
       className={cn(
@@ -20,7 +24,7 @@ export function PostTypeBadge({ type, className }: { type: PostType; className?:
       )}
     >
       <span aria-hidden>{m.emoji}</span>
-      {m.label}
+      <I18nText k={`post.typeShort.${type}`} fallback={m.zh} />
     </span>
   );
 }

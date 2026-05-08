@@ -1,0 +1,17 @@
+{
+  "theme": {
+    "springFestival": { "banner": "🏮 Happy Lunar New Year from the RouYou family" },
+    "lantern": { "banner": "🏮 Lantern Festival — light up your succulent hours" },
+    "valentine": { "banner": "💝 Among the succulents, say \"I like you\"" },
+    "womensDay": { "banner": "🌷 Here's to every woman who loves flowers" },
+    "arborDay": { "banner": "🌲 Arbor Day — every succulent is a tiny forest" },
+    "earthDay": { "banner": "🌍 Earth Day — grow some green with us" },
+    "communityBirthday": { "banner": "🎉 Happy birthday RouYou — another year with you" },
+    "childrensDay": { "banner": "🎈 Children's Day — inner child, hello again" },
+    "dragonBoat": { "banner": "🐉 Dragon Boat — may your succulents thrive" },
+    "midAutumn": { "banner": "🌕 Mid-Autumn — full moons and plump leaves" },
+    "nationalDay": { "banner": "🇨🇳 Happy National Day" },
+    "halloween": { "banner": "🎃 On Halloween, your succulents seem to be watching you" },
+    "christmas": { "banner": "🎄 Merry Christmas and a cozy winter for your plants" }
+  }
+}

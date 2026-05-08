@@ -1,0 +1,70 @@
+{
+  "user": {
+    "tabs": {
+      "posts": "Posts",
+      "likes": "Liked",
+      "collects": "Saved",
+      "following": "Following",
+      "followers": "Followers",
+      "followedBoards": "Followed boards",
+      "badges": "Badges",
+      "about": "About"
+    },
+    "noBio": "This plant-parent hasn't written a bio…",
+    "expToNext": "{need} EXP to Lv.{level}",
+    "joinedAt": "Joined {date}",
+    "stats": {
+      "posts": "posts",
+      "followers": "followers",
+      "following": "following",
+      "totalPosts": "Total posts",
+      "badgesEarned": "Badges earned"
+    },
+    "vip": {
+      "lifetime": "Lifetime VIP",
+      "remainDays": "VIP · {days} days left",
+      "member": "VIP"
+    },
+    "actions": {
+      "privacy": "🔒 Privacy",
+      "editProfile": "Edit profile",
+      "editProfileUnavailable": "Edit coming soon",
+      "message": "Message",
+      "follow": "+ Follow",
+      "unfollow": "✓ Following"
+    },
+    "empty": {
+      "posts": "No posts yet",
+      "likes": "No liked posts yet",
+      "collects": "No saved posts yet",
+      "following": "Not following anyone yet",
+      "followers": "No followers yet",
+      "followedBoards": "No followed boards yet",
+      "followedBoardsHint": "Tap «+ Follow» on any board to save it"
+    },
+    "badges": {
+      "featured": "🏆 Featured badges",
+      "viewAll": "View all badges →",
+      "activityData": "📊 Activity",
+      "obtainedCount": "Earned · {n}",
+      "completionRate": "Completion {percent}%",
+      "lockedCount": "Locked · {n}"
+    },
+    "info": {
+      "username": "Username",
+      "userId": "User ID",
+      "level": "Level",
+      "joinDate": "Joined",
+      "bio": "Bio",
+      "empty": "—"
+    },
+    "hidden": {
+      "following": "This user chose to hide their following list",
+      "followers": "This user chose to hide their followers list",
+      "goToSettings": "Go to settings →"
+    },
+    "privateBoards": "Only visible to you",
+    "privateBoardsHint": "The followed-boards list is private. You can't view other users' followed boards.",
+    "totalCount": "{n} total"
+  }
+}

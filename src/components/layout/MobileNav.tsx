@@ -5,22 +5,32 @@ import { useEffect, useState } from 'react';
 import { Logo } from '@/components/ui/Logo';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/i18n/I18nContext';
 import { Avatar } from '@/components/ui/Avatar';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/client-api';
 import type { Board } from '@/lib/types';
 
-const mainNav: { href: string; label: string; icon: IconName }[] = [
-  { href: '/', label: '首页', icon: 'home' },
-  { href: '/board', label: '全部板块', icon: 'board' },
-  { href: '/plants', label: '多肉图鉴', icon: 'plants' },
-  { href: '/messages', label: '私信', icon: 'message' },
-  { href: '/notifications', label: '通知', icon: 'bell' },
-  { href: '/about', label: '关于', icon: 'info' },
+const mainNav: { href: string; labelKey: string; icon: IconName }[] = [
+  { href: '/', labelKey: 'nav.home', icon: 'home' },
+  { href: '/board', labelKey: 'nav.sidebar.allBoards', icon: 'board' },
+  { href: '/plants', labelKey: 'nav.sidebar.plants', icon: 'plants' },
+  { href: '/market', labelKey: 'market.hero.title', icon: 'star' },
+  { href: '/auction', labelKey: 'auction.title', icon: 'star' },
+  { href: '/orders', labelKey: 'nav.myOrders', icon: 'check' },
+  { href: '/addresses', labelKey: 'nav.shippingAddress', icon: 'board' },
+  { href: '/settings/privacy', labelKey: 'nav.sidebar.privacySettings', icon: 'settings' },
+  { href: '/points', labelKey: 'nav.pointsCenter', icon: 'star' },
+  { href: '/tasks', labelKey: 'nav.activityCenter', icon: 'check' },
+  { href: '/vip', labelKey: 'nav.vipCenter', icon: 'star' },
+  { href: '/messages', labelKey: 'nav.messages', icon: 'message' },
+  { href: '/notifications', labelKey: 'nav.notifications', icon: 'bell' },
+  { href: '/about', labelKey: 'nav.about', icon: 'info' },
 ];
 
 export function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [boards, setBoards] = useState<Board[]>([]);
 
   useEffect(() => {
@@ -58,7 +68,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
             type="button"
             onClick={onClose}
             className="grid h-9 w-9 place-items-center rounded-lg text-leaf-700 hover:bg-leaf-50"
-            aria-label="关闭"
+            aria-label={t('nav.closeMenu')}
           >
             <Icon name="close" size={20} />
           </button>
@@ -68,7 +78,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
             <Avatar src={user.avatar} alt={user.name} size={44} ring />
             <div className="min-w-0">
               <div className="truncate text-sm font-medium">{user.name}</div>
-              <div className="text-xs text-leaf-600">Lv.{user.level} · {user.posts} 帖</div>
+              <div className="text-xs text-leaf-600">{t('nav.sidebar.userMeta', { level: user.level, posts: user.posts })}</div>
             </div>
           </div>
         )}
@@ -81,7 +91,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm hover:bg-leaf-50"
             >
               <Icon name={n.icon} size={18} />
-              {n.label}
+              {t(n.labelKey)}
             </Link>
           ))}
           <Link
@@ -90,12 +100,12 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
             className="mt-3 flex items-center gap-2 rounded-lg bg-leaf-500 px-3 py-2.5 text-sm text-white"
           >
             <Icon name="plus" size={18} />
-            发布新帖
+            {t('nav.sidebar.newPost')}
           </Link>
         </nav>
         <div className="mt-2 px-3">
           <div className="mb-1 px-2 text-[11px] font-medium uppercase tracking-wider text-leaf-600/70">
-            热门板块
+            {t('nav.sidebar.hotBoards')}
           </div>
           <div className="space-y-0.5 pb-6">
             {boards.map((b) => (
@@ -121,14 +131,14 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
               onClick={onClose}
               className="btn-ghost flex-1 justify-center"
             >
-              登录
+              {t('nav.login')}
             </Link>
             <Link
               href="/register"
               onClick={onClose}
               className="btn-primary flex-1 justify-center"
             >
-              注册
+              {t('nav.register')}
             </Link>
           </div>
         )}

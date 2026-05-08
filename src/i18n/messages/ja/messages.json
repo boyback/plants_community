@@ -1,0 +1,15 @@
+{
+  "messages": {
+    "title": "DM",
+    "empty": "まだ会話がありません",
+    "newConversation": "新しい会話",
+    "inputPlaceholder": "メッセージを入力、Enter で送信",
+    "send": "送信",
+    "pickConversation": "左の会話を選んでチャット開始",
+    "unread": "{n} 件未読",
+    "sentAt": "{time} 送信",
+    "search": "会話を検索",
+    "loadMore": "過去のメッセージを読み込む",
+    "errorSend": "送信失敗、しばらくしてから再試行"
+  }
+}

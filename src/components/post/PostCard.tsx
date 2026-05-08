@@ -4,7 +4,8 @@ import type { Post } from '@/lib/types';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
-import { formatNumber, timeAgo, cn } from '@/lib/utils';
+import { I18nText } from '@/components/ui/I18nText';
+import { formatNumber, timeAgo, cn, boardUrl } from '@/lib/utils';
 
 /**
  * 推荐流/板块列表的帖子卡片
@@ -74,7 +75,13 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
         {post.type === 'event' && post.event && (
           <div className="rounded-lg bg-violet-50/80 p-2.5 text-xs text-violet-900">
             📍 {post.event.location} · 🕘 {new Date(post.event.startAt).toLocaleDateString()}
-            <span className="ml-2 text-violet-600">{post.event.attendees} 人参加</span>
+            <span className="ml-2 text-violet-600">
+              <I18nText
+                k="detail.event.attendeesShort"
+                vars={{ n: post.event.attendees }}
+                fallback={`${post.event.attendees} 人参加`}
+              />
+            </span>
           </div>
         )}
 
@@ -129,7 +136,7 @@ function CompactCard({ post, className }: { post: Post; className?: string }) {
         <div className="mb-1 flex items-center gap-2">
           <PostTypeBadge type={post.type} />
           <Link
-            href={`/board/${post.board.slug}`}
+            href={boardUrl(post.board)}
             className="text-[11px] text-leaf-700 hover:underline"
           >
             {post.board.name}
@@ -170,7 +177,13 @@ function VoteSummary({ post }: { post: Post }) {
           </div>
         );
       })}
-      <div className="text-[10px] text-amber-700">共 {total} 人投票</div>
+      <div className="text-[10px] text-amber-700">
+        <I18nText
+          k="detail.vote.totalVoters"
+          vars={{ n: total }}
+          fallback={`共 ${total} 人投票`}
+        />
+      </div>
     </div>
   );
 }

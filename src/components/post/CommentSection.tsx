@@ -2,24 +2,33 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import type { Comment, Post } from '@/lib/types';
+import type { Comment, Post, SkinItem } from '@/lib/types';
 import { Avatar } from '@/components/ui/Avatar';
+import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserName } from '@/components/ui/UserName';
 import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/i18n/I18nContext';
 import { timeAgo, formatNumber, cn } from '@/lib/utils';
 import { Empty } from '@/components/ui/Empty';
 import { api, ApiError } from '@/lib/client-api';
+import { RichTextEditor } from '@/components/richtext/RichTextEditor';
+import { RichTextView } from '@/components/richtext/RichTextView';
 
 type SortKey = 'new' | 'hot';
 
 export function CommentSection({ post }: { post: Post }) {
-  const { user } = useAuth();
-  const [text, setText] = useState('');
+  const { user, equip, vip } = useAuth();
+  const { t } = useI18n();
+  const [contentJson, setContentJson] = useState<unknown>(null);
+  const [draftKey, setDraftKey] = useState(0); // 用 key 重置编辑器
   const [sort, setSort] = useState<SortKey>('new');
   const [comments, setComments] = useState<Comment[]>(post.commentList ?? []);
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // 当前用户的气泡(自己评论自己用 — 仅装饰)
+  const myBubble = equip.bubble ?? null;
 
   const sorted = useMemo(() => {
     const arr = [...comments];
@@ -31,30 +40,35 @@ export function CommentSection({ post }: { post: Post }) {
     return arr;
   }, [comments, sort]);
 
+  const isContentEmpty = () => {
+    const j = contentJson as { content?: unknown[] } | null;
+    return !j || !Array.isArray(j.content) || j.content.length === 0;
+  };
+
   const submit = async () => {
     if (!user) return;
-    const t = text.trim();
-    if (!t) return;
+    if (isContentEmpty()) return;
     setSubmitting(true);
     setErr(null);
     try {
       const c = await api.post<Comment>(`/api/posts/${post.id}/comments`, {
-        content: t,
+        contentJson,
       });
       setComments((prev) => [c, ...prev]);
-      setText('');
+      setContentJson(null);
+      setDraftKey((k) => k + 1);
     } catch (e) {
-      setErr(e instanceof ApiError ? e.message : '发送失败');
+      setErr(e instanceof ApiError ? e.message : t('detail.post.commentSendFail'));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="card overflow-hidden">
+    <div id="comments" className="card overflow-hidden scroll-mt-20">
       <div className="flex items-center justify-between border-b border-leaf-100 px-5 py-3">
         <div className="text-sm font-semibold">
-          全部评论 <span className="ml-1 text-leaf-700/70">{comments.length}</span>
+          {t('detail.post.commentsAll')} <span className="ml-1 text-leaf-700/70">{comments.length}</span>
         </div>
         <div className="flex items-center gap-1 text-xs">
           <button
@@ -64,7 +78,7 @@ export function CommentSection({ post }: { post: Post }) {
               sort === 'hot' ? 'bg-leaf-100 text-leaf-800' : 'text-ink-700/70 hover:bg-leaf-50'
             )}
           >
-            热门
+            {t('detail.post.commentsHot')}
           </button>
           <button
             onClick={() => setSort('new')}
@@ -73,7 +87,7 @@ export function CommentSection({ post }: { post: Post }) {
               sort === 'new' ? 'bg-leaf-100 text-leaf-800' : 'text-ink-700/70 hover:bg-leaf-50'
             )}
           >
-            最新
+            {t('detail.post.commentsLatest')}
           </button>
         </div>
       </div>
@@ -83,34 +97,35 @@ export function CommentSection({ post }: { post: Post }) {
         {user ? (
           <div className="flex gap-3">
             <Avatar src={user.avatar} alt={user.name} size={36} />
-            <div className="flex-1">
-              <textarea
-                rows={2}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder={`${user.name},分享你的看法...`}
-                className="w-full resize-none rounded-xl border border-leaf-200 bg-white px-3 py-2 text-sm outline-none focus:border-leaf-400 focus:ring-2 focus:ring-leaf-100"
+            <div className="flex-1 min-w-0">
+              <RichTextEditor
+                key={draftKey}
+                value={contentJson ?? undefined}
+                onChange={setContentJson}
+                placeholder={t('detail.post.commentPlaceholderTpl', { name: user.name })}
+                minHeight={80}
+                charLimit={2000}
               />
               <div className="mt-2 flex items-center justify-between">
                 <div className="text-[11px] text-leaf-700/60">
-                  {err ? <span className="text-rose-500">{err}</span> : '请文明评论,理性交流 🌿'}
+                  {err ? <span className="text-rose-500">{err}</span> : t('detail.post.commentEtiquette')}
                 </div>
                 <button
                   type="button"
                   onClick={submit}
-                  disabled={!text.trim() || submitting}
+                  disabled={isContentEmpty() || submitting}
                   className="btn-primary h-8 !px-4 !text-xs"
                 >
-                  {submitting ? '发送中...' : '发送'}
+                  {submitting ? t('detail.post.commentSending') : t('detail.post.commentSend')}
                 </button>
               </div>
             </div>
           </div>
         ) : (
           <div className="flex items-center justify-between rounded-xl bg-leaf-50 px-4 py-3 text-sm">
-            <span className="text-leaf-700">登录后即可发表评论</span>
+            <span className="text-leaf-700">{t('detail.post.commentLoginCta')}</span>
             <Link href="/login" className="btn-primary h-8 !px-3 !text-xs">
-              登录
+              {t('nav.login')}
             </Link>
           </div>
         )}
@@ -119,7 +134,7 @@ export function CommentSection({ post }: { post: Post }) {
       <div className="divide-y divide-leaf-100">
         {sorted.length === 0 ? (
           <div className="p-6">
-            <Empty icon="💬" title="还没有评论,抢个沙发?" />
+            <Empty icon="💬" title={t('detail.post.commentsEmpty')} />
           </div>
         ) : (
           sorted.map((c) => (
@@ -128,6 +143,7 @@ export function CommentSection({ post }: { post: Post }) {
               comment={c}
               liked={!!likedMap[c.id]}
               onLike={() => setLikedMap((m) => ({ ...m, [c.id]: !m[c.id] }))}
+              myBubble={user?.id === c.author.id ? myBubble : null}
             />
           ))
         )}
@@ -140,12 +156,24 @@ function CommentItem({
   comment,
   liked,
   onLike,
+  myBubble,
 }: {
   comment: Comment;
   liked: boolean;
   onLike: () => void;
+  myBubble?: SkinItem | null;
 }) {
+  const { t } = useI18n();
   const [replyOpen, setReplyOpen] = useState(false);
+  // 气泡样式
+  const bubbleMeta = myBubble?.meta as Record<string, unknown> | undefined;
+  const bubbleStyle = bubbleMeta
+    ? {
+        background: bubbleMeta.bg as string | undefined,
+        color: bubbleMeta.color as string | undefined,
+      }
+    : undefined;
+
   return (
     <div className="p-5">
       <div className="flex gap-3">
@@ -163,9 +191,20 @@ function CommentItem({
             <span className="text-[11px] text-leaf-700/60">Lv.{comment.author.level}</span>
             <span className="text-[11px] text-leaf-700/60">· {timeAgo(comment.createdAt)}</span>
           </div>
-          <p className="mt-1.5 whitespace-pre-wrap text-sm leading-6 text-ink-800">
-            {comment.content}
-          </p>
+          <div
+            className={cn(
+              'mt-1.5',
+              myBubble && myBubble.slug !== 'bubble-default' && 'inline-block max-w-full rounded-2xl px-3 py-2 shadow-sm'
+            )}
+            style={myBubble && myBubble.slug !== 'bubble-default' ? bubbleStyle : undefined}
+          >
+            <RichTextView
+              json={comment.contentJson}
+              html={comment.content}
+              text={comment.contentText}
+              size="sm"
+            />
+          </div>
           <div className="mt-2 flex items-center gap-3 text-xs">
             <button
               type="button"
@@ -184,25 +223,25 @@ function CommentItem({
               className="inline-flex items-center gap-1 text-leaf-700/70 hover:text-leaf-700"
             >
               <Icon name="comment" size={13} />
-              回复
+              {t('detail.post.reply')}
             </button>
           </div>
 
           {replyOpen && (
             <div className="mt-3 flex gap-2">
               <input
-                placeholder={`回复 @${comment.author.name}...`}
+                placeholder={t('detail.post.replyTo', { name: comment.author.name })}
                 className="input h-8 !py-1 !text-xs"
               />
               <button type="button" className="btn-primary h-8 !px-3 !text-xs">
-                回复
+                {t('detail.post.reply')}
               </button>
               <button
                 type="button"
                 onClick={() => setReplyOpen(false)}
                 className="btn-outline h-8 !px-3 !text-xs"
               >
-                取消
+                {t('detail.post.cancel')}
               </button>
             </div>
           )}
@@ -215,7 +254,13 @@ function CommentItem({
                     {r.author.name}
                   </Link>
                   <span className="ml-1.5 text-leaf-700/60">· {timeAgo(r.createdAt)}</span>
-                  <div className="mt-0.5 text-ink-800">{r.content}</div>
+                  <RichTextView
+                    json={r.contentJson}
+                    html={r.content}
+                    text={r.contentText}
+                    size="sm"
+                    className="mt-0.5"
+                  />
                 </div>
               ))}
             </div>

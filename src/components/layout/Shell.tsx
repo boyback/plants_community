@@ -5,8 +5,11 @@ import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { MobileTabBar } from './MobileTabBar';
+import { FestivalBanner } from '@/theme/FestivalBanner';
+import { FestivalParticles } from '@/theme/FestivalParticles';
+import { SwipeBack } from '@/components/ui/SwipeBack';
 
-/** 应用主壳:Header + 左侧 Sidebar + 主体 + 移动端抽屉 + 移动端底部 Tab */
+/** 应用主壳:Header + 左侧 Sidebar + 主体 + 移动端抽屉 + 移动端底部 Tab + 节日氛围层 */
 export function Shell({
   children,
   withSidebar = true,
@@ -18,6 +21,9 @@ export function Shell({
 
   return (
     <div className="min-h-screen">
+      <SwipeBack />
+      <FestivalParticles />
+      <FestivalBanner />
       <Header onToggleMobileNav={() => setMobileOpen(true)} />
       <MobileNav open={mobileOpen} onClose={() => setMobileOpen(false)} />
 

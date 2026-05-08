@@ -1,0 +1,173 @@
+# =====================================================================
+# 全栈 Docker Compose
+# 启动:docker compose up -d --build
+# 停止:docker compose down
+# 重置数据:docker compose down -v
+# =====================================================================
+
+services:
+  # -----------------------------------------------
+  # MySQL 8(数据持久化在 mysql_data volume)
+  # -----------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: rouyou-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123456}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-plants_community}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=caching_sha2_password
+      - --max_connections=200
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root123456}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # 可选:暴露端口给宿主调试。生产建议注释掉
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"
+    networks:
+      - rouyou
+
+  # -----------------------------------------------
+  # init:首次起容器时跑 prisma db push + seed,然后退出
+  # -----------------------------------------------
+  init-db:
+    image: node:20-alpine
+    container_name: rouyou-init
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./prisma:/app/prisma:ro
+      - ./scripts:/app/scripts:ro
+      - ./package.json:/app/package.json:ro
+      - ./package-lock.json:/app/package-lock.json:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./src/lib:/app/src/lib:ro
+      - ./.env.docker:/app/.env:ro
+    working_dir: /app
+    environment:
+      DATABASE_URL: "mysql://root:${MYSQL_ROOT_PASSWORD:-root123456}@mysql:3306/${MYSQL_DATABASE:-plants_community}"
+    command: >
+      sh -c "
+      apk add --no-cache openssl &&
+      npm ci --no-audit --prefer-offline &&
+      npx prisma db push --skip-generate --accept-data-loss &&
+      npx tsx prisma/seed.ts &&
+      echo '✅ DB initialized'
+      "
+    restart: "no"
+    networks:
+      - rouyou
+
+  # -----------------------------------------------
+  # Next.js(端口 3000)
+  # -----------------------------------------------
+  next:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rouyou-next:local
+    container_name: rouyou-next
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      init-db:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: "mysql://root:${MYSQL_ROOT_PASSWORD:-root123456}@mysql:3306/${MYSQL_DATABASE:-plants_community}"
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 必须设置}
+      AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-rouyou_token}
+      AUTH_COOKIE_MAX_AGE: ${AUTH_COOKIE_MAX_AGE:-2592000}
+      # 支付(可选)
+      PAYMENT_GATEWAY: ${PAYMENT_GATEWAY:-mock}
+      ALIPAY_APP_ID: ${ALIPAY_APP_ID:-}
+      ALIPAY_PRIVATE_KEY_PEM: ${ALIPAY_PRIVATE_KEY_PEM:-}
+      ALIPAY_PUBLIC_KEY_PEM: ${ALIPAY_PUBLIC_KEY_PEM:-}
+      ALIPAY_GATEWAY: ${ALIPAY_GATEWAY:-}
+      ALIPAY_NOTIFY_URL: ${ALIPAY_NOTIFY_URL:-}
+      ALIPAY_RETURN_URL: ${ALIPAY_RETURN_URL:-}
+      WECHAT_APPID: ${WECHAT_APPID:-}
+      WECHAT_MCHID: ${WECHAT_MCHID:-}
+      WECHAT_SERIAL_NO: ${WECHAT_SERIAL_NO:-}
+      WECHAT_PRIVATE_KEY_PEM: ${WECHAT_PRIVATE_KEY_PEM:-}
+      WECHAT_API_V3_KEY: ${WECHAT_API_V3_KEY:-}
+      WECHAT_NOTIFY_URL: ${WECHAT_NOTIFY_URL:-}
+    volumes:
+      # 用户上传文件:Next.js 写入本地路径,挂 volume 持久化
+      - uploads_data:/app/public/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - rouyou
+
+  # -----------------------------------------------
+  # Go 后端(端口 8080)
+  # -----------------------------------------------
+  go-server:
+    build:
+      context: ./server-go
+      dockerfile: Dockerfile
+    image: rouyou-go:local
+    container_name: rouyou-go
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      init-db:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: "mysql://root:${MYSQL_ROOT_PASSWORD:-root123456}@mysql:3306/${MYSQL_DATABASE:-plants_community}"
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 必须设置}
+      AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-rouyou_token}
+      AUTH_COOKIE_MAX_AGE: ${AUTH_COOKIE_MAX_AGE:-2592000}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    networks:
+      - rouyou
+
+  # -----------------------------------------------
+  # Nginx 反代(80/443)
+  # 把 / -> next; /api/v2/ -> go(可选);TLS 证书挂 volume
+  # -----------------------------------------------
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: rouyou-nginx
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./deploy/nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      next:
+        condition: service_healthy
+      go-server:
+        condition: service_healthy
+    networks:
+      - rouyou
+
+volumes:
+  mysql_data:
+  uploads_data:
+
+networks:
+  rouyou:
+    driver: bridge

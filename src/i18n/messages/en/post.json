@@ -1,0 +1,57 @@
+{
+  "post": {
+    "types": {
+      "rich": "Long post",
+      "short": "Note",
+      "vote": "Poll",
+      "video": "Video",
+      "event": "Event",
+      "help": "Help"
+    },
+    "typeDesc": {
+      "rich": "For tutorials and long-form content (PC & app)",
+      "short": "Quick shares and casual notes (PC & app)",
+      "vote": "Start a poll, gather opinions (PC only)",
+      "video": "Record with video (PC & app)",
+      "event": "Organize offline meetups (PC only)"
+    },
+    "typeBadge": {
+      "rich": "Rich text",
+      "short": "Short post",
+      "vote": "Poll",
+      "video": "Video",
+      "event": "Event"
+    },
+    "typeShort": {
+      "rich": "Rich",
+      "short": "Short",
+      "vote": "Poll",
+      "video": "Video",
+      "event": "Event",
+      "help": "Help"
+    },
+    "actions": {
+      "like": "Like",
+      "collect": "Save",
+      "comment": "Comment",
+      "share": "Share",
+      "report": "Report"
+    },
+    "help": {
+      "urgency": "Urgency",
+      "urgencyLow": "Low",
+      "urgencyNormal": "Normal",
+      "urgencyHigh": "High",
+      "bountyPoints": "Bounty (points)",
+      "bountyHint": "Points are deducted on post creation and awarded when you accept an answer.",
+      "accept": "Accept this answer",
+      "solved": "Solved",
+      "solvedAt": "Accepted {time}",
+      "rewardReceived": "🏆 Your answer was accepted — you earned {points} bounty points"
+    },
+    "empty": {
+      "list": "No posts yet — be the first to share!",
+      "comments": "No comments yet, leave the first one"
+    }
+  }
+}

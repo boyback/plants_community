@@ -1,0 +1,44 @@
+{
+  "vip": {
+    "title": "대회원",
+    "subtitle": "모든 게시글·거래 권한 해제 + 전용 배지·스킨",
+    "myStatus": "내 회원 상태",
+    "active": "활성",
+    "inactive": "미가입",
+    "lifetime": "평생 회원",
+    "expireAt": "{time} 만료",
+    "remainDays": "{days} 일 남음",
+    "plans": {
+      "monthly": "월간",
+      "quarterly": "분기",
+      "yearly": "연간",
+      "lifetime": "평생",
+      "monthly_points": "포인트 월간"
+    },
+    "planSubtitle": {
+      "monthly": "30 일 대회원",
+      "quarterly": "90 일 · 월간보다 9.9 할인",
+      "yearly": "365 일 · 가장 저렴",
+      "lifetime": "한번 결제로 평생",
+      "monthly_points": "5000 포인트 = 30 일"
+    },
+    "priceCash": "₩{yuan}",
+    "pricePoints": "{points} 포인트",
+    "durationDays": "{days} 일",
+    "recommended": "추천",
+    "buy": "지금 가입",
+    "exchange": "포인트 교환",
+    "benefits": {
+      "title": "회원 전용 혜택",
+      "noPostLimit": "모든 글 유형 레벨 제한 없음",
+      "noSellLimit": "마켓 판매 레벨 제한 없음",
+      "highlightName": "닉네임 금색 강조",
+      "exclusiveSkin": "전용 스킨과 꾸미기",
+      "doubleExp": "매일 출석 EXP 2 배",
+      "priorityReply": "우선 고객 지원"
+    },
+    "recentOrders": "최근 회원 주문 20 건",
+    "emptyOrders": "아직 회원 주문이 없습니다",
+    "notEnoughPoints": "포인트 부족: 보유 {current}, 필요 {need}"
+  }
+}

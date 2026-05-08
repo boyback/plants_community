@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Board } from '@/lib/types';
-import { formatNumber } from '@/lib/utils';
+import { formatNumber, boardUrl } from '@/lib/utils';
+import { I18nText } from '@/components/ui/I18nText';
 
 export function BoardCard({ board }: { board: Board }) {
   return (
     <Link
-      href={`/board/${board.slug}`}
+      href={boardUrl(board)}
       className="card group overflow-hidden transition-shadow hover:shadow-lg"
     >
       <div className="relative aspect-[16/7] overflow-hidden bg-leaf-50">
@@ -27,8 +28,8 @@ export function BoardCard({ board }: { board: Board }) {
       <div className="p-4">
         <p className="line-clamp-2 text-xs text-leaf-700/80">{board.description}</p>
         <div className="mt-3 flex items-center justify-between text-[11px] text-leaf-700/70">
-          <span>👥 {formatNumber(board.members)} 成员</span>
-          <span>📝 {formatNumber(board.posts)} 贴</span>
+          <span>👥 <I18nText k="board.stats.members" vars={{ n: formatNumber(board.members) }} /></span>
+          <span>📝 <I18nText k="board.stats.posts" vars={{ n: formatNumber(board.posts) }} /></span>
         </div>
       </div>
     </Link>

@@ -1,0 +1,58 @@
+{
+  "tasks": {
+    "title": "任務與活躍度",
+    "loginRequired": "登入後查看任務與活躍度",
+    "monthly": {
+      "title": "本月活躍度",
+      "ranking": "本月排名",
+      "vipBoost": "👑 大會員 10x 加成中",
+      "desc": "發文 / 留言 / 簽到 / 投票 / 購物 / 完成任務都會增加活躍度"
+    },
+    "howto": {
+      "title": "怎麼漲活躍度?",
+      "items": {
+        "signin": "📅 簽到 +1 / 次",
+        "post": "📝 發文 +5 / 篇",
+        "comment": "💬 留言 +2 / 條",
+        "vote": "🗳️ 投票 +1 / 次",
+        "purchase": "🛒 購物 +5 / 單",
+        "taskBonus": "🎯 完成任務額外加成"
+      }
+    },
+    "tabs": {
+      "tasks": "🎯 任務列表",
+      "rewards": "🎁 活躍度階梯獎勵",
+      "ranking": "🏆 月度排行榜"
+    },
+    "sections": {
+      "dailyTitle": "📅 每日任務",
+      "dailySubtitle": "每天 0 點重置",
+      "monthlyTitle": "🗓️ 月度任務",
+      "monthlySubtitle": "每月 1 號重置",
+      "achievementTitle": "🏅 成就任務",
+      "achievementSubtitle": "一次性達成,永久記錄"
+    },
+    "progress": "已完成 {done} / {total}",
+    "rewardLabel": "獎勵",
+    "activityUnit": "活",
+    "claim": "領取",
+    "claimed": "已領取",
+    "claimedToast": "✨ 已領取 {points} 積分 / {activity} 活躍度",
+    "inProgress": "進行中",
+    "completed": "✓ 已完成",
+    "claimFail": "領取失敗",
+    "rewardNeedLevel": "需要活躍度 {n}",
+    "rewardSkin": "皮膚「{name}」",
+    "claimedThisMonth": "本月已領",
+    "notReached": "未達到",
+    "rewardEmpty": "暫無活躍度獎勵",
+    "thisMonthProgress": "本月進度",
+    "rewardClaimed": "🎁 已領取獎勵:{points} 積分{skin}",
+    "rewardClaimedSkin": " + 1 個皮膚",
+    "ranking": {
+      "empty": "本月還沒有資料",
+      "emptyDesc": "發文、留言、簽到都會上榜",
+      "score": "{n} 活躍度"
+    }
+  }
+}

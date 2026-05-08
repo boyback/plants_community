@@ -1,0 +1,15 @@
+{
+  "messages": {
+    "title": "Messages",
+    "empty": "No conversations yet",
+    "newConversation": "New conversation",
+    "inputPlaceholder": "Type a message, Enter to send",
+    "send": "Send",
+    "pickConversation": "Pick a conversation on the left to start chatting",
+    "unread": "{n} unread",
+    "sentAt": "Sent {time}",
+    "search": "Search conversations",
+    "loadMore": "Load earlier messages",
+    "errorSend": "Send failed, please try again"
+  }
+}

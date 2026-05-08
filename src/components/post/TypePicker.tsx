@@ -1,20 +1,21 @@
+'use client';
+
 import type { PostType } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/i18n/I18nContext';
 
 interface Item {
   type: PostType;
   emoji: string;
-  label: string;
-  desc: string;
   pcOnly?: boolean;
 }
 
 const items: Item[] = [
-  { type: 'rich', emoji: '📝', label: '富文本贴', desc: '适合教程、长篇心得(PC & APP 发布)' },
-  { type: 'short', emoji: '💬', label: '短内容贴', desc: '随手一发,即兴分享(PC & APP 发布)' },
-  { type: 'vote', emoji: '🗳️', label: '投票贴', desc: '发起投票,集思广益(仅 PC 发布)', pcOnly: true },
-  { type: 'video', emoji: '🎬', label: '视频贴', desc: '上传视频记录(PC & APP 均可发布)' },
-  { type: 'event', emoji: '🎉', label: 'EVENT 贴', desc: '组织线下活动(仅 PC 可发布)', pcOnly: true },
+  { type: 'rich', emoji: '📝' },
+  { type: 'short', emoji: '💬' },
+  { type: 'vote', emoji: '🗳️', pcOnly: true },
+  { type: 'video', emoji: '🎬' },
+  { type: 'event', emoji: '🎉', pcOnly: true },
 ];
 
 export function TypePicker({
@@ -24,6 +25,7 @@ export function TypePicker({
   value: PostType;
   onChange: (t: PostType) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
       {items.map((it) => (
@@ -46,8 +48,12 @@ export function TypePicker({
               </span>
             )}
           </div>
-          <div className="text-sm font-medium text-ink-800">{it.label}</div>
-          <div className="mt-0.5 text-[10px] leading-tight text-leaf-700/70">{it.desc}</div>
+          <div className="text-sm font-medium text-ink-800">
+            {t(`post.typeBadge.${it.type}`)}
+          </div>
+          <div className="mt-0.5 text-[10px] leading-tight text-leaf-700/70">
+            {t(`post.typeDesc.${it.type}`)}
+          </div>
           {value === it.type && (
             <span className="absolute right-2 top-2 grid h-5 w-5 place-items-center rounded-full bg-leaf-500 text-xs text-white">
               ✓

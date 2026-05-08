@@ -5,13 +5,20 @@ import { useEffect, useState } from 'react';
 import { Logo } from '@/components/ui/Logo';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
+import { UserAvatar } from '@/components/ui/UserAvatar';
+import { VipBadge } from '@/components/ui/VipBadge';
+import { LocaleSwitcher } from '@/components/ui/LocaleSwitcher';
 import { useAuth } from '@/context/AuthContext';
+import { useRealtime } from '@/context/RealtimeContext';
+import { useI18n } from '@/i18n/I18nContext';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/client-api';
 import type { Notification, Conversation } from '@/lib/types';
 
 export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }) {
-  const { user, logout } = useAuth();
+  const { user, logout, vip, equip, pointsBalance } = useAuth();
+  const { t } = useI18n();
+  const { subscribe } = useRealtime();
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadMsgs, setUnreadMsgs] = useState(0);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
@@ -37,6 +44,7 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
       }
     };
     fetchCounts();
+    // 兜底 60s 轮询(和 SSE 同时在,离线时也能对齐)
     const t = setInterval(fetchCounts, 60_000);
     return () => {
       cancelled = true;
@@ -44,13 +52,23 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
     };
   }, [user]);
 
+  // 实时:收到通知/私信时 + 1
+  useEffect(() => {
+    if (!user) return;
+    const un1 = subscribe('notification', () => setUnreadNotifs((n) => n + 1));
+    const un2 = subscribe('message', () => setUnreadMsgs((n) => n + 1));
+    const un3 = subscribe('notification.read', () => setUnreadNotifs(0));
+    const un4 = subscribe('message.read', () => setUnreadMsgs((n) => Math.max(0, n - 1)));
+    return () => { un1(); un2(); un3(); un4(); };
+  }, [user, subscribe]);
+
   return (
     <header className="sticky top-0 z-30 border-b border-leaf-100/70 bg-white/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-3 px-4">
         <button
           type="button"
           className="-ml-1 grid h-9 w-9 place-items-center rounded-lg text-leaf-700 hover:bg-leaf-50 lg:hidden"
-          aria-label="打开导航"
+          aria-label={t('nav.openMenu')}
           onClick={onToggleMobileNav}
         >
           <Icon name="menu" size={20} />
@@ -59,18 +77,12 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
         <Logo />
 
         <nav className="ml-4 hidden items-center gap-1 lg:flex">
-          <HeaderLink href="/" icon="home">
-            首页
-          </HeaderLink>
-          <HeaderLink href="/board" icon="board">
-            板块
-          </HeaderLink>
-          <HeaderLink href="/plants" icon="plants">
-            多肉图鉴
-          </HeaderLink>
-          <HeaderLink href="/about" icon="info">
-            关于
-          </HeaderLink>
+          <HeaderLink href="/" icon="home">{t('nav.home')}</HeaderLink>
+          <HeaderLink href="/board" icon="board">{t('nav.board')}</HeaderLink>
+          <HeaderLink href="/market" icon="star">{t('nav.market')}</HeaderLink>
+          <HeaderLink href="/auction" icon="star">{t('nav.auction')}</HeaderLink>
+          <HeaderLink href="/plants" icon="plants">{t('nav.plants')}</HeaderLink>
+          <HeaderLink href="/tasks" icon="check">{t('nav.tasks')}</HeaderLink>
         </nav>
 
         <div className="ml-auto hidden flex-1 max-w-md md:block">
@@ -82,8 +94,8 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
             />
             <input
               className="input pl-9"
-              placeholder="搜索帖子、板块、用户..."
-              aria-label="搜索"
+              placeholder={t('nav.search')}
+              aria-label={t('common.search')}
             />
           </div>
         </div>
@@ -91,14 +103,22 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
         <div className="ml-auto flex items-center gap-1 md:ml-0">
           {user ? (
             <>
-              <IconButton href="/messages" icon="message" badge={unreadMsgs} label="私信" />
-              <IconButton href="/notifications" icon="bell" badge={unreadNotifs} label="通知" />
+              <Link
+                href="/points"
+                className="hidden md:inline-flex items-center gap-1 rounded-full bg-leaf-50 px-2.5 py-1 text-xs text-leaf-700 hover:bg-leaf-100"
+                title={t('nav.myPoints')}
+              >
+                💎 {pointsBalance}
+              </Link>
+              <IconButton href="/messages" icon="message" badge={unreadMsgs} label={t('nav.messages')} />
+              <IconButton href="/notifications" icon="bell" badge={unreadNotifs} label={t('nav.notifications')} />
+              <LocaleSwitcher className="hidden md:block" />
               <Link
                 href="/editor"
                 className="hidden sm:inline-flex btn-primary h-9 !px-3 text-xs"
               >
                 <Icon name="plus" size={14} />
-                发帖
+                {t('nav.newPost')}
               </Link>
               <div className="relative">
                 <button
@@ -106,7 +126,13 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                   className="ml-1 flex items-center gap-2 rounded-full p-0.5 hover:bg-leaf-50"
                   onClick={() => setMenuOpen((o) => !o)}
                 >
-                  <Avatar src={user.avatar} alt={user.name} size={32} ring />
+                  <UserAvatar
+                    src={user.avatar}
+                    alt={user.name}
+                    size={32}
+                    pendant={equip.pendant ?? null}
+                    isVip={vip.isVip}
+                  />
                 </button>
                 {menuOpen && (
                   <>
@@ -114,16 +140,48 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                       className="fixed inset-0 z-10"
                       onClick={() => setMenuOpen(false)}
                     />
-                    <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-leaf-100 bg-white shadow-lg">
+                    <div className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-xl border border-leaf-100 bg-white shadow-lg">
                       <div className="border-b border-leaf-50 px-3 py-3">
-                        <div className="text-sm font-medium">{user.name}</div>
-                        <div className="text-xs text-leaf-600">Lv.{user.level}</div>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={cn(
+                              'text-sm font-medium',
+                              vip.isVip
+                                ? 'bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-600 bg-clip-text text-transparent'
+                                : ''
+                            )}
+                          >
+                            {user.name}
+                          </span>
+                          {vip.isVip && <VipBadge size="xs" lifetime={vip.lifetime} />}
+                        </div>
+                        <div className="mt-0.5 text-xs text-leaf-600">
+                          Lv.{user.level} · 💎 {pointsBalance}
+                        </div>
                       </div>
                       <MenuItem href={`/user/${user.id}`} icon="user" onClick={() => setMenuOpen(false)}>
-                        个人主页
+                        {t('nav.myProfile')}
+                      </MenuItem>
+                      <MenuItem href="/points" icon="star" onClick={() => setMenuOpen(false)}>
+                        {t('nav.pointsCenter')}
+                      </MenuItem>
+                      <MenuItem href="/orders" icon="check" onClick={() => setMenuOpen(false)}>
+                        {t('nav.myOrders')}
+                      </MenuItem>
+                      <MenuItem href="/addresses" icon="board" onClick={() => setMenuOpen(false)}>
+                        {t('nav.shippingAddress')}
+                      </MenuItem>
+                      <MenuItem href="/settings" icon="settings" onClick={() => setMenuOpen(false)}>
+                        {t('nav.settings')}
+                      </MenuItem>
+                      <MenuItem href="/tasks" icon="check" onClick={() => setMenuOpen(false)}>
+                        {t('nav.activityCenter')}
+                      </MenuItem>
+                      <MenuItem href="/vip" icon="star" onClick={() => setMenuOpen(false)}>
+                        {vip.isVip ? t('nav.vipCenter') : t('nav.openVip')}
                       </MenuItem>
                       <MenuItem href="/editor" icon="edit" onClick={() => setMenuOpen(false)}>
-                        发布新帖
+                        {t('nav.newPost')}
                       </MenuItem>
                       <MenuItem
                         icon="logout"
@@ -132,7 +190,7 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                           await logout();
                         }}
                       >
-                        退出登录
+                        {t('nav.logout')}
                       </MenuItem>
                     </div>
                   </>
@@ -141,11 +199,12 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
             </>
           ) : (
             <>
+              <LocaleSwitcher className="mr-1" />
               <Link href="/login" className="btn-ghost h-9 text-xs">
-                登录
+                {t('nav.login')}
               </Link>
               <Link href="/register" className="btn-primary h-9 text-xs">
-                注册
+                {t('nav.register')}
               </Link>
             </>
           )}

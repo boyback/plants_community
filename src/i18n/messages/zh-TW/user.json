@@ -1,0 +1,70 @@
+{
+  "user": {
+    "tabs": {
+      "posts": "貼文",
+      "likes": "讚過",
+      "collects": "收藏",
+      "following": "關注",
+      "followers": "粉絲",
+      "followedBoards": "關注的版塊",
+      "badges": "徽章牆",
+      "about": "個人資訊"
+    },
+    "noBio": "這個人很懶,什麼都沒寫...",
+    "expToNext": "距 Lv.{level} 還差 {need} 點",
+    "joinedAt": "加入於 {date}",
+    "stats": {
+      "posts": "帖",
+      "followers": "粉絲",
+      "following": "關注",
+      "totalPosts": "總貼文",
+      "badgesEarned": "已獲徽章"
+    },
+    "vip": {
+      "lifetime": "終身大會員",
+      "remainDays": "大會員剩餘 {days} 天",
+      "member": "大會員"
+    },
+    "actions": {
+      "privacy": "🔒 隱私設定",
+      "editProfile": "編輯資料",
+      "editProfileUnavailable": "編輯暫未開放",
+      "message": "私訊",
+      "follow": "+ 關注",
+      "unfollow": "✓ 已關注"
+    },
+    "empty": {
+      "posts": "還沒有發過貼文",
+      "likes": "還沒有讚過任何貼文",
+      "collects": "還沒有收藏任何貼文",
+      "following": "還沒有關注任何人",
+      "followers": "還沒有粉絲",
+      "followedBoards": "還沒有關注任何版塊",
+      "followedBoardsHint": "在版塊頁點「+ 關注」即可收藏"
+    },
+    "badges": {
+      "featured": "🏆 徽章精選",
+      "viewAll": "查看全部徽章 →",
+      "activityData": "📊 活躍資料",
+      "obtainedCount": "已獲得 · {n}",
+      "completionRate": "完成度 {percent}%",
+      "lockedCount": "未解鎖 · {n}"
+    },
+    "info": {
+      "username": "用戶名",
+      "userId": "用戶 ID",
+      "level": "等級",
+      "joinDate": "加入日期",
+      "bio": "個人簡介",
+      "empty": "暫無"
+    },
+    "hidden": {
+      "following": "該用戶選擇了隱藏關注列表",
+      "followers": "該用戶選擇了隱藏粉絲列表",
+      "goToSettings": "前往設定 →"
+    },
+    "privateBoards": "僅本人可見",
+    "privateBoardsHint": "關注的版塊列表只對本人可見,無法查看他人的關注。",
+    "totalCount": "共 {n} 人"
+  }
+}

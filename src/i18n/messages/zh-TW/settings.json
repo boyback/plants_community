@@ -1,0 +1,41 @@
+{
+  "settings": {
+    "title": "設定",
+    "appearance": {
+      "title": "外觀與語言",
+      "desc": "語言、節日主題等介面偏好",
+      "language": "語言",
+      "languageDesc": "你的語言偏好會儲存到帳戶(已登入)和本地 cookie。",
+      "festival": "節日主題",
+      "festivalDesc": "我們在春節、中秋、聖誕等節日會給社區換上應景的裝飾。不喜歡也可以關掉。",
+      "festivalGlobal": "開啟節日主題",
+      "festivalGlobalDesc": "關閉後所有節日裝飾將不再顯示",
+      "festivalList": "逐個節日開關",
+      "active": "進行中"
+    },
+    "privacy": {
+      "title": "隱私",
+      "desc": "關注 / 粉絲 可見性"
+    },
+    "addresses": {
+      "title": "收件地址",
+      "desc": "管理預設地址、新增、刪除"
+    },
+    "terms": {
+      "title": "用戶協議",
+      "desc": "閱讀最新用戶協議"
+    },
+    "privacyPolicy": {
+      "title": "隱私政策",
+      "desc": "我們如何收集、使用、保護你的個人資訊"
+    },
+    "cookiePolicy": {
+      "title": "Cookie 政策",
+      "desc": "查看我們使用的 Cookie 分類"
+    },
+    "reopenCookie": {
+      "title": "重新管理 Cookie 偏好",
+      "desc": "重新打開同意框,調整 Cookie 分類"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "home": {
+    "signIn": {
+      "welcomeTitle": "RouYou へようこそ 🌵",
+      "welcomeSub": "ログインすると投稿・コメント・チェックインでバッジ獲得、メッセージ・通知機能も利用可能です。",
+      "login": "ログイン",
+      "register": "新規登録",
+      "userMeta": "Lv.{level} · 投稿 {posts} · ファン {followers}",
+      "streakLabel": "連続チェックイン",
+      "daysSuffix": "日",
+      "signedToday": "チェックイン済み",
+      "signInNow": "今すぐチェックイン",
+      "tip": "💡 7 日連続チェックインで「小さな太陽」バッジ獲得",
+      "weekDays": "月,火,水,木,金,土,日"
+    },
+    "topics": {
+      "title": "人気トピック",
+      "moreLink": "すべて見る →",
+      "empty": "トピックなし"
+    },
+    "recommend": {
+      "title": "おすすめユーザー",
+      "refresh": "シャッフル",
+      "followBtn": "+ フォロー",
+      "followedBtn": "フォロー中"
+    },
+    "feedTabs": {
+      "recommend": "おすすめ",
+      "following": "フォロー中",
+      "hot": "人気",
+      "latest": "最新"
+    }
+  }
+}

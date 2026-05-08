@@ -1,0 +1,48 @@
+{
+  "about": {
+    "tagline": "About us",
+    "brandName": "RouYou コミュニティ",
+    "intro": "多肉植物愛好者のためのさわやかなコミュニティ。一枚一枚の葉を大切に。",
+    "vision": {
+      "title": "ビジョン",
+      "body": "ベランダの初心者からハウス栽培の熟練者まで、仲間を見つけて日々を共有し、知見を交換できる場を。"
+    },
+    "features": {
+      "title": "主な機能",
+      "postTypes": "📝 5 種類の投稿",
+      "boards": "🏷️ 細分化されたボード",
+      "encyclopedia": "📖 多肉図鑑",
+      "dm": "💬 1 対 1 メッセージ",
+      "notifications": "🔔 リアルタイム通知",
+      "badges": "🏅 バッジ & 実績",
+      "voteEvent": "🗳️ 投票とイベント",
+      "checkIn": "📅 チェックインボーナス"
+    },
+    "rules": {
+      "title": "コミュニティガイドライン",
+      "item1": "仲間を尊重し、個人攻撃は禁止",
+      "item2": "話題は多肉関連に限定、無関係な広告は禁止",
+      "item3": "取引は認証済みチャネルで、詐欺に注意",
+      "item4": "画像はオリジナルを優先、転載時は出典を明記",
+      "item5": "違反投稿は削除されます"
+    },
+    "tech": {
+      "title": "技術情報",
+      "stack": "フロントエンド:Next.js 14 + React 18 + TypeScript",
+      "style": "スタイル:Tailwind CSS",
+      "demo": "本サイトはデモです。データはモックで、リロード時もローカルに保持されます。"
+    },
+    "contact": {
+      "title": "お問い合わせ",
+      "email": "📧 hello@rouyou.demo",
+      "github": "🐙 GitHub · ",
+      "wechat": "💬 WeChat グループ:管理者に DM して参加"
+    },
+    "copyright": "© {year} RouYou Community — Made with 🌿 and ❤️",
+    "links": {
+      "home": "ホーム",
+      "boards": "ボード一覧",
+      "plants": "図鑑"
+    }
+  }
+}

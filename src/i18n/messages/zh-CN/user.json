@@ -1,0 +1,70 @@
+{
+  "user": {
+    "tabs": {
+      "posts": "发帖",
+      "likes": "赞过",
+      "collects": "收藏",
+      "following": "关注",
+      "followers": "粉丝",
+      "followedBoards": "关注的板块",
+      "badges": "徽章墙",
+      "about": "个人信息"
+    },
+    "noBio": "这个人很懒,什么都没写...",
+    "expToNext": "距 Lv.{level} 还差 {need} 点",
+    "joinedAt": "加入于 {date}",
+    "stats": {
+      "posts": "帖",
+      "followers": "粉丝",
+      "following": "关注",
+      "totalPosts": "总帖子",
+      "badgesEarned": "已获徽章"
+    },
+    "vip": {
+      "lifetime": "终身大会员",
+      "remainDays": "大会员剩余 {days} 天",
+      "member": "大会员"
+    },
+    "actions": {
+      "privacy": "🔒 隐私设置",
+      "editProfile": "编辑资料",
+      "editProfileUnavailable": "编辑暂未开放",
+      "message": "私信",
+      "follow": "+ 关注",
+      "unfollow": "✓ 已关注"
+    },
+    "empty": {
+      "posts": "还没有发过帖子",
+      "likes": "还没有赞过任何帖子",
+      "collects": "还没有收藏任何帖子",
+      "following": "还没有关注任何人",
+      "followers": "还没有粉丝",
+      "followedBoards": "还没有关注任何板块",
+      "followedBoardsHint": "在板块页点「+ 关注」即可收藏"
+    },
+    "badges": {
+      "featured": "🏆 徽章精选",
+      "viewAll": "查看全部徽章 →",
+      "activityData": "📊 活跃数据",
+      "obtainedCount": "已获得 · {n}",
+      "completionRate": "完成度 {percent}%",
+      "lockedCount": "未解锁 · {n}"
+    },
+    "info": {
+      "username": "用户名",
+      "userId": "用户 ID",
+      "level": "等级",
+      "joinDate": "加入日期",
+      "bio": "个人简介",
+      "empty": "暂无"
+    },
+    "hidden": {
+      "following": "该用户选择了隐藏关注列表",
+      "followers": "该用户选择了隐藏粉丝列表",
+      "goToSettings": "前往设置 →"
+    },
+    "privateBoards": "仅本人可见",
+    "privateBoardsHint": "关注的板块列表只对本人可见,无法查看他人的关注。",
+    "totalCount": "共 {n} 人"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "post": {
+    "types": {
+      "rich": "長圖文",
+      "short": "短動態",
+      "vote": "投票",
+      "video": "影片",
+      "event": "活動",
+      "help": "求助"
+    },
+    "typeDesc": {
+      "rich": "適合教學、長篇心得(PC & APP 發佈)",
+      "short": "隨手一發,即興分享(PC & APP 發佈)",
+      "vote": "發起投票,集思廣益(僅 PC 發佈)",
+      "video": "上傳影片紀錄(PC & APP 均可發佈)",
+      "event": "組織線下活動(僅 PC 可發佈)"
+    },
+    "typeBadge": {
+      "rich": "富文本貼",
+      "short": "短內容貼",
+      "vote": "投票貼",
+      "video": "影片貼",
+      "event": "EVENT 貼"
+    },
+    "typeShort": {
+      "rich": "富文本",
+      "short": "短內容",
+      "vote": "投票",
+      "video": "影片",
+      "event": "活動",
+      "help": "求助"
+    },
+    "actions": {
+      "like": "讚",
+      "collect": "收藏",
+      "comment": "留言",
+      "share": "分享",
+      "report": "檢舉"
+    },
+    "help": {
+      "urgency": "緊急程度",
+      "urgencyLow": "不急",
+      "urgencyNormal": "一般",
+      "urgencyHigh": "緊急",
+      "bountyPoints": "懸賞積分",
+      "bountyHint": "發文後從你的積分扣除,採納答案時發給被採納者",
+      "accept": "採納此回答",
+      "solved": "已解決",
+      "solvedAt": "{time} 被採納",
+      "rewardReceived": "🏆 你的回答被採納,獲得 {points} 懸賞積分"
+    },
+    "empty": {
+      "list": "還沒有貼文,等你來發第一條!",
+      "comments": "還沒有留言,快來搶頭香吧"
+    }
+  }
+}

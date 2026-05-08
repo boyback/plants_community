@@ -1,0 +1,48 @@
+{
+  "about": {
+    "tagline": "About us",
+    "brandName": "RouYou 커뮤니티",
+    "intro": "다육식물 애호가를 위한 산뜻한 커뮤니티. 모든 잎을 소중히 여깁니다.",
+    "vision": {
+      "title": "우리의 비전",
+      "body": "베란다 초보부터 온실 고수까지, RouYou에서 일상을 공유하고 지식을 나누며 친구를 만나세요."
+    },
+    "features": {
+      "title": "핵심 기능",
+      "postTypes": "📝 5 가지 글 유형",
+      "boards": "🏷️ 세분화된 게시판",
+      "encyclopedia": "📖 다육이 도감",
+      "dm": "💬 1:1 쪽지",
+      "notifications": "🔔 실시간 알림",
+      "badges": "🏅 배지 & 업적",
+      "voteEvent": "🗳️ 투표와 이벤트",
+      "checkIn": "📅 출석 보상"
+    },
+    "rules": {
+      "title": "커뮤니티 규칙",
+      "item1": "서로 존중, 인신공격 금지",
+      "item2": "다육이 관련 주제 유지, 무관한 광고 금지",
+      "item3": "거래는 인증된 채널로, 사기 주의",
+      "item4": "이미지는 원본 우선, 출처 명시",
+      "item5": "규칙 위반 글은 삭제됩니다"
+    },
+    "tech": {
+      "title": "기술 정보",
+      "stack": "프론트엔드: Next.js 14 + React 18 + TypeScript",
+      "style": "스타일: Tailwind CSS",
+      "demo": "본 사이트는 데모이며, 데이터는 목업입니다. 새로고침 후 로컬에 유지됩니다."
+    },
+    "contact": {
+      "title": "연락처",
+      "email": "📧 hello@rouyou.demo",
+      "github": "🐙 GitHub · ",
+      "wechat": "💬 WeChat 단체방: 관리자에게 DM 요청"
+    },
+    "copyright": "© {year} RouYou Community — Made with 🌿 and ❤️",
+    "links": {
+      "home": "홈",
+      "boards": "게시판 보기",
+      "plants": "도감"
+    }
+  }
+}

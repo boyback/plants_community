@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { handler } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
+import { emitEvent } from '@/lib/events';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +40,8 @@ export const POST = handler(async () => {
         signInStreak: streak,
       },
     });
+    // 触发事件:加积分/EXP/活跃度 + 任务进度
+    await emitEvent({ kind: 'signin', userId: me.id });
   }
 
   return { signInStreak: streak, signedInToday: true, alreadySigned };

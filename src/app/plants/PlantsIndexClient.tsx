@@ -5,43 +5,61 @@ import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Icon } from '@/components/ui/Icon';
+import { useI18n } from '@/i18n/I18nContext';
 import type { PlantSpecies } from '@/lib/types';
 
-const families = ['全部', '景天科', '番杏科', '百合科', '仙人掌科', '大戟科'];
-const diffs = [
-  { label: '全部', value: 0 },
-  { label: '★', value: 1 },
-  { label: '★★', value: 2 },
-  { label: '★★★', value: 3 },
-  { label: '★★★★', value: 4 },
-  { label: '★★★★★', value: 5 },
+type PlantItem = PlantSpecies & { detailHref?: string };
+
+/**
+ * family 过滤键采用 latin-ish key,label 走 i18n:
+ * 命中策略:p.family 里若含该 key 去掉 "aceae" 的词根,或直接含该 key,都算命中。
+ * 为兼容现有 mock(中文家族名),同时把 zh 家族汉字硬编码作为备胎匹配。
+ */
+const FAMILY_OPTIONS: Array<{ key: string; zh: string }> = [
+  { key: 'all', zh: '' },
+  { key: 'Crassulaceae', zh: '景天' },
+  { key: 'Aizoaceae', zh: '番杏' },
+  { key: 'Liliaceae', zh: '百合' },
+  { key: 'Cactaceae', zh: '仙人掌' },
+  { key: 'Euphorbiaceae', zh: '大戟' },
 ];
 
-export function PlantsIndexClient({ plants }: { plants: PlantSpecies[] }) {
-  const [family, setFamily] = useState('全部');
+const DIFFICULTY = [0, 1, 2, 3, 4, 5] as const;
+
+export function PlantsIndexClient({ plants }: { plants: PlantItem[] }) {
+  const { t } = useI18n();
+  const [familyKey, setFamilyKey] = useState('all');
   const [difficulty, setDifficulty] = useState(0);
   const [q, setQ] = useState('');
 
   const list = useMemo(
     () =>
       plants.filter((p) => {
-        if (family !== '全部' && !p.family.includes(family.replace('科', ''))) return false;
+        if (familyKey !== 'all') {
+          const opt = FAMILY_OPTIONS.find((f) => f.key === familyKey)!;
+          // 中文 family 匹配:含 zh 词根;同时 Latin 匹配:family 里含 key 词根
+          const hit =
+            (opt.zh && p.family.includes(opt.zh)) ||
+            (opt.key && p.family.toLowerCase().includes(opt.key.toLowerCase()));
+          if (!hit) return false;
+        }
         if (difficulty !== 0 && p.difficulty !== difficulty) return false;
         if (q && !(p.name.includes(q) || p.latinName.toLowerCase().includes(q.toLowerCase())))
           return false;
         return true;
       }),
-    [plants, family, difficulty, q]
+    [plants, familyKey, difficulty, q]
   );
+
+  const familyLabel = (key: string) =>
+    key === 'all' ? t('plants.all') : t(`plants.family.${key}`);
 
   return (
     <>
       <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">多肉图鉴</h1>
-          <p className="text-sm text-leaf-700/70">
-            收录常见多肉品种,了解它们的习性与养护要点
-          </p>
+          <h1 className="text-2xl font-bold">{t('plants.title')}</h1>
+          <p className="text-sm text-leaf-700/70">{t('plants.subtitle')}</p>
         </div>
         <div className="relative w-full md:w-64">
           <Icon
@@ -51,7 +69,7 @@ export function PlantsIndexClient({ plants }: { plants: PlantSpecies[] }) {
           />
           <input
             className="input pl-8"
-            placeholder="搜索中文/拉丁名..."
+            placeholder={t('plants.searchPlaceholder')}
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
@@ -60,34 +78,30 @@ export function PlantsIndexClient({ plants }: { plants: PlantSpecies[] }) {
 
       <div className="mb-4 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-leaf-700/70 mr-1">科属:</span>
-          {families.map((f) => (
-            <Chip key={f} active={family === f} onClick={() => setFamily(f)}>
-              {f}
+          <span className="text-xs text-leaf-700/70 mr-1">{t('plants.familyLabel')}</span>
+          {FAMILY_OPTIONS.map((f) => (
+            <Chip key={f.key} active={familyKey === f.key} onClick={() => setFamilyKey(f.key)}>
+              {familyLabel(f.key)}
             </Chip>
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-leaf-700/70 mr-1">难度:</span>
-          {diffs.map((d) => (
-            <Chip
-              key={d.value}
-              active={difficulty === d.value}
-              onClick={() => setDifficulty(d.value)}
-            >
-              {d.label}
+          <span className="text-xs text-leaf-700/70 mr-1">{t('plants.difficultyLabel')}</span>
+          {DIFFICULTY.map((d) => (
+            <Chip key={d} active={difficulty === d} onClick={() => setDifficulty(d)}>
+              {d === 0 ? t('plants.all') : '★'.repeat(d)}
             </Chip>
           ))}
         </div>
       </div>
 
-      <div className="mb-3 text-xs text-leaf-700/70">共 {list.length} 种</div>
+      <div className="mb-3 text-xs text-leaf-700/70">{t('plants.totalCount', { n: list.length })}</div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {list.map((p) => (
           <Link
             key={p.id}
-            href={`/plants/${p.slug}`}
+            href={p.detailHref ?? `/plants/${p.slug}`}
             className="card group overflow-hidden transition-shadow hover:shadow-lg"
           >
             <div className="relative aspect-[4/3] overflow-hidden bg-leaf-50">
@@ -117,8 +131,8 @@ export function PlantsIndexClient({ plants }: { plants: PlantSpecies[] }) {
       {list.length === 0 && (
         <div className="mt-6 rounded-2xl border border-dashed border-leaf-200 bg-white/60 py-14 text-center">
           <div className="text-4xl">🔍</div>
-          <div className="mt-2 text-sm text-ink-800">没有找到匹配的品种</div>
-          <div className="text-xs text-leaf-700/70">换个关键词试试?</div>
+          <div className="mt-2 text-sm text-ink-800">{t('plants.empty')}</div>
+          <div className="text-xs text-leaf-700/70">{t('plants.emptyDesc')}</div>
         </div>
       )}
     </>

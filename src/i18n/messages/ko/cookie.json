@@ -1,0 +1,20 @@
+{
+  "cookie": {
+    "title": "쿠키 설정을 존중합니다",
+    "desc": "RouYou 를 원활하게 동작시키고 개선하기 위해 쿠키를 사용합니다. 필수 쿠키는 끌 수 없으며 나머지는 자유롭게 선택할 수 있습니다.",
+    "readPolicy": "전체 쿠키 정책 보기",
+    "acceptAll": "모두 수락",
+    "onlyNecessary": "필수만",
+    "customize": "사용자 지정",
+    "customizeTitle": "쿠키 카테고리 선택",
+    "saveChoice": "선택 저장",
+    "necessary": "필수",
+    "necessaryDesc": "로그인·보안·결제에 필요 — 끌 수 없음",
+    "preferences": "기능",
+    "preferencesDesc": "언어·테마·초안 저장",
+    "analytics": "분석",
+    "analyticsDesc": "품질 개선을 위한 익명 통계",
+    "advertising": "광고",
+    "advertisingDesc": "현재 광고를 운영하지 않습니다 (플레이스홀더)"
+  }
+}

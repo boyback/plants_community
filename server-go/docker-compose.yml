@@ -1,0 +1,17 @@
+services:
+  server:
+    build: .
+    image: plants-community-server:local
+    container_name: plants-community-server
+    ports:
+      - "8080:8080"
+    environment:
+      # 注意:host.docker.internal 在 Docker Desktop 指向宿主机
+      DATABASE_URL: "mysql://root:root123456@host.docker.internal:3306/plants_community"
+      JWT_SECRET: "rouyou-community-demo-secret-please-change-this-in-production-xxx"
+      AUTH_COOKIE_NAME: "rouyou_token"
+      AUTH_COOKIE_MAX_AGE: "2592000"
+      CORS_ORIGIN: "http://localhost:3000"
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

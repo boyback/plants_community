@@ -1,0 +1,23 @@
+# =====================================================================
+# 生产 override:用预构建的 GHCR 镜像,不做本地 build。
+#
+# 用法:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# 也可以让 deploy.sh 自动用,见 scripts/deploy.sh。
+# =====================================================================
+
+services:
+  next:
+    # 覆盖 build,改成只用镜像
+    image: ${NEXT_IMAGE:-ghcr.io/please-set/rouyou-next:latest}
+    build: !reset null
+    pull_policy: always
+
+  go-server:
+    image: ${GO_IMAGE:-ghcr.io/please-set/rouyou-go:latest}
+    build: !reset null
+    pull_policy: always
+
+  # init-db 仍然现场跑 — 它需要项目代码挂载,镜像化没意义
+  # 如果你想完全跳过它(已初始化好 DB),把 next/go-server depends 改 mysql:condition: service_healthy

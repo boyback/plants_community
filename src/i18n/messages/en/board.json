@@ -1,0 +1,49 @@
+{
+  "board": {
+    "title": "All boards",
+    "subtitle": "Browse by family / genus / species, or jump into a discussion board",
+    "groups": {
+      "family": "Botanical classification (Family · Genus · Species)",
+      "familyHint": "Click into a family, then drill down by genus",
+      "discussion": "Discussion boards",
+      "discussionHint": "General topics not tied to a species",
+      "market": "Market · Events",
+      "marketHint": "Trading, events and meet-ups"
+    },
+    "stats": {
+      "members": "{n} members",
+      "posts": "{n} posts",
+      "genera": "{n} genera",
+      "species": "{n} species"
+    },
+    "allBoards": "All boards",
+    "backToAll": "Back to all boards",
+    "newPost": "New post",
+    "postInCategory": "Post in this board",
+    "postInGenus": "Post in this genus",
+    "postInSpecies": "Post in this species",
+    "hotInCategory": "Latest in {name}",
+    "hotInGenus": "Latest in this genus",
+    "hotInSpecies": "Discussions about {name}",
+    "emptyPostsCategory": "No posts yet",
+    "emptyPostsCategoryHint": "Be the first to share",
+    "emptyPostsGenus": "No posts in this genus yet",
+    "emptyPostsSpecies": "No posts for this species yet",
+    "generaListHint": "Tap a genus below to drill in",
+    "generaCount": "{n} genera",
+    "speciesCount": "{n} species",
+    "species": {
+      "alias": "Aliases",
+      "difficulty": "Difficulty",
+      "hardiness": "Hardiness",
+      "careTitle": "Care guide",
+      "gallery": "Gallery",
+      "careData": "Care data",
+      "light": "Light",
+      "watering": "Watering",
+      "bloom": "Bloom",
+      "stats": "Stats",
+      "postCount": "Posts about this species"
+    }
+  }
+}

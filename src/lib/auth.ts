@@ -76,6 +76,29 @@ export async function requireUser(): Promise<DBUser> {
   return u;
 }
 
+/** 判断用户当前是否 VIP */
+export function isVipActive(user: { vipExpireAt: Date | null; vipLifetime: boolean }): boolean {
+  if (user.vipLifetime) return true;
+  if (!user.vipExpireAt) return false;
+  return user.vipExpireAt.getTime() > Date.now();
+}
+
+/**
+ * 必须是管理员(admin 或 moderator)。用于所有 /api/admin/* 路由。
+ * 默认要求 admin,moderator 传 { allowModerator: true } 通过。
+ */
+export async function requireAdmin(opts: { allowModerator?: boolean } = {}): Promise<DBUser> {
+  const u = await requireUser();
+  const role = (u as { role?: string }).role;
+  const ok =
+    role === 'admin' ||
+    (opts.allowModerator === true && role === 'moderator');
+  if (!ok) {
+    throw new HttpError(403, '需要管理员权限');
+  }
+  return u;
+}
+
 export class HttpError extends Error {
   constructor(public status: number, message: string) {
     super(message);

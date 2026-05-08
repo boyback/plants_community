@@ -1,0 +1,48 @@
+# 构建产物
+.next
+node_modules
+out
+build
+dist
+
+# Go 后端独立构建
+server-go/server-go
+server-go/plants-server
+server-go/.next
+
+# 本地数据
+*.db
+*.db-journal
+prisma/*.db
+prisma/*.db-journal
+
+# Git / IDE
+.git
+.gitignore
+.github
+.idea
+.vscode
+*.swp
+.DS_Store
+
+# 环境密钥(密钥不入镜像)
+.env
+.env.local
+.env.*.local
+alipay-keys/
+
+# 文档/测试
+README.md
+docs
+tests
+*.test.mjs
+*.test.ts
+*.test.tsx
+
+# 临时
+/tmp
+/log
+*.log
+
+# 上传产物(运行时挂 volume)
+public/uploads

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
+import { emitEvent } from '@/lib/events';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,6 +64,9 @@ export const POST = handler(async (req) => {
     where: { voteId: vote.id },
     orderBy: { orderIdx: 'asc' },
   });
+
+  await emitEvent({ kind: 'vote_cast', userId: me.id, postId });
+
   return {
     options: updated.map((o) => ({ id: o.id, label: o.label, votes: o.votes })),
     total: updated.reduce((s, o) => s + o.votes, 0),

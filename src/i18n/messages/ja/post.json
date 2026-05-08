@@ -1,0 +1,57 @@
+{
+  "post": {
+    "types": {
+      "rich": "長文投稿",
+      "short": "短文",
+      "vote": "投票",
+      "video": "動画",
+      "event": "イベント",
+      "help": "お助け"
+    },
+    "typeDesc": {
+      "rich": "チュートリアル・長文向き(PC & アプリ可)",
+      "short": "気軽にシェア(PC & アプリ可)",
+      "vote": "投票を開催(PC のみ)",
+      "video": "動画で記録(PC & アプリ可)",
+      "event": "オフラインイベント(PC のみ)"
+    },
+    "typeBadge": {
+      "rich": "リッチテキスト",
+      "short": "ショート投稿",
+      "vote": "投票",
+      "video": "動画",
+      "event": "EVENT"
+    },
+    "typeShort": {
+      "rich": "リッチ",
+      "short": "ショート",
+      "vote": "投票",
+      "video": "動画",
+      "event": "イベント",
+      "help": "求助"
+    },
+    "actions": {
+      "like": "いいね",
+      "collect": "保存",
+      "comment": "コメント",
+      "share": "シェア",
+      "report": "通報"
+    },
+    "help": {
+      "urgency": "緊急度",
+      "urgencyLow": "ゆっくり",
+      "urgencyNormal": "通常",
+      "urgencyHigh": "急ぎ",
+      "bountyPoints": "賞金ポイント",
+      "bountyHint": "投稿時にポイントが引かれ、採用した回答者に贈られます。",
+      "accept": "この回答を採用",
+      "solved": "解決済み",
+      "solvedAt": "{time} に採用",
+      "rewardReceived": "🏆 あなたの回答が採用されました — {points} ポイント獲得"
+    },
+    "empty": {
+      "list": "まだ投稿がありません、最初の投稿を!",
+      "comments": "まだコメントがありません"
+    }
+  }
+}

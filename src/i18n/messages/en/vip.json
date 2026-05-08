@@ -1,0 +1,44 @@
+{
+  "vip": {
+    "title": "Membership",
+    "subtitle": "Unlock all posting & trading permissions + exclusive badges & skins",
+    "myStatus": "My membership",
+    "active": "Active",
+    "inactive": "Not subscribed",
+    "lifetime": "Lifetime",
+    "expireAt": "Expires {time}",
+    "remainDays": "{days} days left",
+    "plans": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "yearly": "Yearly",
+      "lifetime": "Lifetime",
+      "monthly_points": "Monthly (points)"
+    },
+    "planSubtitle": {
+      "monthly": "30 days of VIP",
+      "quarterly": "90 days · save ¥9.9 over monthly",
+      "yearly": "365 days · best value",
+      "lifetime": "Pay once, members forever",
+      "monthly_points": "5000 points = 30 days"
+    },
+    "priceCash": "¥{yuan}",
+    "pricePoints": "{points} points",
+    "durationDays": "{days} days",
+    "recommended": "Recommended",
+    "buy": "Subscribe now",
+    "exchange": "Redeem with points",
+    "benefits": {
+      "title": "Member perks",
+      "noPostLimit": "Post any type without level gate",
+      "noSellLimit": "Sell on the market without level gate",
+      "highlightName": "Gold name highlight",
+      "exclusiveSkin": "Exclusive skins & decorations",
+      "doubleExp": "Double daily sign-in EXP",
+      "priorityReply": "Priority customer support"
+    },
+    "recentOrders": "Latest 20 membership orders",
+    "emptyOrders": "No membership orders yet",
+    "notEnoughPoints": "Not enough points: you have {current}, need {need}"
+  }
+}

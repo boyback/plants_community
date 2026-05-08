@@ -3,7 +3,7 @@ import { Shell } from '@/components/layout/Shell';
 import { prisma } from '@/lib/db';
 import { serializeUser, serializePost } from '@/lib/serializers';
 import { postInclude } from '@/lib/post-include';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, isVipActive } from '@/lib/auth';
 import { UserPageClient } from './UserPageClient';
 
 export const dynamic = 'force-dynamic';
@@ -50,6 +50,12 @@ export default async function UserPage({ params }: { params: { id: string } }) {
     followed = !!f;
   }
 
+  const isVip = isVipActive(uRaw);
+  const daysLeft =
+    !uRaw.vipLifetime && uRaw.vipExpireAt
+      ? Math.max(0, Math.ceil((uRaw.vipExpireAt.getTime() - Date.now()) / 86400_000))
+      : null;
+
   return (
     <Shell>
       <UserPageClient
@@ -59,6 +65,13 @@ export default async function UserPage({ params }: { params: { id: string } }) {
         posts={postsRaw.map(serializePost)}
         likedPosts={likedPostsRaw.map(serializePost)}
         collectedPosts={collectedPostsRaw.map(serializePost)}
+        exp={uRaw.exp}
+        vip={{
+          isVip,
+          lifetime: uRaw.vipLifetime,
+          expireAt: uRaw.vipExpireAt?.toISOString() ?? null,
+        }}
+        daysLeft={daysLeft}
       />
     </Shell>
   );

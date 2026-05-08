@@ -1,0 +1,20 @@
+{
+  "cookie": {
+    "title": "我们尊重你的 Cookie 偏好",
+    "desc": "我们使用 Cookie 让肉友社正常运行并不断改进。必要类 Cookie 无法关闭;其他类别你可以自由选择。",
+    "readPolicy": "阅读完整 Cookie 政策",
+    "acceptAll": "全部接受",
+    "onlyNecessary": "仅必需",
+    "customize": "自定义",
+    "customizeTitle": "选择 Cookie 类别",
+    "saveChoice": "保存选择",
+    "necessary": "必要类",
+    "necessaryDesc": "登录、安全、支付等必备功能,无法关闭",
+    "preferences": "功能类",
+    "preferencesDesc": "记住语言、主题、发帖草稿等偏好",
+    "analytics": "分析类",
+    "analyticsDesc": "匿名统计用于改进产品质量",
+    "advertising": "广告类",
+    "advertisingDesc": "本服务当前不投放广告,保留占位"
+  }
+}

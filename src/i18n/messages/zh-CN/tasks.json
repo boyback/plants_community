@@ -1,0 +1,58 @@
+{
+  "tasks": {
+    "title": "任务与活跃度",
+    "loginRequired": "登录后查看任务与活跃度",
+    "monthly": {
+      "title": "本月活跃度",
+      "ranking": "本月排名",
+      "vipBoost": "👑 大会员 10x 加成中",
+      "desc": "发帖 / 评论 / 签到 / 投票 / 购物 / 完成任务都会增加活跃度"
+    },
+    "howto": {
+      "title": "怎么涨活跃度?",
+      "items": {
+        "signin": "📅 签到 +1 / 次",
+        "post": "📝 发帖 +5 / 篇",
+        "comment": "💬 评论 +2 / 条",
+        "vote": "🗳️ 投票 +1 / 次",
+        "purchase": "🛒 购物 +5 / 单",
+        "taskBonus": "🎯 完成任务额外加成"
+      }
+    },
+    "tabs": {
+      "tasks": "🎯 任务列表",
+      "rewards": "🎁 活跃度阶梯奖励",
+      "ranking": "🏆 月度排行榜"
+    },
+    "sections": {
+      "dailyTitle": "📅 每日任务",
+      "dailySubtitle": "每天 0 点重置",
+      "monthlyTitle": "🗓️ 月度任务",
+      "monthlySubtitle": "每月 1 号重置",
+      "achievementTitle": "🏅 成就任务",
+      "achievementSubtitle": "一次性达成,永久记录"
+    },
+    "progress": "已完成 {done} / {total}",
+    "rewardLabel": "奖励",
+    "activityUnit": "活",
+    "claim": "领取",
+    "claimed": "已领取",
+    "claimedToast": "✨ 已领取 {points} 积分 / {activity} 活跃度",
+    "inProgress": "进行中",
+    "completed": "✓ 已完成",
+    "claimFail": "领取失败",
+    "rewardNeedLevel": "需要活跃度 {n}",
+    "rewardSkin": "皮肤「{name}」",
+    "claimedThisMonth": "本月已领",
+    "notReached": "未达到",
+    "rewardEmpty": "暂无活跃度奖励",
+    "thisMonthProgress": "本月进度",
+    "rewardClaimed": "🎁 已领取奖励:{points} 积分{skin}",
+    "rewardClaimedSkin": " + 1 个皮肤",
+    "ranking": {
+      "empty": "本月还没有数据",
+      "emptyDesc": "发帖、评论、签到都会上榜",
+      "score": "{n} 活跃度"
+    }
+  }
+}

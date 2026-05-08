@@ -1,0 +1,68 @@
+{
+  "points": {
+    "title": "포인트",
+    "loginRequired": "로그인하고 포인트 센터를 확인하세요",
+    "balance": "내 포인트",
+    "balanceDesc": "포인트로 스킨/꾸미기 또는 30 일 대회원 교환 가능",
+    "sources": {
+      "tasks": "📝 퀘스트",
+      "tasksDesc": "일일 / 월간 퀘스트",
+      "purchase": "🛍️ 구매 적립",
+      "purchaseDesc": "구매 시 포인트 적립",
+      "exchangeVip": "👑 대회원 교환"
+    },
+    "tabs": {
+      "bubble": "💬 댓글 말풍선",
+      "reaction": "👍 반응 버튼",
+      "sticker": "🌱 스티커",
+      "pendant": "👑 아바타 장식",
+      "wardrobe": "👗 내 꾸미기",
+      "ledger": "📜 포인트 내역"
+    },
+    "ledger": {
+      "types": {
+        "signin": "출석",
+        "post_create": "글쓰기",
+        "post_liked": "글 좋아요",
+        "comment_create": "댓글",
+        "comment_liked": "댓글 좋아요",
+        "followed": "팔로우 획득",
+        "task_complete": "퀘스트 보상",
+        "activity_reward": "활동 보상",
+        "purchase_back": "구매 적립",
+        "recharge": "충전",
+        "exchange_skin": "스킨 교환",
+        "exchange_vip": "회원 교환",
+        "refund": "환불 회수",
+        "admin": "시스템 조정"
+      },
+      "empty": "아직 포인트 내역 없음",
+      "loadMore": "더 보기"
+    },
+    "skin": {
+      "equippedBadge": "장착",
+      "equipped": "✓ 장착",
+      "equip": "장착",
+      "unequip": "해제",
+      "exchange": "교환",
+      "owned": "보유",
+      "redeem": "{n} 교환",
+      "free": "무료",
+      "notEnough": "포인트 부족",
+      "vipOnly": "대회원 전용",
+      "vipLimit": "👑 VIP 한정",
+      "rarity": {
+        "normal": "일반",
+        "rare": "레어",
+        "epic": "에픽",
+        "legendary": "레전더리"
+      },
+      "preview": {
+        "bubbleText": "{name} 말풍선 예시"
+      },
+      "exchangeConfirm": "「{name}」을(를) 교환하시겠습니까? {points} 포인트 차감",
+      "exchangeSuccess": "🎉 교환 완료!",
+      "exchangeFail": "교환 실패"
+    }
+  }
+}

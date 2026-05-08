@@ -6,7 +6,10 @@ import type { Post } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { api, ApiError } from '@/lib/client-api';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/i18n/I18nContext';
 import { useRouter } from 'next/navigation';
+import { RichTextView } from '@/components/richtext/RichTextView';
+import { Lightbox } from '@/components/ui/Lightbox';
 
 /** 根据帖子类型渲染主体内容 */
 export function PostBody({
@@ -37,10 +40,7 @@ export function PostBody({
 function RichBody({ post }: { post: Post }) {
   return (
     <div className="space-y-4">
-      <article
-        className="prose-article text-[15px] leading-7 text-ink-800"
-        dangerouslySetInnerHTML={{ __html: post.content }}
-      />
+      <RichTextView json={post.contentJson} html={post.content} />
       {post.images && post.images.length > 0 && <ImageGallery images={post.images} />}
     </div>
   );
@@ -77,6 +77,7 @@ function VideoBody({ post }: { post: Post }) {
 
 function VoteBody({ post, initialVoted }: { post: Post; initialVoted: string[] }) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>(initialVoted);
   const [voted, setVoted] = useState(initialVoted.length > 0);
@@ -113,7 +114,7 @@ function VoteBody({ post, initialVoted }: { post: Post; initialVoted: string[] }
       setOptions(res.options);
       setVoted(true);
     } catch (e) {
-      setErr(e instanceof ApiError ? e.message : '投票失败');
+      setErr(e instanceof ApiError ? e.message : t('detail.vote.voteFail'));
     } finally {
       setSubmitting(false);
     }
@@ -124,8 +125,11 @@ function VoteBody({ post, initialVoted }: { post: Post; initialVoted: string[] }
       <p className="whitespace-pre-wrap text-[15px] leading-7 text-ink-800">{post.content}</p>
       <div className="rounded-2xl border border-amber-100 bg-amber-50/30 p-5">
         <div className="mb-1 text-xs text-amber-700">
-          🗳️ {post.vote.multi ? '多选' : '单选'}投票 · 截止 {new Date(post.vote.deadline).toLocaleDateString()}
-          {deadlinePassed && <span className="ml-2 rounded bg-amber-200/60 px-1.5 py-0.5">已结束</span>}
+          {t('detail.vote.title', {
+            mode: post.vote.multi ? t('detail.vote.multi') : t('detail.vote.single'),
+            date: new Date(post.vote.deadline).toLocaleDateString(),
+          })}
+          {deadlinePassed && <span className="ml-2 rounded bg-amber-200/60 px-1.5 py-0.5">{t('detail.vote.ended')}</span>}
         </div>
         <h3 className="text-base font-semibold text-amber-900">{post.vote.question}</h3>
         <div className="mt-4 space-y-2">
@@ -177,7 +181,7 @@ function VoteBody({ post, initialVoted }: { post: Post; initialVoted: string[] }
           })}
         </div>
         <div className="mt-4 flex items-center justify-between text-xs text-amber-700">
-          <span>共 {total} 人参与</span>
+          <span>{t('detail.vote.totalParticipants', { n: total })}</span>
           {!voted && !deadlinePassed && (
             <button
               type="button"
@@ -185,7 +189,7 @@ function VoteBody({ post, initialVoted }: { post: Post; initialVoted: string[] }
               onClick={submit}
               className="btn-primary h-8 !px-4 !text-xs bg-amber-500 hover:bg-amber-600"
             >
-              {submitting ? '提交中...' : '提交投票'}
+              {submitting ? t('detail.vote.submitting') : t('detail.vote.submit')}
             </button>
           )}
         </div>
@@ -197,6 +201,7 @@ function VoteBody({ post, initialVoted }: { post: Post; initialVoted: string[] }
 
 function EventBody({ post, initialAttending }: { post: Post; initialAttending: boolean }) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
   const [joined, setJoined] = useState(initialAttending);
   const [attendees, setAttendees] = useState(post.event?.attendees ?? 0);
@@ -240,17 +245,17 @@ function EventBody({ post, initialAttending }: { post: Post; initialAttending: b
         <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-3">
           <InfoBlock
             icon="📅"
-            title="活动时间"
+            title={t('detail.event.time')}
             value={`${startDate.toLocaleDateString()} ${startDate
               .toLocaleTimeString()
               .slice(0, 5)}`}
           />
-          <InfoBlock icon="📍" title="活动地点" value={ev.location} />
-          <InfoBlock icon="🙋" title="已报名" value={`${attendees} 人`} />
+          <InfoBlock icon="📍" title={t('detail.event.location')} value={ev.location} />
+          <InfoBlock icon="🙋" title={t('detail.event.attended')} value={t('detail.event.attendeesCount', { n: attendees })} />
         </div>
         <div className="flex items-center justify-between border-t border-leaf-100 px-5 py-3">
           <div className="text-xs text-leaf-700/70">
-            {passed ? '活动已结束' : '活动进行中,欢迎报名!'}
+            {passed ? t('detail.event.ended') : t('detail.event.ongoing')}
           </div>
           <button
             type="button"
@@ -265,15 +270,12 @@ function EventBody({ post, initialAttending }: { post: Post; initialAttending: b
                 : 'bg-violet-500 text-white hover:bg-violet-600'
             )}
           >
-            {busy ? '处理中...' : joined ? '✓ 已报名 (点击取消)' : passed ? '已结束' : '🎉 我要参加'}
+            {busy ? t('detail.event.processing') : joined ? t('detail.event.joined') : passed ? t('detail.event.endedLabel') : t('detail.event.join')}
           </button>
         </div>
       </div>
 
-      <article
-        className="prose-article text-[15px] leading-7 text-ink-800"
-        dangerouslySetInnerHTML={{ __html: post.content }}
-      />
+      <RichTextView json={post.contentJson} html={post.content} />
     </div>
   );
 }
@@ -291,68 +293,80 @@ function InfoBlock({ icon, title, value }: { icon: string; title: string; value:
 }
 
 function ImageGallery({ images }: { images: string[] }) {
+  const { t } = useI18n();
   const [active, setActive] = useState<number | null>(null);
 
-  const gridClass =
-    images.length === 1
-      ? 'grid-cols-1'
-      : images.length === 2
-      ? 'grid-cols-2'
-      : 'grid-cols-2 md:grid-cols-3';
+  // 自适应布局策略:
+  //   1: 单张大图(16/10)
+  //   2: 左右对半(square)
+  //   3: 左大右上下(IG 式)
+  //   4: 2x2 田字
+  //   5+: 大图 + 缩略,最多 4 张可见,5+ 时最后一格遮罩 +N
+  const n = images.length;
+  const display = images.slice(0, n >= 5 ? 4 : n);
+  const remain = n - display.length;
+
+  let layoutClass = '';
+  let cellClass = (i: number) => {
+    void i;
+    return 'aspect-square';
+  };
+
+  if (n === 1) {
+    layoutClass = 'grid-cols-1';
+    cellClass = () => 'aspect-[16/10]';
+  } else if (n === 2) {
+    layoutClass = 'grid-cols-2';
+    cellClass = () => 'aspect-square';
+  } else if (n === 3) {
+    // 第一张大,占两行;后两张右侧叠
+    layoutClass = 'grid-cols-3 grid-rows-2 h-[260px] md:h-[320px]';
+    cellClass = (i) => (i === 0 ? 'col-span-2 row-span-2' : '');
+  } else {
+    // n>=4
+    layoutClass = 'grid-cols-2';
+    cellClass = () => 'aspect-square';
+  }
 
   return (
     <>
-      <div className={cn('grid gap-2', gridClass)}>
-        {images.map((src, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => setActive(i)}
-            className={cn(
-              'relative overflow-hidden rounded-lg bg-leaf-50',
-              images.length === 1 ? 'aspect-[16/10]' : 'aspect-square'
-            )}
-          >
-            <Image
-              src={src}
-              alt={`图 ${i + 1}`}
-              fill
-              sizes="(max-width:768px) 50vw, 400px"
-              className="object-cover transition-transform hover:scale-105"
-              unoptimized
-            />
-          </button>
-        ))}
+      <div className={cn('grid gap-2 overflow-hidden rounded-lg', layoutClass)}>
+        {display.map((src, i) => {
+          const showRemain = i === display.length - 1 && remain > 0;
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setActive(i)}
+              className={cn(
+                'relative overflow-hidden bg-leaf-50',
+                cellClass(i)
+              )}
+            >
+              <Image
+                src={src}
+                alt={t('detail.gallery.imgAlt', { n: i + 1 })}
+                fill
+                sizes="(max-width:768px) 50vw, 400px"
+                className="object-cover transition-transform hover:scale-105"
+                unoptimized
+              />
+              {showRemain && (
+                <div className="absolute inset-0 grid place-items-center bg-ink-900/50 text-2xl font-bold text-white">
+                  +{remain}
+                </div>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {active !== null && (
-        <div
-          className="fixed inset-0 z-50 grid place-items-center bg-ink-900/80 p-4"
-          onClick={() => setActive(null)}
-        >
-          <div className="relative max-h-full max-w-5xl">
-            <Image
-              src={images[active]}
-              alt=""
-              width={1400}
-              height={900}
-              className="max-h-[85vh] w-auto rounded-lg object-contain"
-              unoptimized
-            />
-            <button
-              type="button"
-              onClick={() => setActive(null)}
-              className="absolute -right-2 -top-2 grid h-9 w-9 place-items-center rounded-full bg-white text-ink-800 shadow-lg hover:bg-leaf-50"
-              aria-label="关闭"
-            >
-              ×
-            </button>
-            <div className="mt-2 text-center text-xs text-white/80">
-              {active + 1} / {images.length}
-            </div>
-          </div>
-        </div>
-      )}
+      <Lightbox
+        images={images}
+        index={active}
+        onClose={() => setActive(null)}
+        onChange={setActive}
+      />
     </>
   );
 }

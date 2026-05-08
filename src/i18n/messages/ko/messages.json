@@ -1,0 +1,15 @@
+{
+  "messages": {
+    "title": "쪽지",
+    "empty": "아직 대화가 없어요",
+    "newConversation": "새 대화",
+    "inputPlaceholder": "메시지 입력, Enter 로 전송",
+    "send": "전송",
+    "pickConversation": "왼쪽 대화를 선택해 시작하세요",
+    "unread": "{n} 개 읽지 않음",
+    "sentAt": "{time} 전송",
+    "search": "대화 검색",
+    "loadMore": "이전 메시지 더 보기",
+    "errorSend": "전송 실패, 잠시 후 다시 시도"
+  }
+}

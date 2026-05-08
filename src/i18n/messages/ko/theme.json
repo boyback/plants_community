@@ -1,0 +1,17 @@
+{
+  "theme": {
+    "springFestival": { "banner": "🏮 춘절 축하합니다! 커뮤니티에서 새해 인사" },
+    "lantern": { "banner": "🏮 정월 대보름, 다육이와 함께 불을 밝혀요" },
+    "valentine": { "banner": "💝 다육이 옆에서 \"좋아해\"라고 말해 봐요" },
+    "womensDay": { "banner": "🌷 꽃을 사랑하는 모든 여성에게" },
+    "arborDay": { "banner": "🌲 식목일, 다육이 한 그루는 작은 숲" },
+    "earthDay": { "banner": "🌍 지구의 날, 지구에 초록을 더해요" },
+    "communityBirthday": { "banner": "🎉 RouYou 생일을 축하해요, 올해도 함께" },
+    "childrensDay": { "banner": "🎈 어린이날, 내 마음속 어린이도 안녕!" },
+    "dragonBoat": { "banner": "🐉 단오절, 다육이가 쑥쑥" },
+    "midAutumn": { "banner": "🌕 추석, 달도 다육이도 둥글어요" },
+    "nationalDay": { "banner": "🇨🇳 국경절 축하합니다" },
+    "halloween": { "banner": "🎃 할로윈, 다육이가 당신을 보고 있는 것 같아요" },
+    "christmas": { "banner": "🎄 메리 크리스마스, 다육이도 따뜻한 겨울을" }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "about": {
+    "tagline": "About us",
+    "brandName": "肉友社 · RouYou Community",
+    "intro": "一个面向多肉植物爱好者的清新社区。我们相信:每一片叶子都值得被认真对待。",
+    "vision": {
+      "title": "我们的愿景",
+      "body": "让每一位养肉人都能在这里找到知音。无论你是阳台党新手,还是大棚老玩家,都能在肉友社分享日常、交流心得、结识同好。"
+    },
+    "features": {
+      "title": "核心功能",
+      "postTypes": "📝 5 种帖子类型",
+      "boards": "🏷️ 细分板块讨论",
+      "encyclopedia": "📖 多肉图鉴",
+      "dm": "💬 一对一私信",
+      "notifications": "🔔 实时通知",
+      "badges": "🏅 徽章成就系统",
+      "voteEvent": "🗳️ 投票与活动",
+      "checkIn": "📅 签到激励"
+    },
+    "rules": {
+      "title": "社区公约",
+      "item1": "尊重每一位肉友,拒绝人身攻击",
+      "item2": "保持话题与多肉相关,严禁无关广告",
+      "item3": "交易请通过认证渠道,谨防受骗",
+      "item4": "图片请尽量原创,转载请注明来源",
+      "item5": "违反以上公约的帖子将被删除"
+    },
+    "tech": {
+      "title": "技术信息",
+      "stack": "前端框架:Next.js 14 + React 18 + TypeScript",
+      "style": "样式方案:Tailwind CSS",
+      "demo": "本站为演示站点,数据为 Mock,刷新后状态保留在本地"
+    },
+    "contact": {
+      "title": "联系我们",
+      "email": "📧 hello@rouyou.demo",
+      "github": "🐙 GitHub · ",
+      "wechat": "💬 微信交流群:入群请私信管理员"
+    },
+    "copyright": "© {year} RouYou Community — Made with 🌿 and ❤️",
+    "links": {
+      "home": "返回首页",
+      "boards": "浏览板块",
+      "plants": "多肉图鉴"
+    }
+  }
+}

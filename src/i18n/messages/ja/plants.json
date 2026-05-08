@@ -1,0 +1,20 @@
+{
+  "plants": {
+    "title": "多肉図鑑",
+    "subtitle": "よく見る多肉植物の品種と管理のコツを掲載",
+    "searchPlaceholder": "和名/学名で検索…",
+    "familyLabel": "科:",
+    "difficultyLabel": "難易度:",
+    "all": "すべて",
+    "totalCount": "全 {n} 種",
+    "empty": "該当する品種が見つかりません",
+    "emptyDesc": "別のキーワードでお試しください",
+    "family": {
+      "Crassulaceae": "ベンケイソウ科",
+      "Aizoaceae": "ハマミズナ科",
+      "Liliaceae": "ユリ科",
+      "Cactaceae": "サボテン科",
+      "Euphorbiaceae": "トウダイグサ科"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "common": {
+    "ok": "OK",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "back": "Back",
+    "loading": "Loading…",
+    "empty": "Nothing here yet",
+    "retry": "Retry",
+    "search": "Search",
+    "submit": "Submit",
+    "copy": "Copy",
+    "copied": "Copied",
+    "more": "More",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "hours": "hours",
+    "minutes": "minutes",
+    "days": "days",
+    "points": "points"
+  },
+  "error": {
+    "generic": "Something went wrong. Please try again later.",
+    "network": "Network error, please check your connection.",
+    "notFound": "We couldn't find what you're looking for.",
+    "unauthorized": "Please sign in first",
+    "forbidden": "You don't have permission to do that"
+  },
+  "permission": {
+    "loginToUse": "Sign in to use this feature",
+    "goLogin": "Sign in",
+    "noPermissionPrefix": "Not allowed: ",
+    "doTasksToLevel": "Level up with tasks",
+    "openVip": "Subscribe to VIP"
+  }
+}

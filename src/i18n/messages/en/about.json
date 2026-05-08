@@ -1,0 +1,48 @@
+{
+  "about": {
+    "tagline": "About us",
+    "brandName": "RouYou Community",
+    "intro": "A cozy community for succulent lovers. We believe every leaf deserves care.",
+    "vision": {
+      "title": "Our vision",
+      "body": "We want every succulent grower to find kindred spirits here. Whether you're a balcony beginner or a greenhouse veteran, share, learn and meet friends in RouYou."
+    },
+    "features": {
+      "title": "Core features",
+      "postTypes": "📝 5 post types",
+      "boards": "🏷️ Curated boards",
+      "encyclopedia": "📖 Species encyclopedia",
+      "dm": "💬 Direct messaging",
+      "notifications": "🔔 Realtime notifications",
+      "badges": "🏅 Badges & achievements",
+      "voteEvent": "🗳️ Polls & events",
+      "checkIn": "📅 Daily check-in rewards"
+    },
+    "rules": {
+      "title": "Community guidelines",
+      "item1": "Respect fellow members; no personal attacks",
+      "item2": "Keep topics succulent-related; no spam",
+      "item3": "Use certified channels for trades to avoid scams",
+      "item4": "Prefer original photos; credit sources on reposts",
+      "item5": "Violating posts will be removed"
+    },
+    "tech": {
+      "title": "Tech",
+      "stack": "Frontend: Next.js 14 + React 18 + TypeScript",
+      "style": "Styling: Tailwind CSS",
+      "demo": "This is a demo site. Data is mocked; state persists locally on refresh."
+    },
+    "contact": {
+      "title": "Contact",
+      "email": "📧 hello@rouyou.demo",
+      "github": "🐙 GitHub · ",
+      "wechat": "💬 WeChat group: DM an admin to join"
+    },
+    "copyright": "© {year} RouYou Community — Made with 🌿 and ❤️",
+    "links": {
+      "home": "Home",
+      "boards": "Browse boards",
+      "plants": "Species"
+    }
+  }
+}

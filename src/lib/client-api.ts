@@ -15,11 +15,16 @@ async function request<T>(
   body?: unknown,
   init?: RequestInit
 ): Promise<T> {
+  // FormData 不要 JSON.stringify,也不要手动设 Content-Type(浏览器会自动加 boundary)
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+  const headers: Record<string, string> | undefined =
+    body && !isFormData ? { 'Content-Type': 'application/json' } : undefined;
+
   const res = await fetch(url, {
     method,
     credentials: 'include',
-    headers: body ? { 'Content-Type': 'application/json' } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
+    headers,
+    body: body == null ? undefined : isFormData ? (body as FormData) : JSON.stringify(body),
     cache: 'no-store',
     ...init,
   });
@@ -44,5 +49,6 @@ export const api = {
   get: <T>(url: string, init?: RequestInit) => request<T>('GET', url, undefined, init),
   post: <T>(url: string, body?: unknown, init?: RequestInit) => request<T>('POST', url, body, init),
   put: <T>(url: string, body?: unknown, init?: RequestInit) => request<T>('PUT', url, body, init),
-  delete: <T>(url: string, init?: RequestInit) => request<T>('DELETE', url, undefined, init),
+  patch: <T>(url: string, body?: unknown, init?: RequestInit) => request<T>('PATCH', url, body, init),
+  delete: <T>(url: string, body?: unknown, init?: RequestInit) => request<T>('DELETE', url, body, init),
 };

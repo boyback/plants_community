@@ -1,0 +1,49 @@
+{
+  "board": {
+    "title": "全部板块",
+    "subtitle": "按科 / 属 / 品种三级分类,也有综合讨论区",
+    "groups": {
+      "family": "植物学分类(按科 · 属 · 品种)",
+      "familyHint": "点击进入科,再按属逐级浏览",
+      "discussion": "社区讨论区",
+      "discussionHint": "不按植物分类的通用话题",
+      "market": "市场 · 活动",
+      "marketHint": "交易、活动、线下聚会"
+    },
+    "stats": {
+      "members": "{n} 成员",
+      "posts": "{n} 贴",
+      "genera": "{n} 属",
+      "species": "{n} 品种"
+    },
+    "allBoards": "全部板块",
+    "backToAll": "返回全部板块",
+    "newPost": "发帖",
+    "postInCategory": "在本板块发帖",
+    "postInGenus": "在本属发帖",
+    "postInSpecies": "在此品种发帖",
+    "hotInCategory": "{name}最新讨论",
+    "hotInGenus": "本属最新讨论",
+    "hotInSpecies": "关于「{name}」的讨论",
+    "emptyPostsCategory": "还没有人发过帖子",
+    "emptyPostsCategoryHint": "成为第一个分享的人吧",
+    "emptyPostsGenus": "还没有人在本属发过帖子",
+    "emptyPostsSpecies": "还没有人在本品种下发过帖子",
+    "generaListHint": "点击下方属名进入二级板块",
+    "generaCount": "{n} 个属",
+    "speciesCount": "{n} 个品种",
+    "species": {
+      "alias": "别名",
+      "difficulty": "难度",
+      "hardiness": "耐寒",
+      "careTitle": "养护要点",
+      "gallery": "图集",
+      "careData": "养护数据",
+      "light": "光照",
+      "watering": "浇水",
+      "bloom": "花期",
+      "stats": "统计",
+      "postCount": "本品种帖子"
+    }
+  }
+}

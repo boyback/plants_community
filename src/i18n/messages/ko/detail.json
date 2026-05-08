@@ -1,0 +1,85 @@
+{
+  "detail": {
+    "post": {
+      "commentCountLabel": "댓글 {n} 개",
+      "likeCountLabel": "좋아요 {n} 개",
+      "commentPlaceholder": "의견을 남겨 보세요…",
+      "commentSend": "전송",
+      "commentLogin": "로그인하고 토론에 참여",
+      "reply": "답글",
+      "report": "신고",
+      "deletedByAuthor": "작성자가 삭제했습니다",
+      "copyLink": "링크 복사",
+      "published": "{time} 게시",
+      "editedAt": "{time} 수정됨",
+      "views": "조회",
+      "postsLabel": "게시글",
+      "followersLabel": "팔로워",
+      "followingLabel": "팔로잉",
+      "related": "이 게시판의 관련 글",
+      "commentsAll": "전체 댓글",
+      "commentsHot": "인기",
+      "commentsLatest": "최신",
+      "commentPlaceholderTpl": "{name}, 의견을 공유하세요. 굵게·목록·이미지 지원",
+      "commentEtiquette": "예의 바르게 토론해 주세요 🌿",
+      "commentSending": "전송 중…",
+      "commentSendFail": "전송 실패",
+      "commentLoginCta": "로그인 후 댓글 작성",
+      "commentsEmpty": "아직 댓글이 없어요, 첫 댓글을?",
+      "replyTo": "@{name} 에 답글…",
+      "likeAction": "좋아요",
+      "collected": "저장됨",
+      "collect": "저장",
+      "shareTo": "공유:",
+      "shareToX": "{name} 로 공유",
+      "shareSuccess": "「{channel}」에 공유됨 🎉",
+      "shareChannels": {
+        "wechat": "WeChat",
+        "weibo": "Weibo",
+        "link": "링크"
+      },
+      "opFail": "작업 실패",
+      "collectSuccess": "저장됨 ⭐",
+      "collectUnsetSuccess": "저장 취소",
+      "cancel": "취소"
+    },
+    "vote": {
+      "multi": "복수 선택",
+      "single": "단일 선택",
+      "title": "🗳️ {mode}투표 · 마감 {date}",
+      "ended": "종료",
+      "totalParticipants": "총 {n} 명 참여",
+      "totalVoters": "총 {n} 표",
+      "submitting": "제출 중…",
+      "submit": "투표 제출",
+      "voteFail": "투표 실패"
+    },
+    "event": {
+      "time": "진행 시간",
+      "location": "장소",
+      "attended": "참가 신청",
+      "attendeesCount": "{n} 명",
+      "attendeesShort": "{n} 명 참가",
+      "ended": "이벤트 종료",
+      "ongoing": "진행 중, 참여하세요!",
+      "processing": "처리 중…",
+      "joined": "✓ 신청됨 (클릭하여 취소)",
+      "endedLabel": "종료",
+      "join": "🎉 참가하기"
+    },
+    "gallery": {
+      "imgAlt": "이미지 {n}",
+      "close": "닫기"
+    },
+    "board": {
+      "follow": "게시판 팔로우",
+      "followShort": "+ 팔로우",
+      "followFull": "+ 게시판 팔로우",
+      "following": "✓ 팔로잉",
+      "subBoards": "하위 게시판",
+      "postCount": "{n} 건",
+      "memberCount": "{n} 명",
+      "opFail": "작업 실패"
+    }
+  }
+}

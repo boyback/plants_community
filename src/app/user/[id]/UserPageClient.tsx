@@ -2,23 +2,38 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PostCard } from '@/components/post/PostCard';
 import { Avatar } from '@/components/ui/Avatar';
+import { UserName } from '@/components/ui/UserName';
 import { Icon } from '@/components/ui/Icon';
 import { Empty } from '@/components/ui/Empty';
-import { cn, formatDate, formatNumber } from '@/lib/utils';
+import { VipBadge } from '@/components/ui/VipBadge';
+import { cn, formatDate, formatNumber, boardUrl } from '@/lib/utils';
 import { api, ApiError } from '@/lib/client-api';
-import type { Badge, Post, User } from '@/lib/types';
+import { LEVELS } from '@/lib/levels';
+import { useI18n } from '@/i18n/I18nContext';
+import type { Badge, Board, Post, User } from '@/lib/types';
 
-type TabKey = 'posts' | 'likes' | 'collects' | 'badges' | 'about';
+type TabKey =
+  | 'posts'
+  | 'likes'
+  | 'collects'
+  | 'following'
+  | 'followers'
+  | 'followed-boards'
+  | 'badges'
+  | 'about';
 
-const tabs: { key: TabKey; label: string }[] = [
-  { key: 'posts', label: '发帖' },
-  { key: 'likes', label: '赞过' },
-  { key: 'collects', label: '收藏' },
-  { key: 'badges', label: '徽章墙' },
-  { key: 'about', label: '个人信息' },
+const tabs: { key: TabKey; labelKey: string }[] = [
+  { key: 'posts', labelKey: 'user.tabs.posts' },
+  { key: 'likes', labelKey: 'user.tabs.likes' },
+  { key: 'collects', labelKey: 'user.tabs.collects' },
+  { key: 'following', labelKey: 'user.tabs.following' },
+  { key: 'followers', labelKey: 'user.tabs.followers' },
+  { key: 'followed-boards', labelKey: 'user.tabs.followedBoards' },
+  { key: 'badges', labelKey: 'user.tabs.badges' },
+  { key: 'about', labelKey: 'user.tabs.about' },
 ];
 
 export function UserPageClient({
@@ -28,6 +43,9 @@ export function UserPageClient({
   posts,
   likedPosts,
   collectedPosts,
+  exp = 0,
+  vip,
+  daysLeft,
 }: {
   user: User;
   isMe: boolean;
@@ -35,10 +53,34 @@ export function UserPageClient({
   posts: Post[];
   likedPosts: Post[];
   collectedPosts: Post[];
+  exp?: number;
+  vip?: { isVip: boolean; lifetime: boolean; expireAt: string | null };
+  daysLeft?: number | null;
 }) {
-  const [tab, setTab] = useState<TabKey>('posts');
+  const { t } = useI18n();
+  const [tab, setTab] = useState<TabKey>(() => {
+    if (typeof window === 'undefined') return 'posts';
+    const p = new URLSearchParams(window.location.search).get('tab');
+    const allowed: TabKey[] = [
+      'posts', 'likes', 'collects', 'following', 'followers',
+      'followed-boards', 'badges', 'about',
+    ];
+    // 支持旧 tab 名 following-boards
+    const normalized = p === 'following-boards' ? 'followed-boards' : p;
+    return allowed.includes(normalized as TabKey) ? (normalized as TabKey) : 'posts';
+  });
   const [followed, setFollowed] = useState(initialFollowed);
   const [busy, setBusy] = useState(false);
+
+  // 计算下一级 EXP
+  const currentDef = LEVELS.find((l) => l.level === user.level);
+  const nextDef = LEVELS.find((l) => l.level === user.level + 1);
+  const expBase = currentDef?.expRequired ?? 0;
+  const expCap = nextDef?.expRequired ?? expBase + 1000;
+  const expPercent =
+    nextDef && expCap > expBase
+      ? Math.min(100, Math.max(0, Math.round(((exp - expBase) / (expCap - expBase)) * 100)))
+      : 100;
 
   const toggleFollow = async () => {
     setBusy(true);
@@ -72,34 +114,92 @@ export function UserPageClient({
             <Avatar src={user.avatar} alt={user.name} size={100} ring />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-ink-800">{user.name}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1
+                className={cn(
+                  'text-xl font-bold',
+                  vip?.isVip ? 'bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-600 bg-clip-text text-transparent' : 'text-ink-800'
+                )}
+              >
+                {user.name}
+              </h1>
               <span className="rounded-full bg-leaf-100 px-2 py-0.5 text-[11px] font-medium text-leaf-700">
-                Lv.{user.level}
+                Lv.{user.level} · {currentDef ? t(`levels.name.${currentDef.level}`) : ''}
               </span>
+              {vip?.isVip && <VipBadge size="sm" lifetime={vip.lifetime} />}
             </div>
-            <p className="mt-1 text-sm text-leaf-700/80">{user.bio || '这个人很懒,什么都没写...'}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-leaf-700/70">
-              <span>加入于 {formatDate(user.joinedAt)}</span>
+            <p className="mt-1 text-sm text-leaf-700/80">{user.bio || t('user.noBio')}</p>
+
+            {/* EXP 进度条 */}
+            {nextDef && (
+              <div className="mt-3 max-w-md">
+                <div className="flex items-baseline justify-between text-[11px] text-leaf-700/70">
+                  <span>EXP {exp} / {expCap}</span>
+                  <span>{t('user.expToNext', { level: nextDef.level, need: expCap - exp })}</span>
+                </div>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-leaf-100">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-leaf-400 to-leaf-600"
+                    style={{ width: `${expPercent}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-leaf-700/70">
+              <span>{t('user.joinedAt', { date: formatDate(user.joinedAt) })}</span>
               <span>·</span>
-              <span className="text-ink-800 font-semibold">{user.posts}</span> 帖
+              <button
+                type="button"
+                onClick={() => setTab('posts')}
+                className="hover:text-leaf-700"
+              >
+                <span className="text-ink-800 font-semibold">{user.posts}</span> {t('user.stats.posts')}
+              </button>
               <span>·</span>
-              <span className="text-ink-800 font-semibold">{formatNumber(user.followers)}</span> 粉丝
+              <button
+                type="button"
+                onClick={() => setTab('followers')}
+                className="hover:text-leaf-700"
+              >
+                <span className="text-ink-800 font-semibold">{formatNumber(user.followers)}</span> {t('user.stats.followers')}
+              </button>
               <span>·</span>
-              <span className="text-ink-800 font-semibold">{formatNumber(user.following)}</span> 关注
+              <button
+                type="button"
+                onClick={() => setTab('following')}
+                className="hover:text-leaf-700"
+              >
+                <span className="text-ink-800 font-semibold">{formatNumber(user.following)}</span> {t('user.stats.following')}
+              </button>
+              {vip?.isVip && (
+                <span className="text-amber-700">
+                  · 👑{' '}
+                  {vip.lifetime
+                    ? t('user.vip.lifetime')
+                    : daysLeft !== null && daysLeft !== undefined
+                    ? t('user.vip.remainDays', { days: daysLeft })
+                    : t('user.vip.member')}
+                </span>
+              )}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {isMe ? (
-              <button type="button" className="btn-outline" disabled title="编辑暂未开放">
-                <Icon name="edit" size={14} />
-                编辑资料
-              </button>
+              <>
+                <Link href="/settings/privacy" className="btn-outline !text-xs">
+                  {t('user.actions.privacy')}
+                </Link>
+                <button type="button" className="btn-outline !text-xs" disabled title={t('user.actions.editProfileUnavailable')}>
+                  <Icon name="edit" size={12} />
+                  {t('user.actions.editProfile')}
+                </button>
+              </>
             ) : (
               <>
                 <Link href={`/messages?to=${user.id}`} className="btn-outline">
                   <Icon name="message" size={14} />
-                  私信
+                  {t('user.actions.message')}
                 </Link>
                 <button
                   type="button"
@@ -107,7 +207,7 @@ export function UserPageClient({
                   disabled={busy}
                   className={cn('btn', followed ? 'bg-leaf-100 text-leaf-700' : 'btn-primary')}
                 >
-                  {followed ? '✓ 已关注' : '+ 关注'}
+                  {followed ? t('user.actions.unfollow') : t('user.actions.follow')}
                 </button>
               </>
             )}
@@ -116,17 +216,17 @@ export function UserPageClient({
       </div>
 
       <div className="mb-5 flex items-center gap-1 overflow-x-auto border-b border-leaf-100">
-        {tabs.map((t) => (
+        {tabs.map((item) => (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
+            key={item.key}
+            onClick={() => setTab(item.key)}
             className={cn(
               'relative whitespace-nowrap px-4 py-2.5 text-sm transition-colors',
-              tab === t.key ? 'text-leaf-700 font-medium' : 'text-ink-700/60 hover:text-leaf-700'
+              tab === item.key ? 'text-leaf-700 font-medium' : 'text-ink-700/60 hover:text-leaf-700'
             )}
           >
-            {t.label}
-            {tab === t.key && (
+            {t(item.labelKey)}
+            {tab === item.key && (
               <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-leaf-500" />
             )}
           </button>
@@ -143,7 +243,7 @@ export function UserPageClient({
                 ))}
               </div>
             ) : (
-              <Empty icon="🌱" title="还没有发过帖子" />
+              <Empty icon="🌱" title={t('user.empty.posts')} />
             ))}
 
           {tab === 'likes' &&
@@ -154,7 +254,7 @@ export function UserPageClient({
                 ))}
               </div>
             ) : (
-              <Empty icon="❤️" title="还没有赞过任何帖子" />
+              <Empty icon="❤️" title={t('user.empty.likes')} />
             ))}
 
           {tab === 'collects' &&
@@ -165,8 +265,16 @@ export function UserPageClient({
                 ))}
               </div>
             ) : (
-              <Empty icon="⭐" title="还没有收藏任何帖子" />
+              <Empty icon="⭐" title={t('user.empty.collects')} />
             ))}
+
+          {tab === 'following' && (
+            <FollowListTab userId={user.id} kind="following" isMe={isMe} />
+          )}
+          {tab === 'followers' && (
+            <FollowListTab userId={user.id} kind="followers" isMe={isMe} />
+          )}
+          {tab === 'followed-boards' && <FollowedBoardsTab isMe={isMe} />}
 
           {tab === 'badges' && <BadgeWall badges={user.badges} />}
 
@@ -175,7 +283,7 @@ export function UserPageClient({
 
         <div className="space-y-5">
           <div className="card p-4">
-            <div className="mb-3 text-sm font-semibold">🏆 徽章精选</div>
+            <div className="mb-3 text-sm font-semibold">{t('user.badges.featured')}</div>
             <div className="grid grid-cols-4 gap-2">
               {user.badges
                 .filter((b) => b.obtained)
@@ -194,17 +302,17 @@ export function UserPageClient({
               onClick={() => setTab('badges')}
               className="mt-3 w-full text-center text-[11px] text-leaf-700 hover:underline"
             >
-              查看全部徽章 →
+              {t('user.badges.viewAll')}
             </button>
           </div>
 
           <div className="card p-4">
-            <div className="mb-3 text-sm font-semibold">📊 活跃数据</div>
+            <div className="mb-3 text-sm font-semibold">{t('user.badges.activityData')}</div>
             <div className="space-y-2 text-xs">
-              <StatRow label="总帖子" value={String(user.posts)} />
-              <StatRow label="粉丝" value={formatNumber(user.followers)} />
-              <StatRow label="关注" value={formatNumber(user.following)} />
-              <StatRow label="已获徽章" value={String(user.badges.filter((b) => b.obtained).length)} />
+              <StatRow label={t('user.stats.totalPosts')} value={String(user.posts)} />
+              <StatRow label={t('user.stats.followers')} value={formatNumber(user.followers)} />
+              <StatRow label={t('user.stats.following')} value={formatNumber(user.following)} />
+              <StatRow label={t('user.stats.badgesEarned')} value={String(user.badges.filter((b) => b.obtained).length)} />
             </div>
           </div>
         </div>
@@ -223,15 +331,17 @@ function StatRow({ label, value }: { label: string; value: string }) {
 }
 
 function BadgeWall({ badges }: { badges: Badge[] }) {
+  const { t } = useI18n();
   const obtained = badges.filter((b) => b.obtained);
   const locked = badges.filter((b) => !b.obtained);
+  const percent = badges.length > 0 ? Math.round((obtained.length / badges.length) * 100) : 0;
   return (
     <div className="space-y-6">
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <div className="text-sm font-semibold">已获得 · {obtained.length}</div>
+          <div className="text-sm font-semibold">{t('user.badges.obtainedCount', { n: obtained.length })}</div>
           <div className="text-[11px] text-leaf-700/70">
-            完成度 {badges.length > 0 ? Math.round((obtained.length / badges.length) * 100) : 0}%
+            {t('user.badges.completionRate', { percent })}
           </div>
         </div>
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
@@ -242,7 +352,7 @@ function BadgeWall({ badges }: { badges: Badge[] }) {
       </div>
       {locked.length > 0 && (
         <div>
-          <div className="mb-3 text-sm font-semibold">未解锁 · {locked.length}</div>
+          <div className="mb-3 text-sm font-semibold">{t('user.badges.lockedCount', { n: locked.length })}</div>
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
             {locked.map((b) => (
               <BadgeCard key={b.id} badge={b} locked />
@@ -277,13 +387,14 @@ function BadgeCard({ badge, locked }: { badge: Badge; locked?: boolean }) {
 }
 
 function AboutTab({ user }: { user: User }) {
+  const { t } = useI18n();
   return (
     <div className="card p-5 space-y-3 text-sm">
-      <InfoRow label="用户名" value={user.name} />
-      <InfoRow label="用户 ID" value={user.id} />
-      <InfoRow label="等级" value={`Lv.${user.level}`} />
-      <InfoRow label="加入日期" value={formatDate(user.joinedAt)} />
-      <InfoRow label="个人简介" value={user.bio ?? '暂无'} />
+      <InfoRow label={t('user.info.username')} value={user.name} />
+      <InfoRow label={t('user.info.userId')} value={user.id} />
+      <InfoRow label={t('user.info.level')} value={`Lv.${user.level}`} />
+      <InfoRow label={t('user.info.joinDate')} value={formatDate(user.joinedAt)} />
+      <InfoRow label={t('user.info.bio')} value={user.bio ?? t('user.info.empty')} />
     </div>
   );
 }
@@ -294,5 +405,165 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <div className="w-24 shrink-0 text-xs text-leaf-700/70">{label}</div>
       <div className="flex-1 text-ink-800">{value}</div>
     </div>
+  );
+}
+
+/* ---------------- 关注 / 粉丝 Tab ---------------- */
+
+function FollowListTab({
+  userId,
+  kind,
+  isMe,
+}: {
+  userId: string;
+  kind: 'following' | 'followers';
+  isMe: boolean;
+}) {
+  const { t } = useI18n();
+  const [list, setList] = useState<User[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [blocked, setBlocked] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setBlocked(null);
+    api
+      .get<{ items: User[]; total: number }>(
+        `/api/users/${userId}/${kind}`
+      )
+      .then((r) => {
+        setList(r.items);
+        setTotal(r.total);
+      })
+      .catch((e) => {
+        if (e instanceof ApiError && e.status === 403) {
+          setBlocked(e.message);
+        } else {
+          setBlocked(e instanceof Error ? e.message : t('error.generic'));
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [userId, kind, t]);
+
+  if (loading) {
+    return <div className="py-10 text-center text-sm text-leaf-700/60">{t('common.loading')}</div>;
+  }
+
+  if (blocked) {
+    return (
+      <div className="card p-8 text-center">
+        <div className="text-4xl">🔒</div>
+        <div className="mt-3 text-base font-semibold text-ink-800">{blocked}</div>
+        <div className="mt-1 text-xs text-leaf-700/60">
+          {kind === 'following' ? t('user.hidden.following') : t('user.hidden.followers')}
+          {isMe && (
+            <>
+              <br />
+              <Link href="/settings/privacy" className="text-leaf-700 hover:underline">
+                {t('user.hidden.goToSettings')}
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (!list || list.length === 0) {
+    return (
+      <Empty
+        icon={kind === 'following' ? '🤝' : '👥'}
+        title={kind === 'following' ? t('user.empty.following') : t('user.empty.followers')}
+      />
+    );
+  }
+
+  return (
+    <>
+      <div className="mb-3 text-xs text-leaf-700/70">{t('user.totalCount', { n: total })}</div>
+      <ul className="space-y-2">
+        {list.map((u) => (
+          <li key={u.id} className="card flex items-center gap-3 p-3">
+            <Link href={`/user/${u.id}`}>
+              <Avatar src={u.avatar} alt={u.name} size={44} />
+            </Link>
+            <div className="min-w-0 flex-1">
+              <UserName user={u} size="sm" />
+              {u.bio && (
+                <div className="mt-0.5 line-clamp-1 text-[11px] text-leaf-700/70">{u.bio}</div>
+              )}
+              <div className="mt-1 text-[10px] text-leaf-700/60">
+                Lv.{u.level} · {formatNumber(u.followers)} · {u.posts}
+              </div>
+            </div>
+            <Link href={`/user/${u.id}`} className="btn-outline !text-xs">{t('nav.myProfile')}</Link>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+/* ---------------- 关注的板块 Tab(仅自己可见) ---------------- */
+
+function FollowedBoardsTab({ isMe }: { isMe: boolean }) {
+  const { t } = useI18n();
+  const [list, setList] = useState<Board[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isMe) {
+      setLoading(false);
+      return;
+    }
+    api
+      .get<Board[]>('/api/boards/followed')
+      .then(setList)
+      .catch(() => setList([]))
+      .finally(() => setLoading(false));
+  }, [isMe]);
+
+  if (!isMe) {
+    return (
+      <div className="card p-8 text-center">
+        <div className="text-4xl">🔒</div>
+        <div className="mt-3 text-base font-semibold">{t('user.privateBoards')}</div>
+        <div className="mt-1 text-xs text-leaf-700/60">
+          {t('user.privateBoardsHint')}
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return <div className="py-10 text-center text-sm text-leaf-700/60">{t('common.loading')}</div>;
+  }
+  if (!list || list.length === 0) {
+    return <Empty icon="⭐" title={t('user.empty.followedBoards')} desc={t('user.empty.followedBoardsHint')} />;
+  }
+
+  return (
+    <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
+      {list.map((b) => (
+        <li key={b.id}>
+          <Link
+            href={boardUrl(b)}
+            className="card flex items-center gap-3 p-3 transition-shadow hover:shadow-md"
+          >
+            <span className="text-2xl shrink-0">{b.icon}</span>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium text-ink-800">{b.name}</div>
+              <div className="text-[10px] text-leaf-700/60">
+                {b.path.map((p) => p.name).join(' · ')}
+              </div>
+            </div>
+            <span className="shrink-0 text-[11px] text-leaf-700/70">
+              📝 {b.posts}
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }

@@ -1,0 +1,43 @@
+{
+  "theme": {
+    "springFestival": {
+      "banner": "🏮 新春快乐!社区给你拜个早年"
+    },
+    "lantern": {
+      "banner": "🏮 灯会快乐,点亮多肉时光"
+    },
+    "valentine": {
+      "banner": "💝 在多肉的陪伴里,说一句喜欢你"
+    },
+    "womensDay": {
+      "banner": "🌷 致敬每一位爱花的女性"
+    },
+    "arborDay": {
+      "banner": "🌲 植树节:每一株多肉,都是一座小森林"
+    },
+    "earthDay": {
+      "banner": "🌍 世界地球日,一起给地球添一抹绿"
+    },
+    "communityBirthday": {
+      "banner": "🎉 肉友社生日快乐,和你一起又一年"
+    },
+    "childrensDay": {
+      "banner": "🎈 儿童节,所有爱多肉的大小朋友都快乐"
+    },
+    "dragonBoat": {
+      "banner": "🐉 端午安康,多肉长势正好"
+    },
+    "midAutumn": {
+      "banner": "🌕 月圆人团圆,多肉也圆润"
+    },
+    "nationalDay": {
+      "banner": "🇨🇳 国庆快乐,共赏万千肉肉"
+    },
+    "halloween": {
+      "banner": "🎃 万圣夜,今天的多肉好像在看你"
+    },
+    "christmas": {
+      "banner": "🎄 圣诞和新年,愿你的多肉平安越冬"
+    }
+  }
+}

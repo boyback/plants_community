@@ -1,0 +1,20 @@
+{
+  "plants": {
+    "title": "Succulent species",
+    "subtitle": "Browse common succulent species and their care tips",
+    "searchPlaceholder": "Search by name or Latin…",
+    "familyLabel": "Family:",
+    "difficultyLabel": "Difficulty:",
+    "all": "All",
+    "totalCount": "{n} species",
+    "empty": "No matching species",
+    "emptyDesc": "Try a different keyword?",
+    "family": {
+      "Crassulaceae": "Crassulaceae",
+      "Aizoaceae": "Aizoaceae",
+      "Liliaceae": "Liliaceae",
+      "Cactaceae": "Cactaceae",
+      "Euphorbiaceae": "Euphorbiaceae"
+    }
+  }
+}

@@ -3,16 +3,18 @@ import { notFound } from 'next/navigation';
 import { Shell } from '@/components/layout/Shell';
 import { PostBody } from '@/components/post/PostBody';
 import { PostActions } from '@/components/post/PostActions';
+import { MobileActionBar } from '@/components/post/MobileActionBar';
 import { CommentSection } from '@/components/post/CommentSection';
 import { PostCard } from '@/components/post/PostCard';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
+import { I18nText } from '@/components/ui/I18nText';
 import { prisma } from '@/lib/db';
 import { postInclude } from '@/lib/post-include';
 import { serializePost } from '@/lib/serializers';
 import { getCurrentUser } from '@/lib/auth';
-import { formatNumber, formatDateTime } from '@/lib/utils';
+import { formatNumber, formatDateTime, boardUrl } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -119,13 +121,20 @@ export default async function PostDetailPage({ params }: { params: { id: string 
     <Shell>
       <div className="mb-4 flex items-center gap-1.5 text-xs text-leaf-700/70">
         <Link href="/" className="hover:text-leaf-700">
-          首页
+          <I18nText k="nav.home" fallback="首页" />
         </Link>
         <Icon name="arrow-right" size={12} />
-        <Link href={`/board/${post.board.slug}`} className="hover:text-leaf-700">
-          {post.board.name}
-        </Link>
-        <Icon name="arrow-right" size={12} />
+        {post.board.path.map((p, i) => (
+          <span key={i} className="contents">
+            <Link
+              href={'/board/' + post.board.path.slice(0, i + 1).map((x) => encodeURIComponent(x.slug)).join('/')}
+              className="hover:text-leaf-700"
+            >
+              {p.name}
+            </Link>
+            <Icon name="arrow-right" size={12} />
+          </span>
+        ))}
         <span className="truncate text-ink-700">{post.title}</span>
       </div>
 
@@ -134,7 +143,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
           <article className="card p-6 md:p-8">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <PostTypeBadge type={post.type} />
-              <Link href={`/board/${post.board.slug}`} className="chip hover:bg-leaf-100">
+              <Link href={boardUrl(post.board)} className="chip hover:bg-leaf-100">
                 {post.board.icon} {post.board.name}
               </Link>
               {post.tags.map((t) => (
@@ -162,7 +171,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
                 <div className="text-[11px] text-leaf-700/70">
                   Lv.{post.author.level} · {formatDateTime(post.createdAt)} ·
                   <Icon name="eye" size={11} className="mx-1" />
-                  {formatNumber(post.views)} 阅读
+                  {formatNumber(post.views)} <I18nText k="detail.post.views" fallback="阅读" />
                 </div>
               </div>
             </div>
@@ -175,6 +184,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
           </article>
 
           <PostActions post={post} initialLiked={liked} initialCollected={collected} />
+          <MobileActionBar post={post} initialLiked={liked} initialCollected={collected} />
 
           <CommentSection post={post} />
         </div>
@@ -193,29 +203,29 @@ export default async function PostDetailPage({ params }: { params: { id: string 
             <div className="mt-3 grid grid-cols-3 border-t border-leaf-100 pt-3 text-center text-xs">
               <div>
                 <div className="font-semibold text-ink-800">{post.author.posts}</div>
-                <div className="text-leaf-700/70">帖子</div>
+                <div className="text-leaf-700/70"><I18nText k="detail.post.postsLabel" fallback="帖子" /></div>
               </div>
               <div>
                 <div className="font-semibold text-ink-800">{formatNumber(post.author.followers)}</div>
-                <div className="text-leaf-700/70">粉丝</div>
+                <div className="text-leaf-700/70"><I18nText k="detail.post.followersLabel" fallback="粉丝" /></div>
               </div>
               <div>
                 <div className="font-semibold text-ink-800">{formatNumber(post.author.following)}</div>
-                <div className="text-leaf-700/70">关注</div>
+                <div className="text-leaf-700/70"><I18nText k="detail.post.followingLabel" fallback="关注" /></div>
               </div>
             </div>
             <div className="mt-3 flex gap-2">
               <Link href={`/user/${post.author.id}`} className="btn-outline flex-1 justify-center !text-xs">
-                主页
+                <I18nText k="nav.myProfile" fallback="主页" />
               </Link>
               <Link href={`/messages?to=${post.author.id}`} className="btn-primary flex-1 justify-center !text-xs">
-                私信
+                <I18nText k="nav.messages" fallback="私信" />
               </Link>
             </div>
           </div>
 
           <div className="card p-4">
-            <div className="mb-3 text-sm font-semibold text-ink-800">📖 本版相关</div>
+            <div className="mb-3 text-sm font-semibold text-ink-800">📖 <I18nText k="detail.post.related" fallback="本版相关" /></div>
             <div className="space-y-3">
               {related.map((p) => (
                 <PostCard key={p.id} post={p} layout="compact" />

@@ -1,0 +1,20 @@
+{
+  "cookie": {
+    "title": "我們尊重你的 Cookie 偏好",
+    "desc": "我們使用 Cookie 讓肉友社正常運作並持續改進。必要類 Cookie 無法關閉;其他類別你可以自由選擇。",
+    "readPolicy": "閱讀完整 Cookie 政策",
+    "acceptAll": "全部接受",
+    "onlyNecessary": "僅必需",
+    "customize": "自訂",
+    "customizeTitle": "選擇 Cookie 類別",
+    "saveChoice": "儲存選擇",
+    "necessary": "必要類",
+    "necessaryDesc": "登入、安全、支付等必備功能,無法關閉",
+    "preferences": "功能類",
+    "preferencesDesc": "記住語言、主題、貼文草稿等偏好",
+    "analytics": "分析類",
+    "analyticsDesc": "匿名統計用於改進產品品質",
+    "advertising": "廣告類",
+    "advertisingDesc": "本服務目前不投放廣告,保留位置"
+  }
+}

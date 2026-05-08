@@ -1,0 +1,17 @@
+{
+  "theme": {
+    "springFestival": { "banner": "🏮 春節快楽!コミュニティから新年のご挨拶" },
+    "lantern": { "banner": "🏮 元宵節、多肉の夜に灯りを" },
+    "valentine": { "banner": "💝 多肉と一緒に、「好き」を伝えよう" },
+    "womensDay": { "banner": "🌷 花を愛するすべての女性へ" },
+    "arborDay": { "banner": "🌲 植樹の日、多肉はひとつの小さな森" },
+    "earthDay": { "banner": "🌍 アースデイ、地球に緑を一筋" },
+    "communityBirthday": { "banner": "🎉 RouYou の誕生日、今年も一緒に" },
+    "childrensDay": { "banner": "🎈 こどもの日、内なる子供にもご挨拶" },
+    "dragonBoat": { "banner": "🐉 端午節、多肉はすくすく" },
+    "midAutumn": { "banner": "🌕 中秋、満月と丸い葉っぱ" },
+    "nationalDay": { "banner": "🇨🇳 国慶節おめでとうございます" },
+    "halloween": { "banner": "🎃 ハロウィン、多肉がこちらを見ている気が…" },
+    "christmas": { "banner": "🎄 メリークリスマス、多肉に暖かい冬を" }
+  }
+}

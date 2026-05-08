@@ -1,0 +1,34 @@
+{
+  "home": {
+    "signIn": {
+      "welcomeTitle": "歡迎來到肉友社 🌵",
+      "welcomeSub": "登入後可以發文、留言、簽到獲得徽章,還能使用私訊和通知中心。",
+      "login": "登入",
+      "register": "註冊",
+      "userMeta": "Lv.{level} · {posts} 帖 · {followers} 粉",
+      "streakLabel": "已連續簽到",
+      "daysSuffix": "天",
+      "signedToday": "已簽到",
+      "signInNow": "立即簽到",
+      "tip": "💡 連續簽到 7 天可獲得徽章「小太陽」",
+      "weekDays": "週一,週二,週三,週四,週五,週六,週日"
+    },
+    "topics": {
+      "title": "熱門話題",
+      "moreLink": "查看全部 →",
+      "empty": "暫無話題"
+    },
+    "recommend": {
+      "title": "推薦肉友",
+      "refresh": "換一批",
+      "followBtn": "+ 追蹤",
+      "followedBtn": "已追蹤"
+    },
+    "feedTabs": {
+      "recommend": "推薦",
+      "following": "追蹤",
+      "hot": "熱門",
+      "latest": "最新"
+    }
+  }
+}

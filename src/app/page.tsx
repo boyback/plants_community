@@ -14,8 +14,9 @@ export const dynamic = 'force-dynamic';
 export default async function HomePage() {
   const [postsRaw, bannersRaw, recommendUsersRaw] = await Promise.all([
     prisma.post.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 24,
+      where: { deleted: false },
+      orderBy: [{ hotScore: 'desc' }, { createdAt: 'desc' }],
+      take: 20,
       include: postInclude(),
     }),
     prisma.banner.findMany({
@@ -48,7 +49,7 @@ export default async function HomePage() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_280px]">
         <div className="min-w-0 space-y-6">
           {banners.length > 0 && <BannerCarousel items={banners} />}
-          <FeedTabs posts={posts} />
+          <FeedTabs initial={posts} />
         </div>
 
         <div className="space-y-5">

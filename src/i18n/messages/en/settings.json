@@ -1,0 +1,41 @@
+{
+  "settings": {
+    "title": "Settings",
+    "appearance": {
+      "title": "Appearance & Language",
+      "desc": "Language, festival themes and interface preferences",
+      "language": "Language",
+      "languageDesc": "Your language preference is saved to your account (when signed in) and a local cookie.",
+      "festival": "Festival themes",
+      "festivalDesc": "During festivals like Spring Festival, Mid-Autumn and Christmas we dress up the site a bit. You can turn it off if it's not your thing.",
+      "festivalGlobal": "Enable festival themes",
+      "festivalGlobalDesc": "When off, no festival decorations will be shown",
+      "festivalList": "Per-festival toggles",
+      "active": "Live"
+    },
+    "privacy": {
+      "title": "Privacy",
+      "desc": "Who can see your followers / following list"
+    },
+    "addresses": {
+      "title": "Shipping addresses",
+      "desc": "Manage default, add or delete addresses"
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "desc": "Read the latest terms"
+    },
+    "privacyPolicy": {
+      "title": "Privacy Policy",
+      "desc": "How we collect, use and protect your data"
+    },
+    "cookiePolicy": {
+      "title": "Cookie Policy",
+      "desc": "The cookie categories we use"
+    },
+    "reopenCookie": {
+      "title": "Manage cookie choices",
+      "desc": "Reopen the consent banner to revise categories"
+    }
+  }
+}

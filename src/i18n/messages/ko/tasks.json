@@ -1,0 +1,58 @@
+{
+  "tasks": {
+    "title": "퀘스트 & 활동",
+    "loginRequired": "로그인하고 퀘스트·활동을 확인하세요",
+    "monthly": {
+      "title": "이달의 활동",
+      "ranking": "이달 순위",
+      "vipBoost": "👑 대회원 10× 부스트 중",
+      "desc": "게시·댓글·출석·투표·구매·퀘스트 달성 모두 활동도 상승"
+    },
+    "howto": {
+      "title": "활동도 올리는 법?",
+      "items": {
+        "signin": "📅 출석 +1",
+        "post": "📝 게시 +5",
+        "comment": "💬 댓글 +2",
+        "vote": "🗳️ 투표 +1",
+        "purchase": "🛒 구매 +5",
+        "taskBonus": "🎯 퀘스트 보너스"
+      }
+    },
+    "tabs": {
+      "tasks": "🎯 퀘스트 목록",
+      "rewards": "🎁 활동 단계 보상",
+      "ranking": "🏆 월간 랭킹"
+    },
+    "sections": {
+      "dailyTitle": "📅 일일 퀘스트",
+      "dailySubtitle": "매일 0 시 초기화",
+      "monthlyTitle": "🗓️ 월간 퀘스트",
+      "monthlySubtitle": "매월 1 일 초기화",
+      "achievementTitle": "🏅 업적",
+      "achievementSubtitle": "한번 달성하면 영구 기록"
+    },
+    "progress": "달성 {done} / {total}",
+    "rewardLabel": "보상",
+    "activityUnit": "활",
+    "claim": "받기",
+    "claimed": "수령",
+    "claimedToast": "✨ {points} 포인트 / {activity} 활동 획득",
+    "inProgress": "진행 중",
+    "completed": "✓ 완료",
+    "claimFail": "수령 실패",
+    "rewardNeedLevel": "활동 {n} 필요",
+    "rewardSkin": "스킨 「{name}」",
+    "claimedThisMonth": "이달 수령",
+    "notReached": "미달성",
+    "rewardEmpty": "활동 보상이 없습니다",
+    "thisMonthProgress": "이달 진행",
+    "rewardClaimed": "🎁 수령:{points} 포인트{skin}",
+    "rewardClaimedSkin": " + 스킨 1 개",
+    "ranking": {
+      "empty": "이달 데이터가 없어요",
+      "emptyDesc": "게시·댓글·출석 모두 랭킹에 반영",
+      "score": "활동 {n}"
+    }
+  }
+}

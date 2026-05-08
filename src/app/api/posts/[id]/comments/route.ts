@@ -1,13 +1,19 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
-import { requireUser } from '@/lib/auth';
+import { requireUser, isVipActive } from '@/lib/auth';
 import { serializeComment } from '@/lib/serializers';
+import { emitNotification } from '@/lib/realtime/notify';
+import { hasPermission } from '@/lib/levels';
+import { emitEvent } from '@/lib/events';
+import { processRichInput } from '@/lib/richtext';
 
 export const dynamic = 'force-dynamic';
 
 const Body = z.object({
-  content: z.string().min(1).max(2000),
+  // 富文本场景:contentJson(权威);兜底:content(HTML 或纯文本)
+  content: z.string().optional(),
+  contentJson: z.unknown().optional(),
   parentId: z.string().optional(),
 });
 
@@ -20,8 +26,20 @@ function pickPostId(req: Request) {
 
 export const POST = handler(async (req) => {
   const me = await requireUser();
+  if (!hasPermission({ level: me.level, isVip: isVipActive(me) }, 'comment')) {
+    return fail(403, '需要 Lv.1 以上才能评论');
+  }
   const postId = pickPostId(req);
   const body = Body.parse(await req.json());
+
+  // 处理富文本输入
+  const stored = processRichInput({
+    json: body.contentJson,
+    // 兼容老调用:仅传 content 字符串时,按纯文本处理
+    text: typeof body.content === 'string' ? body.content : undefined,
+    textMaxLen: 2000,
+  });
+  if (!stored.text) return fail(400, '评论内容不能为空');
 
   const post = await prisma.post.findUnique({
     where: { id: postId },
@@ -34,15 +52,16 @@ export const POST = handler(async (req) => {
       where: { id: body.parentId },
       select: { postId: true },
     });
-    if (!parent || parent.postId !== postId)
-      return fail(400, '父评论无效');
+    if (!parent || parent.postId !== postId) return fail(400, '父评论无效');
   }
 
   const comment = await prisma.comment.create({
     data: {
       postId,
       authorId: me.id,
-      content: body.content,
+      content: stored.html,
+      contentJson: stored.json || null,
+      contentText: stored.text,
       parentId: body.parentId ?? null,
     },
     include: {
@@ -55,18 +74,26 @@ export const POST = handler(async (req) => {
     },
   });
 
-  // 给帖子作者发通知(除非是自己评论自己)
+  // 通知里使用纯文本预览
   if (post.authorId !== me.id) {
-    await prisma.notification.create({
+    const notif = await prisma.notification.create({
       data: {
         recipientId: post.authorId,
         fromId: me.id,
         type: 'comment',
-        text: `评论了你的帖子《${post.title.slice(0, 20)}》:${body.content.slice(0, 40)}`,
+        text: `评论了你的帖子《${post.title.slice(0, 20)}》:${stored.text.slice(0, 40)}`,
         link: `/post/${post.id}`,
       },
     });
+    emitNotification(post.authorId, { id: notif.id, type: notif.type, text: notif.text, link: notif.link });
   }
+
+  await emitEvent({
+    kind: 'comment_create',
+    userId: me.id,
+    commentId: comment.id,
+    postId: post.id,
+  });
 
   return serializeComment(comment);
 });

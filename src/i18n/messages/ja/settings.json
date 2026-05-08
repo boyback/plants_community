@@ -1,0 +1,41 @@
+{
+  "settings": {
+    "title": "設定",
+    "appearance": {
+      "title": "外観と言語",
+      "desc": "言語、季節テーマなどの表示設定",
+      "language": "言語",
+      "languageDesc": "言語設定はアカウント(ログイン時)とローカル cookie に保存されます。",
+      "festival": "季節テーマ",
+      "festivalDesc": "春節・中秋・クリスマス等の期間、コミュニティに季節の装飾を施します。お好みでオフにできます。",
+      "festivalGlobal": "季節テーマを有効にする",
+      "festivalGlobalDesc": "オフにすると季節装飾は一切表示されません",
+      "festivalList": "祭ごとの切り替え",
+      "active": "開催中"
+    },
+    "privacy": {
+      "title": "プライバシー",
+      "desc": "フォロー・フォロワー一覧の公開設定"
+    },
+    "addresses": {
+      "title": "配送先住所",
+      "desc": "既定の住所、追加、削除"
+    },
+    "terms": {
+      "title": "利用規約",
+      "desc": "最新の規約を読む"
+    },
+    "privacyPolicy": {
+      "title": "プライバシーポリシー",
+      "desc": "個人情報の取り扱いについて"
+    },
+    "cookiePolicy": {
+      "title": "Cookie ポリシー",
+      "desc": "使用する Cookie のカテゴリ"
+    },
+    "reopenCookie": {
+      "title": "Cookie 設定を変更",
+      "desc": "同意画面を再度開いてカテゴリを調整"
+    }
+  }
+}

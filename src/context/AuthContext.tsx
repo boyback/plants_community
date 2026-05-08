@@ -1,38 +1,84 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import type { User } from '@/lib/types';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+  useCallback,
+} from 'react';
+import type { User, EquipState } from '@/lib/types';
 import { api, ApiError } from '@/lib/client-api';
+
+interface VipState {
+  isVip: boolean;
+  lifetime: boolean;
+  expireAt: string | null;
+}
+
+interface ExpProgressInfo {
+  level: number;
+  currentLevelExp: number;
+  nextLevelExp: number;
+  percent: number;
+  pointsToNext: number;
+  isMax: boolean;
+}
 
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
+  signedInToday: boolean;
+  signInStreak: number;
+  exp: number;
+  expProgress: ExpProgressInfo | null;
+  pointsBalance: number;
+  vip: VipState;
+  equip: EquipState;
   login: (name: string, password: string) => Promise<{ ok: boolean; msg?: string }>;
   register: (name: string, password: string) => Promise<{ ok: boolean; msg?: string }>;
   logout: () => Promise<void>;
-  signedInToday: boolean;
   signIn: () => Promise<void>;
-  signInStreak: number;
   refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+const DEFAULT_VIP: VipState = { isVip: false, lifetime: false, expireAt: null };
 
 export function AuthProvider({
   children,
   initialUser,
   initialSignInStreak = 0,
   initialSignedInToday = false,
+  initialExp = 0,
+  initialExpProgress = null,
+  initialPointsBalance = 0,
+  initialVip = DEFAULT_VIP,
+  initialEquip = {},
 }: {
   children: ReactNode;
   initialUser?: User | null;
   initialSignInStreak?: number;
   initialSignedInToday?: boolean;
+  initialExp?: number;
+  initialExpProgress?: ExpProgressInfo | null;
+  initialPointsBalance?: number;
+  initialVip?: VipState;
+  initialEquip?: EquipState;
 }) {
   const [user, setUser] = useState<User | null>(initialUser ?? null);
   const [loading, setLoading] = useState(!initialUser);
   const [signedInToday, setSignedInToday] = useState(initialSignedInToday);
   const [signInStreak, setSignInStreak] = useState(initialSignInStreak);
+  const [exp, setExp] = useState(initialExp);
+  const [expProgressState, setExpProgressState] = useState<ExpProgressInfo | null>(
+    initialExpProgress
+  );
+  const [pointsBalance, setPointsBalance] = useState(initialPointsBalance);
+  const [vip, setVip] = useState<VipState>(initialVip);
+  const [equip, setEquip] = useState<EquipState>(initialEquip);
 
   const refresh = useCallback(async () => {
     try {
@@ -40,6 +86,11 @@ export function AuthProvider({
         user: User;
         signInStreak: number;
         signedInToday: boolean;
+        exp: number;
+        expProgress: ExpProgressInfo;
+        pointsBalance: number;
+        vip: VipState;
+        equip: EquipState;
       }>('/api/auth/me');
       if (!res) {
         setUser(null);
@@ -47,6 +98,11 @@ export function AuthProvider({
         setUser(res.user);
         setSignInStreak(res.signInStreak);
         setSignedInToday(res.signedInToday);
+        setExp(res.exp);
+        setExpProgressState(res.expProgress);
+        setPointsBalance(res.pointsBalance);
+        setVip(res.vip);
+        setEquip(res.equip);
       }
     } catch {
       setUser(null);
@@ -56,7 +112,6 @@ export function AuthProvider({
   }, []);
 
   useEffect(() => {
-    // 如果没有服务端初值,客户端拉一次
     if (!initialUser) refresh();
     else setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -89,14 +144,16 @@ export function AuthProvider({
     setUser(null);
     setSignInStreak(0);
     setSignedInToday(false);
+    setExp(0);
+    setExpProgressState(null);
+    setPointsBalance(0);
+    setVip(DEFAULT_VIP);
+    setEquip({});
   };
 
   const signIn = async () => {
-    const res = await api.post<{ signInStreak: number; signedInToday: boolean }>(
-      '/api/auth/signin'
-    );
-    setSignInStreak(res.signInStreak);
-    setSignedInToday(res.signedInToday);
+    await api.post<{ signInStreak: number; signedInToday: boolean }>('/api/auth/signin');
+    await refresh();
   };
 
   return (
@@ -104,12 +161,17 @@ export function AuthProvider({
       value={{
         user,
         loading,
+        signedInToday,
+        signInStreak,
+        exp,
+        expProgress: expProgressState,
+        pointsBalance,
+        vip,
+        equip,
         login,
         register,
         logout,
-        signedInToday,
         signIn,
-        signInStreak,
         refresh,
       }}
     >

@@ -1,0 +1,57 @@
+{
+  "post": {
+    "types": {
+      "rich": "长图文",
+      "short": "短动态",
+      "vote": "投票",
+      "video": "视频",
+      "event": "活动",
+      "help": "求助"
+    },
+    "typeDesc": {
+      "rich": "适合教程、长篇心得(PC & APP 发布)",
+      "short": "随手一发,即兴分享(PC & APP 发布)",
+      "vote": "发起投票,集思广益(仅 PC 发布)",
+      "video": "上传视频记录(PC & APP 均可发布)",
+      "event": "组织线下活动(仅 PC 可发布)"
+    },
+    "typeBadge": {
+      "rich": "富文本贴",
+      "short": "短内容贴",
+      "vote": "投票贴",
+      "video": "视频贴",
+      "event": "EVENT 贴"
+    },
+    "typeShort": {
+      "rich": "富文本",
+      "short": "短内容",
+      "vote": "投票",
+      "video": "视频",
+      "event": "活动",
+      "help": "求助"
+    },
+    "actions": {
+      "like": "点赞",
+      "collect": "收藏",
+      "comment": "评论",
+      "share": "分享",
+      "report": "举报"
+    },
+    "help": {
+      "urgency": "紧急程度",
+      "urgencyLow": "不急",
+      "urgencyNormal": "一般",
+      "urgencyHigh": "紧急",
+      "bountyPoints": "悬赏积分",
+      "bountyHint": "发帖后从你的积分扣除,采纳答案时发给被采纳者",
+      "accept": "采纳此回答",
+      "solved": "已解决",
+      "solvedAt": "{time} 被采纳",
+      "rewardReceived": "🏆 你的回答被采纳,获得 {points} 悬赏积分"
+    },
+    "empty": {
+      "list": "还没有帖子,等你来发第一条!",
+      "comments": "还没有评论,快来抢沙发吧"
+    }
+  }
+}

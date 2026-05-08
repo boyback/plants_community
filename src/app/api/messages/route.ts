@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
 import { serializeMessage } from '@/lib/serializers';
+import { emitMessage } from '@/lib/realtime/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +26,14 @@ export const POST = handler(async (req) => {
       toId: body.toId,
       text: body.text,
     },
+  });
+
+  emitMessage(body.toId, {
+    id: msg.id,
+    fromId: me.id,
+    toId: body.toId,
+    text: body.text,
+    createdAt: msg.createdAt.toISOString(),
   });
 
   return serializeMessage(msg, me.id);

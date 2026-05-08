@@ -6,6 +6,7 @@
  */
 import { PrismaClient, PostType } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { sanitizeHtml, jsonFromHtml, plainFromHtml } from '../src/lib/richtext';
 
 const prisma = new PrismaClient();
 
@@ -565,9 +566,56 @@ async function main() {
       .catch(() => null);
   }
 
+  // 富文本三栏回填:把所有种子帖子 / 评论的 HTML 转 JSON,并 sanitize
+  console.log('• 富文本回填(content → contentJson + contentText)');
+  await backfillRichText();
+
   console.log('✅ Seed 完成');
   console.log('   已创建用户:', users.length, ' 默认密码:123456');
   console.log('   板块:', boards.length, ' 帖子:', allPosts.length, ' 图鉴:', plants.length);
+
+  // 联跑交易/积分/皮肤/任务 seed
+  console.log('');
+  await import('./seed-market');
+
+  // 联跑三级分类 seed(品种/属/科)
+  console.log('');
+  const { seedTaxonomy } = await import('./seed-taxonomy');
+  await seedTaxonomy();
+}
+
+async function backfillRichText() {
+  // 帖子
+  const posts = await prisma.post.findMany({ select: { id: true, content: true } });
+  for (const p of posts) {
+    const html = sanitizeHtml(p.content);
+    const json = jsonFromHtml(html);
+    const text = plainFromHtml(html, 2000);
+    await prisma.post.update({
+      where: { id: p.id },
+      data: {
+        content: html,
+        contentJson: json ? JSON.stringify(json) : null,
+        contentText: text,
+      },
+    });
+  }
+  // 评论
+  const comments = await prisma.comment.findMany({ select: { id: true, content: true } });
+  for (const c of comments) {
+    const html = sanitizeHtml(c.content);
+    const json = jsonFromHtml(html);
+    const text = plainFromHtml(html, 500);
+    await prisma.comment.update({
+      where: { id: c.id },
+      data: {
+        content: html,
+        contentJson: json ? JSON.stringify(json) : null,
+        contentText: text,
+      },
+    });
+  }
+  console.log(`   帖子 ${posts.length} 条 / 评论 ${comments.length} 条 已生成 JSON`);
 }
 
 async function seedComments(

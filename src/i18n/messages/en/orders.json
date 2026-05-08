@@ -1,0 +1,46 @@
+{
+  "orders": {
+    "title": "My orders",
+    "tabBuyer": "As buyer",
+    "tabSeller": "As seller",
+    "statusLabel": "Status",
+    "statusAll": "All",
+    "status": {
+      "pending_payment": "Awaiting payment",
+      "pending_ship": "Awaiting shipment",
+      "pending_receipt": "Shipped",
+      "pending_review": "Awaiting review",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "refunded": "Refunded"
+    },
+    "source": {
+      "product": "Product",
+      "auction": "Auction"
+    },
+    "totalAmount": "Total ¥{yuan}",
+    "orderNo": "Order #{no}",
+    "placedAt": "Placed {time}",
+    "paidAt": "Paid {time}",
+    "shippedAt": "Shipped {time}",
+    "receivedAt": "Received {time}",
+    "shipTo": "Ship to",
+    "tracking": "Tracking #{no}",
+    "actions": {
+      "pay": "Pay now",
+      "cancel": "Cancel order",
+      "ship": "Mark as shipped",
+      "confirm": "Confirm delivery",
+      "review": "Leave a review",
+      "viewProduct": "View product",
+      "viewAuction": "View auction"
+    },
+    "empty": "No orders yet, check out the {link}",
+    "emptyLinkMarket": "Market",
+    "inputTracking": "Tracking number (optional)",
+    "reviewPlaceholder": "Share your honest thoughts (optional)",
+    "submitReview": "Submit review",
+    "pickRating": "Pick a rating",
+    "confirmCancel": "Cancel this order?"
+  }
+}

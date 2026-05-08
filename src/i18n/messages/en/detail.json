@@ -1,0 +1,85 @@
+{
+  "detail": {
+    "post": {
+      "commentCountLabel": "{n} comments",
+      "likeCountLabel": "{n} likes",
+      "commentPlaceholder": "Share your thoughts…",
+      "commentSend": "Send",
+      "commentLogin": "Sign in to join the discussion",
+      "reply": "Reply",
+      "report": "Report",
+      "deletedByAuthor": "Deleted by the author",
+      "copyLink": "Copy link",
+      "published": "Posted {time}",
+      "editedAt": "Edited {time}",
+      "views": "views",
+      "postsLabel": "Posts",
+      "followersLabel": "Followers",
+      "followingLabel": "Following",
+      "related": "Related in this board",
+      "commentsAll": "All comments",
+      "commentsHot": "Hot",
+      "commentsLatest": "Latest",
+      "commentPlaceholderTpl": "{name}, share your thoughts — bold, lists, images supported",
+      "commentEtiquette": "Please comment kindly and respectfully 🌿",
+      "commentSending": "Sending…",
+      "commentSendFail": "Send failed",
+      "commentLoginCta": "Sign in to comment",
+      "commentsEmpty": "No comments yet — be the first!",
+      "replyTo": "Reply to @{name}…",
+      "likeAction": "Like",
+      "collected": "Saved",
+      "collect": "Save",
+      "shareTo": "Share to:",
+      "shareToX": "Share to {name}",
+      "shareSuccess": "Shared to «{channel}» 🎉",
+      "shareChannels": {
+        "wechat": "WeChat",
+        "weibo": "Weibo",
+        "link": "Link"
+      },
+      "opFail": "Operation failed",
+      "collectSuccess": "Saved ⭐",
+      "collectUnsetSuccess": "Removed from saved",
+      "cancel": "Cancel"
+    },
+    "vote": {
+      "multi": "multi-choice",
+      "single": "single-choice",
+      "title": "🗳️ {mode} poll · ends {date}",
+      "ended": "Ended",
+      "totalParticipants": "{n} total voters",
+      "totalVoters": "{n} votes",
+      "submitting": "Submitting…",
+      "submit": "Submit vote",
+      "voteFail": "Vote failed"
+    },
+    "event": {
+      "time": "Time",
+      "location": "Location",
+      "attended": "RSVP'd",
+      "attendeesCount": "{n} people",
+      "attendeesShort": "{n} going",
+      "ended": "Event ended",
+      "ongoing": "Happening now — join us!",
+      "processing": "Processing…",
+      "joined": "✓ Joined (tap to cancel)",
+      "endedLabel": "Ended",
+      "join": "🎉 Join"
+    },
+    "gallery": {
+      "imgAlt": "Image {n}",
+      "close": "Close"
+    },
+    "board": {
+      "follow": "Follow",
+      "followShort": "+ Follow",
+      "followFull": "+ Follow board",
+      "following": "✓ Following",
+      "subBoards": "Sub-boards",
+      "postCount": "{n} posts",
+      "memberCount": "{n} members",
+      "opFail": "Operation failed"
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "tasks": {
+    "title": "Quests & Activity",
+    "loginRequired": "Sign in to see your quests and activity",
+    "monthly": {
+      "title": "Monthly activity",
+      "ranking": "Monthly rank",
+      "vipBoost": "👑 VIP 10× multiplier active",
+      "desc": "Post, comment, sign in, vote, shop or finish quests — all boost your activity"
+    },
+    "howto": {
+      "title": "How to raise activity?",
+      "items": {
+        "signin": "📅 Sign-in +1 each",
+        "post": "📝 Post +5 each",
+        "comment": "💬 Comment +2 each",
+        "vote": "🗳️ Vote +1 each",
+        "purchase": "🛒 Purchase +5 each",
+        "taskBonus": "🎯 Quest bonus"
+      }
+    },
+    "tabs": {
+      "tasks": "🎯 Quests",
+      "rewards": "🎁 Activity rewards",
+      "ranking": "🏆 Monthly leaderboard"
+    },
+    "sections": {
+      "dailyTitle": "📅 Daily quests",
+      "dailySubtitle": "Reset at midnight",
+      "monthlyTitle": "🗓️ Monthly quests",
+      "monthlySubtitle": "Reset on the 1st",
+      "achievementTitle": "🏅 Achievements",
+      "achievementSubtitle": "Earn once, keep forever"
+    },
+    "progress": "Done {done} / {total}",
+    "rewardLabel": "Reward",
+    "activityUnit": "act",
+    "claim": "Claim",
+    "claimed": "Claimed",
+    "claimedToast": "✨ Claimed {points} pts / {activity} activity",
+    "inProgress": "In progress",
+    "completed": "✓ Done",
+    "claimFail": "Claim failed",
+    "rewardNeedLevel": "Needs activity {n}",
+    "rewardSkin": "Skin «{name}»",
+    "claimedThisMonth": "Claimed this month",
+    "notReached": "Not reached",
+    "rewardEmpty": "No activity rewards yet",
+    "thisMonthProgress": "This month's progress",
+    "rewardClaimed": "🎁 Claimed: {points} pts{skin}",
+    "rewardClaimedSkin": " + 1 skin",
+    "ranking": {
+      "empty": "No data this month yet",
+      "emptyDesc": "Posting, commenting and signing in all count",
+      "score": "{n} activity"
+    }
+  }
+}

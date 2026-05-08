@@ -1,0 +1,41 @@
+{
+  "settings": {
+    "title": "设置",
+    "appearance": {
+      "title": "外观与语言",
+      "desc": "语言、节日主题等界面偏好",
+      "language": "语言",
+      "languageDesc": "你的语言偏好会保存到账户(已登录)和本地 cookie。",
+      "festival": "节日主题",
+      "festivalDesc": "我们在春节、中秋、圣诞等节日会给社区换上应景的装饰。不喜欢也可以关掉。",
+      "festivalGlobal": "开启节日主题",
+      "festivalGlobalDesc": "关闭后所有节日装饰将不再显示",
+      "festivalList": "逐个节日开关",
+      "active": "进行中"
+    },
+    "privacy": {
+      "title": "隐私",
+      "desc": "关注 / 粉丝 可见性"
+    },
+    "addresses": {
+      "title": "收件地址",
+      "desc": "管理默认地址、新增、删除"
+    },
+    "terms": {
+      "title": "用户协议",
+      "desc": "阅读最新用户协议"
+    },
+    "privacyPolicy": {
+      "title": "隐私政策",
+      "desc": "我们如何收集、使用、保护你的个人信息"
+    },
+    "cookiePolicy": {
+      "title": "Cookie 政策",
+      "desc": "查看我们使用的 Cookie 分类"
+    },
+    "reopenCookie": {
+      "title": "重新管理 Cookie 偏好",
+      "desc": "重新打开同意框,调整 Cookie 分类"
+    }
+  }
+}

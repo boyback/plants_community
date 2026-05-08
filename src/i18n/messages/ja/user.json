@@ -1,0 +1,70 @@
+{
+  "user": {
+    "tabs": {
+      "posts": "投稿",
+      "likes": "いいね",
+      "collects": "保存",
+      "following": "フォロー中",
+      "followers": "フォロワー",
+      "followedBoards": "フォロー中ボード",
+      "badges": "バッジ",
+      "about": "プロフィール"
+    },
+    "noBio": "まだ自己紹介がありません…",
+    "expToNext": "Lv.{level} まであと {need} EXP",
+    "joinedAt": "{date} に参加",
+    "stats": {
+      "posts": "投稿",
+      "followers": "フォロワー",
+      "following": "フォロー中",
+      "totalPosts": "総投稿",
+      "badgesEarned": "獲得バッジ"
+    },
+    "vip": {
+      "lifetime": "永久会員",
+      "remainDays": "会員 · 残り {days} 日",
+      "member": "会員"
+    },
+    "actions": {
+      "privacy": "🔒 プライバシー",
+      "editProfile": "プロフィール編集",
+      "editProfileUnavailable": "編集は準備中",
+      "message": "DM",
+      "follow": "+ フォロー",
+      "unfollow": "✓ フォロー中"
+    },
+    "empty": {
+      "posts": "まだ投稿がありません",
+      "likes": "いいねした投稿がありません",
+      "collects": "保存した投稿がありません",
+      "following": "まだ誰もフォローしていません",
+      "followers": "フォロワーがいません",
+      "followedBoards": "フォロー中のボードがありません",
+      "followedBoardsHint": "ボードページで「+ フォロー」をタップで保存"
+    },
+    "badges": {
+      "featured": "🏆 注目バッジ",
+      "viewAll": "すべてのバッジを見る →",
+      "activityData": "📊 アクティビティ",
+      "obtainedCount": "獲得 · {n}",
+      "completionRate": "達成率 {percent}%",
+      "lockedCount": "未獲得 · {n}"
+    },
+    "info": {
+      "username": "ユーザー名",
+      "userId": "ユーザー ID",
+      "level": "レベル",
+      "joinDate": "参加日",
+      "bio": "自己紹介",
+      "empty": "—"
+    },
+    "hidden": {
+      "following": "このユーザーはフォロー一覧を非公開にしています",
+      "followers": "このユーザーはフォロワー一覧を非公開にしています",
+      "goToSettings": "設定へ →"
+    },
+    "privateBoards": "自分のみ表示",
+    "privateBoardsHint": "フォロー中ボードは本人のみ閲覧可能、他人のものは見られません。",
+    "totalCount": "全 {n} 名"
+  }
+}

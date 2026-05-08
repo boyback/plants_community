@@ -1,0 +1,57 @@
+{
+  "post": {
+    "types": {
+      "rich": "긴 글",
+      "short": "짧은 글",
+      "vote": "투표",
+      "video": "동영상",
+      "event": "이벤트",
+      "help": "도움 요청"
+    },
+    "typeDesc": {
+      "rich": "튜토리얼·장문에 적합 (PC & 앱)",
+      "short": "가볍게 공유 (PC & 앱)",
+      "vote": "투표 개설 (PC 전용)",
+      "video": "동영상으로 기록 (PC & 앱)",
+      "event": "오프라인 모임 (PC 전용)"
+    },
+    "typeBadge": {
+      "rich": "리치텍스트",
+      "short": "짧은 글",
+      "vote": "투표",
+      "video": "동영상",
+      "event": "이벤트"
+    },
+    "typeShort": {
+      "rich": "리치",
+      "short": "짧은",
+      "vote": "투표",
+      "video": "동영상",
+      "event": "이벤트",
+      "help": "도움"
+    },
+    "actions": {
+      "like": "좋아요",
+      "collect": "저장",
+      "comment": "댓글",
+      "share": "공유",
+      "report": "신고"
+    },
+    "help": {
+      "urgency": "긴급도",
+      "urgencyLow": "여유",
+      "urgencyNormal": "보통",
+      "urgencyHigh": "긴급",
+      "bountyPoints": "현상 포인트",
+      "bountyHint": "작성 시 포인트가 차감되며 채택 시 답변자에게 지급됩니다.",
+      "accept": "이 답변 채택",
+      "solved": "해결됨",
+      "solvedAt": "{time} 에 채택됨",
+      "rewardReceived": "🏆 답변이 채택되었습니다 — {points} 포인트 획득"
+    },
+    "empty": {
+      "list": "아직 게시글이 없어요, 첫 글을 남겨보세요!",
+      "comments": "아직 댓글이 없어요"
+    }
+  }
+}
