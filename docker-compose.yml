@@ -105,8 +105,11 @@ services:
       # 用户上传文件:Next.js 写入本地路径,挂 volume 持久化
       - uploads_data:/app/public/uploads
     healthcheck:
-      # node:alpine 镜像里没有 wget/curl,用 node 的 fetch 自检(node 18+ 内置)
-      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      # node:alpine 没 wget/curl,用 node net 模块 TCP 探活,不依赖 fetch / dns
+      test:
+        - "CMD-SHELL"
+        - |
+          node -e "require('net').createConnection(3000, '127.0.0.1').once('connect', function() { this.end(); process.exit(0); }).once('error', function() { process.exit(1); })"
       interval: 10s
       timeout: 5s
       retries: 5
@@ -161,9 +164,9 @@ services:
       - ./deploy/nginx/certs:/etc/nginx/certs:ro
     depends_on:
       next:
-        condition: service_healthy
+        condition: service_started
       go-server:
-        condition: service_healthy
+        condition: service_started
     networks:
       - rouyou
 
