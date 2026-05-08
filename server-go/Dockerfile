@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # --------- Build stage ---------
-FROM golang:1.22-alpine AS builder
+FROM golang:1.25-alpine AS builder
 WORKDIR /src
 
 # 国内 Go module 代理(七牛云 + 阿里云,备用 proxy.golang.org)
