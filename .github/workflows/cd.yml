@@ -2,7 +2,7 @@ name: CD
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     tags: ['v*']
   workflow_dispatch:
     inputs:
@@ -99,7 +99,7 @@ jobs:
     name: Rolling Deploy
     runs-on: ubuntu-latest
     needs: publish
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     # 没配 secret 就跳过(不写 environment 也行)
     environment:
       name: production

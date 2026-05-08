@@ -10,12 +10,12 @@
 services:
   next:
     # 覆盖 build,改成只用镜像
-    image: ${NEXT_IMAGE:-ghcr.io/please-set/rouyou-next:latest}
+    image: ${NEXT_IMAGE:-ghcr.io/boyback/rouyou-next:latest}
     build: !reset null
     pull_policy: always
 
   go-server:
-    image: ${GO_IMAGE:-ghcr.io/please-set/rouyou-go:latest}
+    image: ${GO_IMAGE:-ghcr.io/boyback/rouyou-go:latest}
     build: !reset null
     pull_policy: always
 

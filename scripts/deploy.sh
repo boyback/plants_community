@@ -16,7 +16,7 @@
 set -euo pipefail
 
 TAG="${TAG:-latest}"
-GHCR_OWNER="${GHCR_OWNER:-${GITHUB_OWNER:-please-set-GHCR_OWNER}}"
+GHCR_OWNER="${GHCR_OWNER:-boyback}"
 NEXT_IMAGE="ghcr.io/${GHCR_OWNER}/rouyou-next:${TAG}"
 GO_IMAGE="ghcr.io/${GHCR_OWNER}/rouyou-go:${TAG}"
 
@@ -38,7 +38,7 @@ git fetch --tags
 if [[ "$TAG" != "latest" ]]; then
   git checkout "$TAG"
 else
-  git checkout main
+  git checkout master
   git pull --ff-only
 fi
 
