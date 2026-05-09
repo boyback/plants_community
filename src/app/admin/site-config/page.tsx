@@ -9,6 +9,13 @@ interface Config {
   photoModeration: 'auto' | 'manual';
 }
 
+interface PingResult {
+  driver: string;
+  ok: boolean;
+  details?: Record<string, unknown>;
+  error?: string;
+}
+
 export default function Page() {
   const [cfg, setCfg] = useState<Config | null>(null);
   const [busy, setBusy] = useState(false);
@@ -51,6 +58,8 @@ export default function Page() {
   return (
     <div className="space-y-5">
       <h1 className="text-xl font-semibold">⚙️ 站点配置</h1>
+
+      <UploadDriverPing />
 
       <section className="card p-5">
         <h2 className="mb-4 text-base font-semibold">📸 品种现场照</h2>
@@ -125,5 +134,74 @@ export default function Page() {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * 上传 driver 健康检查面板
+ */
+function UploadDriverPing() {
+  const [busy, setBusy] = useState(false);
+  const [r, setR] = useState<PingResult | null>(null);
+
+  const ping = async () => {
+    setBusy(true);
+    try {
+      const res = await api.get<PingResult>('/api/admin/upload-driver/ping');
+      setR(res);
+    } catch (e) {
+      setR({
+        driver: '?',
+        ok: false,
+        error: e instanceof ApiError ? e.message : 'ping 失败',
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="card p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-base font-semibold">🛢️ 上传存储 driver</h2>
+        <button
+          type="button"
+          onClick={ping}
+          disabled={busy}
+          className="btn-outline !text-xs"
+        >
+          {busy ? '检查中...' : '🩺 健康检查'}
+        </button>
+      </div>
+
+      <p className="mb-3 text-xs text-leaf-700/70">
+        当前 driver 由环境变量 <code className="rounded bg-leaf-50 px-1">UPLOAD_DRIVER</code>{' '}
+        控制(local/qiniu)。点上面按钮验证配置是否正确 — 它会上传一个 1
+        字节测试文件再删掉。
+      </p>
+
+      {r && (
+        <div
+          className={
+            r.ok
+              ? 'rounded-lg bg-leaf-50/60 p-3 text-xs text-leaf-800'
+              : 'rounded-lg bg-rose-50/60 p-3 text-xs text-rose-800'
+          }
+        >
+          <div className="mb-1 font-semibold">
+            {r.ok ? '✅' : '❌'} driver = {r.driver}{' '}
+            {r.ok ? '工作正常' : '配置异常'}
+          </div>
+          {r.error && (
+            <div className="mt-1 text-rose-700">原因:{r.error}</div>
+          )}
+          {r.details && (
+            <pre className="mt-2 overflow-x-auto rounded bg-white/70 p-2 text-[10px] text-ink-800">
+              {JSON.stringify(r.details, null, 2)}
+            </pre>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
