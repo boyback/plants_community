@@ -59,7 +59,7 @@ jobs:
         with:
           context: .
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           tags: ${{ steps.meta_next.outputs.tags }}
           labels: ${{ steps.meta_next.outputs.labels }}
           cache-from: type=gha,scope=next
@@ -81,7 +81,7 @@ jobs:
         with:
           context: ./server-go
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           tags: ${{ steps.meta_go.outputs.tags }}
           labels: ${{ steps.meta_go.outputs.labels }}
           cache-from: type=gha,scope=go
