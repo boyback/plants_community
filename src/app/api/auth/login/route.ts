@@ -22,6 +22,11 @@ export const POST = handler(async (req) => {
 
   if (!user) return fail(401, '用户名或密码错误');
 
+  // 第三方登录用户(微信)无密码,密码登录路径不可用
+  if (!user.passwordHash) {
+    return fail(401, '该账号是微信登录账号,请使用微信登录或先在「设置」中设置密码');
+  }
+
   const ok = await verifyPassword(body.password, user.passwordHash);
   if (!ok) return fail(401, '用户名或密码错误');
 

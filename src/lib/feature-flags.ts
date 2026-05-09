@@ -18,3 +18,16 @@ function readBool(name: string, fallback: boolean): boolean {
 
 /** 是否启用 Post.reviewStatus 过滤(默认关 — 等服务器跑 init-db 同步 schema) */
 export const REVIEW_FILTER_ENABLED = readBool('REVIEW_FILTER_ENABLED', false);
+
+/**
+ * 微信登录是否启用 — 看凭证是否配置完整。
+ * 任一组(网站应用 / 公众号)凭证齐了即视为该入口可用,前端会按需展示按钮。
+ */
+export const WECHAT_LOGIN_WEB_ENABLED = !!(
+  process.env.WECHAT_LOGIN_APP_ID && process.env.WECHAT_LOGIN_APP_SECRET
+);
+export const WECHAT_LOGIN_MP_ENABLED = !!(
+  process.env.WECHAT_MP_APP_ID && process.env.WECHAT_MP_APP_SECRET
+);
+export const WECHAT_LOGIN_ANY_ENABLED =
+  WECHAT_LOGIN_WEB_ENABLED || WECHAT_LOGIN_MP_ENABLED;

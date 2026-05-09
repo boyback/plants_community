@@ -16,13 +16,24 @@ datasource db {
 model User {
   id           String   @id @default(cuid())
   name         String   @unique
-  passwordHash String
+  /// 密码哈希:本地账号必填;第三方登录(微信)用户可空
+  passwordHash String?
   avatar       String   @default("")
   bio          String?  @db.Text
   level        Int      @default(1)
   exp          Int      @default(0) // 经验值,达到阈值自动升级
   joinedAt     DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  // 第三方登录:微信
+  /// 微信开放平台 unionid(同一主体下网站/公众号/小程序共享)
+  wxUnionId       String? @unique
+  /// 网站应用(开放平台)openid - PC 扫码
+  wxOpenidWebsite String? @unique
+  /// 公众号 openid - 微信内 H5
+  wxOpenidMp      String? @unique
+  /// 用户绑定手机号(初期仅微信用户首次自动建账后可补)
+  phone           String? @unique
 
   // 签到状态
   lastSignInAt DateTime?
