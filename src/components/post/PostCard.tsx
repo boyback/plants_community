@@ -58,9 +58,18 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
             className="block h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
+          {/* 左上角:类型徽章 */}
           <div className="absolute left-2 top-2">
             <PostTypeBadge type={post.type} />
           </div>
+          {/* 右上角:赞数 chip(替代底部 stats,类似朋友圈风格) */}
+          {post.likes > 0 && (
+            <div className="absolute right-2 top-2 inline-flex items-center gap-0.5 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
+              <Icon name="heart" size={11} fill="currentColor" />
+              {formatNumber(post.likes)}
+            </div>
+          )}
+          {/* video 类型加大播放图标 */}
           {post.type === 'video' && (
             <div className="pointer-events-none absolute inset-0 grid place-items-center">
               <div className="grid h-12 w-12 place-items-center rounded-full bg-black/50 text-white">
@@ -95,22 +104,18 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
 
         {post.type === 'journal' && post.journal && <JournalPreview post={post} />}
 
-        {/* —— 作者一行 —— */}
-        <NestedLink
-          href={`/user/${post.author.id}`}
-          className="flex min-w-0 items-center gap-1.5 pt-0.5 text-[11px] text-ink-700/80 hover:text-leaf-700"
-        >
-          <Avatar src={post.author.avatar} alt={post.author.name} size={20} />
-          <span className="truncate font-medium">{post.author.name}</span>
-          <span className="text-leaf-600/70">·</span>
-          <span className="shrink-0">{timeAgo(post.createdAt)}</span>
-        </NestedLink>
-
-        {/* —— 看 / 赞 / 评 一行,顶部细分隔线视觉切分 —— */}
-        <div className="flex items-center gap-3 border-t border-leaf-50 pt-1.5 text-[11px] text-leaf-700/80">
-          <Stat icon="eye" n={post.views} />
-          <Stat icon="heart" n={post.likes} />
-          <Stat icon="comment" n={post.comments} />
+        {/* —— 底部:作者名(左) + 时间 / 心(右) —— */}
+        <div className="flex items-center justify-between gap-2 pt-0.5">
+          <NestedLink
+            href={`/user/${post.author.id}`}
+            className="flex min-w-0 items-center gap-1.5 text-[11px] text-ink-700/80 hover:text-leaf-700"
+          >
+            <Avatar src={post.author.avatar} alt={post.author.name} size={20} />
+            <span className="truncate font-medium">{post.author.name}</span>
+          </NestedLink>
+          <span className="shrink-0 text-[10px] text-leaf-700/60">
+            {timeAgo(post.createdAt)}
+          </span>
         </div>
       </div>
     </Link>
