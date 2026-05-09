@@ -32,14 +32,12 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-# 1. 拉最新代码(用于 docker-compose.yml / nginx 配置等的版本同步)
-echo "→ git pull"
-git fetch --tags
-if [[ "$TAG" != "latest" ]]; then
+# 1. 代码同步:在 CI/CD 调用时,workflow 已经 reset --hard 过了。
+#    手动调用时,这里也兜底 fetch 一下(失败不阻塞)。
+echo "→ git fetch (best-effort)"
+git fetch --tags 2>/dev/null || true
+if [[ "$TAG" != "latest" && -n "$(git tag -l "$TAG")" ]]; then
   git checkout "$TAG"
-else
-  git checkout master
-  git pull --ff-only
 fi
 
 # 2. 拉镜像

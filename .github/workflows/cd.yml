@@ -112,6 +112,11 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           # 工作目录:服务器上 git clone 这个仓库的位置
           script: |
+            set -e
             cd ${{ secrets.DEPLOY_PATH }}
-            git pull origin main
+            git fetch origin master
+            git reset --hard origin/master
+            export GHCR_OWNER=${{ github.repository_owner }}
+            export TAG=latest
+            chmod +x ./scripts/deploy.sh
             ./scripts/deploy.sh
