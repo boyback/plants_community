@@ -715,8 +715,8 @@ img, video, svg {
   }
   /* 4 列时:
    * 1. 隐藏标题下的时间
-   * 2. 显示「作者 + 时间」独立行(放在内容下、footer 上)
-   * 3. footer 隐藏作者,只剩看赞评(右对齐)
+   * 2. 显示作者行(独立,放在 footer 上)
+   * 3. footer 隐藏作者,看赞评均分一排,时间塞最右
    */
   .feed-grid[data-cols='4'] .post-time-top {
     display: none;
@@ -728,8 +728,17 @@ img, video, svg {
     display: none;
   }
   .feed-grid[data-cols='4'] .post-footer {
-    justify-content: flex-end;
     border-top: 0;
     padding-top: 0;
+  }
+  /* 看赞评均分整行 + 时间在最右 */
+  .feed-grid[data-cols='4'] .post-stats {
+    flex: 1;
+    justify-content: space-between;
+    gap: 0;
+  }
+  .feed-grid[data-cols='4'] .post-stats-time {
+    display: inline;
+    margin-left: auto;
   }
 }
