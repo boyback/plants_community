@@ -14,8 +14,12 @@ export const dynamic = 'force-dynamic';
 
 const Query = z.object({
   q: z.string().optional(),
-  type: z.enum(['rich', 'short', 'vote', 'video', 'event', 'help']).optional(),
+  type: z.enum(['rich', 'short', 'vote', 'video', 'event', 'help', 'journal']).optional(),
   status: z.enum(['all', 'deleted', 'active']).default('active'),
+  /** 审核状态过滤:pending=待审 / rejected=已驳 / published=已发 / all_review=全部 */
+  review: z
+    .enum(['pending', 'rejected', 'published', 'all_review'])
+    .optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
@@ -24,12 +28,13 @@ export const GET = handler(async (req) => {
   await requireAdmin({ allowModerator: true });
   const parsed = Query.safeParse(Object.fromEntries(new URL(req.url).searchParams));
   if (!parsed.success) return fail(400, '参数错误', parsed.error.issues);
-  const { q, type, status, page, pageSize } = parsed.data;
+  const { q, type, status, review, page, pageSize } = parsed.data;
 
   const where: Record<string, unknown> = {};
   if (status === 'deleted') where.deleted = true;
   else if (status === 'active') where.deleted = false;
   if (type) where.type = type;
+  if (review && review !== 'all_review') where.reviewStatus = review;
   if (q) {
     where.OR = [
       { title: { contains: q } },
@@ -53,6 +58,9 @@ export const GET = handler(async (req) => {
         deleted: true,
         deletedAt: true,
         deleteReason: true,
+        reviewStatus: true,
+        reviewReason: true,
+        reviewedAt: true,
         createdAt: true,
         author: { select: { id: true, name: true, avatar: true, level: true, role: true } },
         _count: { select: { comments: true, likes: true } },

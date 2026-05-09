@@ -1,9 +1,7 @@
 /**
- * DELETE /api/admin/posts/:id?reason=xxx
- *   软删除(设 deleted=true)
- *
- * POST   /api/admin/posts/:id/restore
- *   恢复(deleted=false)
+ * DELETE /api/admin/posts/:id?reason=xxx        软删除
+ * POST   /api/admin/posts/:id/restore           恢复
+ * PATCH  /api/admin/posts/:id                   审核操作 { action: 'approve'|'reject', reason? }
  */
 
 import { z } from 'zod';
@@ -41,6 +39,37 @@ export const DELETE = handler(async (req) => {
     targetType: 'post',
     targetId: id,
     reason: q.reason,
+  });
+  return { ok: true };
+});
+
+const PatchBody = z.object({
+  action: z.enum(['approve', 'reject']),
+  reason: z.string().max(500).optional(),
+});
+
+export const PATCH = handler(async (req) => {
+  const me = await requireAdmin({ allowModerator: true });
+  const id = pickId(req);
+  const body = PatchBody.parse(await req.json());
+  const p = await prisma.post.findUnique({ where: { id } });
+  if (!p) return fail(404, '帖子不存在');
+
+  await prisma.post.update({
+    where: { id },
+    data: {
+      reviewStatus: body.action === 'approve' ? 'published' : 'rejected',
+      reviewReason: body.reason ?? null,
+      reviewedAt: new Date(),
+      reviewedBy: me.id,
+    },
+  });
+  await logAdmin({
+    actorId: me.id,
+    action: body.action === 'approve' ? 'post.review.approve' : 'post.review.reject',
+    targetType: 'post',
+    targetId: id,
+    reason: body.reason,
   });
   return { ok: true };
 });

@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 export default async function HomePage() {
   const [postsRaw, bannersRaw, recommendUsersRaw] = await Promise.all([
     prisma.post.findMany({
-      where: { deleted: false },
+      where: { deleted: false, reviewStatus: 'published' },
       orderBy: [{ hotScore: 'desc' }, { createdAt: 'desc' }],
       take: 20,
       include: postInclude(),

@@ -67,7 +67,7 @@ async function CategoryView({ categorySlug }: { categorySlug: string }) {
 
   const PAGE = 24;
   const postsRaw = await prisma.post.findMany({
-    where: { categoryId: c.id },
+    where: { categoryId: c.id, deleted: false, reviewStatus: 'published' },
     orderBy: { createdAt: 'desc' },
     take: PAGE + 1,
     include: postInclude(),
@@ -166,7 +166,7 @@ async function GenusView({
 
   const PAGE = 24;
   const postsRaw = await prisma.post.findMany({
-    where: { genusId: g.id },
+    where: { genusId: g.id, deleted: false, reviewStatus: 'published' },
     orderBy: { createdAt: 'desc' },
     take: PAGE + 1,
     include: postInclude(),
@@ -303,7 +303,7 @@ async function SpeciesView({
 
   const PAGE = 24;
   const postsRaw = await prisma.post.findMany({
-    where: { speciesId: s.id },
+    where: { speciesId: s.id, deleted: false, reviewStatus: 'published' },
     orderBy: { createdAt: 'desc' },
     take: PAGE + 1,
     include: postInclude(),

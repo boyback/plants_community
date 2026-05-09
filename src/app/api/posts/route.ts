@@ -7,6 +7,7 @@ import { postInclude } from '@/lib/post-include';
 import { hasPermission, type Permission } from '@/lib/levels';
 import { emitEvent } from '@/lib/events';
 import { processRichInput } from '@/lib/richtext';
+import { postNeedsReview } from '@/lib/post-review';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +26,10 @@ export const GET = handler(async (req) => {
   const limit = Math.min(Number(url.searchParams.get('limit') ?? '24'), 100);
   const cursor = url.searchParams.get('cursor') ?? undefined;
 
+  // 公开列表默认仅展示已发布(隐藏 pending/rejected/deleted)
   const where: Record<string, unknown> = {
+    deleted: false,
+    reviewStatus: 'published',
     ...(authorId ? { authorId } : {}),
   };
   if (categorySlug) where.category = { slug: categorySlug };
@@ -248,6 +252,14 @@ export const POST = handler(async (req) => {
     textMaxLen: 2000,
   });
 
+  // 含外链 → 自动送审
+  const needsReview = postNeedsReview({
+    cover,
+    images: body.images ?? [],
+    videoUrl: body.videoUrl ?? null,
+    content: stored.html,
+  });
+
   const created = await prisma.post.create({
     data: {
       type: body.type,
@@ -264,6 +276,7 @@ export const POST = handler(async (req) => {
       speciesId: resolvedIds.speciesId,
       boardId: resolvedIds.boardId,
       authorId: me.id,
+      reviewStatus: needsReview ? 'pending' : 'published',
       ...(body.vote && {
         vote: {
           create: {

@@ -6,6 +6,8 @@ import { Suspense, useEffect, useState } from 'react';
 import type { PostType, Board } from '@/lib/types';
 import { Shell } from '@/components/layout/Shell';
 import { TypePicker } from '@/components/post/TypePicker';
+import { UploadField } from '@/components/upload/UploadField';
+import { PostPreview } from '@/components/editor/PostPreview';
 import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
@@ -436,24 +438,14 @@ function EditorInner() {
               )}
 
               {type === 'video' && (
-                <>
-                  <Row label={t('editor.video')}>
-                    <input
-                      className="input"
-                      value={videoUrl}
-                      onChange={(e) => setVideoUrl(e.target.value)}
-                      placeholder={t('editor.videoUrlPlaceholder')}
-                    />
-                  </Row>
-                  <Row label={t('editor.video')}>
-                    <textarea
-                      className="input min-h-[100px]"
-                      value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                      placeholder={t('editor.placeholderShort')}
-                    />
-                  </Row>
-                </>
+                <Row label={t('editor.video')}>
+                  <textarea
+                    className="input min-h-[100px]"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder={t('editor.placeholderShort')}
+                  />
+                </Row>
               )}
 
               {type === 'vote' && (
@@ -565,42 +557,25 @@ function EditorInner() {
                 <JournalEditor value={journal} onChange={setJournal} />
               )}
 
-              <Row label={t('editor.images')}>
-                <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-leaf-200 bg-white p-2">
-                  {images.map((src, i) => (
-                    <span
-                      key={i}
-                      className="inline-flex max-w-[200px] items-center gap-1 truncate rounded-full bg-leaf-100 px-2 py-0.5 text-xs text-leaf-700"
-                    >
-                      🖼 {src.slice(0, 32)}...
-                      <button
-                        type="button"
-                        onClick={() => setImages(images.filter((_, k) => k !== i))}
-                        className="text-leaf-600 hover:text-leaf-800"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                  <input
-                    className="flex-1 bg-transparent px-1 text-sm outline-none min-w-[120px]"
-                    value={imageInput}
-                    onChange={(e) => setImageInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && imageInput.trim()) {
-                        e.preventDefault();
-                        if (images.length < 9) {
-                          setImages([...images, imageInput.trim()]);
-                          setImageInput('');
-                        }
-                      }
-                    }}
-                    placeholder={
-                      images.length >= 9 ? t('editor.imagesHint') : t('editor.images')
-                    }
-                    disabled={images.length >= 9}
+              {/* 视频帖独立的视频上传(替换 video URL 输入) */}
+              {type === 'video' && (
+                <Row label={t('editor.video')}>
+                  <UploadField
+                    kind="video"
+                    value={videoUrl ? [videoUrl] : []}
+                    onChange={(arr) => setVideoUrl(arr[0] ?? '')}
+                    max={1}
                   />
-                </div>
+                </Row>
+              )}
+
+              <Row label={t('editor.images')}>
+                <UploadField
+                  kind="image"
+                  value={images}
+                  onChange={setImages}
+                  max={9}
+                />
               </Row>
 
               <Row label={t('editor.tags')}>
@@ -665,6 +640,24 @@ function EditorInner() {
         </div>
 
         <div className="space-y-4">
+          {/* 实时预览 */}
+          <PostPreview
+            type={type}
+            title={title}
+            content={content}
+            contentJson={contentJson}
+            images={images}
+            videoUrl={videoUrl}
+            tags={tags}
+            user={user}
+            voteOptions={voteOptions}
+            voteMulti={voteMulti}
+            voteDeadline={voteDeadline}
+            eventLocation={eventLocation}
+            eventStartAt={eventStartAt}
+            journal={journal}
+          />
+
           <div className="card p-4">
             <div className="mb-3 flex items-center justify-between">
               <div className="text-sm font-semibold text-ink-800">📦 {t('editor.saveDraft')}</div>

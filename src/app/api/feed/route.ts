@@ -35,7 +35,11 @@ export const GET = handler(async (req) => {
   const me = await getCurrentUser();
 
   // -------- 各 tab 的 where --------
-  const baseWhere: Record<string, unknown> = { deleted: false };
+  // 公开 feed 仅展示已发布(隐藏 pending/rejected)
+  const baseWhere: Record<string, unknown> = {
+    deleted: false,
+    reviewStatus: 'published',
+  };
 
   if (tab === 'following') {
     if (!me) return fail(401, '请先登录');
@@ -104,7 +108,7 @@ export const GET = handler(async (req) => {
   const now = new Date();
   const since = new Date(now.getTime() - 14 * 86400_000);
   const pool = await prisma.post.findMany({
-    where: { deleted: false, createdAt: { gte: since } },
+    where: { deleted: false, reviewStatus: 'published', createdAt: { gte: since } },
     orderBy: { hotScore: 'desc' },
     take: 200,
     include: postInclude(),
