@@ -84,7 +84,30 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
       )}
 
       <div className="space-y-2 p-3">
-        {post.species && <SpeciesChip species={post.species} board={post.board} />}
+        {/* 板块 + 话题 chips(细脚标,点击跳板块/话题) */}
+        <div className="flex flex-wrap items-center gap-1">
+          {/* 板块名 chip */}
+          <NestedLink
+            href={boardUrl(post.board)}
+            className="inline-flex items-center gap-0.5 rounded-full bg-leaf-50 px-2 py-0.5 text-[10px] font-medium text-leaf-700 hover:bg-leaf-100"
+          >
+            <span>{post.board.icon}</span>
+            <span className="truncate max-w-[100px]">{post.board.name}</span>
+          </NestedLink>
+
+          {/* species 打分 chip(若有) */}
+          {post.species && <SpeciesChip species={post.species} board={post.board} />}
+
+          {/* 话题 / tag chips(最多前 3) */}
+          {post.tags.slice(0, 3).map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center rounded-full bg-amber-50/70 px-2 py-0.5 text-[10px] text-amber-700"
+            >
+              #{tag}
+            </span>
+          ))}
+        </div>
 
         {/* 标题 + 紧贴的发布时间 */}
         <div className="space-y-0.5">
