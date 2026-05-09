@@ -30,14 +30,32 @@ export function ColorThemeSwitcher({ className }: { className?: string }) {
         <div className="absolute right-0 top-full z-50 mt-2 w-[300px] overflow-hidden rounded-2xl border border-leaf-100 bg-white p-3 shadow-card dark:bg-leaf-50">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-xs font-semibold text-ink-800">🎨 配色主题</div>
+            {/* iOS 风格明暗 toggle:左 ☀️ 明亮,右 🌙 暗黑 */}
             <button
               type="button"
+              role="switch"
+              aria-checked={mode === 'dark'}
               onClick={toggleMode}
-              className="inline-flex items-center gap-1 rounded-full bg-leaf-50 px-2.5 py-1 text-[11px] text-leaf-700 transition-colors hover:bg-leaf-100"
               title={mode === 'dark' ? '切换到明亮' : '切换到暗黑'}
+              className={cn(
+                'relative inline-flex h-6 w-12 items-center rounded-full transition-colors',
+                mode === 'dark' ? 'bg-ink-700' : 'bg-leaf-200'
+              )}
             >
-              <span>{mode === 'dark' ? '🌙' : '☀️'}</span>
-              <span>{mode === 'dark' ? '暗黑' : '明亮'}</span>
+              {/* 背景图标:始终显示在两端 */}
+              <span className="pointer-events-none absolute left-1 text-[10px] leading-none">
+                ☀️
+              </span>
+              <span className="pointer-events-none absolute right-1 text-[10px] leading-none">
+                🌙
+              </span>
+              {/* 滑块 */}
+              <span
+                className={cn(
+                  'inline-block h-5 w-5 transform rounded-full bg-white shadow ring-1 ring-black/5 transition-transform',
+                  mode === 'dark' ? 'translate-x-[26px]' : 'translate-x-0.5'
+                )}
+              />
             </button>
           </div>
 
