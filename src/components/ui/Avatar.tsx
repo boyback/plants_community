@@ -13,18 +13,25 @@ export function Avatar({ src, alt, size = 40, className, ring }: AvatarProps) {
   return (
     <span
       className={cn(
-        'inline-block overflow-hidden rounded-full bg-leaf-50',
+        // shrink-0 + min-w/h:flex 容器里不被挤压
+        // aspect-square 兜底,即便外层强行拉宽也保持正方
+        'inline-block shrink-0 overflow-hidden rounded-full bg-leaf-50 aspect-square',
         ring && 'ring-2 ring-white shadow-sm',
         className
       )}
-      style={{ width: size, height: size }}
+      style={{
+        width: size,
+        height: size,
+        minWidth: size,
+        minHeight: size,
+      }}
     >
       <Image
         src={src}
         alt={alt}
         width={size}
         height={size}
-        className="h-full w-full object-cover"
+        className="block h-full w-full object-cover"
         unoptimized
       />
     </span>
