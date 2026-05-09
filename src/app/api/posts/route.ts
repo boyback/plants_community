@@ -8,6 +8,9 @@ import { hasPermission, type Permission } from '@/lib/levels';
 import { emitEvent } from '@/lib/events';
 import { processRichInput } from '@/lib/richtext';
 import { postNeedsReview } from '@/lib/post-review';
+import { firePushToBaidu } from '@/lib/baidu-push';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://plantcommunity.cn';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 
 export const dynamic = 'force-dynamic';
@@ -327,6 +330,11 @@ export const POST = handler(async (req) => {
   });
 
   await emitEvent({ kind: 'post_create', userId: me.id, postId: created.id });
+
+  // 待审核帖不推百度(避免推了一个未公开页面)
+  if (!needsReview) {
+    firePushToBaidu(`${SITE_URL}/post/${created.id}`);
+  }
 
   return serializePost(created);
 });

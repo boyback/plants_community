@@ -10,6 +10,9 @@ import { requireAdmin } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { logAdmin } from '@/lib/admin-log';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
+import { firePushToBaidu } from '@/lib/baidu-push';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://plantcommunity.cn';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,5 +78,11 @@ export const PATCH = handler(async (req) => {
     targetId: id,
     reason: body.reason,
   });
+
+  // 审核通过 → 推百度 API
+  if (body.action === 'approve') {
+    firePushToBaidu(`${SITE_URL}/post/${id}`);
+  }
+
   return { ok: true };
 });
