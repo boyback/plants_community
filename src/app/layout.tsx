@@ -86,10 +86,24 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  // 中国站点验证留位(申请百度/必应站长后填)
+  // 站点验证 — 从 env 读取,留空则不输出对应 meta
+  // 申请百度/Google/必应/360 站长平台后填进 .env 即可
   verification: {
-    // google: 'xxxxx',
-    // other: { 'baidu-site-verification': 'xxxxx' },
+    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || undefined,
+    other: {
+      ...(process.env.NEXT_PUBLIC_BAIDU_VERIFICATION
+        ? { 'baidu-site-verification': process.env.NEXT_PUBLIC_BAIDU_VERIFICATION }
+        : {}),
+      ...(process.env.NEXT_PUBLIC_BING_VERIFICATION
+        ? { 'msvalidate.01': process.env.NEXT_PUBLIC_BING_VERIFICATION }
+        : {}),
+      ...(process.env.NEXT_PUBLIC_360_VERIFICATION
+        ? { '360-site-verification': process.env.NEXT_PUBLIC_360_VERIFICATION }
+        : {}),
+      ...(process.env.NEXT_PUBLIC_SOGOU_VERIFICATION
+        ? { 'sogou_site_verification': process.env.NEXT_PUBLIC_SOGOU_VERIFICATION }
+        : {}),
+    },
   },
   icons: {
     icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌵</text></svg>',
