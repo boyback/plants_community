@@ -10,7 +10,7 @@ import {
   serializePost,
 } from '@/lib/serializers';
 import { postInclude } from '@/lib/post-include';
-import { PostCard } from '@/components/post/PostCard';
+import { PostMasonry } from '@/components/post/PostMasonry';
 import { Icon } from '@/components/ui/Icon';
 import { Empty } from '@/components/ui/Empty';
 import { SpeciesRatingPanel } from '@/components/species/SpeciesRatingPanel';
@@ -63,12 +63,17 @@ async function CategoryView({ categorySlug }: { categorySlug: string }) {
   });
   if (!c) notFound();
 
+  const PAGE = 24;
   const postsRaw = await prisma.post.findMany({
     where: { categoryId: c.id },
     orderBy: { createdAt: 'desc' },
-    take: 12,
+    take: PAGE + 1,
     include: postInclude(),
   });
+  let nextCursor: string | null = null;
+  if (postsRaw.length > PAGE) {
+    nextCursor = postsRaw.pop()!.id;
+  }
   const posts = postsRaw.map(serializePost);
   const category = serializeCategory(c);
 
@@ -117,18 +122,19 @@ async function CategoryView({ categorySlug }: { categorySlug: string }) {
         <h2 className="mb-3 text-base font-semibold text-ink-800">
           🔥 <I18nText k="board.hotInCategory" vars={{ name: category.name }} fallback={`${category.name}最新讨论`} />
         </h2>
-        {posts.length === 0 ? (
-          <Empty icon="🌱"
-            title={<I18nText k="board.emptyPostsCategory" fallback="还没有人发过帖子" />}
-            desc={<I18nText k="board.emptyPostsCategoryHint" fallback="成为第一个分享的人吧" />}
-          />
-        ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {posts.map((p) => (
-              <PostCard key={p.id} post={p} />
-            ))}
-          </div>
-        )}
+        <PostMasonry
+          initial={posts}
+          initialCursor={nextCursor}
+          loadMoreUrl={`/api/posts?category=${encodeURIComponent(categorySlug)}&sort=latest&limit=24`}
+          source="board_category"
+          empty={
+            <Empty
+              icon="🌱"
+              title={<I18nText k="board.emptyPostsCategory" fallback="还没有人发过帖子" />}
+              desc={<I18nText k="board.emptyPostsCategoryHint" fallback="成为第一个分享的人吧" />}
+            />
+          }
+        />
       </section>
     </Shell>
   );
@@ -156,12 +162,17 @@ async function GenusView({
   });
   if (!g) notFound();
 
+  const PAGE = 24;
   const postsRaw = await prisma.post.findMany({
     where: { genusId: g.id },
     orderBy: { createdAt: 'desc' },
-    take: 10,
+    take: PAGE + 1,
     include: postInclude(),
   });
+  let nextCursor: string | null = null;
+  if (postsRaw.length > PAGE) {
+    nextCursor = postsRaw.pop()!.id;
+  }
   const posts = postsRaw.map(serializePost);
 
   const genus = serializeGenus(g);
@@ -250,15 +261,13 @@ async function GenusView({
 
       <section>
         <h2 className="mb-3 text-base font-semibold text-ink-800">💬 <I18nText k="board.hotInGenus" fallback="本属最新讨论" /></h2>
-        {posts.length === 0 ? (
-          <Empty icon="🌱" title={<I18nText k="board.emptyPostsGenus" fallback="还没有人在本属发过帖子" />} />
-        ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {posts.map((p) => (
-              <PostCard key={p.id} post={p} />
-            ))}
-          </div>
-        )}
+        <PostMasonry
+          initial={posts}
+          initialCursor={nextCursor}
+          loadMoreUrl={`/api/posts?genus=${encodeURIComponent(genusSlug)}&sort=latest&limit=24`}
+          source="board_genus"
+          empty={<Empty icon="🌱" title={<I18nText k="board.emptyPostsGenus" fallback="还没有人在本属发过帖子" />} />}
+        />
       </section>
     </Shell>
   );
@@ -290,12 +299,17 @@ async function SpeciesView({
   });
   if (!s) notFound();
 
+  const PAGE = 24;
   const postsRaw = await prisma.post.findMany({
     where: { speciesId: s.id },
     orderBy: { createdAt: 'desc' },
-    take: 12,
+    take: PAGE + 1,
     include: postInclude(),
   });
+  let nextCursor: string | null = null;
+  if (postsRaw.length > PAGE) {
+    nextCursor = postsRaw.pop()!.id;
+  }
   const posts = postsRaw.map(serializePost);
 
   const full = serializeSpeciesFull(s);
@@ -386,15 +400,13 @@ async function SpeciesView({
                 </Link>
               </div>
             </div>
-            {posts.length === 0 ? (
-              <Empty icon="🌱" title={<I18nText k="board.emptyPostsSpecies" fallback="还没有人在本品种下发过帖子" />} />
-            ) : (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {posts.map((p) => (
-                  <PostCard key={p.id} post={p} />
-                ))}
-              </div>
-            )}
+            <PostMasonry
+              initial={posts}
+              initialCursor={nextCursor}
+              loadMoreUrl={`/api/posts?species=${encodeURIComponent(speciesSlug)}&sort=latest&limit=24`}
+              source="board_species"
+              empty={<Empty icon="🌱" title={<I18nText k="board.emptyPostsSpecies" fallback="还没有人在本品种下发过帖子" />} />}
+            />
           </section>
         </div>
 

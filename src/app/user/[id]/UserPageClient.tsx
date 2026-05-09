@@ -237,9 +237,11 @@ export function UserPageClient({
         <div className="min-w-0">
           {tab === 'posts' &&
             (posts.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="columns-1 gap-3 sm:columns-2">
                 {posts.map((p) => (
-                  <PostCard key={p.id} post={p} />
+                  <div key={p.id} className="mb-3 break-inside-avoid">
+                    <PostCard post={p} />
+                  </div>
                 ))}
               </div>
             ) : (
@@ -248,9 +250,11 @@ export function UserPageClient({
 
           {tab === 'likes' &&
             (likedPosts.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="columns-1 gap-3 sm:columns-2">
                 {likedPosts.map((p) => (
-                  <PostCard key={p.id} post={p} />
+                  <div key={p.id} className="mb-3 break-inside-avoid">
+                    <PostCard post={p} />
+                  </div>
                 ))}
               </div>
             ) : (
@@ -259,9 +263,11 @@ export function UserPageClient({
 
           {tab === 'collects' &&
             (collectedPosts.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="columns-1 gap-3 sm:columns-2">
                 {collectedPosts.map((p) => (
-                  <PostCard key={p.id} post={p} />
+                  <div key={p.id} className="mb-3 break-inside-avoid">
+                    <PostCard post={p} />
+                  </div>
                 ))}
               </div>
             ) : (
