@@ -48,6 +48,7 @@ const boards = [
   { slug: 'yangzhi', name: '养殖交流', description: '浇水、配土、光照,经验分享和求助', cover: 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=800', icon: '💧', members: 21034 },
   { slug: 'jiaoyi', name: '交易市场', description: '出肉、收肉、拼团,请文明交易', cover: 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=800', icon: '💰', members: 15623 },
   { slug: 'xinshou', name: '新手村', description: '萌新报道、小白问答,老手带带新人', cover: 'https://images.unsplash.com/photo-1466692476868-9ee5a3a3e93b?w=800', icon: '🌱', members: 32145 },
+  { slug: 'paishe', name: '摄影大赛', description: '2026 多肉摄影大赛 · 投稿、评选、作品鉴赏', cover: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=800', icon: '📷', members: 0 },
 ];
 
 /* ---------------- 多肉图鉴 ---------------- */
@@ -64,9 +65,9 @@ const plants = [
 
 /* ---------------- Banner ---------------- */
 const banners = [
-  { title: '夏日度夏季开启', subtitle: '老玩家和新人一起,安全渡过炎炎夏日', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=1600', link: '/board/jingtian', tint: 'from-leaf-700/70', orderIdx: 0 },
-  { title: '第三届·多肉图鉴大赛', subtitle: '上传你珍藏的多肉照片,赢取精美肉盆', image: 'https://images.unsplash.com/photo-1466692476868-9ee5a3a3e93b?w=1600', link: '/plants', tint: 'from-leaf-900/70', orderIdx: 1 },
-  { title: '北京线下茶话会', subtitle: '8 月 20 日 · 带上你的肉肉一起来玩', image: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1600', link: '/', tint: 'from-sand-300/60', orderIdx: 2 },
+  { title: '2026 多肉摄影大赛 征稿中', subtitle: '上传你最满意的多肉作品,万元奖金 · 限定徽章 · 大V 流量扶持', image: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=1600', link: '/board/paishe', tint: 'from-leaf-900/70', orderIdx: 0 },
+  { title: '养护教程合集 · 新手必看', subtitle: '浇水、配土、光照、度夏越冬,从入门到精通的完整路径', image: 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=1600', link: '/board/yangzhi', tint: 'from-leaf-700/70', orderIdx: 1 },
+  { title: '景天鉴赏 · 状态肉合集', subtitle: '拟石莲、风车、长生草,看老玩家如何把它们养出极致状态', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=1600', link: '/board/jingtian', tint: 'from-sand-300/60', orderIdx: 2 },
 ];
 
 /* ---------------- 帖子(需要作者/板块 id,在函数内拼装) ---------------- */
