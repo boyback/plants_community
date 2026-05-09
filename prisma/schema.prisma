@@ -27,15 +27,20 @@ model User {
 
   // 第三方登录:微信
   /// 微信开放平台 unionid(同一主体下网站/公众号/小程序共享)
-  wxUnionId       String? @unique
+  wxUnionId         String? @unique
   /// 网站应用(开放平台)openid - PC 扫码
-  wxOpenidWebsite String? @unique
+  wxOpenidWebsite   String? @unique
   /// 公众号 openid - 微信内 H5
-  wxOpenidMp      String? @unique
+  wxOpenidMp        String? @unique
   /// 用户绑定手机号(初期仅微信用户首次自动建账后可补)
-  phone           String? @unique
-  /// 邮箱(用于邮箱验证码登录;首次登录自动绑)
-  email           String? @unique
+  phone             String? @unique
+  /// 邮箱(用于邮箱验证码注册/找回;唯一)
+  email             String? @unique
+  /// 用户账号(@handle 格式,登录用,注册时强制设置;6-20 位字母数字下划线,首字母)
+  /// 老用户可空,迁移期允许;新注册必填
+  handle            String? @unique
+  /// 邮箱营销/通知是否取消订阅(默认 false 即接收;欢迎邮件不受此影响)
+  emailUnsubscribed Boolean @default(false)
 
   // 签到状态
   lastSignInAt DateTime?

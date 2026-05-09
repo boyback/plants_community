@@ -2,46 +2,166 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/context/AuthContext';
-import { useI18n } from '@/i18n/I18nContext';
+import { HANDLE_REGEX } from '@/lib/handle';
+import { cn } from '@/lib/utils';
+
+const EMAIL_RE = /^[\w.+-]+@[\w-]+\.[\w.-]+$/;
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register } = useAuth();
-  const { t } = useI18n();
-  const [name, setName] = useState('');
+  const { refresh } = useAuth();
+
+  // 表单状态
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [handle, setHandle] = useState('');
   const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [ageConfirm, setAgeConfirm] = useState(false);
-  const [agreed, setAgreed] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+
+  // handle 异步可用性
+  const [handleStatus, setHandleStatus] = useState<
+    | { state: 'idle' }
+    | { state: 'checking' }
+    | { state: 'ok' }
+    | { state: 'taken'; reason: string }
+  >({ state: 'idle' });
+  const handleCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 验证码倒计时
+  const [cooldown, setCooldown] = useState(0);
+  const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+
   const [err, setErr] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const canSubmit =
-    ageConfirm && agreed && name.trim().length >= 2 && password.length >= 6 && !loading;
+  useEffect(() => {
+    return () => {
+      if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+      if (handleCheckTimerRef.current) clearTimeout(handleCheckTimerRef.current);
+    };
+  }, []);
 
+  // —————————————————————————— 1. 发送验证码
+  const sendCode = async () => {
+    setErr(null);
+    if (!EMAIL_RE.test(email)) {
+      setErr('请输入正确的邮箱');
+      return;
+    }
+    setSending(true);
+    try {
+      const r = await fetch('/api/auth/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        setErr(data?.error?.message || '发送失败');
+        return;
+      }
+      setCooldown(60);
+      cooldownTimerRef.current = setInterval(() => {
+        setCooldown((s) => {
+          if (s <= 1) {
+            if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+            return 0;
+          }
+          return s - 1;
+        });
+      }, 1000);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // —————————————————————————— 2. 校验验证码
+  const verifyCode = async () => {
+    setErr(null);
+    if (!/^\d{6}$/.test(code)) {
+      setErr('请输入 6 位验证码');
+      return;
+    }
+    setVerifying(true);
+    try {
+      const r = await fetch('/api/auth/email/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        setErr(data?.error?.message || '验证失败');
+        return;
+      }
+      setEmailVerified(true);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  // —————————————————————————— 3. handle 实时检查(debounce 500ms)
+  useEffect(() => {
+    if (handleCheckTimerRef.current) clearTimeout(handleCheckTimerRef.current);
+    if (!handle) {
+      setHandleStatus({ state: 'idle' });
+      return;
+    }
+    setHandleStatus({ state: 'checking' });
+    handleCheckTimerRef.current = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/auth/handle-available?handle=${encodeURIComponent(handle)}`);
+        const data = await r.json();
+        if (data.ok) {
+          setHandleStatus({ state: 'ok' });
+        } else {
+          setHandleStatus({ state: 'taken', reason: data.reason || '账号不可用' });
+        }
+      } catch {
+        setHandleStatus({ state: 'idle' });
+      }
+    }, 500);
+  }, [handle]);
+
+  // —————————————————————————— 4. 完成注册
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setErr(null);
-    if (!ageConfirm || !agreed) {
-      setErr(t('auth.register.mustAccept') || '请先勾选年龄确认与协议同意');
-      return;
+    if (!emailVerified) return setErr('请先验证邮箱');
+    if (!HANDLE_REGEX.test(handle)) return setErr('账号格式不正确');
+    if (handleStatus.state !== 'ok') return setErr('账号不可用');
+    if (password.length < 6) return setErr('密码至少 6 位');
+
+    setSubmitting(true);
+    try {
+      const r = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          handle,
+          password,
+          displayName: displayName.trim() || undefined,
+        }),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        setErr(data?.error?.message || '注册失败');
+        return;
+      }
+      // refresh 会重读 /api/auth/me 写入 AuthContext
+      await refresh();
+      router.push('/');
+      router.refresh();
+    } finally {
+      setSubmitting(false);
     }
-    if (password !== confirm) {
-      setErr(t('auth.register.passwordMismatch') || '两次密码输入不一致');
-      return;
-    }
-    setLoading(true);
-    const r = await register(name, password);
-    setLoading(false);
-    if (!r.ok) {
-      setErr(r.msg ?? (t('auth.register.fail') || '注册失败'));
-      return;
-    }
-    router.push('/');
-    router.refresh();
   };
 
   return (
@@ -55,137 +175,155 @@ export default function RegisterPage() {
         <div className="mb-6">
           <Logo />
         </div>
-        <div className="card p-8">
-          <h1 className="text-2xl font-bold text-ink-800">{t('auth.register.title') || '加入肉友社'} 🌱</h1>
-          <p className="mt-1 text-sm text-leaf-700/70">
-            {t('auth.register.subtitle') || '开始你的养肉之旅'}
-          </p>
 
-          <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        <div className="card p-7">
+          <h1 className="text-2xl font-bold text-ink-800">加入肉友社 🌱</h1>
+          <p className="mt-1 text-xs text-leaf-700/70">填完下面 4 项,几秒搞定</p>
+
+          <form onSubmit={onSubmit} className="mt-5 space-y-4">
+            {/* —— 邮箱 + 验证码 —— */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-ink-800">
-                {t('auth.login.name') || '用户名'}
+                邮箱 <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="email"
+                className={cn('input', emailVerified && 'pointer-events-none opacity-70')}
+                value={email}
+                onChange={(e) => setEmail(e.target.value.trim())}
+                placeholder="you@example.com"
+                autoComplete="email"
+                disabled={emailVerified}
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-ink-800">
+                验证码 <span className="text-rose-500">*</span>
+                {emailVerified && <span className="ml-2 text-emerald-600">✓ 已验证</span>}
+              </label>
+              <div className="flex gap-2">
+                <input
+                  className="input flex-1"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="6 位验证码"
+                  maxLength={6}
+                  inputMode="numeric"
+                  disabled={emailVerified}
+                />
+                {!emailVerified && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={sendCode}
+                      disabled={cooldown > 0 || sending || !EMAIL_RE.test(email)}
+                      className="btn-ghost shrink-0 !px-3 !text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {cooldown > 0 ? `${cooldown}s` : sending ? '发送中…' : '获取验证码'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={verifyCode}
+                      disabled={verifying || code.length !== 6}
+                      className="btn-primary shrink-0 !px-3 !text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {verifying ? '校验中…' : '验证'}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* —— handle —— */}
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-ink-800">
+                账号(类似微信号) <span className="text-rose-500">*</span>
               </label>
               <input
                 className="input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t('auth.register.name') || '取一个好听的昵称'}
+                value={handle}
+                onChange={(e) => setHandle(e.target.value)}
+                placeholder="6-20 位,字母开头"
+                maxLength={20}
+                autoComplete="username"
+                disabled={!emailVerified}
               />
+              <div className="mt-1 text-[11px]">
+                {handleStatus.state === 'idle' && (
+                  <span className="text-leaf-700/50">登录用,设置后不可修改</span>
+                )}
+                {handleStatus.state === 'checking' && (
+                  <span className="text-leaf-700/50">检查中…</span>
+                )}
+                {handleStatus.state === 'ok' && <span className="text-emerald-600">✓ 可用</span>}
+                {handleStatus.state === 'taken' && (
+                  <span className="text-rose-500">{handleStatus.reason}</span>
+                )}
+              </div>
             </div>
+
+            {/* —— 密码 —— */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-ink-800">
-                {t('auth.login.password') || '密码'}
+                密码 <span className="text-rose-500">*</span>
               </label>
               <input
                 type="password"
                 className="input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={t('auth.register.password') || '至少 6 位'}
+                placeholder="至少 6 位"
+                minLength={6}
+                autoComplete="new-password"
+                disabled={!emailVerified}
               />
             </div>
+
+            {/* —— 显示名(可选) —— */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-ink-800">
-                {t('auth.register.passwordConfirm') || '确认密码'}
+                昵称(可选,默认与账号同名)
               </label>
               <input
-                type="password"
                 className="input"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                placeholder={t('auth.register.passwordConfirmPlaceholder') || '再输入一次'}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="留空 = 用账号当昵称"
+                maxLength={24}
+                disabled={!emailVerified}
               />
             </div>
-
-            {/* 14 岁确认 */}
-            <label className="flex items-start gap-2 text-xs text-leaf-700 cursor-pointer">
-              <input
-                type="checkbox"
-                className="mt-0.5 h-4 w-4"
-                checked={ageConfirm}
-                onChange={(e) => setAgeConfirm(e.target.checked)}
-              />
-              <span>{t('auth.register.ageConfirm') || '我已满 14 周岁'}</span>
-            </label>
-
-            {/* 协议同意(带富链接) */}
-            <label className="flex items-start gap-2 text-xs text-leaf-700 cursor-pointer">
-              <input
-                type="checkbox"
-                className="mt-0.5 h-4 w-4"
-                checked={agreed}
-                onChange={(e) => setAgreed(e.target.checked)}
-              />
-              <AgreeText t={t} />
-            </label>
 
             {err && (
               <div className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{err}</div>
             )}
+
             <button
               type="submit"
-              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!canSubmit}
+              className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={
+                submitting ||
+                !emailVerified ||
+                handleStatus.state !== 'ok' ||
+                password.length < 6
+              }
             >
-              {loading
-                ? t('common.loading') || '加载中…'
-                : t('auth.register.submit') || '创建账号'}
+              {submitting ? '注册中…' : '完成注册'}
             </button>
           </form>
 
           <div className="mt-4 text-center text-xs text-leaf-700/70">
             <Link href="/login" className="link">
-              {t('auth.register.toLogin') || '已有账号?去登录'}
+              已有账号?去登录 →
             </Link>
           </div>
         </div>
+
         <Link href="/" className="mt-4 text-center text-xs text-leaf-700 hover:underline">
-          ← {t('common.back') || '返回'}
+          ← 返回
         </Link>
       </div>
     </div>
-  );
-}
-
-/** 把「我已阅读并同意 用户协议 与 隐私政策」的插值文案拆成 <Link> 组合 */
-function AgreeText({ t }: { t: (k: string, vars?: Record<string, string | number>) => string }) {
-  const tpl = t('auth.register.agree'); // "我已阅读并同意 {terms} 与 {privacy}"
-  const termsLabel = t('auth.register.terms');
-  const privacyLabel = t('auth.register.privacy');
-
-  // 若 key 未命中(返回 'auth.register.agree'),退回纯中文
-  if (!tpl || tpl === 'auth.register.agree') {
-    return (
-      <span>
-        我已阅读并同意
-        <Link href="/terms" target="_blank" className="link mx-1">用户协议</Link>
-        与
-        <Link href="/privacy" target="_blank" className="link mx-1">隐私政策</Link>
-      </span>
-    );
-  }
-  // 简单插值:以 {terms} / {privacy} 为分隔
-  const parts = tpl.split(/\{(terms|privacy)\}/g);
-  return (
-    <span>
-      {parts.map((p, i) => {
-        if (p === 'terms') {
-          return (
-            <Link key={i} href="/terms" target="_blank" className="link mx-1">
-              {termsLabel}
-            </Link>
-          );
-        }
-        if (p === 'privacy') {
-          return (
-            <Link key={i} href="/privacy" target="_blank" className="link mx-1">
-              {privacyLabel}
-            </Link>
-          );
-        }
-        return <span key={i}>{p}</span>;
-      })}
-    </span>
   );
 }

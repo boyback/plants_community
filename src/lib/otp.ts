@@ -111,7 +111,32 @@ export function verifyEmailCode(email: string, code: string): { ok: boolean; rea
   }
   if (entry.code !== code) return { ok: false, reason: '验证码错误' };
   codes.delete(key);
+  // 标记该邮箱「已通过验证」,5 分钟内允许走注册流程
+  markEmailVerified(key);
   return { ok: true };
+}
+
+// ============================================================
+// 已验证邮箱 session(给注册流程用)
+// ============================================================
+
+const verifiedEmails = new Map<string, number>(); // email -> expiresAt
+const VERIFIED_TTL_MS = 5 * 60 * 1000;
+
+function markEmailVerified(email: string) {
+  verifiedEmails.set(email.toLowerCase(), Date.now() + VERIFIED_TTL_MS);
+}
+
+/** 检查邮箱是否近 5min 内通过过验证(注册路由用)。check=true 时校验完即清除 */
+export function consumeVerifiedEmail(email: string): boolean {
+  const key = email.toLowerCase();
+  const expires = verifiedEmails.get(key);
+  if (!expires || expires < Date.now()) {
+    verifiedEmails.delete(key);
+    return false;
+  }
+  verifiedEmails.delete(key);
+  return true;
 }
 
 // ============================================================

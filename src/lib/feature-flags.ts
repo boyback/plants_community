@@ -20,14 +20,17 @@ function readBool(name: string, fallback: boolean): boolean {
 export const REVIEW_FILTER_ENABLED = readBool('REVIEW_FILTER_ENABLED', false);
 
 /**
- * 微信登录是否启用 — 看凭证是否配置完整。
- * 任一组(网站应用 / 公众号)凭证齐了即视为该入口可用,前端会按需展示按钮。
+ * 微信登录是否启用。
+ * 双门:必须 凭证齐 + 全局开关(WECHAT_LOGIN_ENABLED)都打开。
+ * 当前微信开放平台资质未下来,默认 OFF。
  */
-export const WECHAT_LOGIN_WEB_ENABLED = !!(
-  process.env.WECHAT_LOGIN_APP_ID && process.env.WECHAT_LOGIN_APP_SECRET
-);
-export const WECHAT_LOGIN_MP_ENABLED = !!(
-  process.env.WECHAT_MP_APP_ID && process.env.WECHAT_MP_APP_SECRET
-);
+const WECHAT_LOGIN_GLOBAL = readBool('WECHAT_LOGIN_ENABLED', false);
+
+export const WECHAT_LOGIN_WEB_ENABLED =
+  WECHAT_LOGIN_GLOBAL &&
+  !!(process.env.WECHAT_LOGIN_APP_ID && process.env.WECHAT_LOGIN_APP_SECRET);
+export const WECHAT_LOGIN_MP_ENABLED =
+  WECHAT_LOGIN_GLOBAL &&
+  !!(process.env.WECHAT_MP_APP_ID && process.env.WECHAT_MP_APP_SECRET);
 export const WECHAT_LOGIN_ANY_ENABLED =
   WECHAT_LOGIN_WEB_ENABLED || WECHAT_LOGIN_MP_ENABLED;
