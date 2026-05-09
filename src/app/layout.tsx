@@ -86,25 +86,8 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  // 站点验证 — server-side 读 env,无需 NEXT_PUBLIC_ 前缀
-  // 申请百度/Google/必应/360 站长平台后填进 .env 即可,运行时生效
-  verification: {
-    google: process.env.SITE_VERIFICATION_GOOGLE || undefined,
-    other: {
-      ...(process.env.SITE_VERIFICATION_BAIDU
-        ? { 'baidu-site-verification': process.env.SITE_VERIFICATION_BAIDU }
-        : {}),
-      ...(process.env.SITE_VERIFICATION_BING
-        ? { 'msvalidate.01': process.env.SITE_VERIFICATION_BING }
-        : {}),
-      ...(process.env.SITE_VERIFICATION_360
-        ? { '360-site-verification': process.env.SITE_VERIFICATION_360 }
-        : {}),
-      ...(process.env.SITE_VERIFICATION_SOGOU
-        ? { 'sogou_site_verification': process.env.SITE_VERIFICATION_SOGOU }
-        : {}),
-    },
-  },
+  // ⚠ 站点验证 meta 不放这里 — Next.js metadata 字段是 build-time 烘的,
+  //    生产改 env 后不会生效。下面 SiteVerificationMetas 组件运行时读取。
   icons: {
     icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌵</text></svg>',
   },
@@ -208,6 +191,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         {/* 必须在样式应用前同步设置 data-theme,避免主题闪烁 */}
         <script dangerouslySetInnerHTML={{ __html: COLOR_THEME_SSR_SCRIPT }} />
+        {/* 站长平台验证 meta — 运行时读取 env,改 .env 后 restart next 立即生效 */}
+        <SiteVerificationMetas />
       </head>
       <body>
         <ColorThemeProvider>
@@ -232,5 +217,30 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </ColorThemeProvider>
       </body>
     </html>
+  );
+}
+
+/**
+ * 站长平台验证 meta — 运行时(SSR)读 env,而非 build 时烘进字面量。
+ * 改 .env + restart next 后立即生效,无需重新构建镜像。
+ */
+function SiteVerificationMetas() {
+  // .trim() 防止 .env 有意外空格 / 换行
+  const get = (k: string) => (process.env[k] || '').trim();
+  const items = [
+    { name: 'baidu-site-verification', content: get('SITE_VERIFICATION_BAIDU') },
+    { name: 'google-site-verification', content: get('SITE_VERIFICATION_GOOGLE') },
+    { name: 'msvalidate.01', content: get('SITE_VERIFICATION_BING') },
+    { name: '360-site-verification', content: get('SITE_VERIFICATION_360') },
+    { name: 'sogou_site_verification', content: get('SITE_VERIFICATION_SOGOU') },
+  ].filter((it) => it.content.length > 0);
+
+  if (items.length === 0) return null;
+  return (
+    <>
+      {items.map((it) => (
+        <meta key={it.name} name={it.name} content={it.content} />
+      ))}
+    </>
   );
 }
