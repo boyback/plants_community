@@ -114,7 +114,7 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
               </Link>
               <IconButton href="/messages" icon="message" badge={unreadMsgs} label={t('nav.messages')} />
               <IconButton href="/notifications" icon="bell" badge={unreadNotifs} label={t('nav.notifications')} />
-              <ColorThemeSwitcher className="hidden md:block" />
+              <ColorThemeSwitcher />
               <LocaleSwitcher className="hidden md:block" />
               <Link
                 href="/editor"
@@ -229,7 +229,7 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
             </>
           ) : (
             <>
-              <ColorThemeSwitcher className="hidden md:block" />
+              <ColorThemeSwitcher />
               <LocaleSwitcher className="mr-1" />
               <Link href="/login" className="btn-ghost h-9 text-xs">
                 {t('nav.login')}

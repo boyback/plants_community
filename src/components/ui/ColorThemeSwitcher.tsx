@@ -14,22 +14,41 @@ export function ColorThemeSwitcher({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // 点击外部关闭
+  // 点击外部关闭(用 click 而不是 mousedown,避免触发顺序冲突)
+  // 同时延迟一帧绑定,避免开门那一击立刻被自己关掉
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
       if (!ref.current?.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
+    // 用 setTimeout 延后绑定,跳过本次点击事件(避免「自己点开自己关掉」)
+    const tid = setTimeout(() => {
+      document.addEventListener('click', onDoc);
+    }, 0);
+    return () => {
+      clearTimeout(tid);
+      document.removeEventListener('click', onDoc);
+    };
+  }, [open]);
+
+  // ESC 关闭
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, [open]);
 
   return (
-    <div ref={ref} className={cn('relative', className)}>
+    <div ref={ref} className={cn('relative inline-block', className)}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         title={`主题:${meta.name}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
         className="grid h-9 w-9 place-items-center rounded-full text-base hover:bg-leaf-50"
       >
         {meta.logoEmoji}
