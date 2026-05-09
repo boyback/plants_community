@@ -15,8 +15,6 @@ const mainNav: { href: string; labelKey: string; icon: IconName }[] = [
   { href: '/', labelKey: 'nav.home', icon: 'home' },
   { href: '/board', labelKey: 'nav.sidebar.allBoards', icon: 'board' },
   { href: '/plants', labelKey: 'nav.sidebar.plants', icon: 'plants' },
-  { href: '/market', labelKey: 'market.hero.title', icon: 'star' },
-  { href: '/auction', labelKey: 'auction.title', icon: 'star' },
   { href: '/orders', labelKey: 'nav.myOrders', icon: 'check' },
   { href: '/addresses', labelKey: 'nav.shippingAddress', icon: 'board' },
   { href: '/settings/privacy', labelKey: 'nav.sidebar.privacySettings', icon: 'settings' },

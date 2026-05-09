@@ -80,8 +80,6 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
         <nav className="ml-4 hidden items-center gap-1 lg:flex">
           <HeaderLink href="/" icon="home">{t('nav.home')}</HeaderLink>
           <HeaderLink href="/board" icon="board">{t('nav.board')}</HeaderLink>
-          <HeaderLink href="/market" icon="star">{t('nav.market')}</HeaderLink>
-          <HeaderLink href="/auction" icon="star">{t('nav.auction')}</HeaderLink>
           <HeaderLink href="/plants" icon="plants">{t('nav.plants')}</HeaderLink>
           <HeaderLink href="/tasks" icon="check">{t('nav.tasks')}</HeaderLink>
         </nav>

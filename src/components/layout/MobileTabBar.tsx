@@ -8,10 +8,10 @@ import { useI18n } from '@/i18n/I18nContext';
 
 const items: { href: string; labelKey: string; icon: IconName; center?: boolean; match?: (p: string) => boolean }[] = [
   { href: '/', labelKey: 'nav.home', icon: 'home', match: (p) => p === '/' },
-  { href: '/market', labelKey: 'nav.market', icon: 'star', match: (p) => p.startsWith('/market') || p.startsWith('/orders') },
+  { href: '/board', labelKey: 'nav.board', icon: 'board', match: (p) => p.startsWith('/board') },
   { href: '/editor', labelKey: 'nav.mobileTabEditor', icon: 'plus', center: true },
+  { href: '/plants', labelKey: 'nav.plants', icon: 'plants', match: (p) => p.startsWith('/plants') },
   { href: '/tasks', labelKey: 'nav.tasks', icon: 'check', match: (p) => p.startsWith('/tasks') },
-  { href: '/points', labelKey: 'nav.pointsCenter', icon: 'star', match: (p) => p.startsWith('/points') },
 ];
 
 /** 仅在 lg 以下显示的底部 Tabbar */
