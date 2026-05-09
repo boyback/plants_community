@@ -86,13 +86,19 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
       <div className="space-y-2 p-3">
         {post.species && <SpeciesChip species={post.species} board={post.board} />}
 
-        <h3 className="line-clamp-2 text-sm font-semibold text-ink-800 group-hover:text-leaf-700 md:text-base">
-          {post.title}
-        </h3>
+        {/* 标题 + 紧贴的发布时间 */}
+        <div className="space-y-0.5">
+          <h3 className="line-clamp-2 text-sm font-semibold text-ink-800 group-hover:text-leaf-700">
+            {post.title}
+          </h3>
+          <div className="text-[10px] text-leaf-700/60">
+            {timeAgo(post.createdAt)}
+          </div>
+        </div>
 
         {/* —— 类型预览块(只展示,不可交互) —— */}
         {post.type === 'short' && post.content && (
-          <p className="line-clamp-2 text-xs leading-5 text-ink-700/80 md:text-[13px]">
+          <p className="line-clamp-2 text-xs leading-4 text-ink-700/80">
             {post.content}
           </p>
         )}
@@ -103,24 +109,16 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
 
         {post.type === 'journal' && post.journal && <JournalPreview post={post} />}
 
-        {/* footer:作者一行 + 看赞评一行 */}
-        <div className="space-y-1.5 pt-1">
-          {/* —— 作者一行 —— */}
-          <div className="flex items-center justify-between gap-2">
-            <NestedLink
-              href={`/user/${post.author.id}`}
-              className="flex min-w-0 items-center gap-1.5 text-[11px] text-ink-700/80 hover:text-leaf-700"
-            >
-              <Avatar src={post.author.avatar} alt={post.author.name} size={20} />
-              <span className="truncate font-medium">{post.author.name}</span>
-            </NestedLink>
-            <span className="shrink-0 text-[10px] text-leaf-700/60">
-              {timeAgo(post.createdAt)}
-            </span>
-          </div>
-
-          {/* —— 看 / 赞 / 评 一行 —— */}
-          <div className="flex items-center gap-3 border-t border-leaf-50 pt-1.5 text-[11px] text-leaf-700/70">
+        {/* footer:作者(左) + 看赞评(右) 同一行 */}
+        <div className="flex items-center justify-between gap-2 border-t border-leaf-50 pt-1.5">
+          <NestedLink
+            href={`/user/${post.author.id}`}
+            className="flex min-w-0 items-center gap-1 text-[10px] text-ink-700/80 hover:text-leaf-700"
+          >
+            <Avatar src={post.author.avatar} alt={post.author.name} size={18} />
+            <span className="truncate font-medium">{post.author.name}</span>
+          </NestedLink>
+          <div className="flex shrink-0 items-center gap-2 text-[10px] text-leaf-700/70">
             <Stat icon="eye" n={post.views} />
             <Stat icon="heart" n={post.likes} />
             <Stat icon="comment" n={post.comments} />

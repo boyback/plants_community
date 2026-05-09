@@ -20,8 +20,131 @@ import { SpeciesRatingPanel } from '@/components/species/SpeciesRatingPanel';
 import { I18nText } from '@/components/ui/I18nText';
 import { FollowBoardButton } from '@/components/board/FollowBoardButton';
 import { formatNumber } from '@/lib/utils';
+import type { Metadata } from 'next';
+import { parseJsonArray } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * SEO:三级板块的动态 metadata
+ *  - 品种页:title「银冠玉(Lophophora williamsii) 养护、图片、繁殖 · 肉友社」
+ *  - 属页:  title「乌羽玉属 Lophophora · 共 X 个品种 · 肉友社」
+ *  - 科页:  title「仙人掌科 · 共 X 个品种 X 个属 · 肉友社」
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: { path: string[] };
+}): Promise<Metadata> {
+  const [categorySlug, genusSlug, speciesSlug] = params.path ?? [];
+  if (!categorySlug) return {};
+
+  // 三级:品种
+  if (speciesSlug) {
+    const s = await prisma.species
+      .findFirst({
+        where: {
+          slug: speciesSlug,
+          genus: {
+            slug: genusSlug,
+            category: { slug: categorySlug },
+          },
+        },
+        include: {
+          genus: { include: { category: true } },
+        },
+      })
+      .catch(() => null);
+    if (!s) return {};
+    const aliases = parseJsonArray(s.alias);
+    const tips = parseJsonArray(s.tips);
+    const title = `${s.name}${s.latinName ? `(${s.latinName})` : ''} 养护图鉴`;
+    const description = [
+      `${s.name}(${s.latinName})${aliases.length ? '别名:' + aliases.join('、') : ''}`,
+      s.description?.slice(0, 80),
+      tips[0],
+    ]
+      .filter(Boolean)
+      .join(' · ');
+    const keywords = [
+      s.name,
+      s.latinName,
+      ...aliases,
+      `${s.name} 养护`,
+      `${s.name} 浇水`,
+      `${s.name} 度夏`,
+      `${s.name} 图片`,
+      s.genus?.name,
+      s.genus?.category?.name,
+      '多肉',
+      '多肉植物',
+    ].filter(Boolean) as string[];
+    return {
+      title,
+      description,
+      keywords,
+      openGraph: {
+        type: 'article',
+        title,
+        description,
+        images: s.cover ? [{ url: s.cover, alt: s.name }] : undefined,
+      },
+    };
+  }
+
+  // 二级:属
+  if (genusSlug) {
+    const g = await prisma.genus
+      .findFirst({
+        where: { slug: genusSlug, category: { slug: categorySlug } },
+        include: {
+          category: true,
+          _count: { select: { species: true, posts: true } },
+        },
+      })
+      .catch(() => null);
+    if (!g) return {};
+    const title = `${g.name}${g.latinName ? `属 ${g.latinName}` : '属'} · 旗下品种`;
+    const description = `${g.category?.name}下的${g.name}属,共 ${g._count?.species ?? 0} 个品种,${g._count?.posts ?? 0} 篇相关讨论。${g.description?.slice(0, 60) ?? ''}`;
+    return {
+      title,
+      description,
+      keywords: [
+        g.name,
+        g.latinName,
+        `${g.name}属`,
+        `${g.name} 品种`,
+        g.category?.name,
+        '多肉植物',
+      ].filter(Boolean) as string[],
+    };
+  }
+
+  // 一级:科
+  const c = await prisma.category
+    .findUnique({
+      where: { slug: categorySlug },
+      include: {
+        _count: { select: { genera: true, posts: true } },
+      },
+    })
+    .catch(() => null);
+  if (!c) return {};
+  const title = `${c.name} · 多肉品种图鉴`;
+  const description = `${c.name}${c.latinName ? `(${c.latinName})` : ''} 大家族,共 ${c._count?.genera ?? 0} 个属,${c._count?.posts ?? 0} 篇社区讨论。${c.description?.slice(0, 60) ?? ''}`;
+  return {
+    title,
+    description,
+    keywords: [
+      c.name,
+      c.latinName,
+      `${c.name} 品种`,
+      `${c.name} 图鉴`,
+      '多肉',
+      '多肉植物',
+    ].filter(Boolean) as string[],
+  };
+}
 
 /**
  * 统一的三级板块页:

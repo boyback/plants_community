@@ -1,49 +1,23 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import { useColorTheme } from '@/context/ColorThemeContext';
+import { useHoverOpen } from '@/lib/hooks/useHoverOpen';
 import { cn } from '@/lib/utils';
 
 /**
  * 配色主题切换器(头部用)
- * - 点击展开下拉:12 主题色板 + 明/暗模式切换
+ * - **悬浮触发**:鼠标 hover 触发按钮即展开,移开 150ms 后关闭
+ * - 12 主题色板 + 明/暗模式切换
  * - 选中后立即生效,保存 localStorage
  */
 export function ColorThemeSwitcher({ className }: { className?: string }) {
   const { theme, mode, meta, setTheme, toggleMode, themes } = useColorTheme();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  // 点击外部关闭(用 click + setTimeout 跳过开门那一击)
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const tid = setTimeout(() => {
-      document.addEventListener('click', onDoc);
-    }, 0);
-    return () => {
-      clearTimeout(tid);
-      document.removeEventListener('click', onDoc);
-    };
-  }, [open]);
-
-  // ESC 关闭
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [open]);
+  const { open, bind, close } = useHoverOpen();
 
   return (
-    <div ref={ref} className={cn('relative inline-block', className)}>
+    <div className={cn('relative inline-block', className)} {...bind}>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
         title={`主题:${meta.name} · ${mode === 'dark' ? '暗黑' : '明亮'}`}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -54,7 +28,6 @@ export function ColorThemeSwitcher({ className }: { className?: string }) {
 
       {open && (
         <div className="absolute right-0 top-full z-50 mt-2 w-[300px] overflow-hidden rounded-2xl border border-leaf-100 bg-white p-3 shadow-card dark:bg-leaf-50">
-          {/* 头部:标题 + 明/暗 toggle */}
           <div className="mb-2 flex items-center justify-between">
             <div className="text-xs font-semibold text-ink-800">🎨 配色主题</div>
             <button
@@ -68,7 +41,6 @@ export function ColorThemeSwitcher({ className }: { className?: string }) {
             </button>
           </div>
 
-          {/* 主题色板网格 */}
           <div className="grid max-h-[420px] grid-cols-2 gap-1.5 overflow-y-auto pr-0.5">
             {themes.map((t) => {
               const active = t.key === theme;
@@ -78,7 +50,7 @@ export function ColorThemeSwitcher({ className }: { className?: string }) {
                   type="button"
                   onClick={() => {
                     setTheme(t.key);
-                    setOpen(false);
+                    close();
                   }}
                   className={cn(
                     'group flex flex-col items-start gap-1 rounded-xl border-2 p-2 text-left transition-all',

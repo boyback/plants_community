@@ -17,9 +17,80 @@ import { prisma } from '@/lib/db';
 import { serializeUser, serializeEquip } from '@/lib/serializers';
 import { expProgress } from '@/lib/levels';
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://plantcommunity.cn';
+
+const SITE_NAME = '肉友社';
+const SITE_DESC =
+  '中文多肉植物爱好者社区:景天、番杏、仙人掌、大戟、十二卷,品种图鉴 + 养护技巧 + 晒图分享 + 交易市场。银冠玉、乌羽玉、兜、玉露、生石花…多肉爱好者的聚集地。';
+
+const SITE_KEYWORDS = [
+  // 大类
+  '多肉', '多肉植物', '多肉爱好者社区', '多肉论坛',
+  '景天', '景天科', '番杏', '仙人掌', '大戟', '十二卷', '玉露',
+  // 高频品种
+  '银冠玉', '乌羽玉', '兜', '生石花', '红宝石', '吉娃娃',
+  '洛神', '雪莲', '初恋', '黑王子', '桃之卵', '碧光环',
+  // 场景
+  '多肉度夏', '多肉浇水', '多肉拼盘', '多肉繁殖', '多肉换盆', '多肉徒长',
+  '多肉图鉴', '多肉品种', '多肉养护', '多肉晒图',
+];
+
 export const metadata: Metadata = {
-  title: '肉友社 · 多肉植物爱好者社区',
-  description: '一个面向多肉植物爱好者的交流论坛,养护技巧、图鉴、晒图、交易一站式',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${SITE_NAME} · 多肉植物爱好者社区`,
+    template: `%s · ${SITE_NAME}`,
+  },
+  description: SITE_DESC,
+  keywords: SITE_KEYWORDS,
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  applicationName: SITE_NAME,
+  category: '生活',
+  alternates: {
+    canonical: '/',
+    languages: {
+      'zh-CN': '/',
+      'zh-TW': '/',
+      'en': '/',
+    },
+  },
+  openGraph: {
+    type: 'website',
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} · 多肉植物爱好者社区`,
+    description: SITE_DESC,
+    url: SITE_URL,
+    locale: 'zh_CN',
+    images: [
+      {
+        url: '/default-avatar.svg',
+        width: 200,
+        height: 200,
+        alt: SITE_NAME,
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${SITE_NAME} · 多肉植物爱好者社区`,
+    description: SITE_DESC,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  // 中国站点验证留位(申请百度/必应站长后填)
+  verification: {
+    // google: 'xxxxx',
+    // other: { 'baidu-site-verification': 'xxxxx' },
+  },
   icons: {
     icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌵</text></svg>',
   },

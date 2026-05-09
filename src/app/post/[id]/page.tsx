@@ -18,8 +18,63 @@ import { getCurrentUser } from '@/lib/auth';
 import { formatNumber, formatDateTime, boardUrl } from '@/lib/utils';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 import { lookupLivePhotos } from '@/lib/live-photo';
+import type { Metadata } from 'next';
+import { parseJsonArray } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
+
+/** SEO:用帖子标题 + 摘要做 metadata */
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  const p = await prisma.post
+    .findUnique({
+      where: { id: params.id },
+      select: {
+        title: true,
+        contentText: true,
+        cover: true,
+        tags: true,
+        deleted: true,
+        author: { select: { name: true } },
+        species: { select: { name: true } },
+        genus: { select: { name: true } },
+        category: { select: { name: true } },
+      },
+    })
+    .catch(() => null);
+  if (!p || p.deleted) return {};
+
+  const tags = parseJsonArray(p.tags);
+  const board = p.species?.name ?? p.genus?.name ?? p.category?.name ?? '';
+  const title = p.title;
+  const description =
+    (p.contentText?.slice(0, 120) ?? '') ||
+    `${p.author.name} 在「${board || '肉友社'}」分享的内容`;
+  const keywords = [
+    ...tags,
+    p.species?.name,
+    p.genus?.name,
+    p.category?.name,
+    '多肉',
+    '多肉植物',
+  ].filter(Boolean) as string[];
+
+  return {
+    title,
+    description,
+    keywords,
+    openGraph: {
+      type: 'article',
+      title,
+      description,
+      authors: p.author.name,
+      images: p.cover ? [{ url: p.cover, alt: p.title }] : undefined,
+    },
+  };
+}
 
 export default async function PostDetailPage({ params }: { params: { id: string } }) {
   const postRaw = await prisma.post.findUnique({
