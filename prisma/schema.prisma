@@ -382,7 +382,8 @@ model JournalEntry {
   entryDate DateTime
   stage     JournalStage @default(other)
   note      String       @db.Text // 心得文本(纯文本/简单 markdown)
-  images    String       @default("[]") @db.Text // JSON array,封面或多张图
+  // MySQL TEXT 不允许默认值,空 JSON 在应用层兜底为 "[]"
+  images    String       @db.Text // JSON array,封面或多张图
   orderIdx  Int          @default(0) // 同日多条时的次序
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
