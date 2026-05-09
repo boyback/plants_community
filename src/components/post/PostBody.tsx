@@ -32,9 +32,61 @@ export function PostBody({
       return <VoteBody post={post} initialVoted={initialVoted} />;
     case 'event':
       return <EventBody post={post} initialAttending={initialAttending} />;
+    case 'journal':
+      return <JournalBody post={post} />;
     default:
       return null;
   }
+}
+
+function JournalBody({ post }: { post: Post }) {
+  if (!post.journal) return null;
+  const j = post.journal;
+  const status =
+    j.endReason === 'alive'
+      ? { emoji: '🌱', label: '仍在养', color: 'text-leaf-700' }
+      : j.endReason === 'withered'
+      ? { emoji: '🥀', label: '已枯死', color: 'text-rose-700' }
+      : j.endReason === 'gifted'
+      ? { emoji: '🎁', label: '已送人', color: 'text-amber-700' }
+      : j.endReason === 'finished'
+      ? { emoji: '✅', label: '已结束', color: 'text-leaf-600' }
+      : { emoji: '📌', label: '其他', color: 'text-leaf-700' };
+  return (
+    <div className="rounded-xl border border-leaf-100 bg-leaf-50/40 p-4">
+      <div className="grid gap-3 md:grid-cols-3">
+        <Stat label="对象">
+          <div className="text-base font-semibold text-ink-800">{j.subjectName}</div>
+          {j.speciesName && (
+            <div className="text-xs text-leaf-700/80">🌱 {j.speciesName}</div>
+          )}
+        </Stat>
+        <Stat label="天数">
+          <div className="text-base font-semibold text-ink-800">
+            第 {j.daysSinceStart} 天
+          </div>
+          <div className="text-xs text-leaf-700/80">
+            起 {new Date(j.startDate).toLocaleDateString()}
+          </div>
+        </Stat>
+        <Stat label="状态">
+          <div className={cn('text-base font-semibold', status.color)}>
+            {status.emoji} {status.label}
+          </div>
+          <div className="text-xs text-leaf-700/80">📖 已记录 {j.entriesCount} 条</div>
+        </Stat>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="mb-1 text-[11px] text-leaf-700/70">{label}</div>
+      {children}
+    </div>
+  );
 }
 
 function RichBody({ post }: { post: Post }) {

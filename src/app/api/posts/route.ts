@@ -76,9 +76,31 @@ export const GET = handler(async (req) => {
  *   - boardSlug(向后兼容):按 legacy board / category 查找
  * 其中至少需提供一个。自动推导上级并写入 categoryId/genusId/speciesId。
  */
+const JournalEntryInput = z.object({
+  entryDate: z.string(), // ISO
+  stage: z
+    .enum([
+      'germinate',
+      'growing',
+      'flowering',
+      'fruiting',
+      'withering',
+      'repot',
+      'cutting',
+      'summer',
+      'winter',
+      'pest',
+      'watering',
+      'other',
+    ])
+    .default('other'),
+  note: z.string().max(2000).default(''),
+  images: z.array(z.string()).max(9).default([]),
+});
+
 const CreateBody = z
   .object({
-    type: z.enum(['rich', 'short', 'vote', 'video', 'event']),
+    type: z.enum(['rich', 'short', 'vote', 'video', 'event', 'journal']),
     // 板块定位(任一)
     categorySlug: z.string().optional(),
     genusSlug: z.string().optional(),
@@ -105,6 +127,14 @@ const CreateBody = z
         endAt: z.string().optional(),
       })
       .optional(),
+    journal: z
+      .object({
+        subjectName: z.string().min(1).max(50),
+        startDate: z.string(),
+        speciesId: z.string().optional(),
+        entries: z.array(JournalEntryInput).max(50).default([]),
+      })
+      .optional(),
   })
   .superRefine((data, ctx) => {
     if (!data.categorySlug && !data.genusSlug && !data.speciesSlug && !data.boardSlug)
@@ -115,6 +145,8 @@ const CreateBody = z
       ctx.addIssue({ code: 'custom', message: 'EVENT 贴必须包含 event 字段' });
     if (data.type === 'video' && !data.videoUrl)
       ctx.addIssue({ code: 'custom', message: '视频贴必须包含 videoUrl' });
+    if (data.type === 'journal' && !data.journal)
+      ctx.addIssue({ code: 'custom', message: '生命周期贴必须包含 journal 字段' });
   });
 
 type ResolvedIds = {
@@ -189,6 +221,8 @@ export const POST = handler(async (req) => {
     video: 'post:video',
     vote: 'post:vote',
     event: 'post:event',
+    // journal 复用 rich 权限(通常 Lv.2+ 即可发)
+    journal: 'post:rich',
   };
   const need = permMap[body.type];
   if (!hasPermission({ level: me.level, isVip }, need)) {
@@ -251,6 +285,24 @@ export const POST = handler(async (req) => {
             location: body.event.location,
             startAt: new Date(body.event.startAt),
             endAt: new Date(body.event.endAt ?? body.event.startAt),
+          },
+        },
+      }),
+      ...(body.journal && {
+        journal: {
+          create: {
+            subjectName: body.journal.subjectName,
+            startDate: new Date(body.journal.startDate),
+            speciesId: body.journal.speciesId ?? resolvedIds.speciesId ?? null,
+            entries: {
+              create: body.journal.entries.map((e, i) => ({
+                entryDate: new Date(e.entryDate),
+                stage: e.stage,
+                note: e.note,
+                images: stringifyJson(e.images),
+                orderIdx: i,
+              })),
+            },
           },
         },
       }),

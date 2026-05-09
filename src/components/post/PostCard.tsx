@@ -87,6 +87,24 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
           </div>
         )}
 
+        {post.type === 'journal' && post.journal && (
+          <div className="rounded-lg bg-emerald-50/80 p-2.5 text-xs text-emerald-900">
+            📖 已记录 {post.journal.entriesCount} 条 · 第 {post.journal.daysSinceStart} 天
+            {post.journal.endReason !== 'alive' && (
+              <span className="ml-1 text-emerald-700/70">
+                ·{' '}
+                {post.journal.endReason === 'withered'
+                  ? '已枯死'
+                  : post.journal.endReason === 'gifted'
+                  ? '已送人'
+                  : post.journal.endReason === 'finished'
+                  ? '已结束'
+                  : '其他'}
+              </span>
+            )}
+          </div>
+        )}
+
         {post.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {post.tags.map((t) => (

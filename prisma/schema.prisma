@@ -174,6 +174,30 @@ enum PostType {
   video
   event
   help // 求助贴:附带悬赏 + 紧急度 + 采纳机制
+  journal // 生命周期 / 成长日志:时间线记录植物各阶段
+}
+
+enum JournalEndReason {
+  alive // 仍在养(默认,未结束时)
+  withered // 枯死
+  gifted // 送人 / 转手
+  finished // 正常结束(如开花结束、季节性度过)
+  other
+}
+
+enum JournalStage {
+  germinate // 发芽
+  growing // 成长
+  flowering // 开花
+  fruiting // 结果
+  withering // 枯萎
+  repot // 换盆
+  cutting // 扦插
+  summer // 度夏
+  winter // 越冬
+  pest // 虫害
+  watering // 浇水/施肥
+  other
 }
 
 enum HelpUrgency {
@@ -221,9 +245,10 @@ model Post {
   board      Board?    @relation(fields: [boardId], references: [id])
 
   // 帖子类型扩展
-  vote  Vote?
-  event Event?
-  help  HelpRequest?
+  vote    Vote?
+  event   Event?
+  help    HelpRequest?
+  journal Journal?
 
   comments Comment[]
   likes    PostLike[]
@@ -325,6 +350,47 @@ model EventAttendee {
 
   @@id([eventId, userId])
   @@map("event_attendees")
+}
+
+// 生命周期 / 成长日志帖扩展表
+model Journal {
+  id          String           @id @default(cuid())
+  postId      String           @unique
+  // 这本日志记录的植物对象昵称,例如「我的红宝石」「阳台 9 号」
+  subjectName String
+  // 关联品种(可选;若关联,可继承品种封面 / 难度等)
+  speciesId   String?
+  // 起始日(种植/到家/萌芽起算日)
+  startDate   DateTime
+  // 结束日(死亡 / 送人 / 自然结束;空表示仍在养)
+  endDate     DateTime?
+  endReason   JournalEndReason @default(alive)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  post    Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  species Species?       @relation(fields: [speciesId], references: [id])
+  entries JournalEntry[]
+
+  @@index([speciesId])
+  @@map("journals")
+}
+
+model JournalEntry {
+  id        String       @id @default(cuid())
+  journalId String
+  entryDate DateTime
+  stage     JournalStage @default(other)
+  note      String       @db.Text // 心得文本(纯文本/简单 markdown)
+  images    String       @default("[]") @db.Text // JSON array,封面或多张图
+  orderIdx  Int          @default(0) // 同日多条时的次序
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  journal Journal @relation(fields: [journalId], references: [id], onDelete: Cascade)
+
+  @@index([journalId, entryDate])
+  @@map("journal_entries")
 }
 
 // ============== 评论 ==============
@@ -1127,8 +1193,9 @@ model Species {
   ratingSum   Int @default(0) // 所有打分之和
   ratingCount Int @default(0) // 总打分人数
 
-  posts   Post[]
-  ratings SpeciesRating[]
+  posts    Post[]
+  ratings  SpeciesRating[]
+  journals Journal[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

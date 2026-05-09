@@ -14,6 +14,8 @@ import type {
   Notification as DBNotification,
   Message as DBMessage,
   Plant as DBPlant,
+  Journal as DBJournal,
+  JournalEntry as DBJournalEntry,
 } from '@prisma/client';
 
 import type {
@@ -27,6 +29,10 @@ import type {
   Message,
   Conversation,
   PlantSpecies,
+  JournalInfo,
+  JournalEntry,
+  JournalStage,
+  JournalEndReason,
 } from './types';
 import { parseJsonArray } from './api';
 
@@ -236,6 +242,13 @@ type PostWithRelations = DBPost & {
     | (DBVote & { options: DBVoteOption[] })
     | null;
   event?: (DBEvent & { _count?: { attendees?: number } }) | null;
+  journal?:
+    | (DBJournal & {
+        species?: { id: string; slug: string; name: string } | null;
+        entries?: DBJournalEntry[];
+        _count?: { entries?: number };
+      })
+    | null;
   _count?: { comments?: number; likes?: number };
   comments?: (DBComment & {
     author: UserWithRelations;
@@ -297,9 +310,55 @@ export function serializePost(p: PostWithRelations): Post {
           ratingCount: p.species.ratingCount,
         }
       : undefined,
+    journal: p.journal ? serializeJournal(p.journal) : undefined,
     commentList: p.comments
       ? p.comments.map((c) => serializeComment(c))
       : undefined,
+  };
+}
+
+function serializeJournalEntry(e: DBJournalEntry): JournalEntry {
+  return {
+    id: e.id,
+    entryDate: e.entryDate.toISOString(),
+    stage: e.stage as JournalStage,
+    note: e.note,
+    images: parseJsonArray(e.images),
+    orderIdx: e.orderIdx,
+    createdAt: e.createdAt.toISOString(),
+  };
+}
+
+function serializeJournal(
+  j: DBJournal & {
+    species?: { id: string; slug: string; name: string } | null;
+    entries?: DBJournalEntry[];
+    _count?: { entries?: number };
+  }
+): JournalInfo {
+  const now = j.endDate ?? new Date();
+  const ms = now.getTime() - j.startDate.getTime();
+  const daysSinceStart = Math.max(0, Math.floor(ms / 86400_000));
+  return {
+    subjectName: j.subjectName,
+    startDate: j.startDate.toISOString(),
+    endDate: j.endDate ? j.endDate.toISOString() : undefined,
+    endReason: j.endReason as JournalEndReason,
+    entriesCount:
+      j._count?.entries ?? (j.entries ? j.entries.length : 0),
+    daysSinceStart,
+    entries: j.entries
+      ? [...j.entries]
+          .sort(
+            (a, b) =>
+              a.entryDate.getTime() - b.entryDate.getTime() ||
+              a.orderIdx - b.orderIdx
+          )
+          .map(serializeJournalEntry)
+      : undefined,
+    speciesId: j.species?.id,
+    speciesName: j.species?.name,
+    speciesSlug: j.species?.slug,
   };
 }
 

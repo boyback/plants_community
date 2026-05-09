@@ -1,4 +1,53 @@
-export type PostType = 'rich' | 'short' | 'vote' | 'video' | 'event' | 'help';
+export type PostType = 'rich' | 'short' | 'vote' | 'video' | 'event' | 'help' | 'journal';
+
+/** 生命周期日志阶段(与 prisma JournalStage 对齐) */
+export type JournalStage =
+  | 'germinate'
+  | 'growing'
+  | 'flowering'
+  | 'fruiting'
+  | 'withering'
+  | 'repot'
+  | 'cutting'
+  | 'summer'
+  | 'winter'
+  | 'pest'
+  | 'watering'
+  | 'other';
+
+export type JournalEndReason =
+  | 'alive'
+  | 'withered'
+  | 'gifted'
+  | 'finished'
+  | 'other';
+
+export interface JournalEntry {
+  id: string;
+  entryDate: string; // ISO
+  stage: JournalStage;
+  note: string;
+  images: string[];
+  orderIdx: number;
+  createdAt: string;
+}
+
+export interface JournalInfo {
+  subjectName: string;
+  startDate: string; // ISO
+  endDate?: string;
+  endReason: JournalEndReason;
+  /** 总事件数(列表页用) */
+  entriesCount: number;
+  /** 距开始 N 天(列表页用) */
+  daysSinceStart: number;
+  /** 详情页才下发完整事件列表 */
+  entries?: JournalEntry[];
+  /** 关联品种(可选) */
+  speciesId?: string;
+  speciesName?: string;
+  speciesSlug?: string;
+}
 
 export interface User {
   id: string;
@@ -154,6 +203,8 @@ export interface Post {
     /** 总打分人数 */
     ratingCount: number;
   };
+  /** 生命周期日志(type=journal 才有) */
+  journal?: JournalInfo;
   commentList?: Comment[];
 }
 

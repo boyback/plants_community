@@ -16,6 +16,7 @@ const items: Item[] = [
   { type: 'vote', emoji: '🗳️', pcOnly: true },
   { type: 'video', emoji: '🎬' },
   { type: 'event', emoji: '🎉', pcOnly: true },
+  { type: 'journal', emoji: '📖' },
 ];
 
 export function TypePicker({
@@ -27,7 +28,7 @@ export function TypePicker({
 }) {
   const { t } = useI18n();
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
       {items.map((it) => (
         <button
           key={it.type}

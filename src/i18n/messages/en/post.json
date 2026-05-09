@@ -6,21 +6,24 @@
       "vote": "Poll",
       "video": "Video",
       "event": "Event",
-      "help": "Help"
+      "help": "Help",
+      "journal": "Journal"
     },
     "typeDesc": {
       "rich": "For tutorials and long-form content (PC & app)",
       "short": "Quick shares and casual notes (PC & app)",
       "vote": "Start a poll, gather opinions (PC only)",
       "video": "Record with video (PC & app)",
-      "event": "Organize offline meetups (PC only)"
+      "event": "Organize offline meetups (PC only)",
+      "journal": "Track plant growth on a timeline"
     },
     "typeBadge": {
       "rich": "Rich text",
       "short": "Short post",
       "vote": "Poll",
       "video": "Video",
-      "event": "Event"
+      "event": "Event",
+      "journal": "Journal Post"
     },
     "typeShort": {
       "rich": "Rich",
@@ -28,7 +31,8 @@
       "vote": "Poll",
       "video": "Video",
       "event": "Event",
-      "help": "Help"
+      "help": "Help",
+      "journal": "Journal"
     },
     "actions": {
       "like": "Like",

@@ -6,21 +6,24 @@
       "vote": "投票",
       "video": "動画",
       "event": "イベント",
-      "help": "お助け"
+      "help": "お助け",
+      "journal": "成長日誌"
     },
     "typeDesc": {
       "rich": "チュートリアル・長文向き(PC & アプリ可)",
       "short": "気軽にシェア(PC & アプリ可)",
       "vote": "投票を開催(PC のみ)",
       "video": "動画で記録(PC & アプリ可)",
-      "event": "オフラインイベント(PC のみ)"
+      "event": "オフラインイベント(PC のみ)",
+      "journal": "植物の成長段階を時系列で記録"
     },
     "typeBadge": {
       "rich": "リッチテキスト",
       "short": "ショート投稿",
       "vote": "投票",
       "video": "動画",
-      "event": "EVENT"
+      "event": "EVENT",
+      "journal": "成長日誌投稿"
     },
     "typeShort": {
       "rich": "リッチ",
@@ -28,7 +31,8 @@
       "vote": "投票",
       "video": "動画",
       "event": "イベント",
-      "help": "求助"
+      "help": "求助",
+      "journal": "成長日誌"
     },
     "actions": {
       "like": "いいね",

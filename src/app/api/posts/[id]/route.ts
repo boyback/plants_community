@@ -17,7 +17,7 @@ export const GET = handler(async (req) => {
   const post = await prisma.post.findUnique({
     where: { id },
     include: {
-      ...postInclude(),
+      ...postInclude({ withJournalEntries: true }),
       comments: {
         where: { parentId: null },
         orderBy: { createdAt: 'desc' },

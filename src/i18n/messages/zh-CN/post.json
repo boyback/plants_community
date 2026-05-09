@@ -6,21 +6,24 @@
       "vote": "投票",
       "video": "视频",
       "event": "活动",
-      "help": "求助"
+      "help": "求助",
+      "journal": "生命周期"
     },
     "typeDesc": {
       "rich": "适合教程、长篇心得(PC & APP 发布)",
       "short": "随手一发,即兴分享(PC & APP 发布)",
       "vote": "发起投票,集思广益(仅 PC 发布)",
       "video": "上传视频记录(PC & APP 均可发布)",
-      "event": "组织线下活动(仅 PC 可发布)"
+      "event": "组织线下活动(仅 PC 可发布)",
+      "journal": "时间线记录植物成长各阶段"
     },
     "typeBadge": {
       "rich": "富文本贴",
       "short": "短内容贴",
       "vote": "投票贴",
       "video": "视频贴",
-      "event": "EVENT 贴"
+      "event": "EVENT 贴",
+      "journal": "生命周期贴"
     },
     "typeShort": {
       "rich": "富文本",
@@ -28,7 +31,8 @@
       "vote": "投票",
       "video": "视频",
       "event": "活动",
-      "help": "求助"
+      "help": "求助",
+      "journal": "生命周期"
     },
     "actions": {
       "like": "点赞",

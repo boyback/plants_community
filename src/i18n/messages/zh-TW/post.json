@@ -6,21 +6,24 @@
       "vote": "投票",
       "video": "影片",
       "event": "活動",
-      "help": "求助"
+      "help": "求助",
+      "journal": "生命週期"
     },
     "typeDesc": {
       "rich": "適合教學、長篇心得(PC & APP 發佈)",
       "short": "隨手一發,即興分享(PC & APP 發佈)",
       "vote": "發起投票,集思廣益(僅 PC 發佈)",
       "video": "上傳影片紀錄(PC & APP 均可發佈)",
-      "event": "組織線下活動(僅 PC 可發佈)"
+      "event": "組織線下活動(僅 PC 可發佈)",
+      "journal": "時間線記錄植物成長各階段"
     },
     "typeBadge": {
       "rich": "富文本貼",
       "short": "短內容貼",
       "vote": "投票貼",
       "video": "影片貼",
-      "event": "EVENT 貼"
+      "event": "EVENT 貼",
+      "journal": "生命週期貼"
     },
     "typeShort": {
       "rich": "富文本",
@@ -28,7 +31,8 @@
       "vote": "投票",
       "video": "影片",
       "event": "活動",
-      "help": "求助"
+      "help": "求助",
+      "journal": "生命週期"
     },
     "actions": {
       "like": "讚",

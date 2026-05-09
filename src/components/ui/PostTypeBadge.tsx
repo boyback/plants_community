@@ -9,6 +9,7 @@ const META: Record<PostType, { emoji: string; color: string; zh: string }> = {
   video: { emoji: '🎬', color: 'bg-rose-50 text-rose-700 border-rose-100', zh: '视频' },
   event: { emoji: '🎉', color: 'bg-violet-50 text-violet-700 border-violet-100', zh: '活动' },
   help: { emoji: '🆘', color: 'bg-blue-50 text-blue-700 border-blue-100', zh: '求助' },
+  journal: { emoji: '📖', color: 'bg-emerald-50 text-emerald-700 border-emerald-100', zh: '生命周期' },
 };
 
 const FALLBACK = { emoji: '📄', color: 'bg-leaf-50 text-leaf-700 border-leaf-100', zh: '' };

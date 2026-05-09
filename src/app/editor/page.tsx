@@ -12,6 +12,11 @@ import { useI18n } from '@/i18n/I18nContext';
 import { cn } from '@/lib/utils';
 import { api, ApiError } from '@/lib/client-api';
 import { RichTextEditor } from '@/components/richtext/RichTextEditor';
+import {
+  JournalEditor,
+  emptyJournalDraft,
+  type JournalDraft,
+} from '@/components/post/JournalEditor';
 
 interface Draft {
   id: string;
@@ -58,6 +63,7 @@ function EditorInner() {
   const [voteDeadline, setVoteDeadline] = useState('');
   const [eventLocation, setEventLocation] = useState('');
   const [eventStartAt, setEventStartAt] = useState('');
+  const [journal, setJournal] = useState<JournalDraft>(() => emptyJournalDraft());
 
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
@@ -141,6 +147,7 @@ function EditorInner() {
     voteDeadline,
     eventLocation,
     eventStartAt,
+    journal,
   });
 
   // 根据当前类型判断"内容是否非空"
@@ -191,6 +198,7 @@ function EditorInner() {
     setVoteDeadline(p.voteDeadline ?? '');
     setEventLocation(p.eventLocation ?? '');
     setEventStartAt(p.eventStartAt ?? '');
+    if (p.journal) setJournal(p.journal as JournalDraft);
     setCurrentDraftId(d.id);
     showToast(t('editor.draftSaved'));
   };
@@ -213,6 +221,15 @@ function EditorInner() {
       return showToast(t('editor.voteDeadline'));
     if (type === 'event' && (!eventLocation.trim() || !eventStartAt))
       return showToast(t('editor.event'));
+    if (type === 'journal') {
+      if (!journal.subjectName.trim())
+        return showToast('请填写植物昵称');
+      if (!journal.startDate) return showToast('请填写起始日期');
+      if (!journal.entries.length)
+        return showToast('至少需要一条事件');
+      const bad = journal.entries.find((e) => !e.entryDate);
+      if (bad) return showToast('每条事件都要填日期');
+    }
 
     const isRich = type === 'rich' || type === 'event';
 
@@ -249,6 +266,18 @@ function EditorInner() {
             location: eventLocation,
             startAt: new Date(eventStartAt).toISOString(),
             endAt: new Date(eventStartAt).toISOString(),
+          },
+        }),
+        ...(type === 'journal' && {
+          journal: {
+            subjectName: journal.subjectName.trim(),
+            startDate: new Date(journal.startDate).toISOString(),
+            entries: journal.entries.map((e) => ({
+              entryDate: new Date(e.entryDate).toISOString(),
+              stage: e.stage,
+              note: e.note,
+              images: e.images,
+            })),
           },
         }),
       };
@@ -530,6 +559,10 @@ function EditorInner() {
                     </Row>
                   </div>
                 </>
+              )}
+
+              {type === 'journal' && (
+                <JournalEditor value={journal} onChange={setJournal} />
               )}
 
               <Row label={t('editor.images')}>

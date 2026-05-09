@@ -1,5 +1,18 @@
-/** 帖子查询的公共 include */
-export function postInclude() {
+/** 帖子查询的公共 include。
+ * @param withJournalEntries true 时下发完整事件列表(详情页用),否则只下发 _count(列表用)
+ */
+export function postInclude(opts?: { withJournalEntries?: boolean }) {
+  const journalEntriesInclude = opts?.withJournalEntries
+    ? {
+        entries: {
+          orderBy: [{ entryDate: 'asc' as const }, { orderIdx: 'asc' as const }],
+        },
+        species: { select: { id: true, slug: true, name: true } },
+      }
+    : {
+        species: { select: { id: true, slug: true, name: true } },
+        _count: { select: { entries: true } },
+      };
   return {
     author: {
       include: {
@@ -25,6 +38,7 @@ export function postInclude() {
     board: { include: { _count: { select: { posts: true } } } },
     vote: { include: { options: true } },
     event: { include: { _count: { select: { attendees: true } } } },
+    journal: { include: journalEntriesInclude },
     _count: { select: { comments: true, likes: true } },
   } as const;
 }

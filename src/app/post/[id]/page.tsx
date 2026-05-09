@@ -5,6 +5,7 @@ import { PostBody } from '@/components/post/PostBody';
 import { PostActions } from '@/components/post/PostActions';
 import { MobileActionBar } from '@/components/post/MobileActionBar';
 import { CommentSection } from '@/components/post/CommentSection';
+import { JournalTimeline } from '@/components/post/JournalTimeline';
 import { PostCard } from '@/components/post/PostCard';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
 import { Avatar } from '@/components/ui/Avatar';
@@ -22,7 +23,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
   const postRaw = await prisma.post.findUnique({
     where: { id: params.id },
     include: {
-      ...postInclude(),
+      ...postInclude({ withJournalEntries: true }),
       comments: {
         where: { parentId: null },
         orderBy: { createdAt: 'desc' },
@@ -185,6 +186,8 @@ export default async function PostDetailPage({ params }: { params: { id: string 
 
           <PostActions post={post} initialLiked={liked} initialCollected={collected} />
           <MobileActionBar post={post} initialLiked={liked} initialCollected={collected} />
+
+          {post.type === 'journal' && post.journal && <JournalTimeline post={post} />}
 
           <CommentSection post={post} />
         </div>
