@@ -28,14 +28,14 @@ const badges = [
 
 /* ---------------- 用户(Mock 密码统一 "123456") ---------------- */
 const users = [
-  { slug: 'u1', name: '多肉阿绿', avatar: 'https://i.pravatar.cc/150?img=47', bio: '三年肉龄,坐标华北阳台党,喜欢景天和生石花。', level: 7 },
-  { slug: 'u2', name: '月光玉露', avatar: 'https://i.pravatar.cc/150?img=32', bio: '玉露控,照片都是手机拍的,随便看看。', level: 5 },
-  { slug: 'u3', name: '沙漠老王', avatar: 'https://i.pravatar.cc/150?img=12', bio: '十年老玩家,仙人球和大戟科都玩。', level: 9 },
-  { slug: 'u4', name: '露娜酱',  avatar: 'https://i.pravatar.cc/150?img=5',  bio: '萌新一枚,求带!', level: 2 },
-  { slug: 'u5', name: '花园里的熊', avatar: 'https://i.pravatar.cc/150?img=68', bio: '全日照派,专治徒长。', level: 6 },
-  { slug: 'u6', name: '清风徐来', avatar: 'https://i.pravatar.cc/150?img=15', bio: '爱拍照,不爱养,哈哈。', level: 4 },
-  { slug: 'u7', name: '番杏女王', avatar: 'https://i.pravatar.cc/150?img=44', bio: '研究番杏科十年,主攻生石花。', level: 8 },
-  { slug: 'u8', name: '南方小院', avatar: 'https://i.pravatar.cc/150?img=23', bio: '广州,夏天挣扎户。', level: 3 },
+  { slug: 'u1', name: '多肉阿绿', avatar: '/uploads/avatars/u1.svg', bio: '三年肉龄,坐标华北阳台党,喜欢景天和生石花。', level: 7 },
+  { slug: 'u2', name: '月光玉露', avatar: '/uploads/avatars/u2.svg', bio: '玉露控,照片都是手机拍的,随便看看。', level: 5 },
+  { slug: 'u3', name: '沙漠老王', avatar: '/uploads/avatars/u3.svg', bio: '十年老玩家,仙人球和大戟科都玩。', level: 9 },
+  { slug: 'u4', name: '露娜酱',  avatar: '/uploads/avatars/u4.svg', bio: '萌新一枚,求带!', level: 2 },
+  { slug: 'u5', name: '花园里的熊', avatar: '/uploads/avatars/u5.svg', bio: '全日照派,专治徒长。', level: 6 },
+  { slug: 'u6', name: '清风徐来', avatar: '/uploads/avatars/u6.svg', bio: '爱拍照,不爱养,哈哈。', level: 4 },
+  { slug: 'u7', name: '番杏女王', avatar: '/uploads/avatars/u7.svg', bio: '研究番杏科十年,主攻生石花。', level: 8 },
+  { slug: 'u8', name: '南方小院', avatar: '/uploads/avatars/u8.svg', bio: '广州,夏天挣扎户。', level: 3 },
 ];
 
 /* ---------------- 板块 ---------------- */

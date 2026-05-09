@@ -11,7 +11,10 @@ out
 /prisma/*.db-journal
 
 # 用户上传文件(运行时生成)
-/public/uploads/
+# 用 /* 而不是 /,这样 Git 会进入子目录;然后用 ! 例外保留 avatars
+/public/uploads/*
+# 默认头像例外:站点资源,跟代码一起部署
+!/public/uploads/avatars/
 alipay-keys/
 
 # Docker 持久化数据(MySQL / 用户上传)
