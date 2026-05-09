@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FormEvent, useState, Suspense, useEffect } from 'react';
+import { FormEvent, useState, Suspense, useEffect, useRef } from 'react';
 import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
+import { cn } from '@/lib/utils';
 
 export default function Page() {
   return (
@@ -15,15 +16,30 @@ export default function Page() {
   );
 }
 
+type Tab = 'sms' | 'password';
+
 function LoginInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login } = useAuth();
+  const { login, refresh } = useAuth();
   const { t } = useI18n();
+
+  // 默认 tab:sms(用户接受度更高);旧用户切到 password
+  const [tab, setTab] = useState<Tab>('sms');
+
+  // 用户名 + 密码登录
   const [name, setName] = useState('多肉阿绿');
   const [password, setPassword] = useState('123456');
+
+  // 手机号 + 验证码登录
+  const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
+  const [cooldown, setCooldown] = useState(0); // 60s 倒计时
+  const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
 
   // 微信登录可用性 + 当前是否在微信内
   const [wxStatus, setWxStatus] = useState<{ web: boolean; mp: boolean } | null>(null);
@@ -35,6 +51,9 @@ function LoginInner() {
       .then((r) => r.json())
       .then(setWxStatus)
       .catch(() => null);
+    return () => {
+      if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+    };
   }, []);
 
   // URL 中 ?error=wx_xx 提示
@@ -47,14 +66,75 @@ function LoginInner() {
   }, [searchParams]);
 
   const returnTo = searchParams.get('redirect') ?? '/';
-  // 微信内优先用 H5 (mp);否则用 PC 扫码 (web)
   const wxLoginHref = inWechat && wxStatus?.mp
     ? `/api/auth/wechat/h5?returnTo=${encodeURIComponent(returnTo)}`
     : wxStatus?.web
       ? `/api/auth/wechat/qrcode?returnTo=${encodeURIComponent(returnTo)}`
       : null;
 
-  const onSubmit = async (e: FormEvent) => {
+  const startCooldown = () => {
+    setCooldown(60);
+    cooldownTimerRef.current = setInterval(() => {
+      setCooldown((s) => {
+        if (s <= 1) {
+          if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+  };
+
+  const sendSms = async () => {
+    setErr(null);
+    if (!/^1[3-9]\d{9}$/.test(phone)) {
+      setErr('请输入正确的手机号');
+      return;
+    }
+    setSending(true);
+    try {
+      const r = await fetch('/api/auth/sms/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        setErr(data?.message || '发送失败');
+        return;
+      }
+      startCooldown();
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const onSubmitSms = async (e: FormEvent) => {
+    e.preventDefault();
+    setErr(null);
+    if (!/^1[3-9]\d{9}$/.test(phone)) return setErr('请输入正确的手机号');
+    if (!/^\d{6}$/.test(code)) return setErr('请输入 6 位验证码');
+    setLoading(true);
+    try {
+      const r = await fetch('/api/auth/sms/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, code }),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        setErr(data?.message || '登录失败');
+        return;
+      }
+      await refresh();
+      router.push(returnTo);
+      router.refresh();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onSubmitPwd = async (e: FormEvent) => {
     e.preventDefault();
     setErr(null);
     setLoading(true);
@@ -64,8 +144,7 @@ function LoginInner() {
       setErr(r.msg ?? (t('auth.login.fail') || '登录失败'));
       return;
     }
-    const redirect = searchParams.get('redirect') ?? '/';
-    router.push(redirect);
+    router.push(returnTo);
     router.refresh();
   };
 
@@ -82,43 +161,126 @@ function LoginInner() {
         </div>
 
         <div className="card p-8">
-          <h1 className="text-2xl font-bold text-ink-800">{t('auth.login.title') || '登录肉友社'} 🌵</h1>
+          <h1 className="text-2xl font-bold text-ink-800">
+            {t('auth.login.title') || '登录肉友社'} 🌵
+          </h1>
 
-          <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-ink-800">
-                {t('auth.login.name') || '用户名'}
-              </label>
-              <input
-                className="input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t('auth.login.name') || '输入你的用户名'}
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-ink-800">
-                {t('auth.login.password') || '密码'}
-              </label>
-              <input
-                type="password"
-                className="input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={t('auth.register.password') || '至少 6 位'}
-              />
-            </div>
-            {err && (
-              <div className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{err}</div>
-            )}
+          {/* Tab 切换:手机号 / 用户名 */}
+          <div className="mt-5 flex gap-1 rounded-full bg-leaf-50 p-1">
             <button
-              type="submit"
-              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={loading}
+              type="button"
+              onClick={() => {
+                setTab('sms');
+                setErr(null);
+              }}
+              className={cn(
+                'flex-1 rounded-full py-2 text-sm font-medium transition-colors',
+                tab === 'sms' ? 'bg-white text-leaf-700 shadow-sm' : 'text-ink-700/60'
+              )}
             >
-              {loading ? t('common.loading') || '加载中…' : t('auth.login.submit') || '登录'}
+              📱 手机号登录
             </button>
-          </form>
+            <button
+              type="button"
+              onClick={() => {
+                setTab('password');
+                setErr(null);
+              }}
+              className={cn(
+                'flex-1 rounded-full py-2 text-sm font-medium transition-colors',
+                tab === 'password' ? 'bg-white text-leaf-700 shadow-sm' : 'text-ink-700/60'
+              )}
+            >
+              🔑 用户名登录
+            </button>
+          </div>
+
+          {/* 手机号 + 验证码 表单 */}
+          {tab === 'sms' && (
+            <form onSubmit={onSubmitSms} className="mt-5 space-y-4">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-ink-800">手机号</label>
+                <input
+                  type="tel"
+                  className="input"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                  placeholder="请输入 11 位手机号"
+                  maxLength={11}
+                  inputMode="numeric"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-ink-800">验证码</label>
+                <div className="flex gap-2">
+                  <input
+                    className="input flex-1"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                    placeholder="6 位验证码"
+                    maxLength={6}
+                    inputMode="numeric"
+                  />
+                  <button
+                    type="button"
+                    onClick={sendSms}
+                    disabled={cooldown > 0 || sending || !/^1[3-9]\d{9}$/.test(phone)}
+                    className="btn-ghost shrink-0 !px-4 !text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {cooldown > 0 ? `${cooldown}s` : sending ? '发送中…' : '获取验证码'}
+                  </button>
+                </div>
+              </div>
+              {err && (
+                <div className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{err}</div>
+              )}
+              <button
+                type="submit"
+                className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading}
+              >
+                {loading ? '登录中…' : '登录 / 注册'}
+              </button>
+              <p className="text-center text-[11px] text-leaf-700/60">
+                未注册的手机号将自动创建账号
+              </p>
+            </form>
+          )}
+
+          {/* 用户名 + 密码 表单 */}
+          {tab === 'password' && (
+            <form onSubmit={onSubmitPwd} className="mt-5 space-y-4">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-ink-800">用户名</label>
+                <input
+                  className="input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={t('auth.login.name') || '输入你的用户名'}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-ink-800">密码</label>
+                <input
+                  type="password"
+                  className="input"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="至少 6 位"
+                />
+              </div>
+              {err && (
+                <div className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{err}</div>
+              )}
+              <button
+                type="submit"
+                className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading}
+              >
+                {loading ? t('common.loading') || '加载中…' : t('auth.login.submit') || '登录'}
+              </button>
+            </form>
+          )}
 
           {/* 微信一键登录 */}
           {wxLoginHref && (
@@ -136,9 +298,7 @@ function LoginInner() {
                   <path d="M9.5 4C5.36 4 2 6.91 2 10.5c0 2.07 1.13 3.91 2.88 5.12L4 18l2.5-1.32c.95.21 1.96.32 3 .32.34 0 .67-.01 1-.04-.13-.5-.2-1.02-.2-1.56 0-3.59 3.36-6.5 7.5-6.5.27 0 .54.01.8.04C18.1 5.95 14.18 4 9.5 4zM7 9a1 1 0 110-2 1 1 0 010 2zm5 0a1 1 0 110-2 1 1 0 010 2z" />
                   <path d="M22 14.5C22 11.46 18.87 9 15 9s-7 2.46-7 5.5c0 1.83 1.13 3.45 2.86 4.45L10 21l2.06-1.13c.93.21 1.92.31 2.94.31 3.87 0 7-2.46 7-5.18zM13 13a.8.8 0 110-1.6.8.8 0 010 1.6zm4 0a.8.8 0 110-1.6.8.8 0 010 1.6z" />
                 </svg>
-                {inWechat
-                  ? t('auth.login.wxH5') || '微信一键登录'
-                  : t('auth.login.wxQr') || '微信扫码登录'}
+                {inWechat ? '微信一键登录' : '微信扫码登录'}
               </a>
             </>
           )}
@@ -147,10 +307,6 @@ function LoginInner() {
             <Link href="/register" className="link">
               {t('auth.login.toRegister') || '还没账号?立即注册'}
             </Link>
-          </div>
-
-          <div className="mt-6 rounded-lg bg-leaf-50 p-3 text-[11px] text-leaf-700">
-            💡 <b>Demo</b> · 建议使用预置用户「多肉阿绿 / 123456」快速体验。
           </div>
         </div>
 

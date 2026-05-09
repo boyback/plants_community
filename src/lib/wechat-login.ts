@@ -313,16 +313,14 @@ async function persistWechatAvatarAsync(userId: string, srcUrl: string): Promise
   });
 }
 
-/** 生成不冲突的 name:优先用昵称,冲突则追加随机 4 位 */
-async function generateUniqueName(nickname: string): Promise<string> {
-  // 微信昵称可能含 emoji + 特殊字符,清洗一下
-  let base = (nickname || '').trim().slice(0, 16) || '微信用户';
-  // 先尝试原样
+/** 生成不冲突的 name:优先用昵称,冲突则追加随机 4 位
+ *  导出供其他第三方登录(短信注册等)共用 */
+export async function generateUniqueName(nickname: string, fallbackPrefix = 'user'): Promise<string> {
+  const base = (nickname || '').trim().slice(0, 16) || fallbackPrefix;
   for (let i = 0; i < 5; i++) {
     const candidate = i === 0 ? base : `${base}_${randomBytes(2).toString('hex')}`;
     const exist = await prisma.user.findUnique({ where: { name: candidate } });
     if (!exist) return candidate;
   }
-  // 兜底
-  return `wx_${randomBytes(5).toString('hex')}`;
+  return `${fallbackPrefix}_${randomBytes(5).toString('hex')}`;
 }
