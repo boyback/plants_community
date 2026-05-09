@@ -116,10 +116,14 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
 
   // m 端列数偏好:1 或 2,默认 2(localStorage 持久化)
   const [mobileCols, setMobileCols] = useState<1 | 2>(2);
+  // PC 端列数偏好:3 或 4,默认 3(localStorage 持久化)
+  const [desktopCols, setDesktopCols] = useState<3 | 4>(3);
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const saved = Number(localStorage.getItem('rouyou.feed.mobileCols'));
-    if (saved === 1 || saved === 2) setMobileCols(saved);
+    const savedM = Number(localStorage.getItem('rouyou.feed.mobileCols'));
+    if (savedM === 1 || savedM === 2) setMobileCols(savedM as 1 | 2);
+    const savedD = Number(localStorage.getItem('rouyou.feed.desktopCols'));
+    if (savedD === 3 || savedD === 4) setDesktopCols(savedD as 3 | 4);
   }, []);
   const updateMobileCols = (n: 1 | 2) => {
     setMobileCols(n);
@@ -127,9 +131,16 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
       localStorage.setItem('rouyou.feed.mobileCols', String(n));
     } catch {}
   };
+  const updateDesktopCols = (n: 3 | 4) => {
+    setDesktopCols(n);
+    try {
+      localStorage.setItem('rouyou.feed.desktopCols', String(n));
+    } catch {}
+  };
 
-  // m 端 column class:1 或 2(sm+ 总是 2,md+ 总是 3)
+  // m 端 column class:1 或 2;md+ 按用户偏好 3 或 4
   const mobileColClass = mobileCols === 1 ? 'columns-1' : 'columns-2';
+  const desktopColClass = desktopCols === 4 ? 'md:columns-4' : 'md:columns-3';
 
   return (
     <div {...bind}>
@@ -139,6 +150,8 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
         setTab={setTab}
         mobileCols={mobileCols}
         onMobileColsChange={updateMobileCols}
+        desktopCols={desktopCols}
+        onDesktopColsChange={updateDesktopCols}
       />
 
       {tab === 'following' && !user ? (
@@ -150,15 +163,15 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
           {cur.err}
         </div>
       ) : !cur.loaded ? (
-        <FeedSkeleton mobileCols={mobileCols} />
+        <FeedSkeleton mobileCols={mobileCols} desktopCols={desktopCols} />
       ) : cur.items.length === 0 ? (
         <div className="mt-6 rounded-xl border border-dashed border-leaf-200 bg-white/60 py-12 text-center text-sm text-leaf-700/70">
           暂时没有内容
         </div>
       ) : (
         <>
-          {/* CSS columns 瀑布流:m 端按用户偏好 1/2,sm=2,md+=3 */}
-          <div className={`mt-4 ${mobileColClass} gap-3 sm:columns-2 md:columns-3 [column-fill:_balance]`}>
+          {/* CSS columns 瀑布流:m 端按用户偏好 1/2,sm=2,md+ 按用户偏好 3/4 */}
+          <div className={`mt-4 ${mobileColClass} gap-3 sm:columns-2 ${desktopColClass} [column-fill:_balance]`}>
             {cur.items.map((p) => (
               <div key={p.id} className="mb-3 break-inside-avoid">
                 <FeedCard post={p} source={tabToSource(tab)} />
@@ -226,10 +239,17 @@ function FeedCard({
   );
 }
 
-function FeedSkeleton({ mobileCols = 2 }: { mobileCols?: 1 | 2 }) {
+function FeedSkeleton({
+  mobileCols = 2,
+  desktopCols = 3,
+}: {
+  mobileCols?: 1 | 2;
+  desktopCols?: 3 | 4;
+}) {
   const colClass = mobileCols === 1 ? 'columns-1' : 'columns-2';
+  const dColClass = desktopCols === 4 ? 'md:columns-4' : 'md:columns-3';
   return (
-    <div className={`mt-4 ${colClass} gap-3 sm:columns-2 md:columns-3`}>
+    <div className={`mt-4 ${colClass} gap-3 sm:columns-2 ${dColClass}`}>
       {Array.from({ length: 9 }).map((_, i) => (
         <div key={i} className="mb-3 break-inside-avoid">
           <PostCardSkeleton variant={i} />
@@ -253,11 +273,15 @@ function TabHeader({
   setTab,
   mobileCols,
   onMobileColsChange,
+  desktopCols,
+  onDesktopColsChange,
 }: {
   tab: TabKey;
   setTab: (t: TabKey) => void;
   mobileCols: 1 | 2;
   onMobileColsChange: (n: 1 | 2) => void;
+  desktopCols: 3 | 4;
+  onDesktopColsChange: (n: 3 | 4) => void;
 }) {
   const { t } = useI18n();
   return (
@@ -297,13 +321,34 @@ function TabHeader({
           </button>
         ))}
       </div>
+
+      {/* PC 端 3/4 列切换(m 端隐藏,md+ 显示) */}
+      <div className="ml-auto hidden md:flex items-center gap-0.5 rounded-lg bg-leaf-50/60 p-0.5">
+        {([3, 4] as const).map((n) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => onDesktopColsChange(n)}
+            title={`${n} 列`}
+            className={cn(
+              'grid h-7 w-9 place-items-center rounded transition-colors',
+              desktopCols === n
+                ? 'bg-white text-leaf-700 shadow-sm'
+                : 'text-ink-500 hover:text-leaf-700'
+            )}
+          >
+            <ColsIcon n={n} />
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
 
-function ColsIcon({ n }: { n: 1 | 2 }) {
+function ColsIcon({ n }: { n: 1 | 2 | 3 | 4 }) {
+  const grid = n === 1 ? 'grid-cols-1' : n === 2 ? 'grid-cols-2' : n === 3 ? 'grid-cols-3' : 'grid-cols-4';
   return (
-    <span className={`grid h-3.5 w-4 gap-[1.5px] ${n === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+    <span className={`grid h-3.5 w-4 gap-[1.5px] ${grid}`}>
       {Array.from({ length: n }).map((_, i) => (
         <span key={i} className="block rounded-[1px] bg-current" />
       ))}
