@@ -1,5 +1,5 @@
 /** 帖子查询的公共 include。
- * @param withJournalEntries true 时下发完整事件列表(详情页用),否则只下发 _count(列表用)
+ * @param withJournalEntries true 时下发完整事件列表(详情页用),否则下发前 3 条 + _count(feed 卡片预览用)
  */
 export function postInclude(opts?: { withJournalEntries?: boolean }) {
   const journalEntriesInclude = opts?.withJournalEntries
@@ -10,6 +10,11 @@ export function postInclude(opts?: { withJournalEntries?: boolean }) {
         species: { select: { id: true, slug: true, name: true } },
       }
     : {
+        // feed 卡片需要预览前 3 条事件;_count 给出总数判断是否需要蒙层
+        entries: {
+          orderBy: [{ entryDate: 'asc' as const }, { orderIdx: 'asc' as const }],
+          take: 3,
+        },
         species: { select: { id: true, slug: true, name: true } },
         _count: { select: { entries: true } },
       };

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { PostCard } from '@/components/post/PostCard';
+import { PostCardSkeleton } from '@/components/post/PostCardSkeleton';
 import { useI18n } from '@/i18n/I18nContext';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from '@/lib/client-api';
@@ -39,11 +40,13 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
   const rerender = () => force((x) => x + 1);
 
   const [loading, setLoading] = useState(false);
+  const loadingRef = useRef(false);
 
-  const load = async (t: TabKey, more: boolean) => {
+  const load = useCallback(async (t: TabKey, more: boolean) => {
     const s = stateRef.current[t];
     if (more && !s.cursor && s.loaded) return; // 没有更多
-    if (loading) return;
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     setLoading(true);
     try {
       const cursor = more ? s.cursor : null;
@@ -62,10 +65,11 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
         loaded: true,
       };
     } finally {
+      loadingRef.current = false;
       setLoading(false);
       rerender();
     }
-  };
+  }, []);
 
   // tab 变化时如果还没拉过,自动拉
   useEffect(() => {
@@ -105,6 +109,24 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
     await load(tab, false);
   });
 
+  // 哨兵:接近视口时自动拉下一页
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !cur.cursor) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) void load(tab, true);
+        }
+      },
+      { rootMargin: '0px 0px 600px 0px' }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cur.cursor, tab]);
+
   return (
     <div {...bind}>
       <PullIndicator status={status} progress={progress} />
@@ -134,17 +156,22 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
             {cur.items.map((p) => (
               <FeedCard key={p.id} post={p} source={tabToSource(tab)} />
             ))}
+            {/* 加载下一页时插入骨架屏占位 */}
+            {loading &&
+              cur.items.length > 0 &&
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={`sk-${i}`} className="mb-3 break-inside-avoid">
+                  <PostCardSkeleton variant={i} />
+                </div>
+              ))}
           </div>
+          {/* 哨兵 */}
           {cur.cursor && (
-            <div className="mt-6 flex justify-center">
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => load(tab, true)}
-                className="btn-outline !text-sm"
-              >
-                {loading ? '加载中...' : '加载更多'}
-              </button>
+            <div ref={sentinelRef} className="h-1 w-full" aria-hidden />
+          )}
+          {!cur.cursor && cur.items.length > 0 && (
+            <div className="py-6 text-center text-xs text-leaf-700/60">
+              — 没有更多了 —
             </div>
           )}
         </>
@@ -187,16 +214,11 @@ function FeedCard({ post, source }: { post: Post; source: string }) {
 }
 
 function FeedSkeleton({ cols }: { cols: 1 | 2 | 3 | 4 }) {
-  const heights = ['h-48', 'h-64', 'h-56', 'h-72', 'h-52', 'h-60', 'h-44', 'h-68'];
   return (
     <div className={`mt-4 gap-3 ${colsToClass(cols)}`}>
-      {heights.map((h, i) => (
-        <div key={i} className="mb-3 break-inside-avoid card overflow-hidden">
-          <div className={`w-full animate-pulse bg-leaf-100/60 ${h}`} />
-          <div className="space-y-2 p-3">
-            <div className="h-3 w-3/4 animate-pulse rounded bg-leaf-100/60" />
-            <div className="h-3 w-1/2 animate-pulse rounded bg-leaf-100/60" />
-          </div>
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="mb-3 break-inside-avoid">
+          <PostCardSkeleton variant={i} />
         </div>
       ))}
     </div>

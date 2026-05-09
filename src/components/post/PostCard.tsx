@@ -4,6 +4,7 @@ import type { Post } from '@/lib/types';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
+import { STAGE_META } from '@/lib/journal';
 import { formatNumber, timeAgo, cn, boardUrl } from '@/lib/utils';
 
 /**
@@ -28,14 +29,15 @@ export function PostCard({
 }
 
 /**
- * Feed 主卡:**纯预览**(无类型相关交互)
- * 卡内一律不展开内容(投票/活动/日志/short/video 都不预览),
- * 用户想看完整数据一律点进 `/post/:id` 详情页。
+ * Feed 主卡片
  *
- * 卡片三段:
- *   1) 图片区(有 cover 才显示;视频右上角带播放小图标)
- *   2) 标题(可选 species chip 在标题上方)
- *   3) 作者 / 时间 + 看·赞·评 三计数
+ * 设计原则:
+ * - **整张卡片是一个 Link**,任何位置点击都进 `/post/:id`
+ * - 类型相关的预览块(投票/活动/时间线 / short)在卡内**纯展示**,不做交互
+ *   (避免列表里出现要按钮但点完又要跳转的体验割裂)
+ * - 时间线(journal)只展示前 3 条,后面用「…」蒙层暗示「还有更多去详情看」
+ *
+ * 嵌套 Link(作者头像、species chip)用 `stopPropagation` 让它们生效但不触发卡片跳转
  */
 function FeedCard({ post, className }: { post: Post; className?: string }) {
   const cover = post.cover ?? post.images?.[0];
@@ -56,11 +58,9 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
             className="block h-auto w-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
-          {/* 类型徽章固定在左上角 */}
           <div className="absolute left-2 top-2">
             <PostTypeBadge type={post.type} />
           </div>
-          {/* video 类型加个播放角标暗示;不预览视频内容 */}
           {post.type === 'video' && (
             <div className="pointer-events-none absolute inset-0 grid place-items-center">
               <div className="grid h-12 w-12 place-items-center rounded-full bg-black/50 text-white">
@@ -70,21 +70,32 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
           )}
         </div>
       ) : (
-        // 无封面时,仍然给类型徽章一个位置(标题上方)
         <div className="px-3 pt-3">
           <PostTypeBadge type={post.type} />
         </div>
       )}
 
       <div className="space-y-2 p-3">
-        {/* species chip 简短提示(可点击,要 stop propagation 不触发卡片整体跳转) */}
         {post.species && <SpeciesChip species={post.species} board={post.board} />}
 
         <h3 className="line-clamp-2 text-sm font-semibold text-ink-800 group-hover:text-leaf-700 md:text-base">
           {post.title}
         </h3>
 
-        {/* 作者 + meta:author chip 是 nested link,需要 stop propagation */}
+        {/* —— 类型预览块(只展示,不可交互) —— */}
+        {post.type === 'short' && post.content && (
+          <p className="line-clamp-2 text-xs leading-5 text-ink-700/80 md:text-[13px]">
+            {post.content}
+          </p>
+        )}
+
+        {post.type === 'vote' && post.vote && <VotePreview post={post} />}
+
+        {post.type === 'event' && post.event && <EventPreview post={post} />}
+
+        {post.type === 'journal' && post.journal && <JournalPreview post={post} />}
+
+        {/* —— 作者 + meta —— */}
         <div className="flex items-center justify-between pt-0.5">
           <NestedLink
             href={`/user/${post.author.id}`}
@@ -126,6 +137,130 @@ function NestedLink({
       {children}
     </Link>
   );
+}
+
+/** 投票预览(只读):展示问题 + top 3 选项进度条 */
+function VotePreview({ post }: { post: Post }) {
+  if (!post.vote) return null;
+  const total = post.vote.options.reduce((s, o) => s + o.votes, 0);
+  const top = [...post.vote.options].sort((a, b) => b.votes - a.votes).slice(0, 3);
+  return (
+    <div className="space-y-1 rounded-lg bg-amber-50/60 p-2 text-amber-900">
+      <div className="line-clamp-1 text-[11px] font-medium">🗳️ {post.vote.question}</div>
+      {top.map((o) => {
+        const pct = total ? Math.round((o.votes / total) * 100) : 0;
+        return (
+          <div
+            key={o.id}
+            className="relative overflow-hidden rounded bg-white/70 px-1.5 py-0.5 text-[10px]"
+          >
+            <div
+              className="absolute inset-y-0 left-0 bg-amber-200/70"
+              style={{ width: `${pct}%` }}
+            />
+            <div className="relative flex justify-between">
+              <span className="truncate">{o.label}</span>
+              <span className="ml-2 tabular-nums">{pct}%</span>
+            </div>
+          </div>
+        );
+      })}
+      <div className="text-[10px] text-amber-700/80">
+        {total} 票 ·{' '}
+        {new Date(post.vote.deadline).getTime() < Date.now() ? '已截止' : '进行中'}
+      </div>
+    </div>
+  );
+}
+
+/** 活动预览(只读):位置 + 时间 + 已报名人数 */
+function EventPreview({ post }: { post: Post }) {
+  if (!post.event) return null;
+  return (
+    <div className="rounded-lg bg-violet-50/80 p-2 text-[11px] text-violet-900">
+      <div className="flex items-center gap-1">
+        <span>📍</span>
+        <span className="truncate">{post.event.location}</span>
+      </div>
+      <div className="mt-0.5 flex items-center justify-between">
+        <span className="text-violet-800/80">
+          🕘 {new Date(post.event.startAt).toLocaleDateString()}
+        </span>
+        <span className="text-violet-700">{post.event.attendees} 人已报名</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 时间线预览(只读):
+ *  - 显示前 3 条事件(后端 take:3)
+ *  - 总数 > 3 时底部叠 fade 蒙层 +「+ N 条」提示「点进去看完整时间线」
+ */
+function JournalPreview({ post }: { post: Post }) {
+  if (!post.journal) return null;
+  const j = post.journal;
+  const shown = j.entries ?? [];
+  const restCount = Math.max(0, j.entriesCount - shown.length);
+  const hasMore = restCount > 0;
+
+  return (
+    <div className="rounded-lg bg-emerald-50/60 p-2">
+      <div className="mb-1 flex items-center justify-between text-[10px] text-emerald-700/80">
+        <span className="truncate">📖 {j.subjectName}</span>
+        <span>第 {j.daysSinceStart} 天 · 共 {j.entriesCount} 条</span>
+      </div>
+
+      <div className="relative">
+        <ol className="space-y-1.5">
+          {shown.map((e) => {
+            const meta = STAGE_META[e.stage];
+            return (
+              <li key={e.id} className="flex items-start gap-1.5">
+                <span
+                  className={cn(
+                    'mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px]',
+                    meta.color.replace('border-', '')
+                  )}
+                >
+                  {meta.emoji}
+                </span>
+                <div className="min-w-0 flex-1 text-[10px] leading-4">
+                  <span className="text-emerald-800/80">
+                    {new Date(e.entryDate).toLocaleDateString('zh-CN', {
+                      month: 'numeric',
+                      day: 'numeric',
+                    })}
+                  </span>{' '}
+                  <span className="text-emerald-900/90">
+                    {e.note ? truncate(e.note, 30) : meta.zh}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+
+        {/* 底部蒙层 + 提示 */}
+        {hasMore && (
+          <>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-emerald-50/80 to-transparent"
+            />
+            <div className="mt-1 text-center text-[10px] text-emerald-700/80">
+              ⋯ 点击查看完整时间线
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function truncate(s: string, n: number) {
+  if (s.length <= n) return s;
+  return s.slice(0, n) + '…';
 }
 
 function CompactCard({ post, className }: { post: Post; className?: string }) {
