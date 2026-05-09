@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Logo } from '@/components/ui/Logo';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
@@ -22,6 +22,7 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadMsgs, setUnreadMsgs] = useState(0);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -120,11 +121,25 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                 <Icon name="plus" size={14} />
                 {t('nav.newPost')}
               </Link>
-              <div className="relative">
+              <div
+                className="relative"
+                onMouseEnter={() => {
+                  if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+                  setMenuOpen(true);
+                }}
+                onMouseLeave={() => {
+                  // 给点延迟,避免鼠标快速划过菜单边缘时闪烁
+                  if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+                  closeTimerRef.current = setTimeout(() => setMenuOpen(false), 150);
+                }}
+              >
                 <button
                   type="button"
                   className="ml-1 flex items-center gap-2 rounded-full p-0.5 hover:bg-leaf-50"
+                  // 移动端兜底:点击也能开关
                   onClick={() => setMenuOpen((o) => !o)}
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
                 >
                   <UserAvatar
                     src={user.avatar}
@@ -135,74 +150,78 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                   />
                 </button>
                 {menuOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-10"
-                      onClick={() => setMenuOpen(false)}
-                    />
-                    <div className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-xl border border-leaf-100 bg-white shadow-lg">
-                      <div className="border-b border-leaf-50 px-3 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className={cn(
-                              'text-sm font-medium',
-                              vip.isVip
-                                ? 'bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-600 bg-clip-text text-transparent'
-                                : ''
-                            )}
-                          >
-                            {user.name}
-                          </span>
-                          {vip.isVip && <VipBadge size="xs" lifetime={vip.lifetime} />}
-                        </div>
-                        <div className="mt-0.5 text-xs text-leaf-600">
-                          Lv.{user.level} · 💎 {pointsBalance}
-                        </div>
-                      </div>
-                      <MenuItem href={`/user/${user.id}`} icon="user" onClick={() => setMenuOpen(false)}>
-                        {t('nav.myProfile')}
-                      </MenuItem>
-                      <MenuItem href="/editor" icon="edit" onClick={() => setMenuOpen(false)}>
-                        {t('nav.newPost')}
-                      </MenuItem>
-                      <div className="my-1 border-t border-leaf-50" />
-                      <MenuItem href="/messages" icon="message" onClick={() => setMenuOpen(false)}>
-                        {t('nav.messages')}
-                      </MenuItem>
-                      <MenuItem href="/notifications" icon="bell" onClick={() => setMenuOpen(false)}>
-                        {t('nav.notifications')}
-                      </MenuItem>
-                      <MenuItem href="/orders" icon="check" onClick={() => setMenuOpen(false)}>
-                        {t('nav.myOrders')}
-                      </MenuItem>
-                      <MenuItem href="/addresses" icon="board" onClick={() => setMenuOpen(false)}>
-                        {t('nav.shippingAddress')}
-                      </MenuItem>
-                      <div className="my-1 border-t border-leaf-50" />
-                      <MenuItem href="/points" icon="star" onClick={() => setMenuOpen(false)}>
-                        {t('nav.pointsCenter')}
-                      </MenuItem>
-                      <MenuItem href="/tasks" icon="check" onClick={() => setMenuOpen(false)}>
-                        {t('nav.activityCenter')}
-                      </MenuItem>
-                      <MenuItem href="/vip" icon="star" onClick={() => setMenuOpen(false)}>
-                        {vip.isVip ? t('nav.vipCenter') : t('nav.openVip')}
-                      </MenuItem>
-                      <div className="my-1 border-t border-leaf-50" />
-                      <MenuItem href="/settings" icon="settings" onClick={() => setMenuOpen(false)}>
-                        {t('nav.settings')}
-                      </MenuItem>
-                      <MenuItem
-                        icon="logout"
-                        onClick={async () => {
-                          setMenuOpen(false);
-                          await logout();
-                        }}
+                  <div className="absolute right-0 z-20 mt-2 w-72 overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-xl">
+                      {/* 顶部用户卡片 — 跳到个人主页 */}
+                      <Link
+                        href={`/user/${user.id}`}
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 border-b border-leaf-50 bg-gradient-to-br from-leaf-50/60 to-white p-4 transition-colors hover:from-leaf-100/60"
                       >
-                        {t('nav.logout')}
-                      </MenuItem>
+                        <Avatar src={user.avatar} alt={user.name} size={44} ring />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={cn(
+                                'truncate text-sm font-semibold',
+                                vip.isVip
+                                  ? 'bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-600 bg-clip-text text-transparent'
+                                  : ''
+                              )}
+                            >
+                              {user.name}
+                            </span>
+                            {vip.isVip && <VipBadge size="xs" lifetime={vip.lifetime} />}
+                          </div>
+                          <div className="mt-0.5 text-[11px] text-leaf-600/80">
+                            Lv.{user.level} · 💎 {pointsBalance}
+                          </div>
+                        </div>
+                        <Icon name="arrow-right" size={14} className="text-leaf-500" />
+                      </Link>
+
+                      {/* 4 格高频入口 */}
+                      <div className="grid grid-cols-4 gap-1 border-b border-leaf-50 bg-leaf-50/30 p-2">
+                        <QuickItem href="/editor" emoji="✏️" label={t('nav.newPost')} onClose={() => setMenuOpen(false)} />
+                        <QuickItem href="/messages" emoji="💬" label={t('nav.messages')} badge={unreadMsgs} onClose={() => setMenuOpen(false)} />
+                        <QuickItem href="/notifications" emoji="🔔" label={t('nav.notifications')} badge={unreadNotifs} onClose={() => setMenuOpen(false)} />
+                        <QuickItem href={vip.isVip ? '/vip' : '/vip'} emoji={vip.isVip ? '👑' : '✨'} label={vip.isVip ? 'VIP' : t('nav.openVip')} onClose={() => setMenuOpen(false)} />
+                      </div>
+
+                      {/* 第二组 — 业务操作 */}
+                      <RowItem href="/orders" icon="check" label={t('nav.myOrders')} onClose={() => setMenuOpen(false)} />
+                      <RowItem href="/addresses" icon="board" label={t('nav.shippingAddress')} onClose={() => setMenuOpen(false)} />
+
+                      <div className="border-t border-leaf-50" />
+
+                      {/* 第三组 — 增长激励 */}
+                      <RowItem href="/points" icon="star" label={t('nav.pointsCenter')} suffix={`💎${pointsBalance}`} onClose={() => setMenuOpen(false)} />
+                      <RowItem href="/tasks" icon="check" label={t('nav.activityCenter')} onClose={() => setMenuOpen(false)} />
+
+                      <div className="border-t border-leaf-50" />
+
+                      {/* 第四组 — 设置/登出 */}
+                      <div className="flex">
+                        <Link
+                          href="/settings"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex flex-1 items-center justify-center gap-1.5 px-3 py-2.5 text-xs text-ink-700 transition-colors hover:bg-leaf-50"
+                        >
+                          <Icon name="settings" size={14} />
+                          {t('nav.settings')}
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setMenuOpen(false);
+                            await logout();
+                          }}
+                          className="flex flex-1 items-center justify-center gap-1.5 border-l border-leaf-50 px-3 py-2.5 text-xs text-rose-600 transition-colors hover:bg-rose-50"
+                        >
+                          <Icon name="logout" size={14} />
+                          {t('nav.logout')}
+                        </button>
+                      </div>
                     </div>
-                  </>
                 )}
               </div>
             </>
@@ -274,34 +293,60 @@ function IconButton({
   );
 }
 
-function MenuItem({
+/** 用户菜单顶部 4 格图标按钮(发帖/私信/通知/VIP)。 */
+function QuickItem({
+  href,
+  emoji,
+  label,
+  badge,
+  onClose,
+}: {
+  href: string;
+  emoji: string;
+  label: string;
+  badge?: number;
+  onClose: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClose}
+      className="relative flex flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[10px] text-ink-700 transition-colors hover:bg-white"
+    >
+      <span className="text-lg leading-none">{emoji}</span>
+      <span className="leading-tight">{label}</span>
+      {badge && badge > 0 ? (
+        <span className="absolute right-1 top-1 grid h-4 min-w-[16px] place-items-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      ) : null}
+    </Link>
+  );
+}
+
+/** 用户菜单中段一行式菜单(订单/地址/积分等)。 */
+function RowItem({
   href,
   icon,
-  onClick,
-  children,
+  label,
+  suffix,
+  onClose,
 }: {
-  href?: string;
+  href: string;
   icon: Parameters<typeof Icon>[0]['name'];
-  onClick?: () => void;
-  children: React.ReactNode;
+  label: string;
+  suffix?: string;
+  onClose: () => void;
 }) {
-  const content = (
-    <>
-      <Icon name={icon} size={15} className="text-leaf-600" />
-      <span>{children}</span>
-    </>
-  );
-  const cls = 'flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-leaf-50 text-ink-800';
-  if (href) {
-    return (
-      <Link href={href} className={cls} onClick={onClick}>
-        {content}
-      </Link>
-    );
-  }
   return (
-    <button type="button" onClick={onClick} className={cls}>
-      {content}
-    </button>
+    <Link
+      href={href}
+      onClick={onClose}
+      className="flex w-full items-center gap-2 px-4 py-2 text-xs text-ink-800 transition-colors hover:bg-leaf-50"
+    >
+      <Icon name={icon} size={14} className="text-leaf-600" />
+      <span className="flex-1">{label}</span>
+      {suffix && <span className="text-[10px] text-ink-500">{suffix}</span>}
+    </Link>
   );
 }

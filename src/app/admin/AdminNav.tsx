@@ -48,6 +48,7 @@ const NAV: { section: string; items: { href: string; label: string; minRole: Rol
     section: '系统',
     items: [
       { href: '/admin/announcements', label: '📣 站内公告', minRole: 'admin' },
+      { href: '/admin/banners', label: '🖼️ 首页 Banner', minRole: 'admin' },
       { href: '/admin/themes', label: '🎨 主题调度', minRole: 'admin' },
       { href: '/admin/tasks', label: '🎯 任务配置', minRole: 'admin' },
       { href: '/admin/logs', label: '📜 操作日志', minRole: 'admin' },

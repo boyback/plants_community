@@ -196,6 +196,8 @@ export interface BannerItem {
   image: string;
   link: string;
   tint: string; // tailwind color class for overlay
+  /** 这张图停留毫秒数,0 = 用全站默认(3000ms) */
+  durationMs?: number;
 }
 
 // ============================================================

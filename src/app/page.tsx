@@ -41,6 +41,7 @@ export default async function HomePage() {
     image: b.image,
     link: b.link,
     tint: b.tint,
+    durationMs: b.durationMs > 0 ? b.durationMs : undefined,
   }));
   const recommendUsers = recommendUsersRaw.map(serializeUser);
 

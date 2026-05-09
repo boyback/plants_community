@@ -460,14 +460,16 @@ model Draft {
 // ============== Banner ==============
 
 model Banner {
-  id       String  @id @default(cuid())
-  title    String
-  subtitle String  @db.Text
-  image    String
-  link     String
-  tint     String
-  orderIdx Int     @default(0)
-  enabled  Boolean @default(true)
+  id         String  @id @default(cuid())
+  title      String
+  subtitle   String  @db.Text
+  image      String
+  link       String
+  tint       String
+  orderIdx   Int     @default(0)
+  enabled    Boolean @default(true)
+  /// 这一张图停留毫秒数,0 = 用全站默认(3000ms)
+  durationMs Int     @default(0)
 
   @@map("banners")
 }
