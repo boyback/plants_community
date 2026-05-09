@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const { reopen } = useCookieConsent();
 
   const sections = [
+    // —— 账户 ——
     {
       href: '/settings/profile',
       icon: '👤' as const,
@@ -29,12 +30,39 @@ export default function SettingsPage() {
       title: t('settings.privacy.title') || '隐私',
       desc: t('settings.privacy.desc') || '关注 / 粉丝 可见性',
     },
+    // —— 业务 ——
+    {
+      href: '/orders',
+      icon: '📦' as const,
+      title: t('nav.myOrders') || '我的订单',
+      desc: '商品订单、退款、发货状态',
+    },
     {
       href: '/addresses',
       icon: '📮' as const,
       title: t('settings.addresses.title') || '收件地址',
       desc: t('settings.addresses.desc') || '管理默认地址、新增、删除',
     },
+    {
+      href: '/vip',
+      icon: '✨' as const,
+      title: t('nav.openVip') || '大会员',
+      desc: '权益、续费、订单',
+    },
+    // —— 激励 ——
+    {
+      href: '/points',
+      icon: '💎' as const,
+      title: t('nav.pointsCenter') || '积分中心',
+      desc: '积分余额、明细、兑换',
+    },
+    {
+      href: '/tasks',
+      icon: '🎯' as const,
+      title: t('nav.activityCenter') || '活动中心',
+      desc: '每日任务 · 累计奖励 · 徽章',
+    },
+    // —— 法律 ——
     {
       href: '/terms',
       icon: '📜' as const,

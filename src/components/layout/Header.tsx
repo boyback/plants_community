@@ -181,27 +181,17 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                         <Icon name="arrow-right" size={14} className="text-leaf-500" />
                       </Link>
 
-                      {/* 4 格高频入口 */}
-                      <div className="grid grid-cols-4 gap-1 border-b border-leaf-50 bg-leaf-50/30 p-2">
-                        <QuickItem href="/editor" emoji="✏️" label={t('nav.newPost')} onClose={() => setMenuOpen(false)} />
-                        <QuickItem href="/messages" emoji="💬" label={t('nav.messages')} badge={unreadMsgs} onClose={() => setMenuOpen(false)} />
-                        <QuickItem href="/notifications" emoji="🔔" label={t('nav.notifications')} badge={unreadNotifs} onClose={() => setMenuOpen(false)} />
-                        <QuickItem href={vip.isVip ? '/vip' : '/vip'} emoji={vip.isVip ? '👑' : '✨'} label={vip.isVip ? 'VIP' : t('nav.openVip')} onClose={() => setMenuOpen(false)} />
-                      </div>
-
-                      {/* 第二组 — 业务操作 */}
-                      <RowItem href="/orders" icon="check" label={t('nav.myOrders')} onClose={() => setMenuOpen(false)} />
-                      <RowItem href="/addresses" icon="board" label={t('nav.shippingAddress')} onClose={() => setMenuOpen(false)} />
+                      {/* 我的主页(快速跳转) */}
+                      <RowItem
+                        href={`/user/${user.id}`}
+                        icon="home"
+                        label="我的主页"
+                        onClose={() => setMenuOpen(false)}
+                      />
 
                       <div className="border-t border-leaf-50" />
 
-                      {/* 第三组 — 增长激励 */}
-                      <RowItem href="/points" icon="star" label={t('nav.pointsCenter')} suffix={`💎${pointsBalance}`} onClose={() => setMenuOpen(false)} />
-                      <RowItem href="/tasks" icon="check" label={t('nav.activityCenter')} onClose={() => setMenuOpen(false)} />
-
-                      <div className="border-t border-leaf-50" />
-
-                      {/* 第四组 — 设置/登出 */}
+                      {/* 设置 / 登出 */}
                       <div className="flex">
                         <Link
                           href="/settings"
