@@ -53,8 +53,10 @@ RUN addgroup --system --gid 1001 nodejs && \
 # Next standalone 输出
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-# public 目录:用 placeholder 模式,确保哪怕本地没建过 public/ 也能 COPY 通过
-RUN mkdir -p ./public && chown nextjs:nodejs ./public
+# public 目录:复制站点静态资源(默认头像、favicon 等)
+# .dockerignore 已排除 public/uploads/(用户上传走 OSS / 宿主目录挂载)
+RUN mkdir -p ./public
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 # Prisma:运行时需要 schema + 生成的 client
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma

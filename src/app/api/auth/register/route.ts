@@ -9,15 +9,8 @@ const Body = z.object({
   password: z.string().min(6, '密码至少 6 位').max(64),
 });
 
-const defaultAvatars = [
-  'https://i.pravatar.cc/150?img=5',
-  'https://i.pravatar.cc/150?img=12',
-  'https://i.pravatar.cc/150?img=23',
-  'https://i.pravatar.cc/150?img=32',
-  'https://i.pravatar.cc/150?img=44',
-  'https://i.pravatar.cc/150?img=47',
-  'https://i.pravatar.cc/150?img=68',
-];
+/** 默认头像:本站静态资源,所有新用户用这一张,注册后可在设置页改 */
+const DEFAULT_AVATAR = '/default-avatar.svg';
 
 export const POST = handler(async (req) => {
   const body = Body.parse(await req.json());
@@ -29,7 +22,7 @@ export const POST = handler(async (req) => {
     data: {
       name: body.name,
       passwordHash: await hashPassword(body.password),
-      avatar: defaultAvatars[Math.floor(Math.random() * defaultAvatars.length)],
+      avatar: DEFAULT_AVATAR,
       bio: '新加入的肉友 🌱',
       level: 1,
     },

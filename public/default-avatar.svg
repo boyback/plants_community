@@ -2,10 +2,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#52c41a" stop-opacity="0.95"/>
-      <stop offset="100%" stop-color="#52c41a" stop-opacity="0.6"/>
+      <stop offset="0%" stop-color="#73d13d" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#389e0d" stop-opacity="0.7"/>
     </linearGradient>
   </defs>
   <rect width="200" height="200" fill="url(#g)" rx="20"/>
-  <text x="100" y="135" font-size="100" text-anchor="middle" font-family="Apple Color Emoji,Segoe UI Emoji,sans-serif">🍃</text>
+  <text x="100" y="135" font-size="100" text-anchor="middle" font-family="Apple Color Emoji,Segoe UI Emoji,sans-serif">🌱</text>
 </svg>

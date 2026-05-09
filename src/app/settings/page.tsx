@@ -12,6 +12,12 @@ export default function SettingsPage() {
 
   const sections = [
     {
+      href: '/settings/profile',
+      icon: '👤' as const,
+      title: '个人资料',
+      desc: '头像、昵称、简介',
+    },
+    {
       href: '/settings/appearance',
       icon: '🎨' as const,
       title: t('settings.appearance.title') || '外观与语言',
