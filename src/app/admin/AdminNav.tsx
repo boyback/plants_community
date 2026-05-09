@@ -42,7 +42,6 @@ const NAV: { section: string; items: { href: string; label: string; minRole: Rol
     items: [
       { href: '/admin/boards', label: '🌿 板块 CRUD', minRole: 'admin' },
       { href: '/admin/species', label: '📚 品种数据', minRole: 'admin' },
-      { href: '/admin/species-photos', label: '📸 品种现场照', minRole: 'moderator' },
     ],
   },
   {

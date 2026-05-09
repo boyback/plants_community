@@ -90,31 +90,15 @@ import type {
   Species as DBSpecies,
 } from '@prisma/client';
 
-type CategoryWithCount = DBCategory & {
-  _count?: { posts?: number; genera?: number };
-  /** 可选:用来推导动态封面的"代表照片" */
-  topPhotoUrl?: string | null;
-};
+type CategoryWithCount = DBCategory & { _count?: { posts?: number; genera?: number } };
 type GenusWithRelations = DBGenus & {
   category?: DBCategory;
   _count?: { posts?: number; species?: number };
-  topPhotoUrl?: string | null;
 };
 type SpeciesWithRelations = DBSpecies & {
   genus?: DBGenus & { category?: DBCategory };
   _count?: { posts?: number };
-  /** 由 prisma include {photos: {take:1, where:{status:'approved'}, orderBy:[pinned,votes]}} 提供 */
-  photos?: { url: string }[];
 };
-
-/**
- * 三级板块的「动态封面」:优先用社区贡献的热门照,落空了用 admin 配置的 cover 字段。
- * 只对 Species 直接生效;Genus/Category 由查询端提前算好 topPhotoUrl 注入。
- */
-function pickSpeciesCover(s: SpeciesWithRelations): string {
-  const top = s.photos?.[0]?.url;
-  return top || s.cover;
-}
 
 export function serializeCategory(c: CategoryWithCount): Board {
   return {
@@ -123,7 +107,7 @@ export function serializeCategory(c: CategoryWithCount): Board {
     slug: c.slug,
     name: c.name,
     description: c.description,
-    cover: c.topPhotoUrl || c.cover,
+    cover: c.cover,
     icon: c.icon,
     members: c.members,
     posts: c._count?.posts ?? 0,
@@ -146,7 +130,7 @@ export function serializeGenus(g: GenusWithRelations): Board {
     slug: g.slug,
     name: g.name,
     description: g.description,
-    cover: g.topPhotoUrl || g.cover || cat?.cover || '',
+    cover: g.cover ?? cat?.cover ?? '',
     icon: cat?.icon ?? '🌿',
     members: 0,
     posts: g._count?.posts ?? 0,
@@ -168,7 +152,7 @@ export function serializeSpecies(s: SpeciesWithRelations): Board {
     slug: s.slug,
     name: s.name,
     description: s.description,
-    cover: pickSpeciesCover(s),
+    cover: s.cover,
     icon: cat?.icon ?? '🌱',
     members: 0,
     posts: s._count?.posts ?? 0,

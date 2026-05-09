@@ -140,29 +140,7 @@ export interface SpeciesFull extends Board {
   genusSlug: string;
 }
 
-/** 用户上传的品种现场照 */
-export type SpeciesPhotoStatus = 'pending' | 'approved' | 'rejected';
 
-export interface SpeciesPhoto {
-  id: string;
-  speciesId: string;
-  url: string;
-  caption?: string;
-  status: SpeciesPhotoStatus;
-  votes: number;
-  pinned: boolean;
-  /** 当前用户是否已经顶过 */
-  myVoted: boolean;
-  uploader: {
-    id: string;
-    name: string;
-    avatar: string;
-    level: number;
-  };
-  createdAt: string;
-  /** 仅 admin/作者本人能看到 */
-  rejectReason?: string;
-}
 
 export interface Comment {
   id: string;

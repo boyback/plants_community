@@ -70,10 +70,8 @@ model User {
   notifications     Notification[]     @relation("NotifRecipient")
   notifFromMe       Notification[]     @relation("NotifSender")
   reports           Report[]           @relation("ReportReporter")
-  postViews         PostView[]
-  speciesRatings    SpeciesRating[]
-  speciesPhotos     SpeciesPhoto[]
-  speciesPhotoVotes SpeciesPhotoVote[]
+  postViews        PostView[]
+  speciesRatings   SpeciesRating[]
   sentMessages      Message[]          @relation("MessageFrom")
   receivedMessages  Message[]          @relation("MessageTo")
   drafts            Draft[]
@@ -1199,7 +1197,6 @@ model Species {
   posts    Post[]
   ratings  SpeciesRating[]
   journals Journal[]
-  photos   SpeciesPhoto[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1230,57 +1227,6 @@ model SpeciesRating {
   @@unique([userId, speciesId])
   @@index([speciesId, createdAt])
   @@map("species_ratings")
-}
-
-// ============================================================
-// 品种现场照:用户上传 + 投票顶贴 + 审核
-// ============================================================
-
-enum SpeciesPhotoStatus {
-  pending // 待审核
-  approved // 通过(进入展示)
-  rejected // 驳回
-}
-
-model SpeciesPhoto {
-  id           String             @id @default(cuid())
-  speciesId    String
-  uploaderId   String
-  url          String             @db.Text
-  caption      String?            @db.Text
-  status       SpeciesPhotoStatus @default(approved)
-  /// 缓存的顶贴数(由 SpeciesPhotoVote 触发更新)
-  votes        Int                @default(0)
-  /// 管理员钉到最顶,优先于 votes 排序
-  pinned       Boolean            @default(false)
-  /// 同分时排序补丁(管理员可调)
-  orderIdx     Int                @default(0)
-  /// 拒绝原因(管理员填)
-  rejectReason String?            @db.Text
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-
-  species  Species            @relation(fields: [speciesId], references: [id], onDelete: Cascade)
-  uploader User               @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
-  voteRows SpeciesPhotoVote[]
-
-  @@index([speciesId, status, pinned, votes])
-  @@index([uploaderId])
-  @@map("species_photos")
-}
-
-model SpeciesPhotoVote {
-  id        String   @id @default(cuid())
-  photoId   String
-  userId    String
-  createdAt DateTime @default(now())
-
-  photo SpeciesPhoto @relation(fields: [photoId], references: [id], onDelete: Cascade)
-  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([photoId, userId])
-  @@index([userId])
-  @@map("species_photo_votes")
 }
 
 // ============================================================
