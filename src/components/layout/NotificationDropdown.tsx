@@ -57,13 +57,14 @@ export function NotificationDropdown({
           '/api/notifications?limit=20'
         )
         .catch(() => ({ items: [], unread: 0 })),
+      // /api/conversations 直接返回数组,不是 { items: [...] }
       api
-        .get<{ items: Conversation[] }>('/api/conversations?limit=10')
-        .catch(() => ({ items: [] })),
+        .get<Conversation[]>('/api/conversations')
+        .catch(() => [] as Conversation[]),
     ])
       .then(([n, c]) => {
-        setItems(n.items);
-        setConvs(c.items);
+        setItems(Array.isArray(n.items) ? n.items : []);
+        setConvs(Array.isArray(c) ? c.slice(0, 10) : []);
       })
       .finally(() => setLoading(false));
   }, [open]);
