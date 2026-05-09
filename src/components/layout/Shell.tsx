@@ -6,6 +6,7 @@ import { WelcomeBanner } from './WelcomeBanner';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { MobileTabBar } from './MobileTabBar';
+import { SiteFooter } from './SiteFooter';
 import { FestivalBanner } from '@/theme/FestivalBanner';
 import { FestivalParticles } from '@/theme/FestivalParticles';
 import { SwipeBack } from '@/components/ui/SwipeBack';
@@ -34,6 +35,10 @@ export function Shell({
         <main className="min-w-0 flex-1">{children}</main>
       </div>
 
+      <SiteFooter />
+
+      {/* m 端底部 Tab Bar 遮挡 footer 末尾,留白 */}
+      <div className="h-16 md:hidden" aria-hidden />
       <MobileTabBar />
     </div>
   );

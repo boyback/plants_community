@@ -5,7 +5,6 @@ import { FeedTabs } from '@/components/home/FeedTabs';
 import { TopicsCard } from '@/components/home/TopicsCard';
 import { RecommendUsers } from '@/components/home/RecommendUsers';
 import { AppDownloadCard } from '@/components/home/AppDownloadCard';
-import { LegalLinks } from '@/components/home/LegalLinks';
 import { prisma } from '@/lib/db';
 import { postInclude } from '@/lib/post-include';
 import { serializePost, serializeUser } from '@/lib/serializers';
@@ -68,8 +67,7 @@ export default async function HomePage() {
           <SignInCard />
           {/* 4. APP 下载 */}
           <AppDownloadCard />
-          {/* 5. 法律入口 */}
-          <LegalLinks />
+          {/* 法律入口已挪到全站 Footer,这里不再重复 */}
         </div>
       </div>
     </Shell>
