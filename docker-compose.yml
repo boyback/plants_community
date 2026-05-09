@@ -114,6 +114,8 @@ services:
     volumes:
       # 用户上传文件:Next.js 写入本地路径,落宿主目录持久化
       - ./data/uploads:/app/public/uploads
+      # 大文件上传分片临时目录(/api/upload/chunk 写,/finish 合并后清理)
+      - ./data/upload-chunks:/app/data/upload-chunks
     healthcheck:
       # Next standalone 在容器里把 HOSTNAME 重置成 docker 容器 ID + 绑定该 IP,
       # 127.0.0.1 反而连不上;改用 0.0.0.0 探所有接口的任一回应
@@ -177,9 +179,11 @@ services:
       go-server:
         condition: service_started
 
-volumes:
-  # 不再用 docker volume,改成宿主目录绑定(./data/mysql, ./data/uploads)
-  # 历史 volume 留着的话不影响,只是不会再被引用
+# 注:不再使用 docker volume,数据全部落宿主目录:
+#   - ./data/mysql       MySQL 数据
+#   - ./data/uploads     用户上传文件
+#   - ./data/upload-chunks 大文件分片临时目录(运行时由 Next 创建)
+# 这样可以避免 `docker volume prune` 时数据被误删
 
 networks:
   rouyou:
