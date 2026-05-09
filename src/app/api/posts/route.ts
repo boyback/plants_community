@@ -8,6 +8,7 @@ import { hasPermission, type Permission } from '@/lib/levels';
 import { emitEvent } from '@/lib/events';
 import { processRichInput } from '@/lib/richtext';
 import { postNeedsReview } from '@/lib/post-review';
+import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +30,7 @@ export const GET = handler(async (req) => {
   // 公开列表默认仅展示已发布(隐藏 pending/rejected/deleted)
   const where: Record<string, unknown> = {
     deleted: false,
-    reviewStatus: 'published',
+    ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' } : {}),
     ...(authorId ? { authorId } : {}),
   };
   if (categorySlug) where.category = { slug: categorySlug };
@@ -276,7 +277,9 @@ export const POST = handler(async (req) => {
       speciesId: resolvedIds.speciesId,
       boardId: resolvedIds.boardId,
       authorId: me.id,
-      reviewStatus: needsReview ? 'pending' : 'published',
+      ...(REVIEW_FILTER_ENABLED && {
+        reviewStatus: needsReview ? 'pending' : 'published',
+      }),
       ...(body.vote && {
         vote: {
           create: {

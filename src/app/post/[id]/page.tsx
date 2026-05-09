@@ -16,6 +16,7 @@ import { postInclude } from '@/lib/post-include';
 import { serializePost } from '@/lib/serializers';
 import { getCurrentUser } from '@/lib/auth';
 import { formatNumber, formatDateTime, boardUrl } from '@/lib/utils';
+import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 
 export const dynamic = 'force-dynamic';
 
@@ -175,7 +176,41 @@ export default async function PostDetailPage({ params }: { params: { id: string 
                   {formatNumber(post.views)} <I18nText k="detail.post.views" fallback="阅读" />
                 </div>
               </div>
+              {/* 作者本人 · 仅 rich/short/video 可编辑(其他类型数据复杂禁止) */}
+              {me?.id === post.author.id &&
+                ['rich', 'short', 'video'].includes(post.type) && (
+                  <Link
+                    href={`/post/${post.id}/edit`}
+                    className="btn-outline !text-xs"
+                  >
+                    <Icon name="edit" size={12} />
+                    编辑
+                  </Link>
+                )}
             </div>
+
+            {/* 审核状态提示(仅作者本人 · 启用审核功能时才显示) */}
+            {REVIEW_FILTER_ENABLED &&
+              me?.id === post.author.id &&
+              postRaw.reviewStatus !== 'published' && (
+                <div
+                  className={
+                    postRaw.reviewStatus === 'pending'
+                      ? 'mb-4 rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-xs text-amber-800'
+                      : 'mb-4 rounded-xl border border-rose-200 bg-rose-50/60 px-4 py-3 text-xs text-rose-800'
+                  }
+                >
+                  {postRaw.reviewStatus === 'pending' ? '🕒 ' : '🚫 '}
+                  {postRaw.reviewStatus === 'pending'
+                    ? '帖子含外链,正在审核中,通过后才会公开展示。'
+                    : '帖子被驳回。'}
+                  {postRaw.reviewReason && (
+                    <div className="mt-1 text-[11px] opacity-80">
+                      原因:{postRaw.reviewReason}
+                    </div>
+                  )}
+                </div>
+              )}
 
             <PostBody
               post={post}

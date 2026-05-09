@@ -7,6 +7,7 @@ import { RecommendUsers } from '@/components/home/RecommendUsers';
 import { prisma } from '@/lib/db';
 import { postInclude } from '@/lib/post-include';
 import { serializePost, serializeUser } from '@/lib/serializers';
+import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 import type { BannerItem } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +15,10 @@ export const dynamic = 'force-dynamic';
 export default async function HomePage() {
   const [postsRaw, bannersRaw, recommendUsersRaw] = await Promise.all([
     prisma.post.findMany({
-      where: { deleted: false, reviewStatus: 'published' },
+      where: {
+        deleted: false,
+        ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' } : {}),
+      },
       orderBy: [{ hotScore: 'desc' }, { createdAt: 'desc' }],
       take: 20,
       include: postInclude(),

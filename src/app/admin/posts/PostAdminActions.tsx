@@ -4,7 +4,15 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/client-api';
 
-export function PostAdminActions({ postId, deleted }: { postId: string; deleted: boolean }) {
+export function PostAdminActions({
+  postId,
+  deleted,
+  reviewStatus,
+}: {
+  postId: string;
+  deleted: boolean;
+  reviewStatus?: string;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
@@ -38,6 +46,23 @@ export function PostAdminActions({ postId, deleted }: { postId: string; deleted:
     }
   };
 
+  const review = async (action: 'approve' | 'reject') => {
+    let reason: string | null = null;
+    if (action === 'reject') {
+      reason = window.prompt('驳回原因(将展示给作者):');
+      if (reason === null) return;
+    }
+    setBusy(true);
+    try {
+      await api.patch(`/api/admin/posts/${postId}`, { action, reason });
+      router.refresh();
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : '操作失败');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (deleted) {
     return (
       <button
@@ -50,14 +75,47 @@ export function PostAdminActions({ postId, deleted }: { postId: string; deleted:
       </button>
     );
   }
+
   return (
-    <button
-      type="button"
-      onClick={del}
-      disabled={busy}
-      className="rounded bg-rose-100 px-2 py-1 text-[10px] text-rose-700 hover:bg-rose-200"
-    >
-      删除
-    </button>
+    <div className="flex flex-wrap justify-end gap-1">
+      {reviewStatus === 'pending' && (
+        <>
+          <button
+            type="button"
+            onClick={() => review('approve')}
+            disabled={busy}
+            className="rounded bg-leaf-500 px-2 py-1 text-[10px] text-white hover:bg-leaf-600"
+          >
+            ✓ 通过
+          </button>
+          <button
+            type="button"
+            onClick={() => review('reject')}
+            disabled={busy}
+            className="rounded bg-amber-100 px-2 py-1 text-[10px] text-amber-700 hover:bg-amber-200"
+          >
+            驳回
+          </button>
+        </>
+      )}
+      {reviewStatus === 'rejected' && (
+        <button
+          type="button"
+          onClick={() => review('approve')}
+          disabled={busy}
+          className="rounded bg-leaf-500 px-2 py-1 text-[10px] text-white hover:bg-leaf-600"
+        >
+          重新通过
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={del}
+        disabled={busy}
+        className="rounded bg-rose-100 px-2 py-1 text-[10px] text-rose-700 hover:bg-rose-200"
+      >
+        删除
+      </button>
+    </div>
   );
 }

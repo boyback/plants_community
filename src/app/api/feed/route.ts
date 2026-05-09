@@ -18,6 +18,7 @@ import { loadUserProfile } from '@/lib/feed/profile';
 import { personalize, type PostForRank } from '@/lib/feed/ranker';
 import { serializePost } from '@/lib/serializers';
 import { postInclude } from '@/lib/post-include';
+import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +39,7 @@ export const GET = handler(async (req) => {
   // 公开 feed 仅展示已发布(隐藏 pending/rejected)
   const baseWhere: Record<string, unknown> = {
     deleted: false,
-    reviewStatus: 'published',
+    ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' } : {}),
   };
 
   if (tab === 'following') {
@@ -108,7 +109,11 @@ export const GET = handler(async (req) => {
   const now = new Date();
   const since = new Date(now.getTime() - 14 * 86400_000);
   const pool = await prisma.post.findMany({
-    where: { deleted: false, reviewStatus: 'published', createdAt: { gte: since } },
+    where: {
+      deleted: false,
+      ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' } : {}),
+      createdAt: { gte: since },
+    },
     orderBy: { hotScore: 'desc' },
     take: 200,
     include: postInclude(),

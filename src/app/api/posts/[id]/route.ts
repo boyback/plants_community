@@ -6,6 +6,7 @@ import { serializePost } from '@/lib/serializers';
 import { postInclude } from '@/lib/post-include';
 import { processRichInput } from '@/lib/richtext';
 import { postNeedsReview } from '@/lib/post-review';
+import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 
 export const dynamic = 'force-dynamic';
 
@@ -130,9 +131,11 @@ export const PATCH = handler(async (req) => {
         cover: body.images[0] ?? null,
       }),
       ...(body.videoUrl !== undefined && { videoUrl: body.videoUrl }),
-      reviewStatus: needsReview ? 'pending' : 'published',
-      reviewReason: needsReview ? '编辑后含外链,等待审核' : null,
-      reviewedAt: needsReview ? null : new Date(),
+      ...(REVIEW_FILTER_ENABLED && {
+        reviewStatus: needsReview ? 'pending' : 'published',
+        reviewReason: needsReview ? '编辑后含外链,等待审核' : null,
+        reviewedAt: needsReview ? null : new Date(),
+      }),
     },
   });
 

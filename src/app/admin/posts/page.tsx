@@ -1,16 +1,38 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { PostAdminActions } from './PostAdminActions';
+import { cn } from '@/lib/utils';
+import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 
 export const dynamic = 'force-dynamic';
+
+type DeleteStatus = 'all' | 'deleted' | 'active';
+type ReviewFilter = 'all_review' | 'pending' | 'rejected' | 'published';
+
+const TYPE_LABEL: Record<string, string> = {
+  rich: '富文本',
+  short: '短动态',
+  vote: '投票',
+  video: '视频',
+  event: '活动',
+  help: '求助',
+  journal: '成长日记',
+};
 
 export default async function AdminPostsPage({
   searchParams,
 }: {
-  searchParams: { q?: string; status?: string; type?: string; page?: string };
+  searchParams: {
+    q?: string;
+    status?: string;
+    type?: string;
+    review?: string;
+    page?: string;
+  };
 }) {
-  const status = (searchParams.status as 'all' | 'deleted' | 'active') ?? 'active';
+  const status = (searchParams.status as DeleteStatus) ?? 'active';
   const type = searchParams.type ?? '';
+  const review = (searchParams.review as ReviewFilter) ?? 'all_review';
   const q = searchParams.q ?? '';
   const page = Math.max(1, Number(searchParams.page) || 1);
   const pageSize = 20;
@@ -19,6 +41,8 @@ export default async function AdminPostsPage({
   if (status === 'deleted') where.deleted = true;
   else if (status === 'active') where.deleted = false;
   if (type) where.type = type;
+  if (REVIEW_FILTER_ENABLED && review !== 'all_review')
+    where.reviewStatus = review;
   if (q) {
     where.OR = [
       { title: { contains: q } },
@@ -26,7 +50,15 @@ export default async function AdminPostsPage({
     ];
   }
 
-  const [items, total] = await Promise.all([
+  // 各 tab 计数(忽略当前 type/q 过滤,但锁定 deleted=false 的活跃帖)
+  const baseCount = { deleted: false } as const;
+  const [pendingCount, rejectedCount, items, total] = await Promise.all([
+    REVIEW_FILTER_ENABLED
+      ? prisma.post.count({ where: { ...baseCount, reviewStatus: 'pending' } })
+      : Promise.resolve(0),
+    REVIEW_FILTER_ENABLED
+      ? prisma.post.count({ where: { ...baseCount, reviewStatus: 'rejected' } })
+      : Promise.resolve(0),
     prisma.post.findMany({
       where,
       orderBy: { createdAt: 'desc' },
@@ -40,8 +72,14 @@ export default async function AdminPostsPage({
         views: true,
         deleted: true,
         deleteReason: true,
+        ...(REVIEW_FILTER_ENABLED && {
+          reviewStatus: true,
+          reviewReason: true,
+        }),
         createdAt: true,
-        author: { select: { id: true, name: true, avatar: true, level: true } },
+        author: {
+          select: { id: true, name: true, avatar: true, level: true },
+        },
         _count: { select: { comments: true, likes: true } },
       },
     }),
@@ -50,6 +88,18 @@ export default async function AdminPostsPage({
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+  const buildTabHref = (r: ReviewFilter) => {
+    const next: Record<string, string> = {};
+    if (q) next.q = q;
+    if (type) next.type = type;
+    if (status !== 'active') next.status = status;
+    next.review = r;
+    // 切 tab 重置到第一页
+    next.page = '1';
+    const qs = new URLSearchParams(next).toString();
+    return `/admin/posts?${qs}`;
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -57,6 +107,64 @@ export default async function AdminPostsPage({
         <p className="mt-1 text-xs text-ink-600">
           共 {total} 篇 · 第 {page}/{totalPages} 页
         </p>
+      </div>
+
+      {/* 审核状态 tab */}
+      <div className="flex flex-wrap items-center gap-1 border-b border-leaf-100">
+        {(
+          [
+            { key: 'all_review', label: '全部', badge: null },
+            {
+              key: 'pending',
+              label: '🕒 待审核',
+              badge: pendingCount > 0 ? pendingCount : null,
+              highlight: pendingCount > 0,
+            },
+            { key: 'published', label: '✅ 已发布', badge: null },
+            {
+              key: 'rejected',
+              label: '🚫 已驳回',
+              badge: rejectedCount > 0 ? rejectedCount : null,
+            },
+          ] as Array<{
+            key: ReviewFilter;
+            label: string;
+            badge: number | null;
+            highlight?: boolean;
+          }>
+        ).map((t) => {
+          const active = review === t.key;
+          return (
+            <Link
+              key={t.key}
+              href={buildTabHref(t.key)}
+              className={cn(
+                'relative flex items-center gap-1.5 px-4 py-2 text-sm transition-colors',
+                active
+                  ? 'font-semibold text-leaf-700'
+                  : 'text-ink-700/60 hover:text-leaf-700',
+                t.highlight && !active && 'text-amber-700'
+              )}
+            >
+              {t.label}
+              {t.badge !== null && (
+                <span
+                  className={cn(
+                    'rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
+                    t.highlight
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-leaf-100 text-leaf-700'
+                  )}
+                >
+                  {t.badge}
+                </span>
+              )}
+              {active && (
+                <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-leaf-500" />
+              )}
+            </Link>
+          );
+        })}
       </div>
 
       {/* 过滤器 */}
@@ -82,13 +190,14 @@ export default async function AdminPostsPage({
           className="rounded-lg border border-ink-200 px-2 py-1.5"
         >
           <option value="">全部类型</option>
-          <option value="rich">富文本</option>
-          <option value="short">短内容</option>
-          <option value="vote">投票</option>
-          <option value="video">视频</option>
-          <option value="event">活动</option>
-          <option value="help">求助</option>
+          {Object.entries(TYPE_LABEL).map(([k, v]) => (
+            <option key={k} value={k}>
+              {v}
+            </option>
+          ))}
         </select>
+        {/* 保持 review tab 选中 */}
+        <input type="hidden" name="review" value={review} />
         <button className="rounded-lg bg-ink-800 px-3 py-1.5 text-white">筛选</button>
       </form>
 
@@ -102,24 +211,49 @@ export default async function AdminPostsPage({
               <th className="px-3 py-2 text-left">作者</th>
               <th className="px-3 py-2 text-right">👁 / 💬 / ❤</th>
               <th className="px-3 py-2 text-left">发布时间</th>
+              <th className="px-3 py-2 text-left">审核</th>
               <th className="px-3 py-2 text-left">状态</th>
               <th className="px-3 py-2 text-right">操作</th>
             </tr>
           </thead>
           <tbody>
             {items.map((p) => (
-              <tr key={p.id} className="border-t border-ink-100 hover:bg-ink-50/50">
+              <tr
+                key={p.id}
+                className={cn(
+                  'border-t border-ink-100 hover:bg-ink-50/50',
+                  REVIEW_FILTER_ENABLED &&
+                    p.reviewStatus === 'pending' &&
+                    'bg-amber-50/40'
+                )}
+              >
                 <td className="max-w-[260px] truncate px-3 py-2">
                   <Link href={`/post/${p.id}`} target="_blank" className="hover:underline">
                     {p.title}
                   </Link>
                   {p.deleted && p.deleteReason && (
-                    <div className="mt-0.5 text-[10px] text-rose-600">原因:{p.deleteReason}</div>
+                    <div className="mt-0.5 text-[10px] text-rose-600">
+                      删除原因:{p.deleteReason}
+                    </div>
                   )}
+                  {REVIEW_FILTER_ENABLED &&
+                    p.reviewStatus === 'rejected' &&
+                    p.reviewReason && (
+                      <div className="mt-0.5 text-[10px] text-rose-600">
+                        驳回原因:{p.reviewReason}
+                      </div>
+                    )}
+                  {REVIEW_FILTER_ENABLED &&
+                    p.reviewStatus === 'pending' &&
+                    p.reviewReason && (
+                      <div className="mt-0.5 text-[10px] text-amber-700">
+                        待审:{p.reviewReason}
+                      </div>
+                    )}
                 </td>
                 <td className="px-3 py-2">
                   <span className="rounded bg-ink-100 px-1.5 py-0.5 font-mono text-[10px]">
-                    {p.type}
+                    {TYPE_LABEL[p.type] ?? p.type}
                   </span>
                 </td>
                 <td className="px-3 py-2">
@@ -135,6 +269,13 @@ export default async function AdminPostsPage({
                   {new Date(p.createdAt).toLocaleDateString('zh-CN')}
                 </td>
                 <td className="px-3 py-2">
+                  {REVIEW_FILTER_ENABLED ? (
+                    <ReviewBadge status={p.reviewStatus ?? 'published'} />
+                  ) : (
+                    <span className="text-[10px] text-ink-400">—</span>
+                  )}
+                </td>
+                <td className="px-3 py-2">
                   {p.deleted ? (
                     <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] text-rose-700">
                       已删除
@@ -146,13 +287,17 @@ export default async function AdminPostsPage({
                   )}
                 </td>
                 <td className="px-3 py-2 text-right">
-                  <PostAdminActions postId={p.id} deleted={p.deleted} />
+                  <PostAdminActions
+                    postId={p.id}
+                    deleted={p.deleted}
+                    reviewStatus={REVIEW_FILTER_ENABLED ? p.reviewStatus : undefined}
+                  />
                 </td>
               </tr>
             ))}
             {items.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-ink-500">
+                <td colSpan={8} className="px-3 py-10 text-center text-ink-500">
                   没有数据
                 </td>
               </tr>
@@ -184,5 +329,27 @@ export default async function AdminPostsPage({
         )}
       </div>
     </div>
+  );
+}
+
+function ReviewBadge({ status }: { status: string }) {
+  if (status === 'pending') {
+    return (
+      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-700">
+        🕒 待审
+      </span>
+    );
+  }
+  if (status === 'rejected') {
+    return (
+      <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] text-rose-700">
+        🚫 已驳
+      </span>
+    );
+  }
+  return (
+    <span className="rounded-full bg-leaf-50 px-2 py-0.5 text-[10px] text-leaf-700">
+      ✅ 已发
+    </span>
   );
 }

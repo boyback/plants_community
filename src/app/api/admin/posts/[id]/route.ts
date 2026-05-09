@@ -9,6 +9,7 @@ import { handler, fail } from '@/lib/api';
 import { requireAdmin } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { logAdmin } from '@/lib/admin-log';
+import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,6 +53,9 @@ export const PATCH = handler(async (req) => {
   const me = await requireAdmin({ allowModerator: true });
   const id = pickId(req);
   const body = PatchBody.parse(await req.json());
+  if (!REVIEW_FILTER_ENABLED) {
+    return fail(503, '审核功能尚未启用,请联系运维同步 schema 后开启 REVIEW_FILTER_ENABLED');
+  }
   const p = await prisma.post.findUnique({ where: { id } });
   if (!p) return fail(404, '帖子不存在');
 

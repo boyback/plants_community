@@ -11,6 +11,7 @@ import {
 } from '@/lib/serializers';
 
 import { postInclude } from '@/lib/post-include';
+import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 import { PostMasonry } from '@/components/post/PostMasonry';
 import { Icon } from '@/components/ui/Icon';
 import { Empty } from '@/components/ui/Empty';
@@ -67,7 +68,11 @@ async function CategoryView({ categorySlug }: { categorySlug: string }) {
 
   const PAGE = 24;
   const postsRaw = await prisma.post.findMany({
-    where: { categoryId: c.id, deleted: false, reviewStatus: 'published' },
+    where: {
+      categoryId: c.id,
+      deleted: false,
+      ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' } : {}),
+    },
     orderBy: { createdAt: 'desc' },
     take: PAGE + 1,
     include: postInclude(),
@@ -166,7 +171,11 @@ async function GenusView({
 
   const PAGE = 24;
   const postsRaw = await prisma.post.findMany({
-    where: { genusId: g.id, deleted: false, reviewStatus: 'published' },
+    where: {
+      genusId: g.id,
+      deleted: false,
+      ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' } : {}),
+    },
     orderBy: { createdAt: 'desc' },
     take: PAGE + 1,
     include: postInclude(),
@@ -303,7 +312,11 @@ async function SpeciesView({
 
   const PAGE = 24;
   const postsRaw = await prisma.post.findMany({
-    where: { speciesId: s.id, deleted: false, reviewStatus: 'published' },
+    where: {
+      speciesId: s.id,
+      deleted: false,
+      ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' } : {}),
+    },
     orderBy: { createdAt: 'desc' },
     take: PAGE + 1,
     include: postInclude(),

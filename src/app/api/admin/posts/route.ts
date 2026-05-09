@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { handler, fail } from '@/lib/api';
 import { requireAdmin } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +35,8 @@ export const GET = handler(async (req) => {
   if (status === 'deleted') where.deleted = true;
   else if (status === 'active') where.deleted = false;
   if (type) where.type = type;
-  if (review && review !== 'all_review') where.reviewStatus = review;
+  if (REVIEW_FILTER_ENABLED && review && review !== 'all_review')
+    where.reviewStatus = review;
   if (q) {
     where.OR = [
       { title: { contains: q } },
@@ -58,9 +60,11 @@ export const GET = handler(async (req) => {
         deleted: true,
         deletedAt: true,
         deleteReason: true,
-        reviewStatus: true,
-        reviewReason: true,
-        reviewedAt: true,
+        ...(REVIEW_FILTER_ENABLED && {
+          reviewStatus: true,
+          reviewReason: true,
+          reviewedAt: true,
+        }),
         createdAt: true,
         author: { select: { id: true, name: true, avatar: true, level: true, role: true } },
         _count: { select: { comments: true, likes: true } },
