@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Shell } from '@/components/layout/Shell';
-import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
-import { UploadField } from '@/components/upload/UploadField';
+import { AvatarField } from '@/components/upload/AvatarField';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from '@/lib/client-api';
 
@@ -77,20 +76,18 @@ export default function ProfileSettingsPage() {
         <section>
           <div className="mb-2 text-sm font-medium">头像</div>
           <div className="flex items-start gap-4">
-            <div className="shrink-0">
-              <Avatar src={avatar} alt={name} size={80} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <UploadField
-                kind="image"
-                value={avatar ? [avatar] : []}
-                onChange={(arr) => setAvatar(arr[0] ?? '/default-avatar.svg')}
-                max={1}
-                allowExternal={false}
-              />
-              <div className="mt-2 text-[11px] text-leaf-700/60">
-                建议正方形,大小不超过 10MB,JPG / PNG / WebP / HEIC 均可
-              </div>
+            <AvatarField
+              value={avatar}
+              onChange={setAvatar}
+              alt={name}
+              size={96}
+            />
+            <div className="text-[11px] leading-5 text-leaf-700/70">
+              点击或拖拽图片到圆框更换头像
+              <br />
+              建议正方形 · 大小不超过 10MB
+              <br />
+              支持 JPG / PNG / WebP / GIF / HEIC
             </div>
           </div>
         </section>
