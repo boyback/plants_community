@@ -452,6 +452,19 @@ async function SpeciesView({
 
   const full = serializeSpeciesFull(s);
 
+  // 同属下其他品种(最多 6 个),按帖子数倒序展示
+  const relatedSpecies = await prisma.species.findMany({
+    where: {
+      genusId: s.genusId,
+      id: { not: s.id },
+    },
+    include: {
+      _count: { select: { posts: true } },
+    },
+    orderBy: [{ posts: { _count: 'desc' } }, { name: 'asc' }],
+    take: 6,
+  });
+
   return (
     <Shell>
       <BoardBreadcrumb path={full.path} />
@@ -568,6 +581,57 @@ async function SpeciesView({
               {full.blooming && <InfoRow icon="🌸" label={<I18nText k="board.species.bloom" fallback="花期" />} value={full.blooming} />}
             </div>
           </div>
+
+          {/* 同属其他品种推荐(SEO + 探索性) */}
+          {relatedSpecies.length > 0 && (
+            <div className="card p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-ink-800">
+                  🌿 同属其他品种
+                </h3>
+                <Link
+                  href={`/board/${categorySlug}/${genusSlug}`}
+                  className="text-[11px] text-leaf-700 hover:underline"
+                >
+                  查看全部 →
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {relatedSpecies.map((rs) => (
+                  <Link
+                    key={rs.id}
+                    href={`/board/${categorySlug}/${genusSlug}/${rs.slug}`}
+                    className="group block overflow-hidden rounded-lg border border-leaf-100 transition-shadow hover:shadow-md"
+                  >
+                    <div className="relative aspect-square overflow-hidden bg-leaf-50">
+                      <Image
+                        src={rs.cover}
+                        alt={rs.name}
+                        fill
+                        sizes="120px"
+                        className="object-cover transition-transform group-hover:scale-105"
+                        unoptimized
+                      />
+                      <div className="absolute left-1 top-1 rounded-full bg-white/85 px-1.5 py-0 text-[9px] text-leaf-700">
+                        {'★'.repeat(rs.difficulty)}
+                      </div>
+                    </div>
+                    <div className="p-2">
+                      <div className="truncate text-[12px] font-medium text-ink-800 group-hover:text-leaf-700">
+                        {rs.name}
+                      </div>
+                      <div className="mt-0.5 flex items-center justify-between text-[10px] text-leaf-700/60">
+                        <span className="truncate italic">{rs.latinName}</span>
+                        <span className="ml-1 shrink-0">
+                          📝 {rs._count?.posts ?? 0}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="card p-4 text-[11px] text-leaf-700/70">
             <div className="mb-1 font-medium text-leaf-700">📊 <I18nText k="board.species.stats" fallback="统计" /></div>
