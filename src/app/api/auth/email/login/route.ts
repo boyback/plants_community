@@ -12,6 +12,8 @@ import { setAuthCookie, signToken } from '@/lib/auth';
 import { verifyEmailCode } from '@/lib/otp';
 import { generateUniqueName } from '@/lib/wechat-login';
 import { serializeUser } from '@/lib/serializers';
+import { fireSendMail } from '@/lib/email-mailer';
+import { welcomeEmail } from '@/lib/email-templates';
 
 const Body = z.object({
   email: z.string().email('邮箱格式不正确'),
@@ -35,6 +37,7 @@ export const POST = handler(async (req) => {
     },
   });
 
+  let isNewUser = false;
   if (!user) {
     // name 默认用邮箱前缀(@ 之前部分),冲突自动追加随机后缀
     const localPart = normalizedEmail.split('@')[0] || '用户';
@@ -48,6 +51,7 @@ export const POST = handler(async (req) => {
         email: normalizedEmail,
       },
     });
+    isNewUser = true;
     user = await prisma.user.findUnique({
       where: { id: created.id },
       include: {
@@ -61,6 +65,12 @@ export const POST = handler(async (req) => {
 
   const token = await signToken({ userId: user.id });
   setAuthCookie(token);
+
+  // 新用户首次注册 → 异步发欢迎邮件(失败不影响登录)
+  if (isNewUser) {
+    const tpl = welcomeEmail({ userName: user.name, userId: user.id });
+    fireSendMail({ to: normalizedEmail, ...tpl });
+  }
 
   return serializeUser(user);
 });

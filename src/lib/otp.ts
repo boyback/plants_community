@@ -20,7 +20,8 @@
  *   SMTP_FROM_NAME=肉友社                      (显示给用户的发件人名称)
  */
 
-import nodemailer, { type Transporter } from 'nodemailer';
+import { sendMail } from './email-mailer';
+import { otpEmail } from './email-templates';
 
 // ============================================================
 // 内存存储 + 限频
@@ -114,29 +115,8 @@ export function verifyEmailCode(email: string, code: string): { ok: boolean; rea
 }
 
 // ============================================================
-// SMTP Driver
+// 实际发送(SMTP / mock)
 // ============================================================
-
-let transporterCache: Transporter | null = null;
-
-function getTransporter(): Transporter | null {
-  if (transporterCache) return transporterCache;
-
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT || 465);
-  const secure = (process.env.SMTP_SECURE ?? 'true').toLowerCase() !== 'false';
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  if (!host || !user || !pass) return null;
-
-  transporterCache = nodemailer.createTransport({
-    host,
-    port,
-    secure, // 465=true / 587=false (STARTTLS)
-    auth: { user, pass },
-  });
-  return transporterCache;
-}
 
 interface SendResult {
   ok: boolean;
@@ -144,39 +124,8 @@ interface SendResult {
 }
 
 async function sendViaSmtp(email: string, code: string): Promise<SendResult> {
-  const tr = getTransporter();
-  if (!tr) return { ok: false, error: 'SMTP 未配置' };
-
-  const fromAddr = process.env.SMTP_USER!;
-  const fromName = process.env.SMTP_FROM_NAME || '肉友社';
-  const subject = `【肉友社】邮箱验证码 ${code}`;
-
-  const html = `
-    <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-      <h2 style="color: #459c67; margin-bottom: 16px;">🌿 肉友社邮箱验证</h2>
-      <p style="color: #333; line-height: 1.6;">你的验证码是:</p>
-      <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2d6a47; background: #f0f9f4; padding: 16px; border-radius: 8px; text-align: center; margin: 16px 0;">
-        ${code}
-      </div>
-      <p style="color: #666; font-size: 13px; line-height: 1.6;">验证码 10 分钟内有效,请勿告诉他人。<br/>如非本人操作,请忽略此邮件。</p>
-      <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-      <p style="color: #999; font-size: 12px;">此邮件由系统自动发送,请勿直接回复。<br/>肉友社 · plantcommunity.cn</p>
-    </div>
-  `;
-
-  try {
-    await tr.sendMail({
-      from: `"${fromName}" <${fromAddr}>`,
-      to: email,
-      subject,
-      html,
-      text: `你的肉友社验证码是:${code}\n10 分钟内有效,请勿告诉他人。`,
-    });
-    return { ok: true };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { ok: false, error: msg };
-  }
+  const { subject, html, text } = otpEmail(code, 10);
+  return sendMail({ to: email, subject, html, text });
 }
 
 async function sendViaMock(email: string, code: string): Promise<SendResult> {
