@@ -8,6 +8,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 
 import { LocaleSwitcher } from '@/components/ui/LocaleSwitcher';
 import { ColorThemeSwitcher } from '@/components/ui/ColorThemeSwitcher';
+import { NotificationDropdown } from './NotificationDropdown';
 import { useAuth } from '@/context/AuthContext';
 import { useRealtime } from '@/context/RealtimeContext';
 import { useI18n } from '@/i18n/I18nContext';
@@ -109,8 +110,11 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
               >
                 💎 {pointsBalance}
               </Link>
-              <IconButton href="/messages" icon="message" badge={unreadMsgs} label={t('nav.messages')} />
-              <IconButton href="/notifications" icon="bell" badge={unreadNotifs} label={t('nav.notifications')} />
+              <NotificationDropdown
+                unreadNotifs={unreadNotifs}
+                unreadMsgs={unreadMsgs}
+                onReadAll={() => setUnreadNotifs(0)}
+              />
               <ColorThemeSwitcher />
               <LocaleSwitcher className="hidden md:block" />
               <Link

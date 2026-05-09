@@ -79,7 +79,7 @@ export function NotificationDropdown({
 
   const markAllRead = async () => {
     try {
-      await api.post('/api/notifications/read-all');
+      await api.post('/api/notifications/read', { all: true });
       setItems((prev) => prev.map((n) => ({ ...n, read: true })));
       onReadAll?.();
     } catch {}
