@@ -50,18 +50,23 @@ export function SignInCard() {
 
   return (
     <div className="card overflow-hidden">
-      {/* 用户彩条 */}
-      <div className="flex items-center gap-3 bg-gradient-to-br from-leaf-400 to-leaf-600 p-4 text-white">
-        <Avatar src={user.avatar} alt={user.name} size={44} ring />
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold">{user.name}</div>
-          <div className="text-[11px] opacity-90">
-            {t('home.signIn.userMeta', {
-              level: user.level,
-              posts: user.posts,
-              followers: user.followers,
-            })}
+      {/* 用户彩条 + 提示 */}
+      <div className="bg-gradient-to-br from-leaf-400 to-leaf-600 p-4 text-white">
+        <div className="flex items-center gap-3">
+          <Avatar src={user.avatar} alt={user.name} size={44} ring />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold">{user.name}</div>
+            <div className="text-[11px] opacity-90">
+              {t('home.signIn.userMeta', {
+                level: user.level,
+                posts: user.posts,
+                followers: user.followers,
+              })}
+            </div>
           </div>
+        </div>
+        <div className="mt-2 text-[11px] leading-5 opacity-90">
+          {t('home.signIn.tip')}
         </div>
       </div>
 
@@ -99,10 +104,6 @@ export function SignInCard() {
               t('home.signIn.signInNow')
             )}
           </button>
-        </div>
-
-        <div className="mt-3 rounded-lg bg-sand-50 p-2.5 text-[11px] text-sand-300">
-          {t('home.signIn.tip')}
         </div>
 
         {/* 月历 */}
