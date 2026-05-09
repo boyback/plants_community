@@ -206,11 +206,14 @@ export const ALLOWED_IMAGE_MIME = [
   'image/png',
   'image/webp',
   'image/gif',
+  // iOS Live Photo / 苹果默认拍照格式 — 服务端会转 JPEG/WebP 落地
+  'image/heic',
+  'image/heif',
 ];
 export const ALLOWED_VIDEO_MIME = [
   'video/mp4',
   'video/webm',
-  'video/quicktime', // .mov
+  'video/quicktime', // .mov,iOS Live Photo 配套视频也是这个
 ];
 
 /** 兼容旧代码 */
@@ -221,10 +224,19 @@ const EXT_BY_MIME: Record<string, string> = {
   'image/png': 'png',
   'image/webp': 'webp',
   'image/gif': 'gif',
+  'image/heic': 'heic',
+  'image/heif': 'heif',
   'video/mp4': 'mp4',
   'video/webm': 'webm',
   'video/quicktime': 'mov',
 };
+
+/** HEIC/HEIF 在 server 端落地前转码的格式(iOS 拍照默认格式,浏览器普遍不识别) */
+export const HEIC_MIMES = ['image/heic', 'image/heif'];
+
+export function isHeicMime(mime: string): boolean {
+  return HEIC_MIMES.includes(mime);
+}
 
 export function getExtForMime(mime: string): string {
   return EXT_BY_MIME[mime] ?? 'bin';
@@ -269,6 +281,27 @@ export function sniffImageMime(buf: Buffer): string | null {
     buf[11] === 0x50
   ) {
     return 'image/webp';
+  }
+  // HEIC/HEIF: ISO BMFF, ftyp + brand 'heic'/'heix'/'mif1'/'msf1'/'heim'/'heis'
+  if (
+    buf[4] === 0x66 && // f
+    buf[5] === 0x74 && // t
+    buf[6] === 0x79 && // y
+    buf[7] === 0x70 // p
+  ) {
+    const brand = buf.slice(8, 12).toString('ascii');
+    if (
+      brand === 'heic' ||
+      brand === 'heix' ||
+      brand === 'heim' ||
+      brand === 'heis'
+    ) {
+      return 'image/heic';
+    }
+    if (brand === 'mif1' || brand === 'msf1') {
+      return 'image/heif';
+    }
+    // 不是 heic/heif,落到 video sniff(qt/mp4 等)
   }
   return null;
 }
@@ -315,4 +348,48 @@ export async function sha256OfFile(filePath: string): Promise<string> {
     s.on('end', () => resolve(h.digest('hex')));
     s.on('error', reject);
   });
+}
+
+// =============== HEIC → JPEG ===============
+
+/**
+ * 把 HEIC/HEIF 转成 JPEG buffer(浏览器普遍不支持 HEIC,iOS 默认拍照都是 HEIC)
+ *
+ * 用 heic-convert(纯 JS,无系统依赖)
+ * 失败时抛错,调用方可 catch 后回退到原始 buffer
+ */
+export async function convertHeicToJpeg(
+  heicBuf: Buffer,
+  quality = 0.9
+): Promise<Buffer> {
+  const mod = await import('heic-convert');
+  const convert = (mod as unknown as { default: (opts: unknown) => Promise<ArrayBuffer> }).default;
+  const out = await convert({
+    buffer: heicBuf,
+    format: 'JPEG',
+    quality,
+  });
+  return Buffer.from(out);
+}
+
+/**
+ * 处理上传后的图片 buffer:
+ * - 如果是 HEIC/HEIF → 转 JPEG,返回 { buf, mime: 'image/jpeg', wasConverted: true }
+ * - 其他直接返回原 buffer
+ */
+export async function normalizeImageBuffer(
+  buf: Buffer,
+  detectedMime: string
+): Promise<{ buf: Buffer; mime: string; wasConverted: boolean }> {
+  if (isHeicMime(detectedMime)) {
+    try {
+      const jpeg = await convertHeicToJpeg(buf);
+      return { buf: jpeg, mime: 'image/jpeg', wasConverted: true };
+    } catch (e) {
+      // 转换失败保留原文件(浏览器看不了,但至少没丢)
+      console.warn('[upload] HEIC convert failed:', e);
+      return { buf, mime: detectedMime, wasConverted: false };
+    }
+  }
+  return { buf, mime: detectedMime, wasConverted: false };
 }

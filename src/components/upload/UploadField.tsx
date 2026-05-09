@@ -20,9 +20,22 @@ interface Props {
 }
 
 const ACCEPT: Record<UploadKind, string> = {
-  image: 'image/jpeg,image/png,image/webp,image/gif',
+  // 图片支持苹果 HEIC/HEIF(服务端会转 JPEG 落地);Live Photo 拍摄时同时还会有 .MOV 配套
+  image:
+    'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif,.mov',
   video: 'video/mp4,video/webm,video/quicktime',
 };
+
+/** 是否是 HEIC/HEIF/Live Photo MOV(浏览器对 .heic 的 type 经常给空字符串,看后缀) */
+function isImagePartner(name: string): boolean {
+  return /\.(heic|heif|mov)$/i.test(name);
+}
+function isMovPartner(name: string): boolean {
+  return /\.mov$/i.test(name);
+}
+function basename(name: string): string {
+  return name.replace(/\.[^.]+$/, '');
+}
 
 export function UploadField({
   kind,
@@ -58,13 +71,80 @@ export function UploadField({
   const handleFiles = async (files: FileList | File[]) => {
     const list = Array.from(files);
     if (list.length === 0) return;
-    // 视频只能 1 个;图片受 max 限
-    const accept = list.slice(0, remaining || 1);
-    const next = [...value];
-    for (const f of accept) {
-      const r = await upload(f, kind);
-      if (r?.url) next.push(r.url);
+
+    // —— Live Photo 配对识别(仅 image 模式)——
+    // 用户一次选了多张文件,如果有 IMG_xxx.HEIC + IMG_xxx.MOV 同名对,
+    // 把 MOV 视为 Live Photo 配套而不是独立视频文件,且让 image 不占名额而 mov 不占
+    const pairs = new Map<string, { image?: File; mov?: File }>();
+    const standalone: File[] = [];
+
+    if (kind === 'image') {
+      for (const f of list) {
+        const isHeic = /\.(heic|heif)$/i.test(f.name);
+        const isMov = isMovPartner(f.name);
+        if (isHeic || (isMov && f.name.match(/^IMG_\d/i))) {
+          // IMG_xxx 开头的 HEIC/MOV 视为 Live Photo 候选
+          const k = basename(f.name);
+          const cur = pairs.get(k) ?? {};
+          if (isHeic) cur.image = f;
+          else cur.mov = f;
+          pairs.set(k, cur);
+        } else {
+          standalone.push(f);
+        }
+      }
+      // 对没配套的 image/mov 单独处理:
+      for (const [k, v] of pairs.entries()) {
+        if (v.image && !v.mov) {
+          // 单 HEIC,当普通图片传
+          standalone.push(v.image);
+          pairs.delete(k);
+        } else if (v.mov && !v.image) {
+          // 单 MOV(没 HEIC 配套),image 模式下不接受 — 提示用户
+          pairs.delete(k);
+        }
+      }
     }
+
+    const next = [...value];
+    let usedSlots = 0;
+
+    // 1. 先处理普通文件
+    for (const f of standalone) {
+      if (value.length + usedSlots >= max) break;
+      const r = await upload(f, kind);
+      if (r?.url) {
+        next.push(r.url);
+        usedSlots++;
+      }
+    }
+
+    // 2. 再处理 Live Photo 对(占 1 个 image 槽)
+    for (const [, p] of pairs.entries()) {
+      if (value.length + usedSlots >= max) break;
+      if (!p.image || !p.mov) continue;
+      const imgRes = await upload(p.image, 'image');
+      if (!imgRes?.url) continue;
+      const movRes = await upload(p.mov, 'video');
+      if (movRes?.url && imgRes.id && movRes.id) {
+        // 调 link 接口关联(失败也不影响主流程,只是丢失联动)
+        try {
+          await fetch('/api/upload/link-live-photo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              imageId: imgRes.id,
+              movId: movRes.id,
+            }),
+          });
+        } catch {
+          // ignore
+        }
+      }
+      next.push(imgRes.url);
+      usedSlots++;
+    }
+
     onChange(next);
   };
 

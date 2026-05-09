@@ -19,6 +19,8 @@ import { api } from '@/lib/client-api';
  */
 
 export interface UploadResult {
+  /** UploadFile.id(用于 Live Photo 关联等后续操作) */
+  id?: string;
   url: string;
   mime: string;
   size: number;
@@ -74,6 +76,7 @@ export function useChunkUpload() {
           setProgress(1);
           setStatus('done');
           return {
+            id: json.data.id,
             url: json.data.url,
             mime: json.data.mime ?? file.type,
             size: file.size,
@@ -89,6 +92,7 @@ export function useChunkUpload() {
         setStatus('uploading');
         const init = await api.post<{
           instant: boolean;
+          id?: string;
           url?: string;
           mime?: string;
           size?: number;
@@ -109,6 +113,7 @@ export function useChunkUpload() {
           setProgress(1);
           setStatus('done');
           return {
+            id: init.id,
             url: init.url,
             mime: init.mime ?? file.type,
             size: init.size ?? file.size,

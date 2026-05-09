@@ -17,6 +17,7 @@ import { serializePost } from '@/lib/serializers';
 import { getCurrentUser } from '@/lib/auth';
 import { formatNumber, formatDateTime, boardUrl } from '@/lib/utils';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
+import { lookupLivePhotos } from '@/lib/live-photo';
 
 export const dynamic = 'force-dynamic';
 
@@ -97,6 +98,12 @@ export default async function PostDetailPage({ params }: { params: { id: string 
       }
     }
   }
+
+  // Live Photo 反查(本帖图片)
+  const livePhotoMap =
+    post.images && post.images.length > 0
+      ? await lookupLivePhotos(post.images)
+      : {};
 
   // 相关帖子
   const relatedRaw = await prisma.post.findMany({
@@ -216,6 +223,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
               post={post}
               initialVoted={myVoteOptions}
               initialAttending={attending}
+              livePhotoMap={livePhotoMap}
             />
           </article>
 

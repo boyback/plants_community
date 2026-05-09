@@ -22,7 +22,9 @@ import {
   getChunkDir,
   getExtForMime,
   getUploadDriver,
+  isHeicMime,
   isRemoteDriver,
+  normalizeImageBuffer,
   sha256OfFile,
 } from '@/lib/upload';
 
@@ -108,15 +110,48 @@ export const POST = handler(async (req) => {
     return fail(400, '文件校验失败:hash 不一致');
   }
 
+  // HEIC/HEIF → 转 JPEG(浏览器普遍不识别)
+  // 注意:hash 校验已经过了,这里只把存储格式改了
+  let finalMime = body.mime;
+  let finalSize = totalSize;
+  let finalKey = key;
+  if (realKind === 'image' && isHeicMime(body.mime)) {
+    const heicBuf = await fs.readFile(stagingPath);
+    const { buf: jpegBuf, mime: convertedMime, wasConverted } =
+      await normalizeImageBuffer(heicBuf, body.mime);
+    if (wasConverted) {
+      // 重写 staging 与 key 扩展名为 .jpg
+      finalMime = convertedMime;
+      finalSize = jpegBuf.length;
+      const newExt = getExtForMime(convertedMime);
+      finalKey = key.replace(/\.[^.]+$/, `.${newExt}`);
+      // 远程 driver 不需要 staging 文件;本地 driver 把 staging 改名直接当成 final
+      await fs.writeFile(stagingPath, jpegBuf);
+    }
+  }
+
   // 决定最终 url
   let url: string;
   if (remote) {
     const buf = await fs.readFile(stagingPath);
-    url = await driver.put(key, buf, body.mime);
+    url = await driver.put(finalKey, buf, finalMime);
     // 上传完成后删本地暂存
     await fs.unlink(stagingPath).catch(() => null);
   } else {
-    url = `/uploads/${key}`;
+    // 本地 driver:如果 finalKey != key(HEIC 转了 jpg),要把 staging 移到正确位置
+    if (finalKey !== key) {
+      const newPath = driver.resolvePath
+        ? driver.resolvePath(finalKey)
+        : path.join(process.cwd(), 'public', 'uploads', finalKey);
+      await fs.mkdir(path.dirname(newPath), { recursive: true });
+      await fs.rename(stagingPath, newPath).catch(async () => {
+        // rename 失败(跨设备)就 copy + 删
+        const buf = await fs.readFile(stagingPath);
+        await fs.writeFile(newPath, buf);
+        await fs.unlink(stagingPath).catch(() => null);
+      });
+    }
+    url = `/uploads/${finalKey}`;
   }
 
   // 写表(秒传去重 unique 上)
@@ -124,10 +159,10 @@ export const POST = handler(async (req) => {
     data: {
       uploaderId: me.id,
       sha256: body.sha256,
-      mime: body.mime,
+      mime: finalMime,
       kind: realKind,
-      size: totalSize,
-      storageKey: key,
+      size: finalSize,
+      storageKey: finalKey,
       url,
     },
   });
@@ -136,6 +171,7 @@ export const POST = handler(async (req) => {
   await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => null);
 
   return {
+    id: created.id,
     url: created.url,
     mime: created.mime,
     size: created.size,

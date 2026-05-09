@@ -16,16 +16,19 @@ export function PostBody({
   post,
   initialVoted = [],
   initialAttending = false,
+  livePhotoMap,
 }: {
   post: Post;
   initialVoted?: string[];
   initialAttending?: boolean;
+  /** 图片 URL → Live Photo 视频 URL 映射(详情页 server 端反查后传入) */
+  livePhotoMap?: Record<string, string>;
 }) {
   switch (post.type) {
     case 'rich':
-      return <RichBody post={post} />;
+      return <RichBody post={post} livePhotoMap={livePhotoMap} />;
     case 'short':
-      return <ShortBody post={post} />;
+      return <ShortBody post={post} livePhotoMap={livePhotoMap} />;
     case 'video':
       return <VideoBody post={post} />;
     case 'vote':
@@ -89,20 +92,36 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-function RichBody({ post }: { post: Post }) {
+function RichBody({
+  post,
+  livePhotoMap,
+}: {
+  post: Post;
+  livePhotoMap?: Record<string, string>;
+}) {
   return (
     <div className="space-y-4">
       <RichTextView json={post.contentJson} html={post.content} />
-      {post.images && post.images.length > 0 && <ImageGallery images={post.images} />}
+      {post.images && post.images.length > 0 && (
+        <ImageGallery images={post.images} livePhotoMap={livePhotoMap} />
+      )}
     </div>
   );
 }
 
-function ShortBody({ post }: { post: Post }) {
+function ShortBody({
+  post,
+  livePhotoMap,
+}: {
+  post: Post;
+  livePhotoMap?: Record<string, string>;
+}) {
   return (
     <div className="space-y-4">
       <p className="whitespace-pre-wrap text-[15px] leading-7 text-ink-800">{post.content}</p>
-      {post.images && post.images.length > 0 && <ImageGallery images={post.images} />}
+      {post.images && post.images.length > 0 && (
+        <ImageGallery images={post.images} livePhotoMap={livePhotoMap} />
+      )}
     </div>
   );
 }
@@ -344,7 +363,13 @@ function InfoBlock({ icon, title, value }: { icon: string; title: string; value:
   );
 }
 
-function ImageGallery({ images }: { images: string[] }) {
+function ImageGallery({
+  images,
+  livePhotoMap,
+}: {
+  images: string[];
+  livePhotoMap?: Record<string, string>;
+}) {
   const { t } = useI18n();
   const [active, setActive] = useState<number | null>(null);
 
@@ -385,6 +410,7 @@ function ImageGallery({ images }: { images: string[] }) {
       <div className={cn('grid gap-2 overflow-hidden rounded-lg', layoutClass)}>
         {display.map((src, i) => {
           const showRemain = i === display.length - 1 && remain > 0;
+          const isLive = !!livePhotoMap?.[src];
           return (
             <button
               key={i}
@@ -403,6 +429,15 @@ function ImageGallery({ images }: { images: string[] }) {
                 className="object-cover transition-transform hover:scale-105"
                 unoptimized
               />
+              {isLive && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white shadow"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                  LIVE
+                </span>
+              )}
               {showRemain && (
                 <div className="absolute inset-0 grid place-items-center bg-ink-900/50 text-2xl font-bold text-white">
                   +{remain}
@@ -418,6 +453,7 @@ function ImageGallery({ images }: { images: string[] }) {
         index={active}
         onClose={() => setActive(null)}
         onChange={setActive}
+        livePhotoMap={livePhotoMap}
       />
     </>
   );

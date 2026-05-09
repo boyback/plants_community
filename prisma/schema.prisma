@@ -1255,7 +1255,7 @@ model UploadFile {
   uploaderId String
   /// 文件 SHA256(64 位 hex)— 用于秒传:同一文件第二次上传直接复用 url
   sha256     String
-  /// MIME 类型,如 image/jpeg / video/mp4
+  /// MIME 类型,如 image/jpeg / video/mp4 / image/heic
   mime       String
   kind       UploadFileKind
   /// 字节数
@@ -1266,13 +1266,21 @@ model UploadFile {
   url        String         @db.Text
   /// 视频/图片元信息(width/height/duration 等),JSON 字符串
   meta       String?        @db.Text
-  createdAt  DateTime       @default(now())
+
+  /// 关联的 Live Photo 视频文件(image 行才用):指向另一个 UploadFile.id(kind=video, MOV)
+  livePhotoMovId   String?
+  /// 反向:这个 video 是哪张 image 的 Live Photo 配套(video 行才用)
+  /// 不强制 FK 引用,允许独立删除一边而不连带删除另一边
+  livePhotoImageId String?
+
+  createdAt DateTime @default(now())
 
   uploader User @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
 
   // 同一上传者同一文件 sha256 唯一(秒传依据)
   @@unique([uploaderId, sha256])
   @@index([sha256])
+  @@index([livePhotoMovId])
   @@map("upload_files")
 }
 

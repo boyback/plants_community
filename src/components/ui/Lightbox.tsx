@@ -18,6 +18,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { LivePhotoView } from '@/components/upload/LivePhotoView';
 
 interface Props {
   images: string[];
@@ -25,9 +26,11 @@ interface Props {
   index: number | null;
   onClose: () => void;
   onChange?: (i: number) => void;
+  /** 图片 URL → Live Photo 视频 URL 的映射(命中则用 LivePhotoView) */
+  livePhotoMap?: Record<string, string>;
 }
 
-export function Lightbox({ images, index, onClose, onChange }: Props) {
+export function Lightbox({ images, index, onClose, onChange, livePhotoMap }: Props) {
   const [animOpen, setAnimOpen] = useState(false);
   const startXRef = useRef(0);
   const startYRef = useRef(0);
@@ -138,21 +141,34 @@ export function Lightbox({ images, index, onClose, onChange }: Props) {
             opacity: drag.dragging ? Math.max(0.4, 1 - Math.abs(drag.dy) / 400) : 1,
           }}
         >
-          {images.map((src, i) => (
-            <div
-              key={i}
-              className="grid h-full place-items-center"
-              style={{ width: `${100 / images.length}%` }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={src}
-                alt={`图片 ${i + 1}`}
-                className="max-h-full max-w-full select-none object-contain"
-                draggable={false}
-              />
-            </div>
-          ))}
+          {images.map((src, i) => {
+            const liveUrl = livePhotoMap?.[src];
+            return (
+              <div
+                key={i}
+                className="grid h-full place-items-center"
+                style={{ width: `${100 / images.length}%` }}
+              >
+                {liveUrl ? (
+                  <LivePhotoView
+                    imageUrl={src}
+                    videoUrl={liveUrl}
+                    alt={`图片 ${i + 1}`}
+                    className="max-h-full max-w-full"
+                    imgClassName="max-h-[90vh] object-contain"
+                  />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={src}
+                    alt={`图片 ${i + 1}`}
+                    className="max-h-full max-w-full select-none object-contain"
+                    draggable={false}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -77,6 +77,7 @@ export const POST = handler(async (req) => {
   if (existing) {
     return {
       instant: true,
+      id: existing.id,
       url: existing.url,
       mime: existing.mime,
       size: existing.size,
