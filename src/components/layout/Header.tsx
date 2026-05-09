@@ -103,8 +103,6 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
         <div className="ml-auto flex items-center gap-1 md:ml-0">
           {user ? (
             <>
-              <ColorThemeSwitcher />
-              <LocaleSwitcher className="hidden md:block" />
               <Link
                 href="/editor"
                 className="hidden sm:inline-flex btn-primary h-9 !px-3 text-xs"
@@ -112,6 +110,8 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                 <Icon name="plus" size={14} />
                 {t('nav.newPost')}
               </Link>
+              <ColorThemeSwitcher />
+              <LocaleSwitcher className="hidden md:block" />
               <div
                 className="relative"
                 onMouseEnter={() => {
@@ -488,7 +488,7 @@ function NotificationDropdownInline({
   };
 
   return (
-    <div className="w-[340px] overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-card">
+    <div className="w-[280px] overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-card">
       <div className="flex items-center justify-between border-b border-leaf-100 px-3 py-2">
         <span className="text-sm font-semibold text-ink-800">消息</span>
         <button
