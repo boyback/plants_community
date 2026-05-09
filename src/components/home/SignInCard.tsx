@@ -76,25 +76,15 @@ export function SignInCard() {
         {t('home.signIn.tip')}
       </div>
 
-      {/* 签到主区:统计 + 连续天数 + 按钮 同一行 */}
+      {/* 主区:按钮 + 今日 N · 连签 N 一行 */}
       <div className="p-4">
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0 flex-1 space-y-0.5 text-[11px] text-leaf-700/80">
-            <div>
-              今日已有 <b className="text-leaf-700 tabular-nums">{todaySignedCount}</b> 人签到
-            </div>
-            <div>
-              {t('home.signIn.streakLabel')}{' '}
-              <b className="tabular-nums text-leaf-700">{signInStreak}</b>{' '}
-              {t('home.signIn.daysSuffix')}
-            </div>
-          </div>
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => void signIn()}
             disabled={signedInToday}
             className={cn(
-              'btn shrink-0 !px-4',
+              'btn shrink-0 !px-3',
               signedInToday
                 ? 'cursor-not-allowed bg-leaf-100 text-leaf-600'
                 : 'bg-leaf-500 text-white hover:bg-leaf-600'
@@ -103,19 +93,22 @@ export function SignInCard() {
             {signedInToday ? (
               <>
                 <Icon name="check" size={14} />
-                {t('home.signIn.signedToday')}
+                已签到
               </>
             ) : (
-              t('home.signIn.signInNow')
+              '签到'
             )}
           </button>
+          <div className="min-w-0 flex-1 text-right text-[11px] text-leaf-700/80">
+            今日 <b className="text-leaf-700 tabular-nums">{todaySignedCount}</b> 人 · 连签{' '}
+            <b className="tabular-nums text-leaf-700">{signInStreak}</b> 天
+          </div>
         </div>
 
         {/* 月历 */}
-        <div className="mt-4 border-t border-leaf-100 pt-3">
-          <div className="mb-2 flex items-center justify-between text-[11px] text-leaf-700/70">
-            <span>📅 本月签到</span>
-            <span>{monthLabel}</span>
+        <div className="mt-3 border-t border-leaf-100 pt-3">
+          <div className="mb-2 text-right text-[10px] text-leaf-700/60">
+            {monthLabel}
           </div>
 
           {/* 周次表头 */}
