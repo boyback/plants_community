@@ -136,22 +136,21 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
       ) : (
         <>
           {/*
-            固定栅格:m=1, sm=2, md+=3 列。所有卡片大小一致,
-            journal/vote 也是 1 列一格,跟普通帖一样
+            CSS columns 瀑布流:m=1, sm=2, md+=3 列
+            卡片高度由内容决定,自然错落,不强制等高
+            每个直接子元素加 break-inside-avoid 避免被切到下一列
           */}
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+          <div className="mt-4 columns-1 gap-3 sm:columns-2 md:columns-3 [column-fill:_balance]">
             {cur.items.map((p) => (
-              <FeedCard
-                key={p.id}
-                post={p}
-                source={tabToSource(tab)}
-              />
+              <div key={p.id} className="mb-3 break-inside-avoid">
+                <FeedCard post={p} source={tabToSource(tab)} />
+              </div>
             ))}
             {/* 加载下一页时插入骨架屏占位 */}
             {loading &&
               cur.items.length > 0 &&
               Array.from({ length: 6 }).map((_, i) => (
-                <div key={`sk-${i}`}>
+                <div key={`sk-${i}`} className="mb-3 break-inside-avoid">
                   <PostCardSkeleton variant={i} />
                 </div>
               ))}
@@ -211,9 +210,9 @@ function FeedCard({
 
 function FeedSkeleton() {
   return (
-    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+    <div className="mt-4 columns-1 gap-3 sm:columns-2 md:columns-3">
       {Array.from({ length: 9 }).map((_, i) => (
-        <div key={i}>
+        <div key={i} className="mb-3 break-inside-avoid">
           <PostCardSkeleton variant={i} />
         </div>
       ))}

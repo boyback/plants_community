@@ -87,13 +87,16 @@ export function PostMasonry({
 
   return (
     <div className={className}>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+      {/* CSS columns 瀑布流 */}
+      <div className="columns-1 gap-3 sm:columns-2 md:columns-3">
         {items.map((p) => (
-          <ObservedCard key={p.id} post={p} source={source} />
+          <div key={p.id} className="mb-3 break-inside-avoid">
+            <ObservedCard post={p} source={source} />
+          </div>
         ))}
         {loading &&
           Array.from({ length: 6 }).map((_, i) => (
-            <div key={`sk-${i}`}>
+            <div key={`sk-${i}`} className="mb-3 break-inside-avoid">
               <PostCardSkeleton variant={i} />
             </div>
           ))}

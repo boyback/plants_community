@@ -45,21 +45,26 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
     <Link
       href={`/post/${post.id}`}
       className={cn(
-        // h-full + flex column:让 grid 中所有兄弟卡片等高,内部内容撑满
-        'card group flex h-full flex-col overflow-hidden transition-shadow hover:shadow-lg',
+        // 瀑布流模式:卡片高度由内容决定,不强制等高
+        'card group block overflow-hidden transition-shadow hover:shadow-lg',
         className
       )}
     >
       {cover ? (
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-leaf-50">
+        <div className="relative w-full overflow-hidden bg-leaf-50">
+          {/*
+            瀑布流图片策略:
+            - 默认按原图比例铺满宽度(h-auto)
+            - 设个 max-height 防止超长图把卡片撑爆 → 此时图片用 contain 居中,不裁切不拉伸
+            - 用宿主元素 max-h + img.object-contain + 居中,极端情况两侧/上下露底色 bg-leaf-50,不会显示空白
+          */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={cover}
             alt={post.title}
-            className="block h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="block w-full max-h-[480px] object-contain transition-transform duration-500 group-hover:scale-[1.02]"
             loading="lazy"
           />
-          {/* 左上角:类型徽章 */}
           <div className="absolute left-2 top-2">
             <PostTypeBadge type={post.type} />
           </div>
@@ -78,7 +83,7 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
         </div>
       )}
 
-      <div className="flex flex-1 flex-col gap-2 p-3">
+      <div className="space-y-2 p-3">
         {post.species && <SpeciesChip species={post.species} board={post.board} />}
 
         <h3 className="line-clamp-2 text-sm font-semibold text-ink-800 group-hover:text-leaf-700 md:text-base">
@@ -98,8 +103,8 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
 
         {post.type === 'journal' && post.journal && <JournalPreview post={post} />}
 
-        {/* mt-auto 让 footer 钉到底,前面 grow 撑空,grid 内卡片自然等高 */}
-        <div className="mt-auto space-y-1.5 pt-1">
+        {/* footer:作者一行 + 看赞评一行 */}
+        <div className="space-y-1.5 pt-1">
           {/* —— 作者一行 —— */}
           <div className="flex items-center justify-between gap-2">
             <NestedLink
