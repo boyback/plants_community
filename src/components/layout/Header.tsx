@@ -4,9 +4,8 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { Logo } from '@/components/ui/Logo';
 import { Icon } from '@/components/ui/Icon';
-import { Avatar } from '@/components/ui/Avatar';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { VipBadge } from '@/components/ui/VipBadge';
+
 import { LocaleSwitcher } from '@/components/ui/LocaleSwitcher';
 import { ColorThemeSwitcher } from '@/components/ui/ColorThemeSwitcher';
 import { useAuth } from '@/context/AuthContext';
@@ -152,67 +151,34 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                   />
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 z-20 mt-2 w-72 overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-xl">
-                      {/* 顶部用户卡片 — 跳到个人主页 */}
-                      <Link
-                        href={`/user/${user.id}`}
-                        onClick={() => setMenuOpen(false)}
-                        className="flex items-center gap-3 border-b border-leaf-50 bg-gradient-to-br from-leaf-50/60 to-white p-4 transition-colors hover:from-leaf-100/60"
-                      >
-                        <Avatar src={user.avatar} alt={user.name} size={44} ring />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
-                            <span
-                              className={cn(
-                                'truncate text-sm font-semibold',
-                                vip.isVip
-                                  ? 'bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-600 bg-clip-text text-transparent'
-                                  : ''
-                              )}
-                            >
-                              {user.name}
-                            </span>
-                            {vip.isVip && <VipBadge size="xs" lifetime={vip.lifetime} />}
-                          </div>
-                          <div className="mt-0.5 text-[11px] text-leaf-600/80">
-                            Lv.{user.level} · 💎 {pointsBalance}
-                          </div>
-                        </div>
-                        <Icon name="arrow-right" size={14} className="text-leaf-500" />
-                      </Link>
+                  <div className="absolute right-0 z-20 mt-2 w-56 overflow-visible rounded-xl border border-leaf-100 bg-white py-1 shadow-xl">
+                    {/* 1. 我的主页 */}
+                    <Link
+                      href={`/user/${user.id}`}
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-ink-800 hover:bg-leaf-50"
+                    >
+                      <Icon name="home" size={14} />
+                      <span>个人主页</span>
+                    </Link>
 
-                      {/* 我的主页(快速跳转) */}
-                      <RowItem
-                        href={`/user/${user.id}`}
-                        icon="home"
-                        label="我的主页"
-                        onClose={() => setMenuOpen(false)}
-                      />
+                    {/* 2. 设置(带二级菜单 hover 展开) */}
+                    <SettingsSubmenu onNavigate={() => setMenuOpen(false)} />
 
-                      <div className="border-t border-leaf-50" />
+                    <div className="my-1 border-t border-leaf-50" />
 
-                      {/* 设置 / 登出 */}
-                      <div className="flex">
-                        <Link
-                          href="/settings"
-                          onClick={() => setMenuOpen(false)}
-                          className="flex flex-1 items-center justify-center gap-1.5 px-3 py-2.5 text-xs text-ink-700 transition-colors hover:bg-leaf-50"
-                        >
-                          <Icon name="settings" size={14} />
-                          {t('nav.settings')}
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            setMenuOpen(false);
-                            await logout();
-                          }}
-                          className="flex flex-1 items-center justify-center gap-1.5 border-l border-leaf-50 px-3 py-2.5 text-xs text-rose-600 transition-colors hover:bg-rose-50"
-                        >
-                          <Icon name="logout" size={14} />
-                          {t('nav.logout')}
-                        </button>
-                      </div>
+                    {/* 3. 退出 */}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setMenuOpen(false);
+                        await logout();
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50"
+                    >
+                      <Icon name="logout" size={14} />
+                      <span>{t('nav.logout')}</span>
+                    </button>
                     </div>
                 )}
               </div>
@@ -341,5 +307,76 @@ function RowItem({
       <span className="flex-1">{label}</span>
       {suffix && <span className="text-[10px] text-ink-500">{suffix}</span>}
     </Link>
+  );
+}
+
+/**
+ * 设置二级菜单:hover 触发,从主项右侧弹出
+ * 列出所有子设置项,点击直接跳页 + 关闭整个用户菜单
+ */
+function SettingsSubmenu({ onNavigate }: { onNavigate: () => void }) {
+  // hook 必须 import,但本文件已 import Link/Icon,这里 inline 用 useState
+  // 保持简洁 — 不引入额外 hook 依赖
+  const [open, setOpen] = useState(false);
+  const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+
+  const onEnter = () => {
+    if (timer) {
+      clearTimeout(timer);
+      setTimer(null);
+    }
+    setOpen(true);
+  };
+  const onLeave = () => {
+    const t = setTimeout(() => setOpen(false), 150);
+    setTimer(t);
+  };
+
+  const items: { href: string; icon: string; label: string }[] = [
+    { href: '/settings/profile', icon: '👤', label: '个人资料' },
+    { href: '/settings/appearance', icon: '🎨', label: '外观与语言' },
+    { href: '/settings/privacy', icon: '🔒', label: '隐私设置' },
+    { href: '/orders', icon: '📦', label: '我的订单' },
+    { href: '/addresses', icon: '📮', label: '收件地址' },
+    { href: '/vip', icon: '✨', label: '大会员' },
+    { href: '/points', icon: '💎', label: '积分中心' },
+    { href: '/tasks', icon: '🎯', label: '活动中心' },
+    { href: '/terms', icon: '📜', label: '用户协议' },
+    { href: '/privacy', icon: '🛡️', label: '隐私政策' },
+    { href: '/cookies', icon: '🍪', label: 'Cookie 政策' },
+  ];
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+    >
+      <Link
+        href="/settings"
+        onClick={onNavigate}
+        className="flex items-center gap-2 px-3 py-2 text-sm text-ink-800 hover:bg-leaf-50"
+      >
+        <Icon name="settings" size={14} />
+        <span className="flex-1">设置</span>
+        <span className="text-leaf-500">▸</span>
+      </Link>
+
+      {open && (
+        <div className="absolute right-full top-0 z-30 mr-1 w-52 overflow-hidden rounded-xl border border-leaf-100 bg-white py-1 shadow-xl">
+          {items.map((it) => (
+            <Link
+              key={it.href}
+              href={it.href}
+              onClick={onNavigate}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-ink-800 hover:bg-leaf-50"
+            >
+              <span className="w-5 text-center">{it.icon}</span>
+              <span>{it.label}</span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
