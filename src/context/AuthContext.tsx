@@ -31,6 +31,8 @@ interface AuthContextValue {
   loading: boolean;
   signedInToday: boolean;
   signInStreak: number;
+  /** 今日全站已签到人数 */
+  todaySignedCount: number;
   exp: number;
   expProgress: ExpProgressInfo | null;
   pointsBalance: number;
@@ -72,6 +74,7 @@ export function AuthProvider({
   const [loading, setLoading] = useState(!initialUser);
   const [signedInToday, setSignedInToday] = useState(initialSignedInToday);
   const [signInStreak, setSignInStreak] = useState(initialSignInStreak);
+  const [todaySignedCount, setTodaySignedCount] = useState(0);
   const [exp, setExp] = useState(initialExp);
   const [expProgressState, setExpProgressState] = useState<ExpProgressInfo | null>(
     initialExpProgress
@@ -86,6 +89,7 @@ export function AuthProvider({
         user: User;
         signInStreak: number;
         signedInToday: boolean;
+        todaySignedCount?: number;
         exp: number;
         expProgress: ExpProgressInfo;
         pointsBalance: number;
@@ -98,6 +102,7 @@ export function AuthProvider({
         setUser(res.user);
         setSignInStreak(res.signInStreak);
         setSignedInToday(res.signedInToday);
+        setTodaySignedCount(res.todaySignedCount ?? 0);
         setExp(res.exp);
         setExpProgressState(res.expProgress);
         setPointsBalance(res.pointsBalance);

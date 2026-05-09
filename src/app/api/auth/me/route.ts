@@ -38,10 +38,18 @@ export const GET = handler(async () => {
     pendant: full.equipPendantId ? map.get(full.equipPendantId) ?? null : null,
   });
 
+  // 今日已签到人数(全站)— 用于在签到卡展示「今天已经有 N 个肉友签到」
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todaySignedCount = await prisma.user.count({
+    where: { lastSignInAt: { gte: todayStart } },
+  });
+
   return {
     user: serializeUser(full),
     signInStreak: full.signInStreak,
     signedInToday: isToday(full.lastSignInAt),
+    todaySignedCount,
     exp: full.exp,
     expProgress: expProgress(full.exp),
     pointsBalance: full.pointsBalance,

@@ -45,7 +45,8 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
     <Link
       href={`/post/${post.id}`}
       className={cn(
-        'card group block overflow-hidden transition-shadow hover:shadow-lg',
+        // h-full + flex column:让 grid 中所有兄弟卡片等高,内部内容撑满
+        'card group flex h-full flex-col overflow-hidden transition-shadow hover:shadow-lg',
         className
       )}
     >
@@ -84,7 +85,7 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
         </div>
       )}
 
-      <div className="space-y-2 p-3">
+      <div className="flex flex-1 flex-col gap-2 p-3">
         {post.species && <SpeciesChip species={post.species} board={post.board} />}
 
         <h3 className="line-clamp-2 text-sm font-semibold text-ink-800 group-hover:text-leaf-700 md:text-base">

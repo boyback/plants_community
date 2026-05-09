@@ -1,12 +1,31 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
+import { api } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
+
+/** 拉取今日全站签到人数(公开接口,未登录也能访问) */
+function useTodaySignedCount(): number {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get<{ count: number }>('/api/stats/signed-today')
+      .then((r) => {
+        if (!cancelled) setN(r.count);
+      })
+      .catch(() => null);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return n;
+}
 
 /**
  * 签到 + 月历 整合卡(右栏最顶)
@@ -17,6 +36,7 @@ import { cn } from '@/lib/utils';
 export function SignInCard() {
   const { user, signedInToday, signIn, signInStreak } = useAuth();
   const { t } = useI18n();
+  const todaySignedCount = useTodaySignedCount();
 
   const cells = useMemo(
     () => buildCells(signInStreak, signedInToday),
@@ -29,20 +49,49 @@ export function SignInCard() {
 
   if (!user) {
     return (
-      <div className="card p-5">
-        <div className="text-sm font-semibold text-ink-800">
-          {t('home.signIn.welcomeTitle')}
+      <div className="card overflow-hidden">
+        {/* 头部 banner */}
+        <div className="bg-gradient-to-br from-leaf-400 to-leaf-600 p-4 text-white">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            🌱 {t('home.signIn.welcomeTitle')}
+          </div>
+          <p className="mt-1 text-[11px] leading-5 opacity-90">
+            {t('home.signIn.welcomeSub')}
+          </p>
         </div>
-        <p className="mt-1 text-xs text-leaf-700/70">
-          {t('home.signIn.welcomeSub')}
-        </p>
-        <div className="mt-3 flex gap-2">
-          <Link href="/login" className="btn-primary flex-1 justify-center">
-            {t('home.signIn.login')}
-          </Link>
-          <Link href="/register" className="btn-outline flex-1 justify-center">
-            {t('home.signIn.register')}
-          </Link>
+
+        {/* 今日已签人数 + 行动按钮 */}
+        <div className="space-y-3 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[11px] text-leaf-700/70">今日签到</div>
+              <div className="text-xl font-bold text-leaf-700">
+                {todaySignedCount}{' '}
+                <span className="text-xs font-normal">人</span>
+              </div>
+            </div>
+            <Link
+              href="/login?redirect=/"
+              className="btn bg-leaf-500 text-white hover:bg-leaf-600 !px-4"
+            >
+              立即签到
+            </Link>
+          </div>
+
+          <div className="flex gap-2 border-t border-leaf-100 pt-3">
+            <Link
+              href="/login?redirect=/"
+              className="btn-ghost flex-1 justify-center !text-xs"
+            >
+              {t('home.signIn.login')}
+            </Link>
+            <Link
+              href="/register"
+              className="btn-outline flex-1 justify-center !text-xs"
+            >
+              {t('home.signIn.register')}
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -72,6 +121,12 @@ export function SignInCard() {
 
       {/* 签到主区 */}
       <div className="p-4">
+        {/* 今日全站签到人数(轻量信息) */}
+        <div className="mb-2 flex items-center justify-between text-[11px] text-leaf-700/70">
+          <span>今日已有 <b className="text-leaf-700 tabular-nums">{todaySignedCount}</b> 人签到</span>
+          {signedInToday && <span className="text-leaf-600">含你 ✓</span>}
+        </div>
+
         <div className="flex items-center justify-between">
           <div>
             <div className="text-xs text-leaf-700/70">
