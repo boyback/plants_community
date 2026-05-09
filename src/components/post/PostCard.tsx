@@ -115,17 +115,22 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
 
         {post.type === 'journal' && post.journal && <JournalPreview post={post} />}
 
-        {/* 4 列模式:作者独立行,放在 footer 上方(默认隐藏) */}
-        <NestedLink
-          href={`/user/${post.author.id}`}
-          className="post-author-block hidden min-w-0 items-center gap-1 text-[10px] text-ink-700/80 hover:text-leaf-700"
-        >
-          <Avatar src={post.author.avatar} alt={post.author.name} size={16} />
-          <span className="truncate font-medium">{post.author.name}</span>
-        </NestedLink>
+        {/* 4 列模式:作者 + 时间(最右)独立成行,放在 footer 上方(默认隐藏) */}
+        <div className="post-author-block hidden items-center gap-1 text-[10px]">
+          <NestedLink
+            href={`/user/${post.author.id}`}
+            className="flex min-w-0 items-center gap-1 text-ink-700/80 hover:text-leaf-700"
+          >
+            <Avatar src={post.author.avatar} alt={post.author.name} size={16} />
+            <span className="truncate font-medium">{post.author.name}</span>
+          </NestedLink>
+          <span className="ml-auto shrink-0 text-leaf-700/60">
+            {timeAgo(post.createdAt)}
+          </span>
+        </div>
 
         {/* footer:作者(左) + 看赞评(右) 同一行
-            4 列瀑布流:作者隐藏到上方,看赞评均分一排,时间在最右 */}
+            4 列瀑布流:作者+时间隐藏到上方,看赞评各占 1/3 */}
         <div className="post-footer flex items-center justify-between gap-2 border-t border-leaf-50 pt-1.5">
           <NestedLink
             href={`/user/${post.author.id}`}
@@ -138,9 +143,6 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
             <Stat icon="eye" n={post.views} />
             <Stat icon="heart" n={post.likes} />
             <Stat icon="comment" n={post.comments} />
-            <span className="post-stats-time hidden shrink-0 text-leaf-700/60">
-              {timeAgo(post.createdAt)}
-            </span>
           </div>
         </div>
       </div>
