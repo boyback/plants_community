@@ -16,7 +16,7 @@ export default function Page() {
   );
 }
 
-type Tab = 'sms' | 'password';
+type Tab = 'email' | 'password';
 
 function LoginInner() {
   const router = useRouter();
@@ -24,15 +24,15 @@ function LoginInner() {
   const { login, refresh } = useAuth();
   const { t } = useI18n();
 
-  // 默认 tab:sms(用户接受度更高);旧用户切到 password
-  const [tab, setTab] = useState<Tab>('sms');
+  // 默认 tab:邮箱(无门槛接入,新用户首选);旧用户切到 password
+  const [tab, setTab] = useState<Tab>('email');
 
   // 用户名 + 密码登录
   const [name, setName] = useState('多肉阿绿');
   const [password, setPassword] = useState('123456');
 
-  // 手机号 + 验证码登录
-  const [phone, setPhone] = useState('');
+  // 邮箱 + 验证码登录
+  const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [cooldown, setCooldown] = useState(0); // 60s 倒计时
   const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -85,18 +85,20 @@ function LoginInner() {
     }, 1000);
   };
 
-  const sendSms = async () => {
+  const isValidEmail = (s: string) => /^[\w.+-]+@[\w-]+\.[\w.-]+$/.test(s);
+
+  const sendEmail = async () => {
     setErr(null);
-    if (!/^1[3-9]\d{9}$/.test(phone)) {
-      setErr('请输入正确的手机号');
+    if (!isValidEmail(email)) {
+      setErr('请输入正确的邮箱地址');
       return;
     }
     setSending(true);
     try {
-      const r = await fetch('/api/auth/sms/send', {
+      const r = await fetch('/api/auth/email/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ email }),
       });
       const data = await r.json();
       if (!r.ok) {
@@ -109,17 +111,17 @@ function LoginInner() {
     }
   };
 
-  const onSubmitSms = async (e: FormEvent) => {
+  const onSubmitEmail = async (e: FormEvent) => {
     e.preventDefault();
     setErr(null);
-    if (!/^1[3-9]\d{9}$/.test(phone)) return setErr('请输入正确的手机号');
+    if (!isValidEmail(email)) return setErr('请输入正确的邮箱');
     if (!/^\d{6}$/.test(code)) return setErr('请输入 6 位验证码');
     setLoading(true);
     try {
-      const r = await fetch('/api/auth/sms/login', {
+      const r = await fetch('/api/auth/email/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, code }),
+        body: JSON.stringify({ email, code }),
       });
       const data = await r.json();
       if (!r.ok) {
@@ -165,20 +167,20 @@ function LoginInner() {
             {t('auth.login.title') || '登录肉友社'} 🌵
           </h1>
 
-          {/* Tab 切换:手机号 / 用户名 */}
+          {/* Tab 切换:邮箱 / 用户名 */}
           <div className="mt-5 flex gap-1 rounded-full bg-leaf-50 p-1">
             <button
               type="button"
               onClick={() => {
-                setTab('sms');
+                setTab('email');
                 setErr(null);
               }}
               className={cn(
                 'flex-1 rounded-full py-2 text-sm font-medium transition-colors',
-                tab === 'sms' ? 'bg-white text-leaf-700 shadow-sm' : 'text-ink-700/60'
+                tab === 'email' ? 'bg-white text-leaf-700 shadow-sm' : 'text-ink-700/60'
               )}
             >
-              📱 手机号登录
+              ✉️ 邮箱登录
             </button>
             <button
               type="button"
@@ -195,19 +197,18 @@ function LoginInner() {
             </button>
           </div>
 
-          {/* 手机号 + 验证码 表单 */}
-          {tab === 'sms' && (
-            <form onSubmit={onSubmitSms} className="mt-5 space-y-4">
+          {/* 邮箱 + 验证码 表单 */}
+          {tab === 'email' && (
+            <form onSubmit={onSubmitEmail} className="mt-5 space-y-4">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-ink-800">手机号</label>
+                <label className="mb-1.5 block text-xs font-medium text-ink-800">邮箱</label>
                 <input
-                  type="tel"
+                  type="email"
                   className="input"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                  placeholder="请输入 11 位手机号"
-                  maxLength={11}
-                  inputMode="numeric"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value.trim())}
+                  placeholder="you@example.com"
+                  autoComplete="email"
                 />
               </div>
               <div>
@@ -223,8 +224,8 @@ function LoginInner() {
                   />
                   <button
                     type="button"
-                    onClick={sendSms}
-                    disabled={cooldown > 0 || sending || !/^1[3-9]\d{9}$/.test(phone)}
+                    onClick={sendEmail}
+                    disabled={cooldown > 0 || sending || !isValidEmail(email)}
                     className="btn-ghost shrink-0 !px-4 !text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {cooldown > 0 ? `${cooldown}s` : sending ? '发送中…' : '获取验证码'}
@@ -242,7 +243,7 @@ function LoginInner() {
                 {loading ? '登录中…' : '登录 / 注册'}
               </button>
               <p className="text-center text-[11px] text-leaf-700/60">
-                未注册的手机号将自动创建账号
+                未注册的邮箱将自动创建账号
               </p>
             </form>
           )}
