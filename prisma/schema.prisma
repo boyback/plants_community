@@ -72,6 +72,7 @@ model User {
   reports          Report[]        @relation("ReportReporter")
   postViews        PostView[]
   speciesRatings   SpeciesRating[]
+  uploads          UploadFile[]
   sentMessages     Message[]       @relation("MessageFrom")
   receivedMessages Message[]       @relation("MessageTo")
   drafts           Draft[]
@@ -177,6 +178,17 @@ enum PostType {
   journal // 生命周期 / 成长日志:时间线记录植物各阶段
 }
 
+enum PostReviewStatus {
+  published // 已发布(默认)
+  pending // 含外链等需审核
+  rejected // 已驳回
+}
+
+enum UploadFileKind {
+  image
+  video
+}
+
 enum JournalEndReason {
   alive // 仍在养(默认,未结束时)
   withered // 枯死
@@ -207,29 +219,34 @@ enum HelpUrgency {
 }
 
 model Post {
-  id           String    @id @default(cuid())
+  id           String           @id @default(cuid())
   type         PostType
   title        String
   // 富文本三套字段:JSON 是源,HTML 是渲染缓存,plain 是搜索/摘要用纯文本
-  content      String    @db.LongText // 已 sanitize 的 HTML(渲染缓存)
-  contentJson  String?   @db.LongText // ProseMirror JSON 字符串(权威源)
-  contentText  String?   @db.Text // 纯文本摘要,做搜索/列表预览用
+  content      String           @db.LongText // 已 sanitize 的 HTML(渲染缓存)
+  contentJson  String?          @db.LongText // ProseMirror JSON 字符串(权威源)
+  contentText  String?          @db.Text // 纯文本摘要,做搜索/列表预览用
   cover        String?
-  images       String?   @db.Text // JSON array string
+  images       String?          @db.Text // JSON array string
   videoUrl     String?
-  tags         String?   @db.Text // JSON array string
-  views        Int       @default(0)
-  shares       Int       @default(0)
+  tags         String?          @db.Text // JSON array string
+  views        Int              @default(0)
+  shares       Int              @default(0)
   // 推荐算法产出的热度分(定时刷);越大越靠前
-  hotScore     Float     @default(0)
+  hotScore     Float            @default(0)
+  // 审核状态:published 已发布(默认)/ pending 含外链送审中 / rejected 驳回
+  reviewStatus PostReviewStatus @default(published)
+  reviewReason String?          @db.Text
+  reviewedAt   DateTime?
+  reviewedBy   String? // 审核管理员 id
   // 缓存 top 评论数 / 收藏数,用于算分(冗余字段定时刷)
   // 软删除
-  deleted      Boolean   @default(false)
+  deleted      Boolean          @default(false)
   deletedAt    DateTime?
   deletedBy    String? // 管理员 id
-  deleteReason String?   @db.Text
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  deleteReason String?          @db.Text
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
   authorId   String
   // 三级分类(Category 必填,Genus/Species 可选)
@@ -1227,6 +1244,36 @@ model SpeciesRating {
   @@unique([userId, speciesId])
   @@index([speciesId, createdAt])
   @@map("species_ratings")
+}
+
+// ============================================================
+// 上传文件登记(用于 sha256 秒传去重 + 用户配额统计)
+// ============================================================
+
+model UploadFile {
+  id         String         @id @default(cuid())
+  uploaderId String
+  /// 文件 SHA256(64 位 hex)— 用于秒传:同一文件第二次上传直接复用 url
+  sha256     String
+  /// MIME 类型,如 image/jpeg / video/mp4
+  mime       String
+  kind       UploadFileKind
+  /// 字节数
+  size       Int
+  /// 存储 key(如 uploads/<userId>/<yyyymm>/<id>.<ext>)
+  storageKey String         @db.Text
+  /// 公开访问 URL
+  url        String         @db.Text
+  /// 视频/图片元信息(width/height/duration 等),JSON 字符串
+  meta       String?        @db.Text
+  createdAt  DateTime       @default(now())
+
+  uploader User @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  // 同一上传者同一文件 sha256 唯一(秒传依据)
+  @@unique([uploaderId, sha256])
+  @@index([sha256])
+  @@map("upload_files")
 }
 
 // ============================================================
