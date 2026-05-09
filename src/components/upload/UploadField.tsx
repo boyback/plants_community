@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useChunkUpload } from '@/lib/hooks/useChunkUpload';
+import { useAuth } from '@/context/AuthContext';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
 
@@ -19,20 +20,20 @@ interface Props {
   className?: string;
 }
 
+/** 子模式:普通文件 / 外链 / 实况(仅 admin) */
+type Mode = 'file' | 'url' | 'live';
+
 const ACCEPT: Record<UploadKind, string> = {
-  // 图片支持苹果 HEIC/HEIF(服务端会转 JPEG 落地);Live Photo 拍摄时同时还会有 .MOV 配套
+  // 普通图片不再接受 .mov(避免误传单个 MOV 当图片);
+  // HEIC 仍允许(服务端会自动转 JPEG)
   image:
-    'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif,.mov',
+    'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif',
   video: 'video/mp4,video/webm,video/quicktime',
 };
 
-/** 是否是 HEIC/HEIF/Live Photo MOV(浏览器对 .heic 的 type 经常给空字符串,看后缀) */
-function isImagePartner(name: string): boolean {
-  return /\.(heic|heif|mov)$/i.test(name);
-}
-function isMovPartner(name: string): boolean {
-  return /\.mov$/i.test(name);
-}
+/** 实况图模式:必须同时选 1 HEIC + 1 MOV */
+const ACCEPT_LIVE = '.heic,.heif,.mov,image/heic,image/heif,video/quicktime';
+
 function basename(name: string): string {
   return name.replace(/\.[^.]+$/, '');
 }
@@ -45,11 +46,17 @@ export function UploadField({
   allowExternal = true,
   className,
 }: Props) {
-  const [mode, setMode] = useState<'file' | 'url'>('file');
+  const [mode, setMode] = useState<Mode>('file');
   const [urlInput, setUrlInput] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const liveRef = useRef<HTMLInputElement>(null);
   const { upload, progress, status, error, abort } = useChunkUpload();
+  const { user } = useAuth();
+  // 仅管理员/版主可见「实况」模式(普通用户传 Live Photo 太复杂,留给运营)
+  const canUseLive =
+    kind === 'image' &&
+    (user?.role === 'admin' || user?.role === 'moderator');
 
   const remaining = Math.max(0, max - value.length);
 
@@ -72,46 +79,13 @@ export function UploadField({
     const list = Array.from(files);
     if (list.length === 0) return;
 
-    // —— Live Photo 配对识别(仅 image 模式)——
-    // 用户一次选了多张文件,如果有 IMG_xxx.HEIC + IMG_xxx.MOV 同名对,
-    // 把 MOV 视为 Live Photo 配套而不是独立视频文件,且让 image 不占名额而 mov 不占
-    const pairs = new Map<string, { image?: File; mov?: File }>();
-    const standalone: File[] = [];
-
-    if (kind === 'image') {
-      for (const f of list) {
-        const isHeic = /\.(heic|heif)$/i.test(f.name);
-        const isMov = isMovPartner(f.name);
-        if (isHeic || (isMov && f.name.match(/^IMG_\d/i))) {
-          // IMG_xxx 开头的 HEIC/MOV 视为 Live Photo 候选
-          const k = basename(f.name);
-          const cur = pairs.get(k) ?? {};
-          if (isHeic) cur.image = f;
-          else cur.mov = f;
-          pairs.set(k, cur);
-        } else {
-          standalone.push(f);
-        }
-      }
-      // 对没配套的 image/mov 单独处理:
-      for (const [k, v] of pairs.entries()) {
-        if (v.image && !v.mov) {
-          // 单 HEIC,当普通图片传
-          standalone.push(v.image);
-          pairs.delete(k);
-        } else if (v.mov && !v.image) {
-          // 单 MOV(没 HEIC 配套),image 模式下不接受 — 提示用户
-          pairs.delete(k);
-        }
-      }
-    }
-
     const next = [...value];
     let usedSlots = 0;
 
-    // 1. 先处理普通文件
-    for (const f of standalone) {
+    for (const f of list) {
       if (value.length + usedSlots >= max) break;
+      // 普通模式:不再处理 .mov(避免误传单个 mov 当图传)
+      // 单独的 .heic 服务端会自动转 JPEG
       const r = await upload(f, kind);
       if (r?.url) {
         next.push(r.url);
@@ -119,33 +93,51 @@ export function UploadField({
       }
     }
 
-    // 2. 再处理 Live Photo 对(占 1 个 image 槽)
-    for (const [, p] of pairs.entries()) {
-      if (value.length + usedSlots >= max) break;
-      if (!p.image || !p.mov) continue;
-      const imgRes = await upload(p.image, 'image');
-      if (!imgRes?.url) continue;
-      const movRes = await upload(p.mov, 'video');
-      if (movRes?.url && imgRes.id && movRes.id) {
-        // 调 link 接口关联(失败也不影响主流程,只是丢失联动)
-        try {
-          await fetch('/api/upload/link-live-photo', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              imageId: imgRes.id,
-              movId: movRes.id,
-            }),
-          });
-        } catch {
-          // ignore
-        }
-      }
-      next.push(imgRes.url);
-      usedSlots++;
+    onChange(next);
+  };
+
+  /** 实况图专用上传:严格校验 1 HEIC + 1 MOV 同名 */
+  const handleLiveFiles = async (files: FileList | File[]) => {
+    const list = Array.from(files);
+    if (list.length !== 2) {
+      alert('实况图必须同时选择 2 个文件:1 张 .HEIC 和 1 个同名 .MOV');
+      return;
+    }
+    const heic = list.find((f) => /\.(heic|heif)$/i.test(f.name));
+    const mov = list.find((f) => /\.mov$/i.test(f.name));
+    if (!heic || !mov) {
+      alert('需要 1 张 .HEIC + 1 个 .MOV(配套视频),目前选中的两个文件类型不对');
+      return;
+    }
+    if (basename(heic.name) !== basename(mov.name)) {
+      alert(
+        `两个文件需同名才能配对为实况图:\n${heic.name}\n${mov.name}\n请确认它们来自同一张 Live Photo(导出时保留所有数据)`
+      );
+      return;
+    }
+    if (value.length >= max) {
+      alert('已达图片上限');
+      return;
     }
 
-    onChange(next);
+    const imgRes = await upload(heic, 'image');
+    if (!imgRes?.url) return;
+    const movRes = await upload(mov, 'video');
+    if (movRes?.url && imgRes.id && movRes.id) {
+      try {
+        await fetch('/api/upload/link-live-photo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageId: imgRes.id,
+            movId: movRes.id,
+          }),
+        });
+      } catch {
+        // ignore
+      }
+    }
+    onChange([...value, imgRes.url]);
   };
 
   const onDrop = (e: React.DragEvent) => {
@@ -189,6 +181,21 @@ export function UploadField({
             🔗 添加外链
           </button>
         )}
+        {canUseLive && (
+          <button
+            type="button"
+            onClick={() => setMode('live')}
+            className={cn(
+              'rounded-full px-3 py-1 transition-colors',
+              mode === 'live'
+                ? 'bg-leaf-500 text-white'
+                : 'bg-leaf-50 text-leaf-700 hover:bg-leaf-100'
+            )}
+            title="管理员专用 · 上传 iOS Live Photo(同时选 1 HEIC + 1 同名 MOV)"
+          >
+            📸 实况图
+          </button>
+        )}
         <span className="ml-auto text-leaf-700/60">
           {value.length}/{max}
           {kind === 'video' && (
@@ -197,8 +204,8 @@ export function UploadField({
         </span>
       </div>
 
-      {/* 文件 / URL 模式 */}
-      {mode === 'file' ? (
+      {/* 文件 / URL / 实况 三种渲染分支 */}
+      {mode === 'file' && (
         <div
           onDragOver={(e) => {
             e.preventDefault();
@@ -217,7 +224,7 @@ export function UploadField({
             ref={fileRef}
             type="file"
             accept={ACCEPT[kind]}
-            multiple={kind === 'image' && remaining > 1}
+            multiple={kind === 'image'}
             className="hidden"
             disabled={busy || remaining === 0}
             onChange={(e) => {
@@ -236,75 +243,97 @@ export function UploadField({
           </button>
           <div className="mt-2 text-[10px] text-leaf-700/70">
             {kind === 'image'
-              ? '支持 jpg/png/webp/gif,单张 ≤ 10MB,可拖拽'
+              ? '支持 jpg/png/webp/gif/heic,单张 ≤ 10MB,可拖拽'
               : '支持 mp4/webm/mov,≤ 100MB,可拖拽'}
           </div>
-          {(busy || error) && (
-            <div className="mt-2 space-y-1">
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-leaf-100">
-                <div
-                  className="h-full bg-leaf-500 transition-[width]"
-                  style={{ width: `${Math.round(progress * 100)}%` }}
-                />
-              </div>
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-leaf-700/70">
-                  {status === 'hashing'
-                    ? '校验中…'
-                    : status === 'uploading'
-                    ? `上传中 ${Math.round(progress * 100)}%`
-                    : status === 'aborted'
-                    ? '已取消'
-                    : status === 'error'
-                    ? error ?? '失败'
-                    : ''}
-                </span>
-                {busy && (
-                  <button
-                    type="button"
-                    onClick={abort}
-                    className="text-rose-600 hover:underline"
-                  >
-                    取消
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="flex gap-2">
-          <input
-            className="input flex-1"
-            placeholder={
-              kind === 'image'
-                ? '粘贴图片 URL,如 https://...png'
-                : '粘贴视频 URL,如 https://...mp4'
-            }
-            value={urlInput}
-            onChange={(e) => setUrlInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                pushUrl();
-              }
-            }}
-            disabled={remaining === 0}
+          <UploadProgress
+            busy={busy}
+            error={error}
+            status={status}
+            progress={progress}
+            abort={abort}
           />
-          <button
-            type="button"
-            className="btn-outline !px-3"
-            onClick={pushUrl}
-            disabled={remaining === 0}
-          >
-            <Icon name="plus" size={14} />
-          </button>
         </div>
       )}
 
-      {mode === 'url' && allowExternal && (
-        <div className="text-[10px] text-amber-700/80">
-          ⚠️ 包含外链的帖子将进入审核队列,通过后才会显示
+      {mode === 'url' && (
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <input
+              className="input flex-1"
+              placeholder={
+                kind === 'image'
+                  ? '粘贴图片 URL,如 https://...png'
+                  : '粘贴视频 URL,如 https://...mp4'
+              }
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  pushUrl();
+                }
+              }}
+              disabled={remaining === 0}
+            />
+            <button
+              type="button"
+              className="btn-outline !px-3"
+              onClick={pushUrl}
+              disabled={remaining === 0}
+            >
+              <Icon name="plus" size={14} />
+            </button>
+          </div>
+          {allowExternal && (
+            <div className="text-[10px] text-amber-700/80">
+              ⚠️ 包含外链的帖子将进入审核队列,通过后才会显示
+            </div>
+          )}
+        </div>
+      )}
+
+      {mode === 'live' && (
+        <div className="rounded-xl border-2 border-dashed border-leaf-200 bg-leaf-50/30 p-4 text-center text-xs">
+          <input
+            ref={liveRef}
+            type="file"
+            accept={ACCEPT_LIVE}
+            multiple
+            className="hidden"
+            disabled={busy || remaining === 0}
+            onChange={(e) => {
+              if (e.target.files) void handleLiveFiles(e.target.files);
+              e.target.value = '';
+            }}
+          />
+          <button
+            type="button"
+            disabled={busy || remaining === 0}
+            onClick={() => liveRef.current?.click()}
+            className="btn-outline !text-xs"
+          >
+            <Icon name="plus" size={12} />
+            选择实况图(同时选 2 个文件)
+          </button>
+          <div className="mt-2 space-y-1 text-[10px] text-leaf-700/70">
+            <div>
+              📌 同时选 <b>1 个 .HEIC</b> + <b>1 个同名 .MOV</b>(Cmd/Ctrl + 点击多选)
+            </div>
+            <div className="text-amber-700/80">
+              ⚠️ 仅管理员可见 · 用于运营级 Live Photo 上传 · 文件名前缀必须一致
+            </div>
+            <div className="text-leaf-700/60">
+              示例:IMG_2968.HEIC + IMG_2968.MOV
+            </div>
+          </div>
+          <UploadProgress
+            busy={busy}
+            error={error}
+            status={status}
+            progress={progress}
+            abort={abort}
+          />
         </div>
       )}
 
@@ -345,6 +374,54 @@ export function UploadField({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function UploadProgress({
+  busy,
+  error,
+  status,
+  progress,
+  abort,
+}: {
+  busy: boolean;
+  error: string | null;
+  status: string;
+  progress: number;
+  abort: () => void;
+}) {
+  if (!busy && !error) return null;
+  return (
+    <div className="mt-2 space-y-1">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-leaf-100">
+        <div
+          className="h-full bg-leaf-500 transition-[width]"
+          style={{ width: `${Math.round(progress * 100)}%` }}
+        />
+      </div>
+      <div className="flex items-center justify-between text-[10px]">
+        <span className="text-leaf-700/70">
+          {status === 'hashing'
+            ? '校验中…'
+            : status === 'uploading'
+            ? `上传中 ${Math.round(progress * 100)}%`
+            : status === 'aborted'
+            ? '已取消'
+            : status === 'error'
+            ? error ?? '失败'
+            : ''}
+        </span>
+        {busy && (
+          <button
+            type="button"
+            onClick={abort}
+            className="text-rose-600 hover:underline"
+          >
+            取消
+          </button>
+        )}
+      </div>
     </div>
   );
 }
