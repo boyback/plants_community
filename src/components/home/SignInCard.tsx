@@ -94,9 +94,8 @@ export function SignInCard() {
       {/* 签到主区 */}
       <div className="p-4">
         {/* 今日全站签到人数(轻量信息) */}
-        <div className="mb-2 flex items-center justify-between text-[11px] text-leaf-700/70">
-          <span>今日已有 <b className="text-leaf-700 tabular-nums">{todaySignedCount}</b> 人签到</span>
-          {signedInToday && <span className="text-leaf-600">含你 ✓</span>}
+        <div className="mb-2 text-[11px] text-leaf-700/70">
+          今日已有 <b className="text-leaf-700 tabular-nums">{todaySignedCount}</b> 人签到
         </div>
 
         <div className="flex items-center justify-between">
