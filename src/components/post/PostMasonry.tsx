@@ -88,7 +88,7 @@ export function PostMasonry({
   return (
     <div className={className}>
       {/* CSS columns 瀑布流 */}
-      <div className="columns-1 gap-3 sm:columns-2 md:columns-3">
+      <div className="columns-2 gap-3 md:columns-3">
         {items.map((p) => (
           <div key={p.id} className="mb-3 break-inside-avoid">
             <ObservedCard post={p} source={source} />

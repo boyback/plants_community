@@ -114,10 +114,32 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cur.cursor, tab]);
 
+  // m 端列数偏好:1 或 2,默认 2(localStorage 持久化)
+  const [mobileCols, setMobileCols] = useState<1 | 2>(2);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = Number(localStorage.getItem('rouyou.feed.mobileCols'));
+    if (saved === 1 || saved === 2) setMobileCols(saved);
+  }, []);
+  const updateMobileCols = (n: 1 | 2) => {
+    setMobileCols(n);
+    try {
+      localStorage.setItem('rouyou.feed.mobileCols', String(n));
+    } catch {}
+  };
+
+  // m 端 column class:1 或 2(sm+ 总是 2,md+ 总是 3)
+  const mobileColClass = mobileCols === 1 ? 'columns-1' : 'columns-2';
+
   return (
     <div {...bind}>
       <PullIndicator status={status} progress={progress} />
-      <TabHeader tab={tab} setTab={setTab} />
+      <TabHeader
+        tab={tab}
+        setTab={setTab}
+        mobileCols={mobileCols}
+        onMobileColsChange={updateMobileCols}
+      />
 
       {tab === 'following' && !user ? (
         <div className="mt-6 rounded-xl border border-dashed border-leaf-200 bg-white/60 py-12 text-center text-sm text-leaf-700/70">
@@ -128,19 +150,15 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
           {cur.err}
         </div>
       ) : !cur.loaded ? (
-        <FeedSkeleton />
+        <FeedSkeleton mobileCols={mobileCols} />
       ) : cur.items.length === 0 ? (
         <div className="mt-6 rounded-xl border border-dashed border-leaf-200 bg-white/60 py-12 text-center text-sm text-leaf-700/70">
           暂时没有内容
         </div>
       ) : (
         <>
-          {/*
-            CSS columns 瀑布流:m=1, sm=2, md+=3 列
-            卡片高度由内容决定,自然错落,不强制等高
-            每个直接子元素加 break-inside-avoid 避免被切到下一列
-          */}
-          <div className="mt-4 columns-1 gap-3 sm:columns-2 md:columns-3 [column-fill:_balance]">
+          {/* CSS columns 瀑布流:m 端按用户偏好 1/2,sm=2,md+=3 */}
+          <div className={`mt-4 ${mobileColClass} gap-3 sm:columns-2 md:columns-3 [column-fill:_balance]`}>
             {cur.items.map((p) => (
               <div key={p.id} className="mb-3 break-inside-avoid">
                 <FeedCard post={p} source={tabToSource(tab)} />
@@ -208,9 +226,10 @@ function FeedCard({
   );
 }
 
-function FeedSkeleton() {
+function FeedSkeleton({ mobileCols = 2 }: { mobileCols?: 1 | 2 }) {
+  const colClass = mobileCols === 1 ? 'columns-1' : 'columns-2';
   return (
-    <div className="mt-4 columns-1 gap-3 sm:columns-2 md:columns-3">
+    <div className={`mt-4 ${colClass} gap-3 sm:columns-2 md:columns-3`}>
       {Array.from({ length: 9 }).map((_, i) => (
         <div key={i} className="mb-3 break-inside-avoid">
           <PostCardSkeleton variant={i} />
@@ -232,9 +251,13 @@ function tabToSource(t: TabKey): string {
 function TabHeader({
   tab,
   setTab,
+  mobileCols,
+  onMobileColsChange,
 }: {
   tab: TabKey;
   setTab: (t: TabKey) => void;
+  mobileCols: 1 | 2;
+  onMobileColsChange: (n: 1 | 2) => void;
 }) {
   const { t } = useI18n();
   return (
@@ -254,6 +277,36 @@ function TabHeader({
           )}
         </button>
       ))}
+
+      {/* m 端 1/2 列切换(sm+ 自动隐藏) */}
+      <div className="ml-auto flex sm:hidden items-center gap-0.5 rounded-lg bg-leaf-50/60 p-0.5">
+        {([1, 2] as const).map((n) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => onMobileColsChange(n)}
+            title={`${n} 列`}
+            className={cn(
+              'grid h-7 w-8 place-items-center rounded transition-colors',
+              mobileCols === n
+                ? 'bg-white text-leaf-700 shadow-sm'
+                : 'text-ink-500 hover:text-leaf-700'
+            )}
+          >
+            <ColsIcon n={n} />
+          </button>
+        ))}
+      </div>
     </div>
+  );
+}
+
+function ColsIcon({ n }: { n: 1 | 2 }) {
+  return (
+    <span className={`grid h-3.5 w-4 gap-[1.5px] ${n === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+      {Array.from({ length: n }).map((_, i) => (
+        <span key={i} className="block rounded-[1px] bg-current" />
+      ))}
+    </span>
   );
 }

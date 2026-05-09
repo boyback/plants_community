@@ -453,10 +453,19 @@ body {
   -webkit-font-smoothing: antialiased;
   /* iOS 灰色点击高亮去掉 */
   -webkit-tap-highlight-color: transparent;
-  /* 防横向滚动 */
-  overflow-x: hidden;
   /* 主题切换平滑过渡 */
   transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/*
+ * 防横向滚动:用 overflow-x: clip 而不是 hidden
+ * - hidden 会创建滚动容器,导致内部 position:sticky 失效
+ * - clip 仅裁剪不创建新滚动上下文,sticky 仍按 viewport 定位
+ * 兼容性:Chrome 90+ / Safari 16+ / Firefox 81+
+ */
+html,
+body {
+  overflow-x: clip;
 }
 
 /* 文字防溢出 */
