@@ -10,7 +10,6 @@
  */
 import Link from 'next/link';
 
-const ICP = '鄂ICP备2026009255号';
 const SUPPORT_EMAIL = 'support@plantcommunity.cn';
 
 export function SiteFooter() {
@@ -57,20 +56,10 @@ export function SiteFooter() {
             </ul>
           </div>
 
-          {/* 3. 备案 */}
+          {/* 3. 联系 */}
           <div>
-            <div className="mb-2 text-sm font-semibold text-ink-800">备案与联系</div>
+            <div className="mb-2 text-sm font-semibold text-ink-800">联系我们</div>
             <ul className="space-y-1.5 text-xs text-ink-700/70">
-              <li>
-                <a
-                  href="https://beian.miit.gov.cn"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-leaf-700 hover:underline"
-                >
-                  {ICP}
-                </a>
-              </li>
               <li>
                 联系邮箱:{' '}
                 <a
