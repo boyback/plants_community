@@ -62,7 +62,7 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
           <img
             src={cover}
             alt={post.title}
-            className="block w-full max-h-[400px] object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+            className="block w-full max-h-[280px] object-contain transition-transform duration-500 group-hover:scale-[1.02]"
             loading="lazy"
           />
           <div className="absolute left-2 top-2">
