@@ -337,10 +337,6 @@ function SettingsSubmenu({ onNavigate }: { onNavigate: () => void }) {
     { href: '/addresses', icon: '📮', label: '收件地址' },
     { href: '/vip', icon: '✨', label: '大会员' },
     { href: '/points', icon: '💎', label: '积分中心' },
-    { href: '/tasks', icon: '🎯', label: '活动中心' },
-    { href: '/terms', icon: '📜', label: '用户协议' },
-    { href: '/privacy', icon: '🛡️', label: '隐私政策' },
-    { href: '/cookies', icon: '🍪', label: 'Cookie 政策' },
   ];
 
   return (

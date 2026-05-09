@@ -56,31 +56,6 @@ export default function SettingsPage() {
       title: t('nav.pointsCenter') || '积分中心',
       desc: '积分余额、明细、兑换',
     },
-    {
-      href: '/tasks',
-      icon: '🎯' as const,
-      title: t('nav.activityCenter') || '活动中心',
-      desc: '每日任务 · 累计奖励 · 徽章',
-    },
-    // —— 法律 ——
-    {
-      href: '/terms',
-      icon: '📜' as const,
-      title: t('settings.terms.title') || '用户协议',
-      desc: t('settings.terms.desc') || '阅读最新用户协议',
-    },
-    {
-      href: '/privacy',
-      icon: '🛡️' as const,
-      title: t('settings.privacyPolicy.title') || '隐私政策',
-      desc: t('settings.privacyPolicy.desc') || '我们如何处理你的数据',
-    },
-    {
-      href: '/cookies',
-      icon: '🍪' as const,
-      title: t('settings.cookiePolicy.title') || 'Cookie 政策',
-      desc: t('settings.cookiePolicy.desc') || '查看我们使用的 Cookie 分类',
-    },
   ];
 
   return (
