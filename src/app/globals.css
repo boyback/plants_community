@@ -5,12 +5,13 @@
 /*
  * 主题系统:
  *   - leaf-* / sand-* / ink-* 全部走 CSS 变量(rgb 数值,不带 rgb()包装)
- *   - 通过 <html data-theme="forest|sakura|ocean|vintage"> 切换
- *   - 默认 forest;不识别的值也回退到 forest
- *   - --page-bg 与 --scroll-thumb 等附加变量也跟主题走
+ *   - 通过 <html data-theme="forest|sakura|..." data-mode="light|dark"> 切换
+ *   - 默认 forest light
+ *   - --page-bg / --surface(卡片底色) / --border 等语义变量随明暗模式变化
+ *   - 12 套明色 + 12 套暗色变体
  */
 
-/* 默认主题 = 森林绿 */
+/* ========== 默认 / forest light ========== */
 :root,
 :root[data-theme='forest'] {
   --leaf-50: 242 250 244;
@@ -119,6 +120,332 @@
   --scroll-thumb-hover: #c4ab74;
 }
 
+/* 多巴胺红 */
+:root[data-theme='dopamine-red'] {
+  --leaf-50: 255 244 240;
+  --leaf-100: 254 226 218;
+  --leaf-200: 253 196 181;
+  --leaf-300: 252 156 134;
+  --leaf-400: 248 117 92;
+  --leaf-500: 239 68 68;
+  --leaf-600: 209 41 41;
+  --leaf-700: 173 30 30;
+  --leaf-800: 132 22 22;
+  --leaf-900: 91 16 16;
+
+  --sand-50: 255 248 234;
+  --sand-100: 254 234 195;
+  --sand-200: 252 211 156;
+  --sand-300: 249 178 110;
+
+  --ink-700: 65 30 30;
+  --ink-800: 47 21 21;
+  --ink-900: 28 12 12;
+
+  --page-bg: #fff7f5;
+  --scroll-thumb: #f9c5b8;
+  --scroll-thumb-hover: #f08b76;
+}
+
+/* 多巴胺紫 */
+:root[data-theme='dopamine-purple'] {
+  --leaf-50: 250 245 255;
+  --leaf-100: 243 232 255;
+  --leaf-200: 232 211 254;
+  --leaf-300: 211 175 252;
+  --leaf-400: 184 130 245;
+  --leaf-500: 147 51 234;
+  --leaf-600: 124 38 207;
+  --leaf-700: 100 27 173;
+  --leaf-800: 76 21 132;
+  --leaf-900: 53 14 91;
+
+  --sand-50: 254 247 255;
+  --sand-100: 251 232 254;
+  --sand-200: 246 209 252;
+  --sand-300: 237 173 247;
+
+  --ink-700: 51 30 65;
+  --ink-800: 35 21 47;
+  --ink-900: 22 12 29;
+
+  --page-bg: #faf5ff;
+  --scroll-thumb: #ddc8f5;
+  --scroll-thumb-hover: #b794ed;
+}
+
+/* 拿铁棕 */
+:root[data-theme='latte'] {
+  --leaf-50: 250 245 237;
+  --leaf-100: 243 230 211;
+  --leaf-200: 230 206 175;
+  --leaf-300: 211 174 132;
+  --leaf-400: 187 138 92;
+  --leaf-500: 161 107 63;
+  --leaf-600: 132 86 47;
+  --leaf-700: 103 65 35;
+  --leaf-800: 75 47 25;
+  --leaf-900: 51 32 16;
+
+  --sand-50: 252 247 235;
+  --sand-100: 245 232 197;
+  --sand-200: 232 209 156;
+  --sand-300: 215 180 117;
+
+  --ink-700: 60 45 32;
+  --ink-800: 41 30 21;
+  --ink-900: 24 18 13;
+
+  --page-bg: #faf5ed;
+  --scroll-thumb: #e6d3b8;
+  --scroll-thumb-hover: #c8a578;
+}
+
+/* 抹茶酱 */
+:root[data-theme='matcha'] {
+  --leaf-50: 247 250 234;
+  --leaf-100: 235 244 200;
+  --leaf-200: 213 230 154;
+  --leaf-300: 184 209 102;
+  --leaf-400: 155 184 67;
+  --leaf-500: 125 154 74;
+  --leaf-600: 102 127 60;
+  --leaf-700: 81 102 47;
+  --leaf-800: 61 77 35;
+  --leaf-900: 41 52 24;
+
+  --sand-50: 252 250 240;
+  --sand-100: 245 240 215;
+  --sand-200: 230 220 175;
+  --sand-300: 207 191 130;
+
+  --ink-700: 47 51 32;
+  --ink-800: 32 35 22;
+  --ink-900: 19 21 13;
+
+  --page-bg: #f6f8ed;
+  --scroll-thumb: #d8e0b3;
+  --scroll-thumb-hover: #b1bf80;
+}
+
+/* 冷雾纱(赛博朋克) — 自带偏冷氛围 */
+:root[data-theme='cybermist'] {
+  --leaf-50: 245 240 255;
+  --leaf-100: 230 220 252;
+  --leaf-200: 207 188 247;
+  --leaf-300: 178 144 240;
+  --leaf-400: 152 100 235;
+  --leaf-500: 168 85 247;
+  --leaf-600: 145 60 220;
+  --leaf-700: 115 39 180;
+  --leaf-800: 88 25 144;
+  --leaf-900: 60 16 102;
+
+  --sand-50: 235 245 255;
+  --sand-100: 195 220 252;
+  --sand-200: 137 192 246;
+  --sand-300: 80 158 232;
+
+  --ink-700: 60 50 90;
+  --ink-800: 40 34 65;
+  --ink-900: 25 22 45;
+
+  --page-bg: #f4f0ff;
+  --scroll-thumb: #d4c2f5;
+  --scroll-thumb-hover: #a07ee0;
+}
+
+/* 玫瑰金 */
+:root[data-theme='rosegold'] {
+  --leaf-50: 252 247 232;
+  --leaf-100: 248 235 195;
+  --leaf-200: 239 213 144;
+  --leaf-300: 226 184 89;
+  --leaf-400: 207 154 55;
+  --leaf-500: 184 134 11;
+  --leaf-600: 153 109 6;
+  --leaf-700: 122 87 3;
+  --leaf-800: 91 65 2;
+  --leaf-900: 61 43 1;
+
+  --sand-50: 252 245 240;
+  --sand-100: 245 226 215;
+  --sand-200: 230 199 180;
+  --sand-300: 209 165 138;
+
+  --ink-700: 60 47 25;
+  --ink-800: 41 32 17;
+  --ink-900: 25 19 10;
+
+  --page-bg: #fbf6e8;
+  --scroll-thumb: #e7d39c;
+  --scroll-thumb-hover: #c2a55b;
+}
+
+/* 蓝莉金刚(宝石蓝) */
+:root[data-theme='sapphire'] {
+  --leaf-50: 240 245 255;
+  --leaf-100: 221 232 254;
+  --leaf-200: 191 210 251;
+  --leaf-300: 147 178 245;
+  --leaf-400: 96 137 232;
+  --leaf-500: 64 95 213;
+  --leaf-600: 30 64 175;
+  --leaf-700: 23 49 145;
+  --leaf-800: 18 38 113;
+  --leaf-900: 13 27 81;
+
+  --sand-50: 255 252 240;
+  --sand-100: 254 245 215;
+  --sand-200: 251 232 175;
+  --sand-300: 247 215 130;
+
+  --ink-700: 30 35 60;
+  --ink-800: 21 24 42;
+  --ink-900: 13 15 27;
+
+  --page-bg: #f0f5ff;
+  --scroll-thumb: #c4d4f5;
+  --scroll-thumb-hover: #819cd9;
+}
+
+/* 海滩蓝(夏日通透) */
+:root[data-theme='beach'] {
+  --leaf-50: 236 252 255;
+  --leaf-100: 207 247 254;
+  --leaf-200: 165 238 251;
+  --leaf-300: 103 224 246;
+  --leaf-400: 34 197 220;
+  --leaf-500: 6 182 212;
+  --leaf-600: 8 145 178;
+  --leaf-700: 14 116 144;
+  --leaf-800: 22 95 119;
+  --leaf-900: 22 78 99;
+
+  --sand-50: 255 251 235;
+  --sand-100: 254 240 197;
+  --sand-200: 252 217 156;
+  --sand-300: 250 188 113;
+
+  --ink-700: 22 47 60;
+  --ink-800: 15 33 42;
+  --ink-900: 8 19 26;
+
+  --page-bg: #f0fcff;
+  --scroll-thumb: #b3e8f4;
+  --scroll-thumb-hover: #61c7df;
+}
+
+/* ========== 暗黑模式 ==========
+ * 策略:数据主题保留主色相关的 500-900,但 50-200 的浅色被反转用作 dark 表面色,
+ * 同时 page/surface/text 都重新定义。每个主题的 dark 调可以自己 override,但默认提供通用版。
+ */
+:root[data-mode='dark'] {
+  /* 浅色调反转为深色面板 */
+  --leaf-50: 24 28 32;
+  --leaf-100: 32 38 44;
+  --leaf-200: 50 60 70;
+  --leaf-300: 80 94 108;
+
+  --sand-50: 28 26 22;
+  --sand-100: 42 38 32;
+  --sand-200: 64 58 48;
+  --sand-300: 92 82 68;
+
+  /* 文本系反转:ink 变浅 */
+  --ink-700: 220 226 230;
+  --ink-800: 230 234 238;
+  --ink-900: 245 247 250;
+
+  /* 页面与卡片底色 */
+  --page-bg: #0e1116;
+  --scroll-thumb: #2a323b;
+  --scroll-thumb-hover: #444f5a;
+}
+
+/* dark 下的主题特定主色微调(让品牌色仍然鲜活)
+ * forest 默认绿色在暗色下用稍亮的绿
+ */
+:root[data-theme='forest'][data-mode='dark'] {
+  --leaf-400: 134 217 165;
+  --leaf-500: 102 195 138;
+  --leaf-600: 75 168 110;
+  --leaf-700: 62 145 95;
+}
+:root[data-theme='sakura'][data-mode='dark'] {
+  --leaf-400: 245 165 199;
+  --leaf-500: 238 122 174;
+  --leaf-600: 220 95 154;
+  --leaf-700: 197 70 130;
+}
+:root[data-theme='ocean'][data-mode='dark'] {
+  --leaf-400: 134 195 234;
+  --leaf-500: 86 165 217;
+  --leaf-600: 60 140 198;
+  --leaf-700: 49 120 175;
+}
+:root[data-theme='vintage'][data-mode='dark'] {
+  --leaf-400: 219 191 105;
+  --leaf-500: 196 159 65;
+  --leaf-600: 167 130 41;
+  --leaf-700: 137 108 35;
+}
+:root[data-theme='dopamine-red'][data-mode='dark'] {
+  --leaf-400: 252 156 134;
+  --leaf-500: 248 117 92;
+  --leaf-600: 230 88 70;
+  --leaf-700: 207 64 50;
+}
+:root[data-theme='dopamine-purple'][data-mode='dark'] {
+  --leaf-400: 211 175 252;
+  --leaf-500: 184 130 245;
+  --leaf-600: 158 95 232;
+  --leaf-700: 137 70 215;
+}
+:root[data-theme='latte'][data-mode='dark'] {
+  --leaf-400: 211 174 132;
+  --leaf-500: 187 138 92;
+  --leaf-600: 161 107 63;
+  --leaf-700: 138 88 50;
+}
+:root[data-theme='matcha'][data-mode='dark'] {
+  --leaf-400: 184 209 102;
+  --leaf-500: 155 184 67;
+  --leaf-600: 130 158 50;
+  --leaf-700: 108 132 40;
+}
+:root[data-theme='cybermist'][data-mode='dark'] {
+  /* 赛博风暗色更浓 */
+  --leaf-400: 198 154 250;
+  --leaf-500: 178 130 245;
+  --leaf-600: 152 100 235;
+  --leaf-700: 130 75 220;
+  --page-bg: #0d0e1c;
+  --scroll-thumb: #2c2348;
+  --scroll-thumb-hover: #4a3a72;
+}
+:root[data-theme='rosegold'][data-mode='dark'] {
+  --leaf-400: 226 184 89;
+  --leaf-500: 207 154 55;
+  --leaf-600: 184 134 11;
+  --leaf-700: 158 113 8;
+  --page-bg: #1a1410;
+  --scroll-thumb: #4a3a22;
+  --scroll-thumb-hover: #75623c;
+}
+:root[data-theme='sapphire'][data-mode='dark'] {
+  --leaf-400: 147 178 245;
+  --leaf-500: 96 137 232;
+  --leaf-600: 64 95 213;
+  --leaf-700: 49 78 195;
+}
+:root[data-theme='beach'][data-mode='dark'] {
+  --leaf-400: 103 224 246;
+  --leaf-500: 34 197 220;
+  --leaf-600: 6 182 212;
+  --leaf-700: 8 158 188;
+}
+
 html,
 body {
   background-color: var(--page-bg);
@@ -157,9 +484,20 @@ img, video, svg {
   background: var(--scroll-thumb-hover);
 }
 
+/* 语义化"表面"变量(card / input 等大面积白色面板用)
+ * light 模式下用纯白,dark 下用 leaf-50(变量已在 dark 下被反转为深色)
+ */
+:root {
+  --surface: 255 255 255;
+}
+:root[data-mode='dark'] {
+  --surface: 24 28 32; /* 与 leaf-50 dark 同步 */
+}
+
 @layer components {
   .card {
-    @apply bg-white rounded-2xl shadow-card border border-leaf-100/60;
+    background-color: rgb(var(--surface));
+    @apply rounded-2xl shadow-card border border-leaf-100/60;
   }
   .btn {
     @apply inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed;
@@ -171,13 +509,15 @@ img, video, svg {
     @apply btn bg-leaf-50 text-leaf-700 hover:bg-leaf-100;
   }
   .btn-outline {
-    @apply btn border border-leaf-200 text-leaf-700 bg-white hover:bg-leaf-50;
+    background-color: rgb(var(--surface));
+    @apply btn border border-leaf-200 text-leaf-700 hover:bg-leaf-50;
   }
   .chip {
     @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs bg-leaf-50 text-leaf-700 border border-leaf-100;
   }
   .input {
-    @apply w-full rounded-xl border border-leaf-200 bg-white px-3 py-2 text-sm outline-none focus:border-leaf-400 focus:ring-2 focus:ring-leaf-100;
+    background-color: rgb(var(--surface));
+    @apply w-full rounded-xl border border-leaf-200 px-3 py-2 text-sm text-ink-800 outline-none focus:border-leaf-400 focus:ring-2 focus:ring-leaf-100;
   }
   .link {
     @apply text-leaf-700 hover:text-leaf-800 hover:underline underline-offset-2;

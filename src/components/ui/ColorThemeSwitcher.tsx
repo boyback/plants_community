@@ -5,23 +5,21 @@ import { useColorTheme } from '@/context/ColorThemeContext';
 import { cn } from '@/lib/utils';
 
 /**
- * 配色主题切换按钮(头部用)
- * - 点击展开下拉,显示 4 个主题色板
+ * 配色主题切换器(头部用)
+ * - 点击展开下拉:12 主题色板 + 明/暗模式切换
  * - 选中后立即生效,保存 localStorage
  */
 export function ColorThemeSwitcher({ className }: { className?: string }) {
-  const { theme, meta, setTheme, themes } = useColorTheme();
+  const { theme, mode, meta, setTheme, toggleMode, themes } = useColorTheme();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // 点击外部关闭(用 click 而不是 mousedown,避免触发顺序冲突)
-  // 同时延迟一帧绑定,避免开门那一击立刻被自己关掉
+  // 点击外部关闭(用 click + setTimeout 跳过开门那一击)
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
       if (!ref.current?.contains(e.target as Node)) setOpen(false);
     };
-    // 用 setTimeout 延后绑定,跳过本次点击事件(避免「自己点开自己关掉」)
     const tid = setTimeout(() => {
       document.addEventListener('click', onDoc);
     }, 0);
@@ -46,19 +44,32 @@ export function ColorThemeSwitcher({ className }: { className?: string }) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        title={`主题:${meta.name}`}
+        title={`主题:${meta.name} · ${mode === 'dark' ? '暗黑' : '明亮'}`}
         aria-haspopup="menu"
         aria-expanded={open}
         className="grid h-9 w-9 place-items-center rounded-full text-base hover:bg-leaf-50"
       >
         {meta.logoEmoji}
       </button>
+
       {open && (
-        <div className="absolute right-0 top-full z-40 mt-2 w-60 overflow-hidden rounded-2xl border border-leaf-100 bg-white p-2 shadow-card">
-          <div className="mb-1 px-2 pt-1 text-[11px] font-medium text-leaf-700/70">
-            🎨 配色主题
+        <div className="absolute right-0 top-full z-50 mt-2 w-[300px] overflow-hidden rounded-2xl border border-leaf-100 bg-white p-3 shadow-card dark:bg-leaf-50">
+          {/* 头部:标题 + 明/暗 toggle */}
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-xs font-semibold text-ink-800">🎨 配色主题</div>
+            <button
+              type="button"
+              onClick={toggleMode}
+              className="inline-flex items-center gap-1 rounded-full bg-leaf-50 px-2.5 py-1 text-[11px] text-leaf-700 transition-colors hover:bg-leaf-100"
+              title={mode === 'dark' ? '切换到明亮' : '切换到暗黑'}
+            >
+              <span>{mode === 'dark' ? '🌙' : '☀️'}</span>
+              <span>{mode === 'dark' ? '暗黑' : '明亮'}</span>
+            </button>
           </div>
-          <div className="grid grid-cols-2 gap-1.5 p-1">
+
+          {/* 主题色板网格 */}
+          <div className="grid max-h-[420px] grid-cols-2 gap-1.5 overflow-y-auto pr-0.5">
             {themes.map((t) => {
               const active = t.key === theme;
               return (
@@ -76,24 +87,31 @@ export function ColorThemeSwitcher({ className }: { className?: string }) {
                       : 'border-leaf-100 hover:border-leaf-300'
                   )}
                 >
-                  {/* 色板预览 */}
                   <div
                     className="flex h-5 w-full items-center overflow-hidden rounded-md ring-1 ring-black/5"
                     style={{ background: t.swatch.bg }}
                   >
-                    <span className="block h-full w-1/2" style={{ background: t.swatch.primary }} />
+                    <span
+                      className="block h-full w-1/2"
+                      style={{ background: t.swatch.primary }}
+                    />
                   </div>
                   <div className="flex w-full items-center justify-between">
-                    <span className="text-xs font-medium text-ink-800">
+                    <span className="truncate text-xs font-medium text-ink-800">
                       {t.logoEmoji} {t.name}
                     </span>
                     {active && (
-                      <span className="grid h-3.5 w-3.5 place-items-center rounded-full bg-leaf-500 text-[9px] text-white">
+                      <span className="grid h-3.5 w-3.5 shrink-0 place-items-center rounded-full bg-leaf-500 text-[9px] text-white">
                         ✓
                       </span>
                     )}
                   </div>
-                  <div className="text-[10px] text-leaf-700/70">{t.desc}</div>
+                  <div className="flex w-full items-center justify-between text-[10px] text-leaf-700/70">
+                    <span className="truncate">{t.desc}</span>
+                    <span className="ml-1 shrink-0 rounded bg-leaf-50/80 px-1 text-[9px] text-leaf-700/60">
+                      {t.vibe}
+                    </span>
+                  </div>
                 </button>
               );
             })}
