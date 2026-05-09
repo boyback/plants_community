@@ -71,6 +71,7 @@ model User {
   notifFromMe      Notification[]  @relation("NotifSender")
   reports          Report[]        @relation("ReportReporter")
   postViews        PostView[]
+  speciesRatings   SpeciesRating[]
   sentMessages     Message[]       @relation("MessageFrom")
   receivedMessages Message[]       @relation("MessageTo")
   drafts           Draft[]
@@ -1111,7 +1112,7 @@ model Species {
   // 从原 Plant 表迁移的字段:
   cover      String
   gallery    String @db.Text // JSON array
-  difficulty Int    @default(2) // 1-5
+  difficulty Int    @default(2) // 1-5,管理员设的「初始/校准」难度
   light      String // "全日照" / "散射光" ...
   watering   String
   hardiness  String // "-5°C"
@@ -1122,7 +1123,12 @@ model Species {
   originRegion String? // 原产地
   growthType   String? // 夏型 / 冬型 / 中间型
 
-  posts Post[]
+  // 用户打分汇总(由 SpeciesRating 触发更新)
+  ratingSum   Int @default(0) // 所有打分之和
+  ratingCount Int @default(0) // 总打分人数
+
+  posts   Post[]
+  ratings SpeciesRating[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1133,6 +1139,26 @@ model Species {
   @@index([slug])
   @@index([genusId, name])
   @@map("species")
+}
+
+/**
+ * 用户对品种的难度打分。
+ * 同一用户对同一品种唯一,可以更新或删除(撤回)。
+ */
+model SpeciesRating {
+  id        String   @id @default(cuid())
+  userId    String
+  speciesId String
+  score     Int // 1-5
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  species Species @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, speciesId])
+  @@index([speciesId, createdAt])
+  @@map("species_ratings")
 }
 
 // ============================================================

@@ -45,12 +45,19 @@ export default async function AdminSpeciesPage({
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">📚 品种数据</h1>
-        <p className="mt-1 text-xs text-ink-600">
-          共 {total} 个品种 · 第 {page}/{totalPages} 页 ·
-          详细编辑请用 Prisma Studio
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">📚 品种数据</h1>
+          <p className="mt-1 text-xs text-ink-600">
+            共 {total} 个品种 · 第 {page}/{totalPages} 页
+          </p>
+        </div>
+        <Link
+          href="/admin/species/new"
+          className="rounded-lg bg-ink-800 px-3 py-2 text-xs text-white hover:bg-ink-700"
+        >
+          + 新建品种
+        </Link>
       </div>
 
       <form className="flex flex-wrap items-center gap-2 rounded-xl border border-ink-100 bg-white p-3 text-xs">
@@ -84,6 +91,7 @@ export default async function AdminSpeciesPage({
               <th className="px-3 py-2 text-right">难度</th>
               <th className="px-3 py-2 text-left">光 / 水 / 冷</th>
               <th className="px-3 py-2 text-right">帖子</th>
+              <th className="px-3 py-2 text-right">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -117,11 +125,19 @@ export default async function AdminSpeciesPage({
                 <td className="px-3 py-2 text-right tabular-nums text-ink-600">
                   {s._count.posts}
                 </td>
+                <td className="px-3 py-2 text-right">
+                  <Link
+                    href={`/admin/species/${s.id}`}
+                    className="rounded border border-ink-200 px-2 py-1 text-[10px] hover:bg-ink-50"
+                  >
+                    编辑
+                  </Link>
+                </td>
               </tr>
             ))}
             {items.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-ink-500">
+                <td colSpan={8} className="px-3 py-10 text-center text-ink-500">
                   没有数据
                 </td>
               </tr>

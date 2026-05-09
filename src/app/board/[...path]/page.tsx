@@ -13,6 +13,7 @@ import { postInclude } from '@/lib/post-include';
 import { PostCard } from '@/components/post/PostCard';
 import { Icon } from '@/components/ui/Icon';
 import { Empty } from '@/components/ui/Empty';
+import { SpeciesRatingPanel } from '@/components/species/SpeciesRatingPanel';
 import { I18nText } from '@/components/ui/I18nText';
 import { FollowBoardButton } from '@/components/board/FollowBoardButton';
 import { formatNumber } from '@/lib/utils';
@@ -399,6 +400,15 @@ async function SpeciesView({
 
         {/* 右栏 */}
         <div className="space-y-4">
+          {/* 用户打分 */}
+          <div className="card p-5">
+            <h3 className="mb-3 text-sm font-semibold">🎯 难度评分</h3>
+            <SpeciesRatingPanel
+              speciesId={full.id}
+              fallbackAvg={full.difficulty}
+            />
+          </div>
+
           <div className="card p-5">
             <h3 className="mb-3 text-sm font-semibold"><I18nText k="board.species.careData" fallback="养护数据" /></h3>
             <div className="space-y-2.5 text-sm">
@@ -406,7 +416,6 @@ async function SpeciesView({
               <InfoRow icon="💧" label={<I18nText k="board.species.watering" fallback="浇水" />} value={full.watering} />
               <InfoRow icon="❄️" label={<I18nText k="board.species.hardiness" fallback="耐寒度" />} value={full.hardiness} />
               {full.blooming && <InfoRow icon="🌸" label={<I18nText k="board.species.bloom" fallback="花期" />} value={full.blooming} />}
-              <InfoRow icon="🎯" label={<I18nText k="board.species.difficulty" fallback="难度" />} value={'★'.repeat(full.difficulty)} />
             </div>
           </div>
 
