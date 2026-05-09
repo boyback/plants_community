@@ -18,6 +18,10 @@ jobs:
   next-check:
     name: Next.js Check
     runs-on: ubuntu-latest
+    env:
+      # build/check 阶段不真连 DB,占位即可(项目 page 都 force-dynamic 不会 SSR 查库)
+      DATABASE_URL: "mysql://placeholder:placeholder@localhost:3306/placeholder"
+      JWT_SECRET: ci-build-placeholder
     steps:
       - uses: actions/checkout@v4
 
@@ -42,9 +46,6 @@ jobs:
         run: node scripts/i18n-scan.mjs --top 5
 
       - name: Next build
-        env:
-          DATABASE_URL: ""
-          JWT_SECRET: ci-build-placeholder
         run: npm run build
 
   # =============================================================
@@ -79,6 +80,9 @@ jobs:
   prisma-validate:
     name: Prisma Schema
     runs-on: ubuntu-latest
+    env:
+      # 仅做 schema 语法校验,不会真连库;Prisma 仍然要 url 参数才能 parse
+      DATABASE_URL: "mysql://placeholder:placeholder@localhost:3306/placeholder"
     steps:
       - uses: actions/checkout@v4
 
