@@ -42,6 +42,7 @@ const NAV: { section: string; items: { href: string; label: string; minRole: Rol
     items: [
       { href: '/admin/boards', label: '🌿 板块 CRUD', minRole: 'admin' },
       { href: '/admin/species', label: '📚 品种数据', minRole: 'admin' },
+      { href: '/admin/species-photos', label: '📸 品种现场照', minRole: 'moderator' },
     ],
   },
   {
@@ -51,6 +52,7 @@ const NAV: { section: string; items: { href: string; label: string; minRole: Rol
       { href: '/admin/banners', label: '🖼️ 首页 Banner', minRole: 'admin' },
       { href: '/admin/themes', label: '🎨 主题调度', minRole: 'admin' },
       { href: '/admin/tasks', label: '🎯 任务配置', minRole: 'admin' },
+      { href: '/admin/site-config', label: '⚙️ 站点配置', minRole: 'admin' },
       { href: '/admin/logs', label: '📜 操作日志', minRole: 'admin' },
     ],
   },

@@ -9,11 +9,17 @@ import {
   serializeSpeciesFull,
   serializePost,
 } from '@/lib/serializers';
+import {
+  pickCategoryTopPhotos,
+  pickGenusTopPhotos,
+  speciesTopPhotoInclude,
+} from '@/lib/board-cover';
 import { postInclude } from '@/lib/post-include';
 import { PostMasonry } from '@/components/post/PostMasonry';
 import { Icon } from '@/components/ui/Icon';
 import { Empty } from '@/components/ui/Empty';
 import { SpeciesRatingPanel } from '@/components/species/SpeciesRatingPanel';
+import { SpeciesPhotoPanel } from '@/components/species/SpeciesPhotoPanel';
 import { I18nText } from '@/components/ui/I18nText';
 import { FollowBoardButton } from '@/components/board/FollowBoardButton';
 import { formatNumber } from '@/lib/utils';
@@ -63,6 +69,13 @@ async function CategoryView({ categorySlug }: { categorySlug: string }) {
   });
   if (!c) notFound();
 
+  // 动态封面:category 自身用其下品种的最热照,子 genera 同理
+  const [catTopMap, genusTopMap] = await Promise.all([
+    pickCategoryTopPhotos([c.id]),
+    pickGenusTopPhotos(c.genera.map((g) => g.id)),
+  ]);
+  const cWithTop = { ...c, topPhotoUrl: catTopMap.get(c.id) ?? null };
+
   const PAGE = 24;
   const postsRaw = await prisma.post.findMany({
     where: { categoryId: c.id },
@@ -75,7 +88,7 @@ async function CategoryView({ categorySlug }: { categorySlug: string }) {
     nextCursor = postsRaw.pop()!.id;
   }
   const posts = postsRaw.map(serializePost);
-  const category = serializeCategory(c);
+  const category = serializeCategory(cWithTop);
 
   return (
     <Shell>
@@ -156,11 +169,18 @@ async function GenusView({
       _count: { select: { posts: true, species: true } },
       species: {
         orderBy: { name: 'asc' },
-        include: { _count: { select: { posts: true } } },
+        include: {
+          _count: { select: { posts: true } },
+          ...speciesTopPhotoInclude,
+        },
       },
     },
   });
   if (!g) notFound();
+
+  // 给 genus 自身算 topPhoto
+  const genusTopMap = await pickGenusTopPhotos([g.id]);
+  const gWithTop = { ...g, topPhotoUrl: genusTopMap.get(g.id) ?? null };
 
   const PAGE = 24;
   const postsRaw = await prisma.post.findMany({
@@ -175,7 +195,7 @@ async function GenusView({
   }
   const posts = postsRaw.map(serializePost);
 
-  const genus = serializeGenus(g);
+  const genus = serializeGenus(gWithTop);
 
   return (
     <Shell>
@@ -231,7 +251,7 @@ async function GenusView({
               >
                 <div className="relative aspect-square overflow-hidden bg-leaf-50">
                   <Image
-                    src={s.cover}
+                    src={(s as { photos?: { url: string }[] }).photos?.[0]?.url || s.cover}
                     alt={s.name}
                     fill
                     sizes="(max-width:768px) 50vw, 240px"
@@ -295,6 +315,7 @@ async function SpeciesView({
     include: {
       genus: { include: { category: true } },
       _count: { select: { posts: true } },
+      ...speciesTopPhotoInclude,
     },
   });
   if (!s) notFound();
@@ -420,6 +441,9 @@ async function SpeciesView({
               fallbackAvg={full.difficulty}
             />
           </div>
+
+          {/* 现场照(用户上传 + 投票) */}
+          <SpeciesPhotoPanel speciesId={full.id} />
 
           <div className="card p-5">
             <h3 className="mb-3 text-sm font-semibold"><I18nText k="board.species.careData" fallback="养护数据" /></h3>

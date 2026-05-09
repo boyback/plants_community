@@ -61,23 +61,25 @@ model User {
   equipPendantId  String? // 昵称挂件(头像框)
 
   // 关系
-  posts            Post[]
-  comments         Comment[]
-  likes            PostLike[]
-  followers        Follow[]        @relation("Followees")
-  following        Follow[]        @relation("Followers")
-  badges           UserBadge[]
-  notifications    Notification[]  @relation("NotifRecipient")
-  notifFromMe      Notification[]  @relation("NotifSender")
-  reports          Report[]        @relation("ReportReporter")
-  postViews        PostView[]
-  speciesRatings   SpeciesRating[]
-  sentMessages     Message[]       @relation("MessageFrom")
-  receivedMessages Message[]       @relation("MessageTo")
-  drafts           Draft[]
-  votes            VoteRecord[]
-  collects         PostCollect[]
-  events           EventAttendee[]
+  posts             Post[]
+  comments          Comment[]
+  likes             PostLike[]
+  followers         Follow[]           @relation("Followees")
+  following         Follow[]           @relation("Followers")
+  badges            UserBadge[]
+  notifications     Notification[]     @relation("NotifRecipient")
+  notifFromMe       Notification[]     @relation("NotifSender")
+  reports           Report[]           @relation("ReportReporter")
+  postViews         PostView[]
+  speciesRatings    SpeciesRating[]
+  speciesPhotos     SpeciesPhoto[]
+  speciesPhotoVotes SpeciesPhotoVote[]
+  sentMessages      Message[]          @relation("MessageFrom")
+  receivedMessages  Message[]          @relation("MessageTo")
+  drafts            Draft[]
+  votes             VoteRecord[]
+  collects          PostCollect[]
+  events            EventAttendee[]
 
   // 新增关系
   pointsLedger   PointsLedger[]
@@ -1197,6 +1199,7 @@ model Species {
   posts    Post[]
   ratings  SpeciesRating[]
   journals Journal[]
+  photos   SpeciesPhoto[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1227,6 +1230,71 @@ model SpeciesRating {
   @@unique([userId, speciesId])
   @@index([speciesId, createdAt])
   @@map("species_ratings")
+}
+
+// ============================================================
+// 品种现场照:用户上传 + 投票顶贴 + 审核
+// ============================================================
+
+enum SpeciesPhotoStatus {
+  pending // 待审核
+  approved // 通过(进入展示)
+  rejected // 驳回
+}
+
+model SpeciesPhoto {
+  id           String             @id @default(cuid())
+  speciesId    String
+  uploaderId   String
+  url          String             @db.Text
+  caption      String?            @db.Text
+  status       SpeciesPhotoStatus @default(approved)
+  /// 缓存的顶贴数(由 SpeciesPhotoVote 触发更新)
+  votes        Int                @default(0)
+  /// 管理员钉到最顶,优先于 votes 排序
+  pinned       Boolean            @default(false)
+  /// 同分时排序补丁(管理员可调)
+  orderIdx     Int                @default(0)
+  /// 拒绝原因(管理员填)
+  rejectReason String?            @db.Text
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  species  Species            @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+  uploader User               @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  voteRows SpeciesPhotoVote[]
+
+  @@index([speciesId, status, pinned, votes])
+  @@index([uploaderId])
+  @@map("species_photos")
+}
+
+model SpeciesPhotoVote {
+  id        String   @id @default(cuid())
+  photoId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  photo SpeciesPhoto @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([photoId, userId])
+  @@index([userId])
+  @@map("species_photo_votes")
+}
+
+// ============================================================
+// 站点全局配置(管理员可调,前端读)
+// ============================================================
+
+model SiteConfig {
+  /// 业务键名,如 photoUploadMinLevel / photoUploadVipOnly / photoModeration
+  key       String   @id
+  /// JSON 字符串值;读取时按 key 类型反序列化
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("site_configs")
 }
 
 // ============================================================
