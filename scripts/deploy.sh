@@ -40,10 +40,15 @@ if [[ "$TAG" != "latest" && -n "$(git tag -l "$TAG")" ]]; then
   git checkout "$TAG"
 fi
 
-# 2. 拉镜像
-echo "→ docker pull"
-docker pull "$NEXT_IMAGE"
-docker pull "$GO_IMAGE"
+# 2. 拉镜像(两个并行,节省时间)
+echo "→ docker pull(并行)"
+docker pull "$NEXT_IMAGE" &
+PID_NEXT=$!
+docker pull "$GO_IMAGE" &
+PID_GO=$!
+# 任意一个失败就退出,避免静默错误
+wait $PID_NEXT || { echo "❌ pull next 镜像失败"; exit 1; }
+wait $PID_GO   || { echo "❌ pull go 镜像失败";   exit 1; }
 
 # 3. 用 prod 的 compose 启动(不 build 本地)
 echo "→ docker compose up"
