@@ -151,8 +151,11 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                   />
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 z-20 mt-2 w-56 overflow-visible rounded-xl border border-leaf-100 bg-white py-1 shadow-xl">
-                    {/* 1. 我的主页 */}
+                  <div className="absolute right-0 z-20 mt-2 w-36 overflow-visible rounded-xl border border-leaf-100 bg-white py-1 shadow-xl">
+                    {/* 1. 设置(带二级菜单 hover 右侧展开) */}
+                    <SettingsSubmenu onNavigate={() => setMenuOpen(false)} />
+
+                    {/* 2. 个人主页 */}
                     <Link
                       href={`/user/${user.id}`}
                       onClick={() => setMenuOpen(false)}
@@ -161,9 +164,6 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                       <Icon name="home" size={14} />
                       <span>个人主页</span>
                     </Link>
-
-                    {/* 2. 设置(带二级菜单 hover 展开) */}
-                    <SettingsSubmenu onNavigate={() => setMenuOpen(false)} />
 
                     <div className="my-1 border-t border-leaf-50" />
 
@@ -179,7 +179,7 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                       <Icon name="logout" size={14} />
                       <span>{t('nav.logout')}</span>
                     </button>
-                    </div>
+                  </div>
                 )}
               </div>
             </>
