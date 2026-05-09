@@ -34,14 +34,14 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
     <article className={cn('card overflow-hidden transition-shadow hover:shadow-lg', className)}>
       <Link href={`/post/${post.id}`} className="block">
         {cover && (
-          <div className="relative aspect-[16/9] w-full overflow-hidden bg-leaf-50">
-            <Image
+          <div className="relative w-full overflow-hidden bg-leaf-50">
+            {/* 不再固定 aspect,让图片自适应原始比例,适合瀑布流 */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={cover}
               alt={post.title}
-              fill
-              sizes="(max-width:768px) 100vw, 640px"
-              className="object-cover transition-transform duration-500 hover:scale-105"
-              unoptimized
+              className="block h-auto w-full object-cover transition-transform duration-500 hover:scale-105"
+              loading="lazy"
             />
             <div className="absolute left-3 top-3">
               <PostTypeBadge type={post.type} />

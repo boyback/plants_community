@@ -112,7 +112,14 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
         </div>
       ) : (
         <>
-          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/*
+            瀑布流:用原生 CSS columns。
+            - mobile: 2 列
+            - md+: 3 列
+            - xl+: 4 列(默认主区域很宽,可以再多一列)
+            - 每张卡 break-inside-avoid 保证不被切
+          */}
+          <div className="mt-4 columns-2 gap-3 md:columns-3 xl:columns-4">
             {cur.items.map((p) => (
               <FeedCard key={p.id} post={p} source={tabToSource(tab)} />
             ))}
@@ -161,18 +168,21 @@ function FeedCard({ post, source }: { post: Post; source: string }) {
     return () => io.disconnect();
   }, [post.id, source]);
   return (
-    <div ref={ref}>
+    // mb-3 提供瀑布流间距,break-inside-avoid 防止 column 把卡切两半
+    <div ref={ref} className="mb-3 break-inside-avoid">
       <PostCard post={post} />
     </div>
   );
 }
 
 function FeedSkeleton() {
+  // 模拟瀑布流的不同高度(随机感)
+  const heights = ['h-48', 'h-64', 'h-56', 'h-72', 'h-52', 'h-60', 'h-44', 'h-68'];
   return (
-    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="card overflow-hidden">
-          <div className="aspect-[16/10] w-full animate-pulse bg-leaf-100/60" />
+    <div className="mt-4 columns-2 gap-3 md:columns-3 xl:columns-4">
+      {heights.map((h, i) => (
+        <div key={i} className="mb-3 break-inside-avoid card overflow-hidden">
+          <div className={`w-full animate-pulse bg-leaf-100/60 ${h}`} />
           <div className="space-y-2 p-3">
             <div className="h-3 w-3/4 animate-pulse rounded bg-leaf-100/60" />
             <div className="h-3 w-1/2 animate-pulse rounded bg-leaf-100/60" />
