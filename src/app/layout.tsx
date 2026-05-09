@@ -6,6 +6,10 @@ import { I18nProvider } from '@/i18n/I18nContext';
 import { ThemeProvider } from '@/theme/ThemeContext';
 import { CookieConsentProvider } from '@/theme/CookieConsent';
 import { RealtimeProvider } from '@/context/RealtimeContext';
+import {
+  ColorThemeProvider,
+  COLOR_THEME_SSR_SCRIPT,
+} from '@/context/ColorThemeContext';
 import { COOKIE_LOCALE, defaultLocale, negotiateLocale, type Locale } from '@/i18n/config';
 import { loadLocaleMessagesServer } from '@/i18n/server-loader';
 import { getCurrentUser, isVipActive } from '@/lib/auth';
@@ -116,25 +120,31 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang={initialLocale}>
+      <head>
+        {/* 必须在样式应用前同步设置 data-theme,避免主题闪烁 */}
+        <script dangerouslySetInnerHTML={{ __html: COLOR_THEME_SSR_SCRIPT }} />
+      </head>
       <body>
-        <I18nProvider initialLocale={initialLocale} initialMessages={initialMessages}>
-          <ThemeProvider>
-            <CookieConsentProvider>
-              <AuthProvider
-                initialUser={initialUser}
-                initialSignInStreak={signInStreak}
-                initialSignedInToday={signedInToday}
-                initialExp={initialExp}
-                initialExpProgress={initialExpProgress}
-                initialPointsBalance={initialPointsBalance}
-                initialVip={initialVip}
-                initialEquip={initialEquip}
-              >
-                <RealtimeProvider>{children}</RealtimeProvider>
-              </AuthProvider>
-            </CookieConsentProvider>
-          </ThemeProvider>
-        </I18nProvider>
+        <ColorThemeProvider>
+          <I18nProvider initialLocale={initialLocale} initialMessages={initialMessages}>
+            <ThemeProvider>
+              <CookieConsentProvider>
+                <AuthProvider
+                  initialUser={initialUser}
+                  initialSignInStreak={signInStreak}
+                  initialSignedInToday={signedInToday}
+                  initialExp={initialExp}
+                  initialExpProgress={initialExpProgress}
+                  initialPointsBalance={initialPointsBalance}
+                  initialVip={initialVip}
+                  initialEquip={initialEquip}
+                >
+                  <RealtimeProvider>{children}</RealtimeProvider>
+                </AuthProvider>
+              </CookieConsentProvider>
+            </ThemeProvider>
+          </I18nProvider>
+        </ColorThemeProvider>
       </body>
     </html>
   );

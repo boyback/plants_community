@@ -8,6 +8,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { VipBadge } from '@/components/ui/VipBadge';
 import { LocaleSwitcher } from '@/components/ui/LocaleSwitcher';
+import { ColorThemeSwitcher } from '@/components/ui/ColorThemeSwitcher';
 import { useAuth } from '@/context/AuthContext';
 import { useRealtime } from '@/context/RealtimeContext';
 import { useI18n } from '@/i18n/I18nContext';
@@ -113,6 +114,7 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
               </Link>
               <IconButton href="/messages" icon="message" badge={unreadMsgs} label={t('nav.messages')} />
               <IconButton href="/notifications" icon="bell" badge={unreadNotifs} label={t('nav.notifications')} />
+              <ColorThemeSwitcher className="hidden md:block" />
               <LocaleSwitcher className="hidden md:block" />
               <Link
                 href="/editor"
@@ -227,6 +229,7 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
             </>
           ) : (
             <>
+              <ColorThemeSwitcher className="hidden md:block" />
               <LocaleSwitcher className="mr-1" />
               <Link href="/login" className="btn-ghost h-9 text-xs">
                 {t('nav.login')}

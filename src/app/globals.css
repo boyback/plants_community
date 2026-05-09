@@ -2,8 +2,121 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+/*
+ * 主题系统:
+ *   - leaf-* / sand-* / ink-* 全部走 CSS 变量(rgb 数值,不带 rgb()包装)
+ *   - 通过 <html data-theme="forest|sakura|ocean|vintage"> 切换
+ *   - 默认 forest;不识别的值也回退到 forest
+ *   - --page-bg 与 --scroll-thumb 等附加变量也跟主题走
+ */
+
+/* 默认主题 = 森林绿 */
+:root,
+:root[data-theme='forest'] {
+  --leaf-50: 242 250 244;
+  --leaf-100: 225 244 230;
+  --leaf-200: 195 232 205;
+  --leaf-300: 152 212 172;
+  --leaf-400: 102 185 133;
+  --leaf-500: 69 156 103;
+  --leaf-600: 51 125 81;
+  --leaf-700: 42 100 66;
+  --leaf-800: 37 79 55;
+  --leaf-900: 31 65 48;
+
+  --sand-50: 251 248 242;
+  --sand-100: 244 236 219;
+  --sand-200: 233 215 181;
+  --sand-300: 218 188 135;
+
+  --ink-700: 44 58 51;
+  --ink-800: 31 42 36;
+  --ink-900: 18 25 21;
+
   --page-bg: #f7faf5;
+  --scroll-thumb: #d8e6dc;
+  --scroll-thumb-hover: #bdd3c3;
+}
+
+/* 樱花粉 */
+:root[data-theme='sakura'] {
+  --leaf-50: 254 244 248;
+  --leaf-100: 253 232 240;
+  --leaf-200: 251 207 226;
+  --leaf-300: 245 165 199;
+  --leaf-400: 238 122 174;
+  --leaf-500: 228 89 152;
+  --leaf-600: 197 60 124;
+  --leaf-700: 161 47 102;
+  --leaf-800: 124 38 81;
+  --leaf-900: 89 27 60;
+
+  --sand-50: 255 250 246;
+  --sand-100: 252 238 226;
+  --sand-200: 247 213 187;
+  --sand-300: 234 175 138;
+
+  --ink-700: 59 38 50;
+  --ink-800: 41 26 34;
+  --ink-900: 25 16 22;
+
+  --page-bg: #fff5f8;
+  --scroll-thumb: #f6c8d9;
+  --scroll-thumb-hover: #ec9bb8;
+}
+
+/* 海洋蓝 */
+:root[data-theme='ocean'] {
+  --leaf-50: 240 248 254;
+  --leaf-100: 220 240 252;
+  --leaf-200: 184 222 246;
+  --leaf-300: 134 195 234;
+  --leaf-400: 86 165 217;
+  --leaf-500: 49 134 198;
+  --leaf-600: 35 109 169;
+  --leaf-700: 28 86 138;
+  --leaf-800: 24 67 105;
+  --leaf-900: 19 51 79;
+
+  --sand-50: 247 250 252;
+  --sand-100: 232 240 245;
+  --sand-200: 196 215 228;
+  --sand-300: 154 187 207;
+
+  --ink-700: 32 47 62;
+  --ink-800: 22 33 47;
+  --ink-900: 13 22 31;
+
+  --page-bg: #f3f9fd;
+  --scroll-thumb: #c8dde9;
+  --scroll-thumb-hover: #99c0d4;
+}
+
+/* 记忆黄(复古报纸) */
+:root[data-theme='vintage'] {
+  --leaf-50: 252 248 235;
+  --leaf-100: 247 238 207;
+  --leaf-200: 237 219 159;
+  --leaf-300: 219 191 105;
+  --leaf-400: 196 159 65;
+  --leaf-500: 167 130 41;
+  --leaf-600: 137 105 32;
+  --leaf-700: 110 84 27;
+  --leaf-800: 82 63 22;
+  --leaf-900: 56 42 16;
+
+  --sand-50: 251 247 240;
+  --sand-100: 240 226 197;
+  --sand-200: 222 197 156;
+  --sand-300: 199 163 110;
+
+  --ink-700: 56 47 32;
+  --ink-800: 36 31 22;
+  --ink-900: 21 19 15;
+
+  --page-bg: #fbf5e6;
+  --scroll-thumb: #e7d6a8;
+  --scroll-thumb-hover: #c4ab74;
 }
 
 html,
@@ -15,6 +128,8 @@ body {
   -webkit-tap-highlight-color: transparent;
   /* 防横向滚动 */
   overflow-x: hidden;
+  /* 主题切换平滑过渡 */
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* 文字防溢出 */
@@ -35,11 +150,11 @@ img, video, svg {
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d8e6dc;
+  background: var(--scroll-thumb);
   border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #bdd3c3;
+  background: var(--scroll-thumb-hover);
 }
 
 @layer components {

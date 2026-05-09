@@ -1,33 +1,44 @@
 import type { Config } from 'tailwindcss';
 
+/**
+ * 颜色全部走 CSS 变量,供运行时主题切换。
+ * - 变量在 globals.css 内 :root[data-theme="..."] 下定义
+ * - 默认值 = 森林绿(leaf 系)
+ * - 4 个预设主题:forest / sakura / ocean / vintage
+ *
+ * 用法:像以前一样写 `bg-leaf-500`,实际生成 `background-color: rgb(var(--leaf-500) / <alpha-value>)`
+ */
+function withVar(name: string) {
+  return `rgb(var(${name}) / <alpha-value>)`;
+}
+
 const config: Config = {
   content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
     extend: {
       colors: {
-        // 清新自然绿主题
         leaf: {
-          50: '#f2faf4',
-          100: '#e1f4e6',
-          200: '#c3e8cd',
-          300: '#98d4ac',
-          400: '#66b985',
-          500: '#459c67',
-          600: '#337d51',
-          700: '#2a6442',
-          800: '#254f37',
-          900: '#1f4130',
+          50: withVar('--leaf-50'),
+          100: withVar('--leaf-100'),
+          200: withVar('--leaf-200'),
+          300: withVar('--leaf-300'),
+          400: withVar('--leaf-400'),
+          500: withVar('--leaf-500'),
+          600: withVar('--leaf-600'),
+          700: withVar('--leaf-700'),
+          800: withVar('--leaf-800'),
+          900: withVar('--leaf-900'),
         },
         sand: {
-          50: '#fbf8f2',
-          100: '#f4ecdb',
-          200: '#e9d7b5',
-          300: '#dabc87',
+          50: withVar('--sand-50'),
+          100: withVar('--sand-100'),
+          200: withVar('--sand-200'),
+          300: withVar('--sand-300'),
         },
         ink: {
-          700: '#2c3a33',
-          800: '#1f2a24',
-          900: '#121915',
+          700: withVar('--ink-700'),
+          800: withVar('--ink-800'),
+          900: withVar('--ink-900'),
         },
       },
       fontFamily: {
