@@ -51,32 +51,12 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
       )}
     >
       {cover ? (
-        <div className="relative w-full overflow-hidden bg-leaf-50">
-          {/*
-            瀑布流图片策略:
-            - 默认按原图比例铺满宽度(h-auto)
-            - 设个 max-height 防止超长图把卡片撑爆 → 此时图片用 contain 居中,不裁切不拉伸
-            - 用宿主元素 max-h + img.object-contain + 居中,极端情况两侧/上下露底色 bg-leaf-50,不会显示空白
-          */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={cover}
-            alt={post.title}
-            className="block w-full max-h-[280px] object-contain transition-transform duration-500 group-hover:scale-[1.02]"
-            loading="lazy"
-          />
-          <div className="absolute left-2 top-2">
-            <PostTypeBadge type={post.type} />
-          </div>
-          {/* video 类型加大播放图标 */}
-          {post.type === 'video' && (
-            <div className="pointer-events-none absolute inset-0 grid place-items-center">
-              <div className="grid h-12 w-12 place-items-center rounded-full bg-black/50 text-white">
-                <Icon name="video" size={20} fill="currentColor" />
-              </div>
-            </div>
-          )}
-        </div>
+        <CoverImage
+          src={cover}
+          alt={post.title}
+          showVideoIcon={post.type === 'video'}
+          typeBadge={<PostTypeBadge type={post.type} />}
+        />
       ) : (
         <div className="px-3 pt-3">
           <PostTypeBadge type={post.type} />

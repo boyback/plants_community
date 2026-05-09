@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { Icon } from '@/components/ui/Icon';
-import { Avatar } from '@/components/ui/Avatar';
 import { api } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
 
@@ -72,42 +71,22 @@ export function SignInCard() {
   return (
     <div className="card overflow-hidden">
       {/* 用户彩条 + 提示 */}
-      <div className="bg-gradient-to-br from-leaf-400 to-leaf-600 p-4 text-white">
-        <div className="flex items-center gap-3">
-          <Avatar src={user.avatar} alt={user.name} size={44} ring />
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold">{user.name}</div>
-            <div className="text-[11px] opacity-90">
-              {t('home.signIn.userMeta', {
-                level: user.level,
-                posts: user.posts,
-                followers: user.followers,
-              })}
-            </div>
-          </div>
-        </div>
-        <div className="mt-2 text-[11px] leading-5 opacity-90">
-          {t('home.signIn.tip')}
-        </div>
+      {/* 顶部细绿条:tip 提示 */}
+      <div className="bg-gradient-to-br from-leaf-400 to-leaf-600 px-4 py-2.5 text-[11px] leading-5 text-white">
+        {t('home.signIn.tip')}
       </div>
 
-      {/* 签到主区 */}
+      {/* 签到主区:统计 + 连续天数 + 按钮 同一行 */}
       <div className="p-4">
-        {/* 今日全站签到人数(轻量信息) */}
-        <div className="mb-2 text-[11px] text-leaf-700/70">
-          今日已有 <b className="text-leaf-700 tabular-nums">{todaySignedCount}</b> 人签到
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-xs text-leaf-700/70">
-              {t('home.signIn.streakLabel')}
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1 space-y-0.5 text-[11px] text-leaf-700/80">
+            <div>
+              今日已有 <b className="text-leaf-700 tabular-nums">{todaySignedCount}</b> 人签到
             </div>
-            <div className="text-xl font-bold text-leaf-700">
-              {signInStreak}{' '}
-              <span className="text-xs font-normal">
-                {t('home.signIn.daysSuffix')}
-              </span>
+            <div>
+              {t('home.signIn.streakLabel')}{' '}
+              <b className="tabular-nums text-leaf-700">{signInStreak}</b>{' '}
+              {t('home.signIn.daysSuffix')}
             </div>
           </div>
           <button
@@ -115,7 +94,7 @@ export function SignInCard() {
             onClick={() => void signIn()}
             disabled={signedInToday}
             className={cn(
-              'btn !px-4',
+              'btn shrink-0 !px-4',
               signedInToday
                 ? 'cursor-not-allowed bg-leaf-100 text-leaf-600'
                 : 'bg-leaf-500 text-white hover:bg-leaf-600'
