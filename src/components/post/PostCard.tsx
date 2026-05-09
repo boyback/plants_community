@@ -60,6 +60,8 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
       <div className="space-y-2 p-4">
         {!cover && <PostTypeBadge type={post.type} />}
 
+        {post.species && <SpeciesChip species={post.species} board={post.board} />}
+
         <Link href={`/post/${post.id}`}>
           <h3 className="line-clamp-2 text-base font-semibold text-ink-800 hover:text-leaf-700">
             {post.title}
@@ -135,12 +137,16 @@ function CompactCard({ post, className }: { post: Post; className?: string }) {
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex items-center gap-2">
           <PostTypeBadge type={post.type} />
-          <Link
-            href={boardUrl(post.board)}
-            className="text-[11px] text-leaf-700 hover:underline"
-          >
-            {post.board.name}
-          </Link>
+          {post.species ? (
+            <SpeciesChip species={post.species} board={post.board} compact />
+          ) : (
+            <Link
+              href={boardUrl(post.board)}
+              className="text-[11px] text-leaf-700 hover:underline"
+            >
+              {post.board.name}
+            </Link>
+          )}
         </div>
         <h4 className="truncate text-sm font-medium text-ink-800">{post.title}</h4>
         <div className="mt-1 flex items-center gap-3 text-[11px] text-leaf-700/70">
@@ -194,5 +200,40 @@ function Stat({ icon, n }: { icon: 'eye' | 'heart' | 'comment'; n: number }) {
       <Icon name={icon} size={13} />
       {formatNumber(n)}
     </span>
+  );
+}
+
+/**
+ * 品种 chip:🌱 月迷 ⭐ 4.2 (28)
+ * - 当 ratingCount === 0 时只显示初始难度,不展示括号
+ * - 点击进品种页(走 board 路径)
+ */
+function SpeciesChip({
+  species,
+  board,
+  compact = false,
+}: {
+  species: NonNullable<Post['species']>;
+  board: Post['board'];
+  compact?: boolean;
+}) {
+  const score = species.avgDifficulty.toFixed(1);
+  return (
+    <Link
+      href={boardUrl(board)}
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full bg-leaf-50 px-2 py-0.5 text-leaf-700 transition-colors hover:bg-leaf-100',
+        compact ? 'text-[11px]' : 'text-xs'
+      )}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <span>🌱</span>
+      <span className="font-medium">{species.name}</span>
+      <span className="text-amber-600">⭐</span>
+      <span className="tabular-nums">{score}</span>
+      {species.ratingCount > 0 && (
+        <span className="text-leaf-600/70">({species.ratingCount})</span>
+      )}
+    </Link>
   );
 }

@@ -144,6 +144,16 @@ export interface Post {
     location: string;
     attendees: number;
   };
+  /** 关联品种(三级板块下到品种级别才有);用于卡片显示「⭐ 4.2 (28)」 */
+  species?: {
+    id: string;
+    slug: string;
+    name: string;
+    /** 用户打分平均(无人打分时回退到 difficulty) */
+    avgDifficulty: number;
+    /** 总打分人数 */
+    ratingCount: number;
+  };
   commentList?: Comment[];
 }
 

@@ -285,6 +285,18 @@ export function serializePost(p: PostWithRelations): Post {
           attendees: p.event._count?.attendees ?? 0,
         }
       : undefined,
+    species: p.species
+      ? {
+          id: p.species.id,
+          slug: p.species.slug,
+          name: p.species.name,
+          avgDifficulty:
+            p.species.ratingCount > 0
+              ? p.species.ratingSum / p.species.ratingCount
+              : p.species.difficulty,
+          ratingCount: p.species.ratingCount,
+        }
+      : undefined,
     commentList: p.comments
       ? p.comments.map((c) => serializeComment(c))
       : undefined,
