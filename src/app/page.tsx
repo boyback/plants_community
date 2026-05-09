@@ -60,12 +60,12 @@ export default async function HomePage() {
         </div>
 
         <div className="space-y-5">
-          {/* 1. 签到 + 月历(整合) */}
-          <SignInCard />
-          {/* 2. 话题 */}
+          {/* 1. 话题 */}
           <TopicsCard />
-          {/* 3. 推荐肉友 */}
+          {/* 2. 推荐肉友 */}
           <RecommendUsers users={recommendUsers} />
+          {/* 3. 签到 + 月历(整合) */}
+          <SignInCard />
           {/* 4. APP 下载 */}
           <AppDownloadCard />
           {/* 5. 法律入口 */}
