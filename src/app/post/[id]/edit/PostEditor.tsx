@@ -1,0 +1,288 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Icon } from '@/components/ui/Icon';
+import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
+import { RichTextEditor } from '@/components/richtext/RichTextEditor';
+import { UploadField } from '@/components/upload/UploadField';
+import { PostPreview } from '@/components/editor/PostPreview';
+import { useAuth } from '@/context/AuthContext';
+import { api, ApiError } from '@/lib/client-api';
+
+type EditableType = 'rich' | 'short' | 'video';
+
+interface InitialPost {
+  id: string;
+  type: EditableType;
+  title: string;
+  content: string;
+  contentJson: unknown;
+  images: string[];
+  videoUrl: string;
+  tags: string[];
+}
+
+/**
+ * 帖子编辑器(仅作者本人 · 仅 rich/short/video 类型)
+ *
+ * 限制:
+ *   - type 锁定不可改
+ *   - 复用发帖编辑器的 UI 形式,左表单 + 右预览
+ *   - 提交走 PATCH /api/posts/:id
+ *   - 编辑后含外链会被自动送审(后端逻辑;前端给提示)
+ */
+export function PostEditor({ post }: { post: InitialPost }) {
+  const router = useRouter();
+  const { user } = useAuth();
+
+  const [title, setTitle] = useState(post.title);
+  const [content, setContent] = useState(post.content);
+  const [contentJson, setContentJson] = useState<unknown>(post.contentJson);
+  const [images, setImages] = useState<string[]>(post.images);
+  const [videoUrl, setVideoUrl] = useState(post.videoUrl);
+  const [tags, setTags] = useState<string[]>(post.tags);
+  const [tagInput, setTagInput] = useState('');
+
+  const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (m: string) => {
+    setToast(m);
+    setTimeout(() => setToast(null), 2200);
+  };
+
+  const onAddTag = () => {
+    const t = tagInput.trim();
+    if (!t) return;
+    if (tags.includes(t)) {
+      setTagInput('');
+      return;
+    }
+    if (tags.length >= 10) return;
+    setTags([...tags, t]);
+    setTagInput('');
+  };
+
+  const onSubmit = async () => {
+    if (!title.trim()) return showToast('请填写标题');
+    if (post.type === 'short' && !content.trim())
+      return showToast('请填写内容');
+    if (post.type === 'rich') {
+      const j = contentJson as { content?: unknown[] } | null;
+      const empty =
+        !j || !Array.isArray(j.content) || j.content.length === 0;
+      if (empty) return showToast('请填写正文');
+    }
+    if (post.type === 'video' && !videoUrl.trim())
+      return showToast('请上传视频或填写视频 URL');
+
+    setSubmitting(true);
+    try {
+      const isRich = post.type === 'rich';
+      const payload: Record<string, unknown> = {
+        title,
+        ...(isRich ? { contentJson } : { content }),
+        tags,
+        images,
+        ...(post.type === 'video' && { videoUrl }),
+      };
+      const r = await api.patch<{ ok: boolean; needsReview: boolean }>(
+        `/api/posts/${post.id}`,
+        payload
+      );
+      if (r.needsReview) {
+        showToast('🕒 已保存,因含外链将进入审核');
+      } else {
+        showToast('✅ 已保存');
+      }
+      setTimeout(() => router.push(`/post/${post.id}`), 1000);
+    } catch (e) {
+      showToast(e instanceof ApiError ? e.message : '保存失败');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_320px]">
+      <div className="min-w-0 space-y-5">
+        <div className="card p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h1 className="text-xl font-semibold">✍️ 编辑帖子</h1>
+            <PostTypeBadge type={post.type} />
+          </div>
+
+          <div className="space-y-4">
+            <Row label="标题">
+              <input
+                className="input"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={60}
+              />
+              <div className="mt-1 text-right text-[11px] text-leaf-700/60">
+                {title.length} / 60
+              </div>
+            </Row>
+
+            {post.type === 'rich' && (
+              <Row label="正文">
+                <RichTextEditor
+                  value={contentJson}
+                  onChange={setContentJson}
+                  placeholder="编辑你的内容..."
+                  minHeight={300}
+                  charLimit={20000}
+                />
+              </Row>
+            )}
+
+            {post.type === 'short' && (
+              <Row label="内容">
+                <textarea
+                  className="input min-h-[140px]"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  maxLength={500}
+                />
+                <div className="mt-1 text-right text-[11px] text-leaf-700/60">
+                  {content.length} / 500
+                </div>
+              </Row>
+            )}
+
+            {post.type === 'video' && (
+              <>
+                <Row label="视频">
+                  <UploadField
+                    kind="video"
+                    value={videoUrl ? [videoUrl] : []}
+                    onChange={(arr) => setVideoUrl(arr[0] ?? '')}
+                    max={1}
+                  />
+                </Row>
+                <Row label="说明">
+                  <textarea
+                    className="input min-h-[100px]"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="视频说明..."
+                  />
+                </Row>
+              </>
+            )}
+
+            <Row label="图片">
+              <UploadField
+                kind="image"
+                value={images}
+                onChange={setImages}
+                max={9}
+              />
+            </Row>
+
+            <Row label="标签">
+              <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-leaf-200 bg-white p-2">
+                {tags.map((t) => (
+                  <span
+                    key={t}
+                    className="inline-flex items-center gap-1 rounded-full bg-leaf-100 px-2 py-0.5 text-xs text-leaf-700"
+                  >
+                    #{t}
+                    <button
+                      type="button"
+                      onClick={() => setTags(tags.filter((x) => x !== t))}
+                      className="text-leaf-600 hover:text-leaf-800"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                <input
+                  className="flex-1 bg-transparent px-1 text-sm outline-none min-w-[120px]"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      onAddTag();
+                    }
+                  }}
+                  placeholder={
+                    tags.length >= 10 ? '最多 10 个标签' : '输入标签后回车'
+                  }
+                  disabled={tags.length >= 10}
+                />
+              </div>
+            </Row>
+
+            <div className="rounded-lg bg-leaf-50/60 p-3 text-[11px] text-leaf-700/80">
+              ⚠️ 帖子类型不可更改 · 编辑后含外链将自动重新进入审核
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Link
+                href={`/post/${post.id}`}
+                className="btn-outline"
+              >
+                取消
+              </Link>
+              <button
+                type="button"
+                onClick={onSubmit}
+                disabled={submitting}
+                className="btn-primary"
+              >
+                <Icon name="check" size={14} />
+                {submitting ? '保存中...' : '保存'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 右侧实时预览 */}
+      <div className="space-y-4">
+        <PostPreview
+          type={post.type}
+          title={title}
+          content={content}
+          contentJson={contentJson}
+          images={images}
+          videoUrl={videoUrl}
+          tags={tags}
+          user={user}
+          voteOptions={[]}
+          voteMulti={false}
+          voteDeadline=""
+          eventLocation=""
+          eventStartAt=""
+          journal={{
+            subjectName: '',
+            startDate: '',
+            entries: [],
+          }}
+        />
+      </div>
+
+      {toast && (
+        <div className="pointer-events-none fixed bottom-10 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg">
+          {toast}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs font-medium text-leaf-700/80">
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}

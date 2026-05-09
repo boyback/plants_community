@@ -22,6 +22,7 @@ import {
   getChunkDir,
   getExtForMime,
   getUploadDriver,
+  isRemoteDriver,
   sha256OfFile,
 } from '@/lib/upload';
 
@@ -75,12 +76,18 @@ export const POST = handler(async (req) => {
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   const key = `${me.id}/${ym}/${id}.${ext}`;
   const driver = getUploadDriver();
-  const finalPath = driver.resolvePath
+  const remote = isRemoteDriver();
+
+  // 远程 driver:先把分片合并到 tmp 文件,再 put 到对象存储,最后删 tmp
+  // 本地 driver:直接合并到最终路径
+  const stagingPath = remote
+    ? path.join(getChunkDir(), `${body.uploadId}.merged`)
+    : driver.resolvePath
     ? driver.resolvePath(key)
     : path.join(process.cwd(), 'public', 'uploads', key);
 
-  await fs.mkdir(path.dirname(finalPath), { recursive: true });
-  const ws = createWriteStream(finalPath);
+  await fs.mkdir(path.dirname(stagingPath), { recursive: true });
+  const ws = createWriteStream(stagingPath);
   let totalSize = 0;
   for (let i = 0; i < body.totalChunks; i++) {
     const cp = path.join(tmpDir, String(i));
@@ -95,14 +102,24 @@ export const POST = handler(async (req) => {
   });
 
   // 校验 hash
-  const actualHash = await sha256OfFile(finalPath);
+  const actualHash = await sha256OfFile(stagingPath);
   if (actualHash !== body.sha256) {
-    await fs.unlink(finalPath).catch(() => null);
+    await fs.unlink(stagingPath).catch(() => null);
     return fail(400, '文件校验失败:hash 不一致');
   }
 
+  // 决定最终 url
+  let url: string;
+  if (remote) {
+    const buf = await fs.readFile(stagingPath);
+    url = await driver.put(key, buf, body.mime);
+    // 上传完成后删本地暂存
+    await fs.unlink(stagingPath).catch(() => null);
+  } else {
+    url = `/uploads/${key}`;
+  }
+
   // 写表(秒传去重 unique 上)
-  const url = `/uploads/${key}`;
   const created = await prisma.uploadFile.create({
     data: {
       uploaderId: me.id,

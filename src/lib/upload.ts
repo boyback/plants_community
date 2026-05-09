@@ -47,12 +47,140 @@ class LocalDriver implements UploadDriver {
   }
 }
 
+/**
+ * 七牛云 Kodo driver
+ *
+ * 必须的环境变量:
+ *   QINIU_ACCESS_KEY     七牛 access key
+ *   QINIU_SECRET_KEY     七牛 secret key
+ *   QINIU_BUCKET         bucket 名
+ *   QINIU_DOMAIN         绑定的 CDN/源站域名(如 https://cdn.plantcommunity.cn)
+ * 可选:
+ *   QINIU_REGION         z0(华东) / z1(华北) / z2(华南) / na0(北美) / as0(东南亚)
+ *                        默认 z0
+ */
+class QiniuDriver implements UploadDriver {
+  private mac: import('qiniu').auth.digest.Mac | null = null;
+  private cfg: import('qiniu').conf.Config | null = null;
+  private bucket: string;
+  private domain: string;
+
+  constructor() {
+    const ak = process.env.QINIU_ACCESS_KEY;
+    const sk = process.env.QINIU_SECRET_KEY;
+    const bucket = process.env.QINIU_BUCKET;
+    const domain = process.env.QINIU_DOMAIN;
+    if (!ak || !sk || !bucket || !domain) {
+      throw new Error(
+        'QINIU_DRIVER 配置不全:需要 QINIU_ACCESS_KEY/SECRET_KEY/BUCKET/DOMAIN'
+      );
+    }
+    this.bucket = bucket;
+    this.domain = domain.replace(/\/$/, '');
+  }
+
+  private async ensureClient(): Promise<{
+    qiniu: typeof import('qiniu');
+    mac: import('qiniu').auth.digest.Mac;
+    cfg: import('qiniu').conf.Config;
+  }> {
+    const qiniu = await import('qiniu');
+    if (this.mac && this.cfg)
+      return { qiniu, mac: this.mac, cfg: this.cfg };
+    this.mac = new qiniu.auth.digest.Mac(
+      process.env.QINIU_ACCESS_KEY!,
+      process.env.QINIU_SECRET_KEY!
+    );
+    this.cfg = new qiniu.conf.Config({
+      zone: regionZone(qiniu, process.env.QINIU_REGION),
+    });
+    return { qiniu, mac: this.mac, cfg: this.cfg };
+  }
+
+  async put(key: string, body: Buffer, contentType: string): Promise<string> {
+    const { qiniu, mac, cfg } = await this.ensureClient();
+    const policy = new qiniu.rs.PutPolicy({
+      scope: `${this.bucket}:${key}`,
+      expires: 3600,
+    });
+    const token = policy.uploadToken(mac);
+
+    const formUploader = new qiniu.form_up.FormUploader(cfg);
+    const putExtra = new qiniu.form_up.PutExtra();
+    putExtra.mimeType = contentType;
+
+    return new Promise((resolve, reject) => {
+      formUploader.put(token, key, body, putExtra, (err, _body, info) => {
+        if (err) return reject(err);
+        if (info.statusCode !== 200) {
+          return reject(
+            new Error(`qiniu upload failed: ${info.statusCode}`)
+          );
+        }
+        resolve(`${this.domain}/${key}`);
+      });
+    });
+  }
+
+  async delete(key: string): Promise<void> {
+    const { qiniu, mac, cfg } = await this.ensureClient();
+    const bucketManager = new qiniu.rs.BucketManager(mac, cfg);
+    return new Promise((resolve, reject) => {
+      bucketManager.delete(this.bucket, key, (err, _b, info) => {
+        if (err) return reject(err);
+        if (info.statusCode !== 200 && info.statusCode !== 612) {
+          // 612 = key 不存在,视为已删
+          return reject(
+            new Error(`qiniu delete failed: ${info.statusCode}`)
+          );
+        }
+        resolve();
+      });
+    });
+  }
+
+  // 七牛是远程对象存储,没有本地路径概念
+  // 分片上传 finish 阶段会先合并到本地 tmp 文件,再调 put 推到七牛
+}
+
+function regionZone(
+  qiniu: typeof import('qiniu'),
+  name: string | undefined
+): import('qiniu').conf.Zone {
+  switch ((name ?? 'z0').toLowerCase()) {
+    case 'z1':
+      return qiniu.zone.Zone_z1;
+    case 'z2':
+      return qiniu.zone.Zone_z2;
+    case 'na0':
+      return qiniu.zone.Zone_na0;
+    case 'as0':
+      return qiniu.zone.Zone_as0;
+    default:
+      return qiniu.zone.Zone_z0;
+  }
+}
+
 let driver: UploadDriver | null = null;
 
 export function getUploadDriver(): UploadDriver {
   if (driver) return driver;
-  driver = new LocalDriver();
+  const which = (process.env.UPLOAD_DRIVER ?? 'local').toLowerCase();
+  switch (which) {
+    case 'qiniu':
+      driver = new QiniuDriver();
+      break;
+    case 'local':
+    default:
+      driver = new LocalDriver();
+      break;
+  }
   return driver;
+}
+
+/** 是否为远程 driver(决定 finish 流程是先在本地合并还是直接 put) */
+export function isRemoteDriver(): boolean {
+  return (process.env.UPLOAD_DRIVER ?? 'local').toLowerCase() === 'qiniu';
 }
 
 export function getChunkDir(): string {
