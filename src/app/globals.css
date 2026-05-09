@@ -686,10 +686,8 @@ img, video, svg {
  * Feed 瀑布流:4 列时卡片更窄,字体相应缩小
  * 仅 md+ 生效(m 端永远 1/2 列,固定字号)
  * ============================================================ */
-/* 默认:时间在标题下,作者行不带时间 */
-.post-time-inline {
-  display: none;
-}
+/* 默认:时间在标题下,footer 显示作者+看赞评 */
+/* 4 列模式才显示的「作者+时间」独立行,默认 hidden(.hidden 已在元素上) */
 
 @media (min-width: 768px) {
   .feed-grid[data-cols='4'] h3,
@@ -715,11 +713,23 @@ img, video, svg {
   .feed-grid[data-cols='4'] .text-2xl {
     font-size: 18px;
   }
-  /* 4 列时:时间从标题下挪到作者行后面,节省一行垂直空间 */
+  /* 4 列时:
+   * 1. 隐藏标题下的时间
+   * 2. 显示「作者 + 时间」独立行(放在内容下、footer 上)
+   * 3. footer 隐藏作者,只剩看赞评(右对齐)
+   */
   .feed-grid[data-cols='4'] .post-time-top {
     display: none;
   }
-  .feed-grid[data-cols='4'] .post-time-inline {
-    display: inline;
+  .feed-grid[data-cols='4'] .post-author-block {
+    display: inline-flex;
+  }
+  .feed-grid[data-cols='4'] .post-footer-author {
+    display: none;
+  }
+  .feed-grid[data-cols='4'] .post-footer {
+    justify-content: flex-end;
+    border-top: 0;
+    padding-top: 0;
   }
 }
