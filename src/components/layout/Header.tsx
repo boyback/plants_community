@@ -8,7 +8,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 
 import { LocaleSwitcher } from '@/components/ui/LocaleSwitcher';
 import { ColorThemeSwitcher } from '@/components/ui/ColorThemeSwitcher';
-import { NotificationDropdown } from './NotificationDropdown';
+
 import { useAuth } from '@/context/AuthContext';
 import { useRealtime } from '@/context/RealtimeContext';
 import { useI18n } from '@/i18n/I18nContext';
@@ -103,18 +103,6 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
         <div className="ml-auto flex items-center gap-1 md:ml-0">
           {user ? (
             <>
-              <Link
-                href="/points"
-                className="hidden md:inline-flex items-center gap-1 rounded-full bg-leaf-50 px-2.5 py-1 text-xs text-leaf-700 hover:bg-leaf-100"
-                title={t('nav.myPoints')}
-              >
-                💎 {pointsBalance}
-              </Link>
-              <NotificationDropdown
-                unreadNotifs={unreadNotifs}
-                unreadMsgs={unreadMsgs}
-                onReadAll={() => setUnreadNotifs(0)}
-              />
               <ColorThemeSwitcher />
               <LocaleSwitcher className="hidden md:block" />
               <Link
@@ -154,10 +142,17 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                 </button>
                 {menuOpen && (
                   <div className="absolute right-0 z-20 mt-2 w-36 overflow-visible rounded-xl border border-leaf-100 bg-white py-1 shadow-xl">
-                    {/* 1. 设置(带二级菜单 hover 右侧展开) */}
+                    {/* 1. 消息(hover 右侧展开 7 类) */}
+                    <MessagesSubmenu
+                      unreadTotal={unreadNotifs + unreadMsgs}
+                      onClose={() => setMenuOpen(false)}
+                      onReadAll={() => setUnreadNotifs(0)}
+                    />
+
+                    {/* 2. 设置(hover 右侧展开二级菜单) */}
                     <SettingsSubmenu onNavigate={() => setMenuOpen(false)} />
 
-                    {/* 2. 个人主页 */}
+                    {/* 3. 个人主页 */}
                     <Link
                       href={`/user/${user.id}`}
                       onClick={() => setMenuOpen(false)}
@@ -169,7 +164,7 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
 
                     <div className="my-1 border-t border-leaf-50" />
 
-                    {/* 3. 退出 */}
+                    {/* 4. 退出 */}
                     <button
                       type="button"
                       onClick={async () => {
@@ -381,4 +376,257 @@ function SettingsSubmenu({ onNavigate }: { onNavigate: () => void }) {
       )}
     </div>
   );
+}
+
+/**
+ * 消息子菜单(用户下拉中的一级项,hover 右侧弹出消息分类下拉)
+ * - 复用 NotificationDropdown 的核心逻辑
+ * - 不再走头部独立按钮,而是嵌入头像菜单
+ */
+function MessagesSubmenu({
+  unreadTotal,
+  onClose,
+  onReadAll,
+}: {
+  unreadTotal: number;
+  onClose: () => void;
+  onReadAll: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+
+  const onEnter = () => {
+    if (timer) clearTimeout(timer);
+    setOpen(true);
+  };
+  const onLeave = () => {
+    const tt = setTimeout(() => setOpen(false), 150);
+    setTimer(tt);
+  };
+
+  return (
+    <div className="relative" onMouseEnter={onEnter} onMouseLeave={onLeave}>
+      <Link
+        href="/notifications"
+        onClick={onClose}
+        className="flex items-center gap-2 px-3 py-2 text-sm text-ink-800 hover:bg-leaf-50"
+      >
+        <Icon name="bell" size={14} />
+        <span className="flex-1">消息</span>
+        {unreadTotal > 0 && (
+          <span className="grid h-4 min-w-[16px] place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white">
+            {unreadTotal > 99 ? '99+' : unreadTotal}
+          </span>
+        )}
+        <span className="text-leaf-500">▸</span>
+      </Link>
+      {open && (
+        <div className="absolute right-full top-0 z-30 mr-1">
+          <NotificationDropdownInline
+            onClose={() => {
+              setOpen(false);
+              onClose();
+            }}
+            onReadAll={onReadAll}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** 内联版下拉:不带触发按钮,直接渲染面板内容 */
+function NotificationDropdownInline({
+  onClose,
+  onReadAll,
+}: {
+  onClose: () => void;
+  onReadAll: () => void;
+}) {
+  const [tab, setTab] = useState<
+    'all' | 'comment' | 'like' | 'mention' | 'follow' | 'system' | 'message'
+  >('all');
+  const [items, setItems] = useState<Notification[]>([]);
+  const [convs, setConvs] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      api
+        .get<{ items: Notification[]; unread: number }>('/api/notifications?limit=20')
+        .catch(() => ({ items: [], unread: 0 })),
+      api.get<Conversation[]>('/api/conversations').catch(() => [] as Conversation[]),
+    ])
+      .then(([n, c]) => {
+        setItems(Array.isArray(n.items) ? n.items : []);
+        setConvs(Array.isArray(c) ? c.slice(0, 10) : []);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const TABS = [
+    { key: 'all', label: '全部' },
+    { key: 'comment', label: '评论' },
+    { key: 'like', label: '点赞' },
+    { key: 'mention', label: '@我' },
+    { key: 'follow', label: '关注' },
+    { key: 'system', label: '系统' },
+    { key: 'message', label: '私信' },
+  ] as const;
+
+  const filtered =
+    tab === 'all' ? items : tab === 'message' ? [] : items.filter((n) => n.type === tab);
+  const showConvs = tab === 'all' || tab === 'message';
+
+  const markAllRead = async () => {
+    try {
+      await api.post('/api/notifications/read', { all: true });
+      setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+      onReadAll();
+    } catch {}
+  };
+
+  return (
+    <div className="w-[340px] overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-card">
+      <div className="flex items-center justify-between border-b border-leaf-100 px-3 py-2">
+        <span className="text-sm font-semibold text-ink-800">消息</span>
+        <button
+          type="button"
+          onClick={markAllRead}
+          className="text-[11px] text-leaf-700 hover:underline"
+        >
+          全部已读
+        </button>
+      </div>
+
+      <div className="flex gap-0.5 overflow-x-auto border-b border-leaf-50 px-1.5 py-1.5">
+        {TABS.map((tt) => (
+          <button
+            key={tt.key}
+            type="button"
+            onClick={() => setTab(tt.key)}
+            className={cn(
+              'shrink-0 rounded-full px-2.5 py-1 text-[11px] transition-colors',
+              tab === tt.key
+                ? 'bg-leaf-500 text-white'
+                : 'text-leaf-700 hover:bg-leaf-50'
+            )}
+          >
+            {tt.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="max-h-[420px] overflow-y-auto">
+        {loading ? (
+          <div className="py-8 text-center text-xs text-leaf-700/70">加载中…</div>
+        ) : (
+          <>
+            {showConvs &&
+              convs.map((c) => (
+                <Link
+                  key={c.id}
+                  href={`/messages?to=${c.user.id}`}
+                  onClick={onClose}
+                  className="flex items-start gap-2 border-b border-leaf-50 px-3 py-2 hover:bg-leaf-50/60"
+                >
+                  <UserAvatar src={c.user.avatar} alt={c.user.name} size={32} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="truncate text-xs font-medium text-ink-800">
+                        💬 {c.user.name}
+                      </span>
+                      <span className="ml-2 shrink-0 text-[10px] text-leaf-700/60">
+                        {timeShort(c.lastAt)}
+                      </span>
+                    </div>
+                    <p className="line-clamp-1 text-[11px] text-leaf-700/80">
+                      {c.lastMessage}
+                    </p>
+                  </div>
+                  {c.unread > 0 && (
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-rose-500" />
+                  )}
+                </Link>
+              ))}
+
+            {tab !== 'message' &&
+              filtered.map((n) => (
+                <Link
+                  key={n.id}
+                  href={n.link ?? '#'}
+                  onClick={onClose}
+                  className={cn(
+                    'flex items-start gap-2 border-b border-leaf-50 px-3 py-2 hover:bg-leaf-50/60',
+                    !n.read && 'bg-leaf-50/30'
+                  )}
+                >
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-leaf-50 text-base">
+                    {iconForType(n.type)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-[11px] leading-5 text-ink-800">
+                      {n.text}
+                    </p>
+                    <span className="text-[10px] text-leaf-700/60">
+                      {timeShort(n.createdAt)}
+                    </span>
+                  </div>
+                  {!n.read && (
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-rose-500" />
+                  )}
+                </Link>
+              ))}
+
+            {filtered.length === 0 && (!showConvs || convs.length === 0) && (
+              <div className="py-8 text-center text-xs text-leaf-700/60">
+                没有相关消息
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="flex border-t border-leaf-100 text-[12px]">
+        <Link
+          href="/notifications"
+          onClick={onClose}
+          className="flex-1 py-2 text-center text-leaf-700 hover:bg-leaf-50"
+        >
+          全部通知
+        </Link>
+        <Link
+          href="/messages"
+          onClick={onClose}
+          className="flex-1 border-l border-leaf-100 py-2 text-center text-leaf-700 hover:bg-leaf-50"
+        >
+          全部私信
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function iconForType(t: Notification['type']): string {
+  switch (t) {
+    case 'like': return '❤️';
+    case 'comment': return '💬';
+    case 'follow': return '➕';
+    case 'mention': return '@';
+    case 'system': return '📢';
+    default: return '🔔';
+  }
+}
+
+function timeShort(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return '刚刚';
+  if (m < 60) return `${m}分前`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}小时前`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}天前`;
+  return new Date(iso).toLocaleDateString('zh-CN');
 }
