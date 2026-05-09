@@ -5,6 +5,7 @@ import { useChunkUpload } from '@/lib/hooks/useChunkUpload';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
+import { CropAvatarDialog } from './CropAvatarDialog';
 
 interface Props {
   value: string;
@@ -14,14 +15,15 @@ interface Props {
   className?: string;
 }
 
-const ACCEPT = 'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif';
+const ACCEPT =
+  'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif';
 
 /**
  * 头像专用上传组件
- * - 整个圆形头像就是触发区,点击或拖拽都能选图
- * - 上传完成后立刻替换显示
- * - 支持 HEIC(服务端转 JPEG)
- * - 不支持外链 / 实况 / 多选(头像专用极简)
+ * - 圆形头像点击/拖拽触发文件选择
+ * - 选完图先弹「裁剪」对话框,确认后才真上传
+ * - GIF 不裁剪(保留动画),直接预览后上传
+ * - 支持 HEIC(服务端会转 JPEG)
  */
 export function AvatarField({
   value,
@@ -33,8 +35,10 @@ export function AvatarField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const { upload, progress, status, error, abort } = useChunkUpload();
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropIsGif, setCropIsGif] = useState(false);
 
+  const { upload, progress, status, error, abort } = useChunkUpload();
   const busy = status === 'uploading' || status === 'hashing';
 
   const showToast = (m: string) => {
@@ -42,20 +46,54 @@ export function AvatarField({
     setTimeout(() => setToast(null), 2200);
   };
 
-  const handleFile = async (file: File | undefined) => {
+  /** 用户选完文件 → 转 dataURL → 弹裁剪 */
+  const onPickFile = async (file: File | undefined) => {
     if (!file) return;
+    // HEIC 浏览器不能本地展示;直接走「不裁剪」路径,直接上传
+    const isHeic =
+      /\.(heic|heif)$/i.test(file.name) ||
+      /^image\/(heic|heif)$/.test(file.type);
+    if (isHeic) {
+      const r = await upload(file, 'image');
+      if (r?.url) {
+        onChange(r.url);
+        showToast('✅ 已更新');
+      }
+      return;
+    }
+    // 普通图(含 GIF):本地预览 → 裁剪
+    const url = URL.createObjectURL(file);
+    setCropIsGif(file.type === 'image/gif' || /\.gif$/i.test(file.name));
+    setCropSrc(url);
+  };
+
+  /** 裁剪确认 → 把 blob 包成 File 喂上传 */
+  const onCropConfirm = async (out: { blob: Blob; preview: string }) => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+
+    const ext = out.blob.type === 'image/gif' ? 'gif' : 'png';
+    const file = new File([out.blob], `avatar_${Date.now()}.${ext}`, {
+      type: out.blob.type || 'image/png',
+    });
     const r = await upload(file, 'image');
+    URL.revokeObjectURL(out.preview);
     if (r?.url) {
       onChange(r.url);
       showToast('✅ 已更新');
     }
   };
 
+  const onCropCancel = () => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+  };
+
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
     if (busy) return;
-    void handleFile(e.dataTransfer.files[0]);
+    void onPickFile(e.dataTransfer.files[0]);
   };
 
   return (
@@ -69,7 +107,7 @@ export function AvatarField({
         onChange={(e) => {
           const f = e.target.files?.[0];
           e.target.value = '';
-          void handleFile(f);
+          void onPickFile(f);
         }}
       />
 
@@ -94,7 +132,6 @@ export function AvatarField({
       >
         <Avatar src={value || '/default-avatar.svg'} alt={alt} size={size} />
 
-        {/* hover 蒙层 */}
         <div
           className={cn(
             'pointer-events-none absolute inset-0 grid place-items-center rounded-full bg-black/40 text-white opacity-0 transition-opacity',
@@ -107,7 +144,6 @@ export function AvatarField({
           </div>
         </div>
 
-        {/* 上传中:进度环 */}
         {busy && (
           <div className="absolute inset-0 grid place-items-center rounded-full bg-black/55 text-white">
             <div className="flex flex-col items-center gap-1 text-[10px]">
@@ -122,7 +158,6 @@ export function AvatarField({
         )}
       </button>
 
-      {/* 状态行(取消 / 错误) */}
       {(busy || error) && (
         <div className="mt-2 flex items-center gap-2 text-[11px]">
           {busy && (
@@ -136,6 +171,15 @@ export function AvatarField({
           )}
           {error && <span className="text-rose-600">{error}</span>}
         </div>
+      )}
+
+      {cropSrc && (
+        <CropAvatarDialog
+          src={cropSrc}
+          isGif={cropIsGif}
+          onCancel={onCropCancel}
+          onConfirm={onCropConfirm}
+        />
       )}
 
       {toast && (

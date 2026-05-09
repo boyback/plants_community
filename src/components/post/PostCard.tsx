@@ -95,23 +95,22 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
 
         {post.type === 'journal' && post.journal && <JournalPreview post={post} />}
 
-        {/* —— 作者 + meta —— */}
-        <div className="flex items-center justify-between pt-0.5">
-          <NestedLink
-            href={`/user/${post.author.id}`}
-            className="flex min-w-0 items-center gap-1.5 text-[11px] text-ink-700/80 hover:text-leaf-700"
-          >
-            <Avatar src={post.author.avatar} alt={post.author.name} size={20} />
-            <span className="truncate font-medium">{post.author.name}</span>
-            <span className="text-leaf-600/70">·</span>
-            <span className="shrink-0">{timeAgo(post.createdAt)}</span>
-          </NestedLink>
+        {/* —— 作者一行 —— */}
+        <NestedLink
+          href={`/user/${post.author.id}`}
+          className="flex min-w-0 items-center gap-1.5 pt-0.5 text-[11px] text-ink-700/80 hover:text-leaf-700"
+        >
+          <Avatar src={post.author.avatar} alt={post.author.name} size={20} />
+          <span className="truncate font-medium">{post.author.name}</span>
+          <span className="text-leaf-600/70">·</span>
+          <span className="shrink-0">{timeAgo(post.createdAt)}</span>
+        </NestedLink>
 
-          <div className="flex shrink-0 items-center gap-2 text-[11px] text-leaf-700/80">
-            <Stat icon="eye" n={post.views} />
-            <Stat icon="heart" n={post.likes} />
-            <Stat icon="comment" n={post.comments} />
-          </div>
+        {/* —— 看 / 赞 / 评 一行,顶部细分隔线视觉切分 —— */}
+        <div className="flex items-center gap-3 border-t border-leaf-50 pt-1.5 text-[11px] text-leaf-700/80">
+          <Stat icon="eye" n={post.views} />
+          <Stat icon="heart" n={post.likes} />
+          <Stat icon="comment" n={post.comments} />
         </div>
       </div>
     </Link>
