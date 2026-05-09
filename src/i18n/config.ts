@@ -30,7 +30,7 @@ export const localeNames: Record<Locale, string> = {
 
 export const localeFlags: Record<Locale, string> = {
   'zh-CN': '🇨🇳',
-  'zh-TW': '🇭🇰',
+  'zh-TW': '🇨🇳',
   en: '🇺🇸',
   ja: '🇯🇵',
   ko: '🇰🇷',

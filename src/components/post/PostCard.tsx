@@ -92,12 +92,12 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
           ))}
         </div>
 
-        {/* 标题 + 紧贴的发布时间 */}
+        {/* 标题 + 紧贴的发布时间(4 列模式下时间挪到底部 — 通过 CSS 切换) */}
         <div className="space-y-0.5">
           <h3 className="line-clamp-2 text-sm font-semibold text-ink-800 group-hover:text-leaf-700">
             {post.title}
           </h3>
-          <div className="text-[10px] text-leaf-700/60">
+          <div className="post-time-top text-[10px] text-leaf-700/60">
             {timeAgo(post.createdAt)}
           </div>
         </div>
@@ -115,7 +115,8 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
 
         {post.type === 'journal' && post.journal && <JournalPreview post={post} />}
 
-        {/* footer:作者(左) + 看赞评(右) 同一行 */}
+        {/* footer:作者(左) + 看赞评(右) 同一行
+            4 列瀑布流时,作者后追加「· 时间」 — 通过 CSS 切换显示 */}
         <div className="flex items-center justify-between gap-2 border-t border-leaf-50 pt-1.5">
           <NestedLink
             href={`/user/${post.author.id}`}
@@ -123,6 +124,9 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
           >
             <Avatar src={post.author.avatar} alt={post.author.name} size={18} />
             <span className="truncate font-medium">{post.author.name}</span>
+            <span className="post-time-inline shrink-0 text-leaf-700/60">
+              · {timeAgo(post.createdAt)}
+            </span>
           </NestedLink>
           <div className="flex shrink-0 items-center gap-2 text-[10px] text-leaf-700/70">
             <Stat icon="eye" n={post.views} />
