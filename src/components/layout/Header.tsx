@@ -64,7 +64,7 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
   }, [user, subscribe]);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-leaf-100/70 bg-white/80 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-leaf-100/70 bg-white shadow-sm dark:bg-leaf-50">
       <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-3 px-4">
         <button
           type="button"
