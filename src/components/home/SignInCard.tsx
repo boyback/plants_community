@@ -49,49 +49,21 @@ export function SignInCard() {
 
   if (!user) {
     return (
-      <div className="card overflow-hidden">
-        {/* 头部 banner */}
-        <div className="bg-gradient-to-br from-leaf-400 to-leaf-600 p-4 text-white">
-          <div className="flex items-center gap-2 text-sm font-semibold">
-            🌱 {t('home.signIn.welcomeTitle')}
-          </div>
-          <p className="mt-1 text-[11px] leading-5 opacity-90">
-            {t('home.signIn.welcomeSub')}
-          </p>
-        </div>
-
-        {/* 今日已签人数 + 行动按钮 */}
-        <div className="space-y-3 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-[11px] text-leaf-700/70">今日签到</div>
-              <div className="text-xl font-bold text-leaf-700">
-                {todaySignedCount}{' '}
-                <span className="text-xs font-normal">人</span>
-              </div>
+      <div className="card p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[11px] text-leaf-700/70">今日签到</div>
+            <div className="text-xl font-bold text-leaf-700 tabular-nums">
+              {todaySignedCount}{' '}
+              <span className="text-xs font-normal">人</span>
             </div>
-            <Link
-              href="/login?redirect=/"
-              className="btn bg-leaf-500 text-white hover:bg-leaf-600 !px-4"
-            >
-              立即签到
-            </Link>
           </div>
-
-          <div className="flex gap-2 border-t border-leaf-100 pt-3">
-            <Link
-              href="/login?redirect=/"
-              className="btn-ghost flex-1 justify-center !text-xs"
-            >
-              {t('home.signIn.login')}
-            </Link>
-            <Link
-              href="/register"
-              className="btn-outline flex-1 justify-center !text-xs"
-            >
-              {t('home.signIn.register')}
-            </Link>
-          </div>
+          <Link
+            href="/login?redirect=/"
+            className="btn bg-leaf-500 text-white hover:bg-leaf-600 !px-4"
+          >
+            立即签到
+          </Link>
         </div>
       </div>
     );

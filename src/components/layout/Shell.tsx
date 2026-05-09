@@ -2,6 +2,7 @@
 
 import { ReactNode, useState } from 'react';
 import { Header } from './Header';
+import { WelcomeBanner } from './WelcomeBanner';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { MobileTabBar } from './MobileTabBar';
@@ -24,6 +25,7 @@ export function Shell({
       <SwipeBack />
       <FestivalParticles />
       <FestivalBanner />
+      <WelcomeBanner />
       <Header onToggleMobileNav={() => setMobileOpen(true)} />
       <MobileNav open={mobileOpen} onClose={() => setMobileOpen(false)} />
 
