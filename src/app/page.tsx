@@ -4,7 +4,6 @@ import { SignInCard } from '@/components/home/SignInCard';
 import { FeedTabs } from '@/components/home/FeedTabs';
 import { TopicsCard } from '@/components/home/TopicsCard';
 import { RecommendUsers } from '@/components/home/RecommendUsers';
-import { MonthCalendar } from '@/components/home/MonthCalendar';
 import { AppDownloadCard } from '@/components/home/AppDownloadCard';
 import { LegalLinks } from '@/components/home/LegalLinks';
 import { prisma } from '@/lib/db';
@@ -61,17 +60,15 @@ export default async function HomePage() {
         </div>
 
         <div className="space-y-5">
-          {/* 1. 话题 */}
-          <TopicsCard />
-          {/* 2. 推荐肉友 */}
-          <RecommendUsers users={recommendUsers} />
-          {/* 3. 签到 */}
+          {/* 1. 签到 + 月历(整合) */}
           <SignInCard />
-          {/* 4. 月历(显示本月签到状态) */}
-          <MonthCalendar />
-          {/* 5. APP 下载 */}
+          {/* 2. 话题 */}
+          <TopicsCard />
+          {/* 3. 推荐肉友 */}
+          <RecommendUsers users={recommendUsers} />
+          {/* 4. APP 下载 */}
           <AppDownloadCard />
-          {/* 6. 法律入口 */}
+          {/* 5. 法律入口 */}
           <LegalLinks />
         </div>
       </div>
