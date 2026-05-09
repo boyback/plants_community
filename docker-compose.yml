@@ -22,7 +22,9 @@ services:
       - --default-authentication-plugin=caching_sha2_password
       - --max_connections=200
     volumes:
-      - mysql_data:/var/lib/mysql
+      # MySQL 数据落到宿主明确路径,避免被 docker volume prune 误删
+      # 第一次创建时如果 ./data/mysql 不存在会自动建
+      - ./data/mysql:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root123456}"]
       interval: 5s
@@ -110,8 +112,8 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
-      # 用户上传文件:Next.js 写入本地路径,挂 volume 持久化
-      - uploads_data:/app/public/uploads
+      # 用户上传文件:Next.js 写入本地路径,落宿主目录持久化
+      - ./data/uploads:/app/public/uploads
     healthcheck:
       # Next standalone 在容器里把 HOSTNAME 重置成 docker 容器 ID + 绑定该 IP,
       # 127.0.0.1 反而连不上;改用 0.0.0.0 探所有接口的任一回应
@@ -176,8 +178,8 @@ services:
         condition: service_started
 
 volumes:
-  mysql_data:
-  uploads_data:
+  # 不再用 docker volume,改成宿主目录绑定(./data/mysql, ./data/uploads)
+  # 历史 volume 留着的话不影响,只是不会再被引用
 
 networks:
   rouyou:
