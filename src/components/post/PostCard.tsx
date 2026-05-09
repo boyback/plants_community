@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Post } from '@/lib/types';
@@ -129,6 +132,80 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
         </div>
       </div>
     </Link>
+  );
+}
+
+/**
+ * 封面图组件
+ * - 默认 max-h-[280px] + object-contain,极端比例图自动居中,不裁切不拉伸
+ * - 当原图自然宽度 < 容器宽度时,放大到 1.5 倍原图尺寸(宽不超过容器),保持清晰且不变模糊
+ *   仍不到容器宽时两边露 bg-leaf-50 兜底
+ */
+function CoverImage({
+  src,
+  alt,
+  showVideoIcon,
+  typeBadge,
+}: {
+  src: string;
+  alt: string;
+  showVideoIcon?: boolean;
+  typeBadge?: React.ReactNode;
+}) {
+  const [naturalW, setNaturalW] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerW, setContainerW] = useState<number | null>(null);
+
+  // 监听容器宽度
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    setContainerW(el.clientWidth);
+    const ro = new ResizeObserver((entries) => {
+      for (const e of entries) setContainerW(e.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // 是否走「放大 1.5 倍」分支
+  const isSmaller = naturalW != null && containerW != null && naturalW < containerW;
+  const scaledWidth = isSmaller
+    ? Math.min(naturalW! * 1.5, containerW!)
+    : null;
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full overflow-hidden bg-leaf-50"
+    >
+      <div className="grid place-items-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          onLoad={(e) => {
+            const img = e.currentTarget;
+            if (img.naturalWidth) setNaturalW(img.naturalWidth);
+          }}
+          className="block max-h-[280px] object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+          style={
+            scaledWidth
+              ? { width: scaledWidth }
+              : { width: '100%' }
+          }
+        />
+      </div>
+      {typeBadge && <div className="absolute left-2 top-2">{typeBadge}</div>}
+      {showVideoIcon && (
+        <div className="pointer-events-none absolute inset-0 grid place-items-center">
+          <div className="grid h-12 w-12 place-items-center rounded-full bg-black/50 text-white">
+            <Icon name="video" size={20} fill="currentColor" />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

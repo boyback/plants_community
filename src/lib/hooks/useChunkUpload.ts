@@ -58,6 +58,23 @@ export function useChunkUpload() {
       abortRef.current = ac;
 
       try {
+        // —— 图片最小尺寸校验(防极端小图)——
+        // 跳过 HEIC(浏览器无法本地预览,服务端会转 JPEG 后再上传到云)
+        if (
+          kind === 'image' &&
+          !/\.(heic|heif)$/i.test(file.name) &&
+          !/^image\/(heic|heif)$/.test(file.type)
+        ) {
+          const dim = await readImageDimensions(file).catch(() => null);
+          if (dim && (dim.width < 320 || dim.height < 320)) {
+            setStatus('error');
+            setError(
+              `图片尺寸过小(${dim.width}x${dim.height}),最小要求 320x320`
+            );
+            return null;
+          }
+        }
+
         // 走老接口的小文件路径
         if (file.size <= CHUNK_THRESHOLD) {
           setStatus('uploading');
@@ -256,4 +273,26 @@ async function sha256OfFile(
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+/**
+ * 读取图片自然尺寸(用 createObjectURL + Image)
+ * GIF 取首帧尺寸,够用
+ */
+async function readImageDimensions(
+  file: File
+): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('图片读取失败'));
+    };
+    img.src = url;
+  });
 }
