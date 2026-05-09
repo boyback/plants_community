@@ -61,23 +61,23 @@ model User {
   equipPendantId  String? // 昵称挂件(头像框)
 
   // 关系
-  posts             Post[]
-  comments          Comment[]
-  likes             PostLike[]
-  followers         Follow[]           @relation("Followees")
-  following         Follow[]           @relation("Followers")
-  badges            UserBadge[]
-  notifications     Notification[]     @relation("NotifRecipient")
-  notifFromMe       Notification[]     @relation("NotifSender")
-  reports           Report[]           @relation("ReportReporter")
+  posts            Post[]
+  comments         Comment[]
+  likes            PostLike[]
+  followers        Follow[]        @relation("Followees")
+  following        Follow[]        @relation("Followers")
+  badges           UserBadge[]
+  notifications    Notification[]  @relation("NotifRecipient")
+  notifFromMe      Notification[]  @relation("NotifSender")
+  reports          Report[]        @relation("ReportReporter")
   postViews        PostView[]
   speciesRatings   SpeciesRating[]
-  sentMessages      Message[]          @relation("MessageFrom")
-  receivedMessages  Message[]          @relation("MessageTo")
-  drafts            Draft[]
-  votes             VoteRecord[]
-  collects          PostCollect[]
-  events            EventAttendee[]
+  sentMessages     Message[]       @relation("MessageFrom")
+  receivedMessages Message[]       @relation("MessageTo")
+  drafts           Draft[]
+  votes            VoteRecord[]
+  collects         PostCollect[]
+  events           EventAttendee[]
 
   // 新增关系
   pointsLedger   PointsLedger[]
