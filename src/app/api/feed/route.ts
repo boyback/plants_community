@@ -24,6 +24,9 @@ export const dynamic = 'force-dynamic';
 
 const Query = z.object({
   tab: z.enum(['recommend', 'following', 'hot', 'latest']).default('recommend'),
+  type: z
+    .enum(['rich', 'short', 'vote', 'video', 'event', 'help', 'journal'])
+    .optional(),
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
@@ -31,7 +34,7 @@ const Query = z.object({
 export const GET = handler(async (req) => {
   const parsed = Query.safeParse(Object.fromEntries(new URL(req.url).searchParams));
   if (!parsed.success) return fail(400, '参数错误', parsed.error.issues);
-  const { tab, cursor, limit } = parsed.data;
+  const { tab, type, cursor, limit } = parsed.data;
 
   const me = await getCurrentUser();
 
@@ -40,6 +43,7 @@ export const GET = handler(async (req) => {
   const baseWhere: Record<string, unknown> = {
     deleted: false,
     ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' } : {}),
+    ...(type ? { type } : {}),
   };
 
   if (tab === 'following') {

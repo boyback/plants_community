@@ -28,10 +28,6 @@ export function SignInCard() {
     );
   }
 
-  const days = t('home.signIn.weekDays').split(',');
-  const today = new Date().getDay();
-  const todayIdx = (today + 6) % 7; // 转为周一为 0
-
   return (
     <div className="card overflow-hidden">
       <div className="flex items-center gap-3 bg-gradient-to-br from-leaf-400 to-leaf-600 p-4 text-white">
@@ -76,29 +72,6 @@ export function SignInCard() {
               t('home.signIn.signInNow')
             )}
           </button>
-        </div>
-
-        <div className="mt-3 grid grid-cols-7 gap-1">
-          {days.map((d, i) => {
-            const done = i <= todayIdx && (signedInToday || i < todayIdx);
-            return (
-              <div key={d} className="flex flex-col items-center text-[10px]">
-                <div className="mb-1 text-leaf-600/70">{d}</div>
-                <div
-                  className={cn(
-                    'grid h-7 w-7 place-items-center rounded-full text-xs',
-                    done
-                      ? 'bg-leaf-500 text-white'
-                      : i === todayIdx
-                      ? 'border-2 border-dashed border-leaf-400 text-leaf-600'
-                      : 'bg-leaf-50 text-leaf-300'
-                  )}
-                >
-                  {done ? '✓' : i + 1}
-                </div>
-              </div>
-            );
-          })}
         </div>
 
         <div className="mt-3 rounded-lg bg-sand-50 p-2.5 text-[11px] text-sand-300">

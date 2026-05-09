@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { PostCard } from '@/components/post/PostCard';
 import { PostCardSkeleton } from '@/components/post/PostCardSkeleton';
@@ -8,7 +9,7 @@ import { useI18n } from '@/i18n/I18nContext';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from '@/lib/client-api';
 import { usePullToRefresh, PullIndicator } from '@/lib/hooks/usePullToRefresh';
-import type { Post } from '@/lib/types';
+import type { Post, PostType } from '@/lib/types';
 
 const TAB_DEFS = [
   { key: 'recommend', labelKey: 'home.feedTabs.recommend' },

@@ -4,6 +4,9 @@ import { SignInCard } from '@/components/home/SignInCard';
 import { FeedTabs } from '@/components/home/FeedTabs';
 import { TopicsCard } from '@/components/home/TopicsCard';
 import { RecommendUsers } from '@/components/home/RecommendUsers';
+import { MonthCalendar } from '@/components/home/MonthCalendar';
+import { AppDownloadCard } from '@/components/home/AppDownloadCard';
+import { LegalLinks } from '@/components/home/LegalLinks';
 import { prisma } from '@/lib/db';
 import { postInclude } from '@/lib/post-include';
 import { serializePost, serializeUser } from '@/lib/serializers';
@@ -58,13 +61,18 @@ export default async function HomePage() {
         </div>
 
         <div className="space-y-5">
-          <SignInCard />
+          {/* 1. 话题 */}
           <TopicsCard />
+          {/* 2. 推荐肉友 */}
           <RecommendUsers users={recommendUsers} />
-          <div className="rounded-xl bg-leaf-50/60 p-4 text-[11px] text-leaf-700/70">
-            <div className="mb-1 font-medium text-leaf-700">📬 社区公约</div>
-            尊重彼此、理性讨论、严禁广告。交易请走认证渠道,谨防受骗。
-          </div>
+          {/* 3. 签到 */}
+          <SignInCard />
+          {/* 4. 月历(显示本月签到状态) */}
+          <MonthCalendar />
+          {/* 5. APP 下载 */}
+          <AppDownloadCard />
+          {/* 6. 法律入口 */}
+          <LegalLinks />
         </div>
       </div>
     </Shell>
