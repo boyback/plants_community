@@ -7,7 +7,7 @@
       "video": "影片",
       "event": "活動",
       "help": "求助",
-      "journal": "生命週期"
+      "journal": "成長日記"
     },
     "typeDesc": {
       "rich": "適合教學、長篇心得(PC & APP 發佈)",
@@ -23,7 +23,7 @@
       "vote": "投票貼",
       "video": "影片貼",
       "event": "EVENT 貼",
-      "journal": "生命週期貼"
+      "journal": "成長日記貼"
     },
     "typeShort": {
       "rich": "富文本",
@@ -32,7 +32,7 @@
       "video": "影片",
       "event": "活動",
       "help": "求助",
-      "journal": "生命週期"
+      "journal": "成長日記"
     },
     "actions": {
       "like": "讚",

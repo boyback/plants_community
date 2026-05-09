@@ -226,9 +226,9 @@ function EditorInner() {
         return showToast('请填写植物昵称');
       if (!journal.startDate) return showToast('请填写起始日期');
       if (!journal.entries.length)
-        return showToast('至少需要一条事件');
+        return showToast('至少需要一条记录');
       const bad = journal.entries.find((e) => !e.entryDate);
-      if (bad) return showToast('每条事件都要填日期');
+      if (bad) return showToast('每条记录都要填日期');
     }
 
     const isRich = type === 'rich' || type === 'event';

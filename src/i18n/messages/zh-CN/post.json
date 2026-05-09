@@ -7,7 +7,7 @@
       "video": "视频",
       "event": "活动",
       "help": "求助",
-      "journal": "生命周期"
+      "journal": "成长日记"
     },
     "typeDesc": {
       "rich": "适合教程、长篇心得(PC & APP 发布)",
@@ -23,7 +23,7 @@
       "vote": "投票贴",
       "video": "视频贴",
       "event": "EVENT 贴",
-      "journal": "生命周期贴"
+      "journal": "成长日记贴"
     },
     "typeShort": {
       "rich": "富文本",
@@ -32,7 +32,7 @@
       "video": "视频",
       "event": "活动",
       "help": "求助",
-      "journal": "生命周期"
+      "journal": "成长日记"
     },
     "actions": {
       "like": "点赞",

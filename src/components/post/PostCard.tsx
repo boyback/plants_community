@@ -50,12 +50,12 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
       )}
     >
       {cover ? (
-        <div className="relative w-full overflow-hidden bg-leaf-50">
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-leaf-50">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={cover}
             alt={post.title}
-            className="block h-auto w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="block h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
           <div className="absolute left-2 top-2">
@@ -249,7 +249,7 @@ function JournalPreview({ post }: { post: Post }) {
               className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-emerald-50/80 to-transparent"
             />
             <div className="mt-1 text-center text-[10px] text-emerald-700/80">
-              ⋯ 点击查看完整时间线
+              ⋯ 点击查看完整记录
             </div>
           </>
         )}

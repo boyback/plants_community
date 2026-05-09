@@ -1,5 +1,5 @@
 /**
- * 生命周期帖子专用接口:
+ * 成长日记帖子专用接口:
  *   POST   /api/posts/:id/journal      作者追加一条新事件
  *   PATCH  /api/posts/:id/journal      作者修改 journal 元信息(结束日 / endReason 等)
  */
@@ -59,7 +59,7 @@ async function findOwnedJournal(
   if (post.deleted) return { error: '帖子已删除' };
   if (post.authorId !== userId) return { error: '只有作者能修改' };
   if (post.type !== 'journal' || !post.journal)
-    return { error: '该帖子不是生命周期类型' };
+    return { error: '该帖子不是成长日记类型' };
   return { journal: { id: post.journal.id } };
 }
 

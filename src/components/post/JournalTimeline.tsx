@@ -11,7 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 
 interface Props {
   post: Post;
-  /** 当前用户 id;为本人时显示「追加事件」按钮 */
+  /** 当前用户 id;为本人时显示「添加新记录」按钮 */
   currentUserId?: string;
 }
 
@@ -47,14 +47,14 @@ export function JournalTimeline({ post }: Props) {
             onClick={() => setAdding(true)}
           >
             <Icon name="plus" size={14} />
-            追加事件
+            添加新记录
           </button>
         )}
       </header>
 
       {sorted.length === 0 ? (
         <div className="py-10 text-center text-sm text-leaf-700/70">
-          暂无事件记录
+          还没有记录
         </div>
       ) : (
         <ol className="relative space-y-5 pl-5">
@@ -228,7 +228,7 @@ function AddEntryDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-base font-semibold">追加事件</h3>
+          <h3 className="text-base font-semibold">添加新记录</h3>
           <button onClick={onClose} className="text-leaf-700/70 hover:text-leaf-700">
             ×
           </button>

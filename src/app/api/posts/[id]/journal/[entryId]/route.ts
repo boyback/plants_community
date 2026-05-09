@@ -1,5 +1,5 @@
 /**
- * 单条生命周期事件:
+ * 单条成长日记事件:
  *   PATCH  /api/posts/:id/journal/:entryId   作者编辑某条事件
  *   DELETE /api/posts/:id/journal/:entryId   作者删除某条事件
  */

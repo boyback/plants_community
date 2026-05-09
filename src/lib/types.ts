@@ -1,6 +1,6 @@
 export type PostType = 'rich' | 'short' | 'vote' | 'video' | 'event' | 'help' | 'journal';
 
-/** 生命周期日志阶段(与 prisma JournalStage 对齐) */
+/** 成长日记日志阶段(与 prisma JournalStage 对齐) */
 export type JournalStage =
   | 'germinate'
   | 'growing'
@@ -207,7 +207,7 @@ export interface Post {
     /** 总打分人数 */
     ratingCount: number;
   };
-  /** 生命周期日志(type=journal 才有) */
+  /** 成长日记日志(type=journal 才有) */
   journal?: JournalInfo;
   commentList?: Comment[];
 }

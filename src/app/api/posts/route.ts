@@ -146,7 +146,7 @@ const CreateBody = z
     if (data.type === 'video' && !data.videoUrl)
       ctx.addIssue({ code: 'custom', message: '视频贴必须包含 videoUrl' });
     if (data.type === 'journal' && !data.journal)
-      ctx.addIssue({ code: 'custom', message: '生命周期贴必须包含 journal 字段' });
+      ctx.addIssue({ code: 'custom', message: '成长日记贴必须包含 journal 字段' });
   });
 
 type ResolvedIds = {

@@ -84,15 +84,15 @@ export function JournalEditor({ value, onChange }: Props) {
         </div>
       </div>
 
-      {/* 事件列表 */}
+      {/* 记录列表 */}
       <div>
         <div className="mb-2 flex items-center justify-between">
           <div className="text-sm font-medium text-leaf-700">
-            🌿 时间线事件({value.entries.length})
+            🌿 成长记录({value.entries.length})
           </div>
           <button type="button" className="btn-ghost !text-xs" onClick={addEntry}>
             <Icon name="plus" size={14} />
-            添加事件
+            添加记录
           </button>
         </div>
 
@@ -139,7 +139,7 @@ function EntryCard({
   return (
     <div className="rounded-xl border border-leaf-100 bg-white p-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs text-leaf-700/70">事件 #{index + 1}</span>
+        <span className="text-xs text-leaf-700/70">记录 #{index + 1}</span>
         {canDelete && (
           <button
             type="button"
