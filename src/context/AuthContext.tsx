@@ -168,6 +168,7 @@ export function AuthProvider({
         loading,
         signedInToday,
         signInStreak,
+        todaySignedCount,
         exp,
         expProgress: expProgressState,
         pointsBalance,
