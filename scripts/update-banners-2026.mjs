@@ -11,7 +11,8 @@
  *     -v $(pwd)/scripts:/app/scripts:ro \
  *     next node scripts/update-banners-2026.mjs
  */
-import { PrismaClient } from '@prisma/client';
+import pkg from '@prisma/client';
+const { PrismaClient } = pkg;
 
 const prisma = new PrismaClient();
 
