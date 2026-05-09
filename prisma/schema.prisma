@@ -41,18 +41,18 @@ model User {
   privacyShowFollowers Boolean @default(true)
 
   // 管理员角色:user(默认) / moderator(版主) / admin(超管)
-  role         UserRole  @default(user)
+  role        UserRole  @default(user)
   // 封禁:若 bannedUntil > now 则无法登录 / 发帖 / 评论;null 或过去时间 = 未封禁
-  bannedUntil  DateTime?
-  banReason    String?   @db.Text
+  bannedUntil DateTime?
+  banReason   String?   @db.Text
 
   // 语言偏好 / 节日主题开关
-  locale          String  @default("zh-CN") // zh-CN / zh-TW / en / ja / ko
+  locale         String  @default("zh-CN") // zh-CN / zh-TW / en / ja / ko
   // 用户主动关闭的主题 slug 的 JSON array,如 ["christmas","halloween"]。
   // 最长 255 字符足够装下 50+ 个 slug
-  disabledThemes  String  @default("[]")
+  disabledThemes String  @default("[]")
   // 若为 true,彻底关闭所有节日主题
-  themesDisabled  Boolean @default(false)
+  themesDisabled Boolean @default(false)
 
   // 当前装扮(指向 SkinItem.id,可空)
   equipBubbleId   String? // 评论气泡
@@ -182,29 +182,29 @@ enum HelpUrgency {
 }
 
 model Post {
-  id          String   @id @default(cuid())
-  type        PostType
-  title       String
+  id           String    @id @default(cuid())
+  type         PostType
+  title        String
   // 富文本三套字段:JSON 是源,HTML 是渲染缓存,plain 是搜索/摘要用纯文本
-  content     String   @db.LongText // 已 sanitize 的 HTML(渲染缓存)
-  contentJson String?  @db.LongText // ProseMirror JSON 字符串(权威源)
-  contentText String?  @db.Text // 纯文本摘要,做搜索/列表预览用
-  cover       String?
-  images      String?  @db.Text // JSON array string
-  videoUrl    String?
-  tags        String?  @db.Text // JSON array string
-  views       Int      @default(0)
-  shares      Int      @default(0)
+  content      String    @db.LongText // 已 sanitize 的 HTML(渲染缓存)
+  contentJson  String?   @db.LongText // ProseMirror JSON 字符串(权威源)
+  contentText  String?   @db.Text // 纯文本摘要,做搜索/列表预览用
+  cover        String?
+  images       String?   @db.Text // JSON array string
+  videoUrl     String?
+  tags         String?   @db.Text // JSON array string
+  views        Int       @default(0)
+  shares       Int       @default(0)
   // 推荐算法产出的热度分(定时刷);越大越靠前
-  hotScore    Float    @default(0)
+  hotScore     Float     @default(0)
   // 缓存 top 评论数 / 收藏数,用于算分(冗余字段定时刷)
   // 软删除
-  deleted     Boolean  @default(false)
-  deletedAt   DateTime?
-  deletedBy   String?  // 管理员 id
-  deleteReason String? @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  deleted      Boolean   @default(false)
+  deletedAt    DateTime?
+  deletedBy    String? // 管理员 id
+  deleteReason String?   @db.Text
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   authorId   String
   // 三级分类(Category 必填,Genus/Species 可选)
@@ -297,16 +297,16 @@ model Event {
 
 // 求助帖扩展表
 model HelpRequest {
-  id               String      @id @default(cuid())
-  postId           String      @unique
-  urgency          HelpUrgency @default(normal)
-  solved           Boolean     @default(false) // 是否已解决
-  acceptedCommentId String?    // 采纳的评论 id(指向 Comment.id)
-  bountyPoints     Int         @default(0) // 悬赏积分(发帖时从作者账户扣,采纳时发给被采纳者)
-  bountyPaidOut    Boolean     @default(false) // 悬赏是否已发放(避免重复发放)
-  solvedAt         DateTime?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  id                String      @id @default(cuid())
+  postId            String      @unique
+  urgency           HelpUrgency @default(normal)
+  solved            Boolean     @default(false) // 是否已解决
+  acceptedCommentId String? // 采纳的评论 id(指向 Comment.id)
+  bountyPoints      Int         @default(0) // 悬赏积分(发帖时从作者账户扣,采纳时发给被采纳者)
+  bountyPaidOut     Boolean     @default(false) // 悬赏是否已发放(避免重复发放)
+  solvedAt          DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
@@ -1164,17 +1164,19 @@ enum UserRole {
   admin
 }
 
-/** 管理员操作日志 */
+/**
+ * 管理员操作日志
+ */
 model AdminLog {
-  id        String   @id @default(cuid())
-  actorId   String
-  action    String   // e.g. "post.delete", "user.ban", "product.offshelf"
-  targetType String  // "post" | "user" | "product" | "order" | ...
-  targetId  String?  // 目标对象 id(可空,比如系统操作)
-  meta      Json?    // 操作附加信息
-  reason    String?  @db.Text
-  ip        String?  @db.VarChar(64)
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String // e.g. "post.delete", "user.ban", "product.offshelf"
+  targetType String // "post" | "user" | "product" | "order" | ...
+  targetId   String? // 目标对象 id(可空,比如系统操作)
+  meta       Json? // 操作附加信息
+  reason     String?  @db.Text
+  ip         String?  @db.VarChar(64)
+  createdAt  DateTime @default(now())
 
   @@index([actorId, createdAt])
   @@index([targetType, targetId])
@@ -1182,7 +1184,9 @@ model AdminLog {
   @@map("admin_logs")
 }
 
-/** 站内公告 */
+/**
+ * 站内公告
+ */
 model Announcement {
   id        String    @id @default(cuid())
   title     String
@@ -1199,16 +1203,18 @@ model Announcement {
   @@map("announcements")
 }
 
-/** 用户举报(帖子/评论/用户) */
+/**
+ * 用户举报(帖子/评论/用户)
+ */
 model Report {
   id         String       @id @default(cuid())
-  reporterId String?      // 可空:匿名举报
+  reporterId String? // 可空:匿名举报
   targetType ReportTarget
-  targetId   String       // 被举报对象 id
-  reason     String       // 枚举 key,如 "spam" / "abuse" / "pornography"
+  targetId   String // 被举报对象 id
+  reason     String // 枚举 key,如 "spam" / "abuse" / "pornography"
   detail     String?      @db.Text
   status     ReportStatus @default(pending)
-  handledBy  String?      // 处理人
+  handledBy  String? // 处理人
   handledAt  DateTime?
   handleNote String?      @db.Text
   createdAt  DateTime     @default(now())
@@ -1234,20 +1240,19 @@ enum ReportStatus {
 
 /**
  * 帖子浏览记录(用于推荐算法 + 冷启动)。
- *
  * 设计:
- *   - 登录用户用 userId,匿名用户用 anonId(cookie 种的 UUID)
- *   - 同 (userId | anonId, postId) 24h 内去重(算 UV)
- *   - 每次访问都 +1 到 Post.views(通过事务)
- *   - 用于推荐算法:计算用户兴趣向量 / 算分时当信号
+ * - 登录用户用 userId,匿名用户用 anonId(cookie 种的 UUID)
+ * - 同 (userId | anonId, postId) 24h 内去重(算 UV)
+ * - 每次访问都 +1 到 Post.views(通过事务)
+ * - 用于推荐算法:计算用户兴趣向量 / 算分时当信号
  */
 model PostView {
   id        String   @id @default(cuid())
   postId    String
   userId    String?
   anonId    String?  @db.VarChar(40) // 匿名用户的 cookie UUID
-  source    String?  // feed_recommend | feed_following | direct | board | search
-  dwellMs   Int?     // 停留时长(可选,后续埋点补)
+  source    String? // feed_recommend | feed_following | direct | board | search
+  dwellMs   Int? // 停留时长(可选,后续埋点补)
   createdAt DateTime @default(now())
 
   post Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
