@@ -39,7 +39,7 @@ export function ColorThemeSwitcher({ className }: { className?: string }) {
               title={mode === 'dark' ? '切换到明亮' : '切换到暗黑'}
               className={cn(
                 'relative inline-flex h-6 w-12 items-center rounded-full transition-colors',
-                mode === 'dark' ? 'bg-ink-700' : 'bg-leaf-200'
+                mode === 'dark' ? 'bg-ink-900' : 'bg-leaf-200'
               )}
             >
               {/* 背景图标:始终显示在两端 */}

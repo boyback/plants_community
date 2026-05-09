@@ -681,3 +681,33 @@ img, video, svg {
 .rouyou-qr-check {
   animation: rouyou-qr-check 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
+
+/* ============================================================
+ * Feed 瀑布流:4 列时卡片更窄,字体相应缩小
+ * 仅 md+ 生效(m 端永远 1/2 列,固定字号)
+ * ============================================================ */
+@media (min-width: 768px) {
+  .feed-grid[data-cols='4'] h3,
+  .feed-grid[data-cols='4'] h4 {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .feed-grid[data-cols='4'] p {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  /* 元数据/chips/统计行(原本就是 10–11px,再降一档) */
+  .feed-grid[data-cols='4'] .text-xs {
+    font-size: 10px;
+  }
+  .feed-grid[data-cols='4'] .text-\[11px\] {
+    font-size: 10px;
+  }
+  .feed-grid[data-cols='4'] .text-\[10px\] {
+    font-size: 9px;
+  }
+  /* 头像 / 图标在 4 列时缩 */
+  .feed-grid[data-cols='4'] .text-2xl {
+    font-size: 18px;
+  }
+}

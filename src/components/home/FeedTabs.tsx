@@ -171,7 +171,11 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
       ) : (
         <>
           {/* CSS columns 瀑布流:m 端按用户偏好 1/2,sm=2,md+ 按用户偏好 3/4 */}
-          <div className={`mt-4 ${mobileColClass} gap-3 sm:columns-2 ${desktopColClass} [column-fill:_balance]`}>
+          {/* data-cols 用于 CSS 在 4 列时缩小卡片字号 */}
+          <div
+            data-cols={desktopCols}
+            className={`feed-grid mt-4 ${mobileColClass} gap-3 sm:columns-2 ${desktopColClass} [column-fill:_balance]`}
+          >
             {cur.items.map((p) => (
               <div key={p.id} className="mb-3 break-inside-avoid">
                 <FeedCard post={p} source={tabToSource(tab)} />
