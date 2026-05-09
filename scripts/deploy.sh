@@ -55,6 +55,24 @@ echo "→ docker compose up"
 NEXT_IMAGE="$NEXT_IMAGE" GO_IMAGE="$GO_IMAGE" \
   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --remove-orphans
 
+# 3.5. 同步 schema(用 prisma db push,幂等;失败不阻塞,因为可能是临时网络问题)
+#       关键:用容器里**已 generate 的** prisma client,而不是 npx (避免拉到 v7)
+#       fallback:容器里没 .bin/prisma 时用 node 直接调
+echo "→ prisma db push(同步 schema)"
+docker compose run --rm --no-deps next sh -c '
+  if [ -x ./node_modules/.bin/prisma ]; then
+    ./node_modules/.bin/prisma db push --accept-data-loss
+  elif [ -f ./node_modules/prisma/build/index.js ]; then
+    node ./node_modules/prisma/build/index.js db push --accept-data-loss
+  else
+    echo "⚠️  prisma CLI 未在镜像中,跳过 db push(请手动同步 schema)"
+    exit 0
+  fi
+' || echo "⚠️  prisma db push 失败,继续部署 — 请手动确认 schema"
+
+# 同步完后重启 next 让它读新 schema
+docker compose restart next
+
 # 4. 等待 healthcheck
 echo "→ 等待容器 healthy(最多 60s)"
 deadline=$(( $(date +%s) + 60 ))
