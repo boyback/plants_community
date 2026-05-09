@@ -225,7 +225,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
  * 改 .env + restart next 后立即生效,无需重新构建镜像。
  */
 function SiteVerificationMetas() {
-  // 用动态 key 访问,绕开 Next.js 对 process.env.XXX 的 build-time 字面量替换
+  // 用动态 key 访问绕开 Next.js 对 process.env.X 的 build-time 字面量替换
   const env = process.env as Record<string, string | undefined>;
   const get = (k: string) => (env[k] || '').trim();
   const items = [
