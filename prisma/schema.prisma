@@ -125,6 +125,84 @@ model User {
   @@map("users")
 }
 
+// ============================================================
+// 邮件群发任务
+// ============================================================
+
+enum EmailBroadcastStatus {
+  draft // 已创建,未启动
+  sending // 发送中(队列消费)
+  done // 全部完成
+  paused // 手动暂停
+  failed // 严重错误终止
+}
+
+model EmailBroadcast {
+  id          String               @id @default(cuid())
+  /// 主题(就是 subject)
+  subject     String
+  /// HTML 内容(可来自模板,也可自定义)
+  html        String               @db.LongText
+  /// 纯文本备份(可空,自动从 html 生成)
+  text        String?              @db.LongText
+  /// 创建人(管理员 id)
+  createdBy   String
+  /// 收件人筛选条件(JSON):{ unsubscribed: false } 等
+  filterJson  String               @db.Text
+  /// 总收件人数
+  total       Int                  @default(0)
+  /// 已成功发送
+  sent        Int                  @default(0)
+  /// 已失败
+  failed      Int                  @default(0)
+  /// 状态
+  status      EmailBroadcastStatus @default(draft)
+  /// 错误最后一次原因(失败时)
+  lastError   String?              @db.Text
+  /// 节流间隔(毫秒,默认 4000 = 每 4s 发 1 封;免费版 SMTP 200/天约 7s 一封)
+  throttleMs  Int                  @default(4000)
+  /// 计划开始时间(默认 now,支持定时)
+  scheduledAt DateTime             @default(now())
+  /// 实际开始 / 完成时间
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  recipients EmailRecipient[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdBy])
+  @@map("email_broadcasts")
+}
+
+enum EmailRecipientStatus {
+  pending
+  sent
+  failed
+  skipped // 取消订阅 / 邮箱无效
+}
+
+model EmailRecipient {
+  id          String               @id @default(cuid())
+  broadcastId String
+  /// 用户 id(为了能批量按用户群)
+  userId      String
+  /// 实际收件邮箱(冗余存,避免后续用户改邮箱影响日志)
+  email       String
+  status      EmailRecipientStatus @default(pending)
+  attempts    Int                  @default(0)
+  error       String?              @db.Text
+  sentAt      DateTime?
+
+  broadcast EmailBroadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+
+  @@index([broadcastId, status])
+  @@index([userId])
+  @@map("email_recipients")
+}
+
 model Follow {
   followerId String
   followeeId String
