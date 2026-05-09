@@ -731,14 +731,10 @@ img, video, svg {
     border-top: 0;
     padding-top: 0;
   }
-  /* 看赞评 3 个各占 1/3 */
+  /* 看赞评:左贴左、右贴右、中间均分 */
   .feed-grid[data-cols='4'] .post-stats {
     flex: 1;
+    justify-content: space-between;
     gap: 0;
-  }
-  .feed-grid[data-cols='4'] .post-stats > * {
-    flex: 1;
-    display: flex;
-    justify-content: center;
   }
 }
