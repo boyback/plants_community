@@ -22,6 +22,9 @@ import { FollowBoardButton } from '@/components/board/FollowBoardButton';
 import { formatNumber } from '@/lib/utils';
 import type { Metadata } from 'next';
 import { parseJsonArray } from '@/lib/api';
+import { jsonLdScript, speciesJsonLd, breadcrumbJsonLd } from '@/lib/jsonld';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://plantcommunity.cn';
 
 export const dynamic = 'force-dynamic';
 
@@ -452,6 +455,24 @@ async function SpeciesView({
 
   const full = serializeSpeciesFull(s);
 
+  // SEO: 构造品种页 JSON-LD(Article + Thing) + 面包屑
+  const speciesUrl = `${SITE_URL}/board/${categorySlug}/${genusSlug}/${speciesSlug}`;
+  const speciesLd = speciesJsonLd({
+    name: full.name,
+    latinName: full.latinName,
+    family: `${s.genus.category.name} · ${s.genus.name}`,
+    description: full.description,
+    cover: full.cover.startsWith('http') ? full.cover : `${SITE_URL}${full.cover}`,
+    url: speciesUrl,
+    difficulty: full.difficulty,
+  });
+  const breadcrumbLd = breadcrumbJsonLd([
+    { name: '首页', url: SITE_URL },
+    { name: s.genus.category.name, url: `${SITE_URL}/board/${categorySlug}` },
+    { name: s.genus.name, url: `${SITE_URL}/board/${categorySlug}/${genusSlug}` },
+    { name: full.name, url: speciesUrl },
+  ]);
+
   // 同属下其他品种(最多 6 个),按帖子数倒序展示
   const relatedSpecies = await prisma.species.findMany({
     where: {
@@ -467,6 +488,8 @@ async function SpeciesView({
 
   return (
     <Shell>
+      {/* SEO: 品种页 JSON-LD(Article + Thing + 面包屑) */}
+      {jsonLdScript([...speciesLd, breadcrumbLd])}
       <BoardBreadcrumb path={full.path} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">

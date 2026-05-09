@@ -20,6 +20,9 @@ import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 import { lookupLivePhotos } from '@/lib/live-photo';
 import type { Metadata } from 'next';
 import { parseJsonArray } from '@/lib/api';
+import { jsonLdScript, postJsonLd, breadcrumbJsonLd } from '@/lib/jsonld';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://plantcommunity.cn';
 
 export const dynamic = 'force-dynamic';
 
@@ -181,8 +184,36 @@ export default async function PostDetailPage({ params }: { params: { id: string 
     related = fRaw.map(serializePost);
   }
 
+  // SEO: 帖子页 JSON-LD
+  const postUrl = `${SITE_URL}/post/${post.id}`;
+  const firstImage = post.images?.[0];
+  const cover = firstImage
+    ? firstImage.startsWith('http') ? firstImage : `${SITE_URL}${firstImage}`
+    : undefined;
+  const ld = postJsonLd({
+    title: post.title || '帖子',
+    excerpt: post.content?.replace(/<[^>]*>/g, '').slice(0, 200),
+    cover,
+    url: postUrl,
+    authorName: post.author.name,
+    authorUrl: `${SITE_URL}/user/${post.author.id}`,
+    publishedAt: post.createdAt,
+    views: post.views,
+    likes: post.likes,
+    comments: post.comments,
+  });
+  const breadcrumb = breadcrumbJsonLd([
+    { name: '首页', url: SITE_URL },
+    ...(post.board
+      ? [{ name: post.board.name, url: `${SITE_URL}/board/${post.board.slug}` }]
+      : []),
+    { name: post.title || '帖子', url: postUrl },
+  ]);
+
   return (
     <Shell>
+      {/* SEO: 帖子页 JSON-LD(DiscussionForumPosting + 面包屑) */}
+      {jsonLdScript([ld, breadcrumb])}
       <div className="mb-4 flex items-center gap-1.5 text-xs text-leaf-700/70">
         <Link href="/" className="hover:text-leaf-700">
           <I18nText k="nav.home" fallback="首页" />

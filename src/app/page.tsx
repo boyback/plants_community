@@ -10,6 +10,7 @@ import { postInclude } from '@/lib/post-include';
 import { serializePost, serializeUser } from '@/lib/serializers';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 import type { BannerItem } from '@/lib/types';
+import { jsonLdScript, websiteJsonLd, organizationJsonLd } from '@/lib/jsonld';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,6 +53,8 @@ export default async function HomePage() {
 
   return (
     <Shell>
+      {/* SEO: 全站根 JSON-LD —— Website 让 Google 显示站内搜索框,Organization 全站共享 */}
+      {jsonLdScript([websiteJsonLd(), organizationJsonLd()])}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_280px]">
         <div className="min-w-0 space-y-6">
           {banners.length > 0 && <BannerCarousel items={banners} />}
