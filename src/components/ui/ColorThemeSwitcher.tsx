@@ -37,10 +37,11 @@ export function ColorThemeSwitcher({ className }: { className?: string }) {
               aria-checked={mode === 'dark'}
               onClick={toggleMode}
               title={mode === 'dark' ? '切换到明亮' : '切换到暗黑'}
-              className={cn(
-                'relative inline-flex h-6 w-12 items-center rounded-full transition-colors',
-                mode === 'dark' ? 'bg-ink-900' : 'bg-leaf-200'
-              )}
+              style={{
+                backgroundColor:
+                  mode === 'dark' ? meta.swatch.primary : `${meta.swatch.primary}33`,
+              }}
+              className="relative inline-flex h-6 w-12 items-center rounded-full transition-colors"
             >
               {/* 背景图标:始终显示在两端 */}
               <span className="pointer-events-none absolute left-1 text-[10px] leading-none">
