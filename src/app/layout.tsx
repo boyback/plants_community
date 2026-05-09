@@ -86,22 +86,22 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  // 站点验证 — 从 env 读取,留空则不输出对应 meta
-  // 申请百度/Google/必应/360 站长平台后填进 .env 即可
+  // 站点验证 — server-side 读 env,无需 NEXT_PUBLIC_ 前缀
+  // 申请百度/Google/必应/360 站长平台后填进 .env 即可,运行时生效
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || undefined,
+    google: process.env.SITE_VERIFICATION_GOOGLE || undefined,
     other: {
-      ...(process.env.NEXT_PUBLIC_BAIDU_VERIFICATION
-        ? { 'baidu-site-verification': process.env.NEXT_PUBLIC_BAIDU_VERIFICATION }
+      ...(process.env.SITE_VERIFICATION_BAIDU
+        ? { 'baidu-site-verification': process.env.SITE_VERIFICATION_BAIDU }
         : {}),
-      ...(process.env.NEXT_PUBLIC_BING_VERIFICATION
-        ? { 'msvalidate.01': process.env.NEXT_PUBLIC_BING_VERIFICATION }
+      ...(process.env.SITE_VERIFICATION_BING
+        ? { 'msvalidate.01': process.env.SITE_VERIFICATION_BING }
         : {}),
-      ...(process.env.NEXT_PUBLIC_360_VERIFICATION
-        ? { '360-site-verification': process.env.NEXT_PUBLIC_360_VERIFICATION }
+      ...(process.env.SITE_VERIFICATION_360
+        ? { '360-site-verification': process.env.SITE_VERIFICATION_360 }
         : {}),
-      ...(process.env.NEXT_PUBLIC_SOGOU_VERIFICATION
-        ? { 'sogou_site_verification': process.env.NEXT_PUBLIC_SOGOU_VERIFICATION }
+      ...(process.env.SITE_VERIFICATION_SOGOU
+        ? { 'sogou_site_verification': process.env.SITE_VERIFICATION_SOGOU }
         : {}),
     },
   },
