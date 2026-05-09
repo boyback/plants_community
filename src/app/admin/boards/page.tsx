@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { BoardToggle } from './BoardToggle';
+import { BoardToggle, BoardOrderInput } from './BoardToggle';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +28,8 @@ export default async function AdminBoardsPage() {
       <div>
         <h1 className="text-2xl font-bold">🌿 板块 CRUD</h1>
         <p className="mt-1 text-xs text-ink-600">
-          三级结构:Category(科) → Genus(属) → Species(品种)。勾选启用/禁用。
+          三级结构:Category(科) → Genus(属) → Species(品种)。
+          数字框是<b>排序权重</b>(越小越靠前,直接影响首页侧边栏顺序);开关控制启用/禁用。
           完整 CRUD 请用 Prisma Studio:<code className="rounded bg-ink-100 px-1">npx prisma studio</code>
         </p>
       </div>
@@ -46,7 +47,10 @@ export default async function AdminBoardsPage() {
                   </div>
                 </div>
               </div>
-              <BoardToggle type="category" id={c.id} enabled={c.enabled} />
+              <div className="flex items-center gap-2">
+                <BoardOrderInput id={c.id} initialOrderIdx={c.orderIdx} />
+                <BoardToggle type="category" id={c.id} enabled={c.enabled} />
+              </div>
             </header>
 
             {c.genera.length > 0 && (

@@ -11,18 +11,16 @@ import { api } from '@/lib/client-api';
 import { VipBadge } from '@/components/ui/VipBadge';
 import type { Board } from '@/lib/types';
 
+/**
+ * Sidebar 主导航 - 5 项核心入口。
+ * 用户中心相关(订单/地址/积分/VIP/任务/私信/通知)挪到 Header 右上角头像菜单。
+ */
 const mainNav: { href: string; labelKey: string; icon: IconName }[] = [
   { href: '/', labelKey: 'nav.home', icon: 'home' },
   { href: '/board', labelKey: 'nav.sidebar.allBoards', icon: 'board' },
   { href: '/plants', labelKey: 'nav.sidebar.plants', icon: 'plants' },
   { href: '/market', labelKey: 'market.hero.title', icon: 'star' },
   { href: '/auction', labelKey: 'auction.title', icon: 'star' },
-  { href: '/addresses', labelKey: 'nav.shippingAddress', icon: 'board' },
-  { href: '/tasks', labelKey: 'nav.activityCenter', icon: 'check' },
-  { href: '/points', labelKey: 'nav.pointsCenter', icon: 'star' },
-  { href: '/vip', labelKey: 'nav.vipCenter', icon: 'star' },
-  { href: '/messages', labelKey: 'nav.messages', icon: 'message' },
-  { href: '/notifications', labelKey: 'nav.notifications', icon: 'bell' },
 ];
 
 type BoardTab = 'following' | 'hot';

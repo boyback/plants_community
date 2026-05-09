@@ -162,8 +162,15 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                       <MenuItem href={`/user/${user.id}`} icon="user" onClick={() => setMenuOpen(false)}>
                         {t('nav.myProfile')}
                       </MenuItem>
-                      <MenuItem href="/points" icon="star" onClick={() => setMenuOpen(false)}>
-                        {t('nav.pointsCenter')}
+                      <MenuItem href="/editor" icon="edit" onClick={() => setMenuOpen(false)}>
+                        {t('nav.newPost')}
+                      </MenuItem>
+                      <div className="my-1 border-t border-leaf-50" />
+                      <MenuItem href="/messages" icon="message" onClick={() => setMenuOpen(false)}>
+                        {t('nav.messages')}
+                      </MenuItem>
+                      <MenuItem href="/notifications" icon="bell" onClick={() => setMenuOpen(false)}>
+                        {t('nav.notifications')}
                       </MenuItem>
                       <MenuItem href="/orders" icon="check" onClick={() => setMenuOpen(false)}>
                         {t('nav.myOrders')}
@@ -171,8 +178,9 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                       <MenuItem href="/addresses" icon="board" onClick={() => setMenuOpen(false)}>
                         {t('nav.shippingAddress')}
                       </MenuItem>
-                      <MenuItem href="/settings" icon="settings" onClick={() => setMenuOpen(false)}>
-                        {t('nav.settings')}
+                      <div className="my-1 border-t border-leaf-50" />
+                      <MenuItem href="/points" icon="star" onClick={() => setMenuOpen(false)}>
+                        {t('nav.pointsCenter')}
                       </MenuItem>
                       <MenuItem href="/tasks" icon="check" onClick={() => setMenuOpen(false)}>
                         {t('nav.activityCenter')}
@@ -180,8 +188,9 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                       <MenuItem href="/vip" icon="star" onClick={() => setMenuOpen(false)}>
                         {vip.isVip ? t('nav.vipCenter') : t('nav.openVip')}
                       </MenuItem>
-                      <MenuItem href="/editor" icon="edit" onClick={() => setMenuOpen(false)}>
-                        {t('nav.newPost')}
+                      <div className="my-1 border-t border-leaf-50" />
+                      <MenuItem href="/settings" icon="settings" onClick={() => setMenuOpen(false)}>
+                        {t('nav.settings')}
                       </MenuItem>
                       <MenuItem
                         icon="logout"
