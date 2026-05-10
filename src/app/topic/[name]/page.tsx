@@ -51,10 +51,23 @@ export default async function TopicPage({
   const page = Math.max(1, Number(searchParams.page || 1));
   const skip = (page - 1) * PAGE_SIZE;
 
+  /**
+   * 匹配策略(三选一,优先级高→低):
+   *   1. tags 字段(JSON 数组字符串)精准包含 — LIKE %"name"%
+   *   2. 标题包含
+   *   3. 正文包含
+   *
+   * 其中 tags 是「该话题精准命中」的最强信号,所以排在最前。
+   */
   const where = {
     deleted: false,
     ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' as const } : {}),
-    OR: [{ title: { contains: name } }, { content: { contains: name } }],
+    OR: [
+      // tags 列存的是 JSON.stringify 的数组,精准匹配 "<tag>"
+      { tags: { contains: `"${name}"` } },
+      { title: { contains: name } },
+      { content: { contains: name } },
+    ],
   };
 
   const [posts, total, matchedSpecies] = await Promise.all([

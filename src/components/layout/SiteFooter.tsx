@@ -36,6 +36,11 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/feedback" className="hover:text-leaf-700 hover:underline">
+                  意见反馈
+                </Link>
+              </li>
+              <li>
                 <Link href="/cookies" className="hover:text-leaf-700 hover:underline">
                   Cookie 政策
                 </Link>
