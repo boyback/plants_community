@@ -114,42 +114,4 @@ export function QuickDiscovery({
   );
 }
 
-/** Server-side 数据抓取 helper */
-export async function loadQuickDiscoveryData(opts: { n?: number; shuffle?: boolean } = {}) {
-  // 动态 import 防止 client 打包时把 prisma 引入
-  const { prisma } = await import('@/lib/db');
-  const n = opts.n ?? 12;
 
-  const [species, categories] = await Promise.all([
-    prisma.species.findMany({
-      include: { genus: { include: { category: true } } },
-      orderBy: opts.shuffle
-        ? { id: 'asc' } // 简单乱序兜底,真正乱用 raw query 做 ORDER BY RAND()
-        : [{ posts: { _count: 'desc' } }, { name: 'asc' }],
-      // shuffle 模式取更多再客户端洗牌
-      take: opts.shuffle ? n * 5 : n,
-    }),
-    prisma.category.findMany({
-      orderBy: { name: 'asc' },
-      take: 12,
-    }),
-  ]);
-
-  let pickedSpecies = species;
-  if (opts.shuffle) {
-    pickedSpecies = [...species].sort(() => Math.random() - 0.5).slice(0, n);
-  }
-
-  return {
-    species: pickedSpecies.map((s) => ({
-      id: s.id,
-      name: s.name,
-      url: `/board/${s.genus.category.slug}/${s.genus.slug}/${s.slug}`,
-    })),
-    categories: categories.map((c) => ({
-      id: c.id,
-      slug: c.slug,
-      name: c.name,
-    })),
-  };
-}

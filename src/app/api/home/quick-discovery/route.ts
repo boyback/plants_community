@@ -3,7 +3,7 @@
  * 给「快速发现」组件刷新数据用
  */
 import { NextResponse } from 'next/server';
-import { loadQuickDiscoveryData } from '@/components/home/QuickDiscovery';
+import { loadQuickDiscoveryData } from '@/lib/quick-discovery';
 
 export const dynamic = 'force-dynamic';
 
