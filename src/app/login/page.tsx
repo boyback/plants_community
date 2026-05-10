@@ -21,8 +21,8 @@ function LoginInner() {
   const { login } = useAuth();
   const { t } = useI18n();
 
-  const [account, setAccount] = useState('多肉阿绿');
-  const [password, setPassword] = useState('123456');
+  const [account, setAccount] = useState('');
+  const [password, setPassword] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
