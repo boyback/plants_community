@@ -51,11 +51,11 @@ export default async function MarketPage({
 
   return (
     <Shell>
-      <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+      <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold"><I18nText k="market.hero.title" fallback="交易市场" /></h1>
+          <h1 className="text-2xl font-bold">交易市场</h1>
           <p className="text-sm text-leaf-700/70">
-            <I18nText k="market.hero.subtitle" fallback="官方甄选 + 肉友闲置,买卖肉肉、工具、盆器一站式" />
+            一口价闲置 + 拍卖竞价 · 支持支付宝 / 微信 / 官方中介担保
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -71,26 +71,18 @@ export default async function MarketPage({
         </div>
       </div>
 
-      {/* 拍卖入口 banner */}
-      <Link
-        href="/auction"
-        className="card mb-6 group flex items-center gap-4 overflow-hidden bg-gradient-to-r from-rose-500 via-rose-400 to-amber-300 p-5 text-white transition-shadow hover:shadow-lg"
-      >
-        <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/20 text-3xl backdrop-blur">
-          🔨
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-base font-semibold">
-            <I18nText k="market.hero.auctionBannerTitle" fallback="拍卖会进行中" />
-          </div>
-          <div className="text-xs opacity-90">
-            <I18nText k="market.hero.auctionBannerSub" fallback="珍稀老桩、限定品种、精品盆器,价高者得 · 保证金参拍" />
-          </div>
-        </div>
-        <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs backdrop-blur transition-colors group-hover:bg-white/30">
-          <I18nText k="market.hero.goCheck" fallback="去看看 →" />
+      {/* 顶部 tab:一口价(default) / 拍卖 */}
+      <div className="mb-6 flex gap-1 border-b border-leaf-100">
+        <span className="border-b-2 border-leaf-500 px-4 py-2 text-sm font-medium text-leaf-700">
+          🛒 一口价
         </span>
-      </Link>
+        <Link
+          href="/auction"
+          className="px-4 py-2 text-sm text-ink-700/60 hover:text-leaf-700"
+        >
+          🔨 拍卖会
+        </Link>
+      </div>
 
       <MarketIndexClient
         initial={{

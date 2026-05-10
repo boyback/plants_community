@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { VipBadge } from '@/components/ui/VipBadge';
-import { SidebarMarket } from '@/components/layout/SidebarMarket';
 import { BoardsTreeMenu } from '@/components/layout/BoardsTreeMenu';
 
 /**
@@ -20,9 +19,6 @@ export function Sidebar() {
     <aside className="sticky top-[60px] hidden h-[calc(100vh-72px)] w-56 shrink-0 overflow-y-auto pr-2 lg:block">
       {/* 板块树(科 → 属) */}
       <BoardsTreeMenu />
-
-      {/* 商品 / 拍卖(放在账号卡之前) */}
-      <SidebarMarket />
 
       {user && (
         <div className="mt-6 rounded-2xl border border-leaf-100 bg-gradient-to-br from-leaf-50 to-white p-4">

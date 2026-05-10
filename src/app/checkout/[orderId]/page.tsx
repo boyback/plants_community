@@ -227,7 +227,7 @@ export default function CheckoutPage() {
 
           <div className="mt-6">
             <div className="mb-3 text-sm font-medium">{t('checkout.pickChannel')}</div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <ChannelCard
                 active={channel === 'wechat'}
                 onClick={() => setChannel('wechat')}
@@ -242,7 +242,28 @@ export default function CheckoutPage() {
                 title={t('checkout.channelAlipay')}
                 subtitle="Alipay"
               />
+              <ChannelCard
+                active={channel === 'escrow'}
+                onClick={() => setChannel('escrow')}
+                icon="🛡️"
+                title="官方中介"
+                subtitle="担保交易"
+              />
             </div>
+            {channel === 'escrow' && (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+                <div className="mb-1 font-semibold">🛡️ 官方中介担保流程</div>
+                <ol className="list-decimal space-y-0.5 pl-4">
+                  <li>买家把货款转入官方平台担保账户</li>
+                  <li>卖家收到「平台已收款」通知后发货</li>
+                  <li>买家收货确认后,平台把货款转给卖家</li>
+                  <li>纠纷可申请客服仲裁,平台收 1% 手续费</li>
+                </ol>
+                <div className="mt-2 text-amber-700">
+                  📩 选择此方式后,请联系客服 admin@plantcommunity.cn 获取担保账户
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-6 grid place-items-center rounded-2xl bg-leaf-50/50 p-6">

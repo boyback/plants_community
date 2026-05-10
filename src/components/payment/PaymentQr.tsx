@@ -5,7 +5,7 @@ import QRCodeLib from 'qrcode';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n/I18nContext';
 
-export type PayChannel = 'wechat' | 'alipay';
+export type PayChannel = 'wechat' | 'alipay' | 'escrow';
 export type PayQrStatus = 'pending' | 'paid' | 'expired' | 'cancelled' | 'refunded';
 
 /** 二维码生成后的"预热窗口":此期间禁止扫码(支付宝侧还在落单) */

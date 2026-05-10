@@ -82,7 +82,7 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
         <nav className="ml-4 hidden items-center gap-1 lg:flex">
           <HeaderLink href="/" icon="home">{t('nav.home')}</HeaderLink>
           <HeaderLink href="/plants" icon="plants">{t('nav.plants')}</HeaderLink>
-          <HeaderLink href="/tasks" icon="check">{t('nav.tasks')}</HeaderLink>
+          <HeaderLink href="/market" icon="shop">交易市场</HeaderLink>
         </nav>
 
         <div className="ml-auto hidden flex-1 max-w-md md:block">
