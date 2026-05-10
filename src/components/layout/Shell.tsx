@@ -3,6 +3,7 @@
 import { ReactNode, useState } from 'react';
 import { Header } from './Header';
 import { WelcomeBanner } from './WelcomeBanner';
+import { AnnouncementBar } from './AnnouncementBar';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { MobileTabBar } from './MobileTabBar';
@@ -28,6 +29,7 @@ export function Shell({
       <FestivalBanner />
       <WelcomeBanner />
       <Header onToggleMobileNav={() => setMobileOpen(true)} />
+      <AnnouncementBar />
       <MobileNav open={mobileOpen} onClose={() => setMobileOpen(false)} />
 
       <div className="mx-auto flex max-w-[1280px] gap-6 px-4 py-4 lg:px-6">
