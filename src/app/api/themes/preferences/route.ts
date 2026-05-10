@@ -1,13 +1,17 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler } from '@/lib/api';
-import { requireUser } from '@/lib/auth';
+import { getCurrentUser, requireUser } from '@/lib/auth';
 import { THEME_REGISTRY } from '@/lib/themes';
 
 export const dynamic = 'force-dynamic';
 
 export const GET = handler(async () => {
-  const me = await requireUser();
+  // 未登录返默认值(不报 401),避免前端控制台一直红
+  const me = await getCurrentUser();
+  if (!me) {
+    return { globalDisabled: false, disabledSlugs: [] };
+  }
   const u = await prisma.user.findUnique({
     where: { id: me.id },
     select: { themesDisabled: true, disabledThemes: true },
