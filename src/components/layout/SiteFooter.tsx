@@ -26,18 +26,13 @@ export function SiteFooter() {
             </p>
           </div>
 
-          {/* 2. 法律 */}
+          {/* 2. 站务 */}
           <div>
-            <div className="mb-2 text-sm font-semibold text-ink-800">法律与合规</div>
+            <div className="mb-2 text-sm font-semibold text-ink-800">站务</div>
             <ul className="space-y-1.5 text-xs text-ink-700/70">
               <li>
-                <Link href="/terms" className="hover:text-leaf-700 hover:underline">
-                  用户协议
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="hover:text-leaf-700 hover:underline">
-                  隐私政策
+                <Link href="/changelog" className="hover:text-leaf-700 hover:underline">
+                  更新日志
                 </Link>
               </li>
               <li>
