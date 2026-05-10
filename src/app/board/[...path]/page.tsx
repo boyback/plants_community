@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Shell } from '@/components/layout/Shell';
 import { prisma } from '@/lib/db';
 import {
@@ -171,8 +171,8 @@ export default async function BoardPage({
   if (genusSlug) {
     return <GenusView categorySlug={categorySlug} genusSlug={genusSlug} />;
   }
-  // 一级:科页
-  return <CategoryView categorySlug={categorySlug} />;
+  // 一级:科页已废除,统一重定向到 /board(全部板块入口)
+  redirect('/board');
 }
 
 /* ============== 一级:科 ============== */
@@ -747,18 +747,25 @@ function BoardBreadcrumb({
       <Link href="/board" className="hover:text-leaf-700">
         <I18nText k="board.allBoards" fallback="全部板块" />
       </Link>
-      {path.map((p, i) => (
-        <span key={i} className="contents">
-          <Icon name="arrow-right" size={12} />
-          {i === path.length - 1 ? (
-            <span className="text-ink-700">{p.name}</span>
-          ) : (
-            <Link href={href(i)} className="hover:text-leaf-700">
-              {p.name}
-            </Link>
-          )}
-        </span>
-      ))}
+      {path.map((p, i) => {
+        const isLast = i === path.length - 1;
+        // 科节点不可点(科页已废除)
+        const isCategory = p.level === 'category';
+        return (
+          <span key={i} className="contents">
+            <Icon name="arrow-right" size={12} />
+            {isLast || isCategory ? (
+              <span className={isLast ? 'text-ink-700' : 'text-leaf-700/60'}>
+                {p.name}
+              </span>
+            ) : (
+              <Link href={href(i)} className="hover:text-leaf-700">
+                {p.name}
+              </Link>
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 }

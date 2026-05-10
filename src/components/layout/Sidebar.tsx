@@ -12,6 +12,17 @@ import { VipBadge } from '@/components/ui/VipBadge';
 import { SidebarMarket } from '@/components/layout/SidebarMarket';
 import type { Board } from '@/lib/types';
 
+interface HotGenus {
+  id: string;
+  slug: string;
+  name: string;
+  latinName: string | null;
+  posts: number;
+  categorySlug: string;
+  categoryName: string;
+  categoryIcon: string;
+}
+
 /**
  * Sidebar 主导航 - 5 项核心入口。
  * 用户中心相关(订单/地址/积分/VIP/任务/私信/通知)挪到 Header 右上角头像菜单。
@@ -29,12 +40,15 @@ export function Sidebar() {
   const { user, vip, pointsBalance, expProgress } = useAuth();
   const { t } = useI18n();
 
-  const [hotBoards, setHotBoards] = useState<Board[]>([]);
+  const [hotGenera, setHotGenera] = useState<HotGenus[]>([]);
   const [followedBoards, setFollowedBoards] = useState<Board[] | null>(null);
   const [tab, setTab] = useState<BoardTab>('hot');
 
   useEffect(() => {
-    api.get<Board[]>('/api/categories?kind=family').then((list) => setHotBoards(list)).catch(() => null);
+    api
+      .get<HotGenus[]>('/api/genera?limit=12&sort=hot')
+      .then((list) => setHotGenera(list || []))
+      .catch(() => null);
   }, []);
 
   // 登录后拉「我关注的板块」
@@ -55,8 +69,41 @@ export function Sidebar() {
   }, [user]);
 
   const showFollowingTab = !!user && (followedBoards?.length ?? 0) > 0;
-  const currentList =
-    tab === 'following' && followedBoards ? followedBoards.slice(0, 12) : hotBoards.slice(0, 6);
+
+  // 把热门属和「我的关注」(可能是科/属/品种混合)统一成 sidebar 行模型
+  type SidebarRow = {
+    key: string;
+    href: string;
+    icon: string;
+    name: string;
+    subtitle?: string;
+    posts: number;
+  };
+  const currentList: SidebarRow[] = (() => {
+    if (tab === 'following' && followedBoards) {
+      return followedBoards.slice(0, 12).map((b) => ({
+        key: b.id,
+        href: boardUrl(b),
+        icon: b.icon || '🌿',
+        name: b.name,
+        subtitle:
+          b.level === 'genus'
+            ? b.path[0]?.name
+            : b.level === 'species'
+              ? b.path[1]?.name
+              : undefined,
+        posts: b.posts,
+      }));
+    }
+    return hotGenera.slice(0, 12).map((g) => ({
+      key: g.id,
+      href: `/board/${g.categorySlug}/${g.slug}`,
+      icon: g.categoryIcon,
+      name: g.name,
+      subtitle: g.categoryName,
+      posts: g.posts,
+    }));
+  })();
 
   return (
     <aside className="sticky top-[60px] hidden h-[calc(100vh-72px)] w-56 shrink-0 overflow-y-auto pr-2 lg:block">
@@ -104,35 +151,32 @@ export function Sidebar() {
           </div>
         ) : (
           <div className="space-y-0.5">
-            {currentList.map((b) => {
-              const url = boardUrl(b);
-              const active = pathname === url;
-              const subtitle =
-                b.level === 'genus' ? b.path[0]?.name : b.level === 'species' ? b.path[1]?.name : undefined;
+            {currentList.map((row) => {
+              const active = pathname === row.href;
               return (
                 <Link
-                  key={b.id}
-                  href={url}
+                  key={row.key}
+                  href={row.href}
                   className={cn(
                     'flex items-center justify-between rounded-lg px-3 py-2 text-sm',
                     active
                       ? 'bg-leaf-100 text-leaf-800 font-medium'
-                      : 'text-ink-800 hover:bg-leaf-50'
+                      : 'text-ink-800 hover:bg-leaf-50',
                   )}
                 >
                   <span className="flex items-center gap-2 min-w-0">
-                    <span className="text-base shrink-0">{b.icon}</span>
+                    <span className="text-base shrink-0">{row.icon}</span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate">{b.name}</span>
-                      {subtitle && (
+                      <span className="block truncate">{row.name}</span>
+                      {row.subtitle && (
                         <span className="block truncate text-[10px] text-leaf-600/70">
-                          {subtitle}
+                          {row.subtitle}
                         </span>
                       )}
                     </span>
                   </span>
                   <span className="shrink-0 text-[11px] text-leaf-600/70">
-                    {b.posts > 999 ? `${(b.posts / 1000).toFixed(1)}k` : b.posts}
+                    {row.posts > 999 ? `${(row.posts / 1000).toFixed(1)}k` : row.posts}
                   </span>
                 </Link>
               );

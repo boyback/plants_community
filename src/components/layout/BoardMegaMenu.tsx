@@ -120,33 +120,21 @@ export function BoardMegaMenu() {
                 <li
                   key={c.id}
                   onMouseEnter={() => setActiveCatId(c.id)}
+                  className={cn(
+                    'flex cursor-default items-center justify-between gap-2 px-3 py-2 text-sm',
+                    active
+                      ? 'bg-leaf-50 text-leaf-700 font-medium'
+                      : 'text-ink-800',
+                  )}
                 >
-                  <Link
-                    href={`/board/${c.slug}`}
-                    className={cn(
-                      'flex items-center justify-between gap-2 px-3 py-2 text-sm',
-                      active
-                        ? 'bg-leaf-50 text-leaf-700 font-medium'
-                        : 'text-ink-800 hover:bg-leaf-50',
-                    )}
-                  >
-                    <span className="flex items-center gap-2 min-w-0">
-                      <span className="text-base shrink-0">{c.icon}</span>
-                      <span className="truncate">{c.name}</span>
-                    </span>
-                    <span className="text-[10px] text-leaf-700/40">▸</span>
-                  </Link>
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="text-base shrink-0">{c.icon}</span>
+                    <span className="truncate">{c.name}</span>
+                  </span>
+                  <span className="text-[10px] text-leaf-700/40">▸</span>
                 </li>
               );
             })}
-            <li className="mt-1 border-t border-leaf-100/60 pt-1">
-              <Link
-                href="/board"
-                className="block px-3 py-2 text-center text-[11px] text-leaf-700 hover:bg-leaf-50 hover:underline"
-              >
-                查看全部 →
-              </Link>
-            </li>
           </ul>
 
           {/* 二级:活跃科下的属 */}
@@ -191,14 +179,7 @@ export function BoardMegaMenu() {
                   ))}
                 </ul>
               )}
-              <div className="border-t border-leaf-100/60 px-4 py-2 text-center">
-                <Link
-                  href={`/board/${activeCat.slug}`}
-                  className="text-[11px] text-leaf-700 hover:underline"
-                >
-                  进入「{activeCat.name}」全部 →
-                </Link>
-              </div>
+
             </div>
           )}
         </div>
