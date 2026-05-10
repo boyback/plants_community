@@ -14,7 +14,6 @@ import { postInclude } from '@/lib/post-include';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 import { PostMasonry } from '@/components/post/PostMasonry';
 import { Icon } from '@/components/ui/Icon';
-import { GenusBannerMosaic } from '@/components/board/GenusBannerMosaic';
 import { Empty } from '@/components/ui/Empty';
 import { SpeciesRatingPanel } from '@/components/species/SpeciesRatingPanel';
 
@@ -319,52 +318,58 @@ async function GenusView({
     <Shell>
       <BoardBreadcrumb path={genus.path} />
 
-      {/* Header — 拼图墙 banner */}
+      {/* Header — 单图大背景 banner(属封面优先,否则用父科封面) */}
       <div className="card mb-6 overflow-hidden">
-        <GenusBannerMosaic
-          cells={g.species.slice(0, 8).map((s) => ({
-            id: s.id,
-            name: s.name,
-            cover: s.cover,
-            href: `/board/${g.category.slug}/${g.slug}/${s.slug}`,
-          }))}
-          fallbackCover={g.cover || g.category.cover}
-        >
-          <div className="mb-1 text-xs opacity-90">{g.category.name}</div>
-          <h1 className="text-2xl font-bold md:text-3xl">
-            {g.name}
-            {g.latinName && (
-              <span className="ml-3 text-sm font-normal italic opacity-80">
-                {g.latinName}
-              </span>
+        <div className="relative aspect-[21/8] bg-gradient-to-br from-leaf-300 to-leaf-600 md:aspect-[21/6]">
+          <Image
+            src={g.cover || g.category.cover}
+            alt={g.name}
+            fill
+            className="object-cover"
+            unoptimized
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink-900/85 via-ink-900/40 to-ink-900/20" />
+
+          <div className="absolute inset-0 flex flex-col justify-end p-5 text-white md:p-6">
+            <div className="mb-1 text-xs opacity-80">{g.category.name}</div>
+            <h1 className="text-2xl font-bold md:text-3xl">
+              {g.name}
+              {g.latinName && (
+                <span className="ml-3 text-sm font-normal italic opacity-80">
+                  {g.latinName}
+                </span>
+              )}
+            </h1>
+            {g.description && (
+              <p className="mt-1 line-clamp-2 max-w-xl text-xs opacity-90 md:text-sm">
+                {g.description}
+              </p>
             )}
-          </h1>
-          {g.description && (
-            <p className="mt-1 max-w-xl text-xs opacity-90 md:text-sm">{g.description}</p>
-          )}
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-            <span>
-              🌱 <I18nText k="board.speciesCount" vars={{ n: g._count?.species ?? 0 }} />
-            </span>
-            <span>
-              📝 <I18nText k="board.stats.posts" vars={{ n: g._count?.posts ?? 0 }} />
-            </span>
-            <div className="ml-auto flex gap-2">
-              <Link
-                href={`/editor?genus=${encodeURIComponent(g.slug)}`}
-                className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-leaf-700 hover:bg-leaf-50"
-              >
-                <Icon name="plus" size={13} />
-                <I18nText k="board.postInGenus" fallback="在本属发帖" />
-              </Link>
-              <FollowBoardButton
-                type="genus"
-                slug={g.slug}
-                categorySlug={g.category.slug}
-              />
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+              <span>
+                🌱 <I18nText k="board.speciesCount" vars={{ n: g._count?.species ?? 0 }} />
+              </span>
+              <span>
+                📝 <I18nText k="board.stats.posts" vars={{ n: g._count?.posts ?? 0 }} />
+              </span>
+              <div className="ml-auto flex gap-2">
+                <Link
+                  href={`/editor?genus=${encodeURIComponent(g.slug)}`}
+                  className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-leaf-700 hover:bg-leaf-50"
+                >
+                  <Icon name="plus" size={13} />
+                  <I18nText k="board.postInGenus" fallback="在本属发帖" />
+                </Link>
+                <FollowBoardButton
+                  type="genus"
+                  slug={g.slug}
+                  categorySlug={g.category.slug}
+                />
+              </div>
             </div>
           </div>
-        </GenusBannerMosaic>
+        </div>
       </div>
 
       {g.species.length > 0 && (
