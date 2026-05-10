@@ -126,10 +126,13 @@ export default function SellPage() {
               <input
                 className="input"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => setTitle(e.target.value.slice(0, 30))}
                 placeholder={t('market.sell.fieldTitlePlaceholder')}
-                maxLength={80}
+                maxLength={30}
               />
+              <div className="mt-1 text-right text-[10px] text-leaf-700/50">
+                {title.length} / 30
+              </div>
             </Field>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

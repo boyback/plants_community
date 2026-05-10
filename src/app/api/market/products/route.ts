@@ -98,7 +98,7 @@ export const GET = handler(async (req) => {
 
 // C2C 发布(需要 market:sell 权限)
 const CreateBody = z.object({
-  title: z.string().min(2).max(80),
+  title: z.string().min(2, '标题至少 2 字').max(30, '标题不超过 30 字'),
   // 商品描述富文本:descriptionJson 权威 / description 兜底
   description: z.string().optional(),
   descriptionJson: z.unknown().optional(),

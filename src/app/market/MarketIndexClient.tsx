@@ -334,7 +334,7 @@ export function MarketIndexClient() {
       ) : items.length === 0 ? (
         <Empty icon="🛒" title={hasFilter ? '没有匹配的内容' : '暂无商品'} />
       ) : view === 'grid' ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {items.map((item) => (
             <GridCard key={`${item.type}-${item.id}`} item={item} />
           ))}
@@ -354,7 +354,7 @@ export function MarketIndexClient() {
 // 卡片
 // ============================================================
 
-/* ===== 网格模式:极简,只看图 + 价格 + 拍卖徽章 ===== */
+/* ===== 网格模式:图 + 标题(全展示)+ 价格 + 卖家+发布时间 ===== */
 function GridCard({ item }: { item: ListingItem }) {
   const isAuction = item.type === 'auction';
   return (
@@ -377,11 +377,14 @@ function GridCard({ item }: { item: ListingItem }) {
           </>
         )}
       </div>
-      <div className="px-2.5 py-2">
-        <div className="line-clamp-1 text-[13px] font-medium text-ink-800 group-hover:text-leaf-700">
+      <div className="space-y-1.5 px-3 py-2.5">
+        {/* 标题:全显示,不截断 */}
+        <div className="break-words text-[13px] font-medium leading-5 text-ink-800 group-hover:text-leaf-700">
           {item.title}
         </div>
-        <div className="mt-0.5 flex items-baseline gap-1.5">
+
+        {/* 价格 */}
+        <div className="flex items-baseline gap-1.5">
           {isAuction && <span className="text-[10px] text-leaf-700/50">起拍</span>}
           <span className="text-[15px] font-bold text-rose-600">{formatPrice(item.price)}</span>
           {item.originalPrice && (
@@ -390,6 +393,31 @@ function GridCard({ item }: { item: ListingItem }) {
             </span>
           )}
         </div>
+
+        {/* 卖家行:头像 + 昵称 */}
+        {item.seller && (
+          <div className="flex items-center gap-1.5">
+            {item.seller.avatar && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={item.seller.avatar}
+                alt=""
+                className="h-4 w-4 shrink-0 rounded-full object-cover"
+              />
+            )}
+            <span className="truncate text-[11px] text-ink-700/70">
+              {item.seller.name}
+            </span>
+            {item.shipFrom && (
+              <span className="ml-auto shrink-0 truncate text-[10px] text-leaf-700/60">
+                📍 {item.shipFrom}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* 发布时间(年月日时分) */}
+        <div className="text-[10px] text-leaf-700/50">{fmtDate(item.createdAt)}</div>
       </div>
     </Link>
   );
@@ -415,7 +443,7 @@ function ListCard({ item }: { item: ListingItem }) {
 
       {/* 中:标题 + 卖家 + 时间 */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="line-clamp-1 text-sm font-medium text-ink-800 group-hover:text-leaf-700">
+        <div className="break-words text-sm font-medium leading-5 text-ink-800 group-hover:text-leaf-700">
           {item.title}
         </div>
         {/* 卖家行 */}
@@ -495,13 +523,12 @@ function Countdown({ to }: { to: string }) {
 /** 卡片显示绝对日期(月/日 时:分),不要相对「N 天前」 */
 function fmtDate(iso: string): string {
   const d = new Date(iso);
-  const m = d.getMonth() + 1;
-  const day = d.getDate();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
   const hh = String(d.getHours()).padStart(2, '0');
   const mm = String(d.getMinutes()).padStart(2, '0');
-  // 同年仅显示「月/日 hh:mm」,跨年附年份
-  const sameYear = d.getFullYear() === new Date().getFullYear();
-  return sameYear ? `${m}/${day} ${hh}:${mm}` : `${d.getFullYear()}/${m}/${day}`;
+  return `${y}-${m}-${day} ${hh}:${mm}`;
 }
 
 /**
