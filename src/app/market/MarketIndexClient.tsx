@@ -309,25 +309,25 @@ function GridCard({ item }: { item: ListingItem }) {
   return (
     <Link
       href={item.url}
-      className="group overflow-hidden rounded-xl border border-leaf-100 bg-white transition-all hover:-translate-y-0.5 hover:shadow-md"
+      className="group overflow-hidden rounded-xl border border-leaf-100 bg-white transition-colors hover:border-leaf-300 hover:shadow-sm"
     >
       <div className="relative aspect-square bg-leaf-50">
         <Image src={item.cover} alt={item.title} fill className="object-cover" unoptimized />
         {isAuction && (
           <>
-            <span className="absolute left-2 top-2 inline-flex items-center gap-0.5 rounded-md bg-rose-500/95 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-sm">
+            <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-0.5 rounded bg-rose-500/95 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-sm">
               🔨 拍卖
             </span>
             {item.endAt && (
-              <span className="absolute right-2 top-2 rounded-md bg-ink-900/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+              <span className="absolute right-1.5 top-1.5 rounded bg-ink-900/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
                 <Countdown to={item.endAt} />
               </span>
             )}
           </>
         )}
       </div>
-      <div className="flex min-h-[110px] flex-col px-3 py-2.5">
-        {/* 标题:单行省略,hover 原生 tooltip 显示全 */}
+      <div className="flex flex-col gap-1 px-2 py-1.5">
+        {/* 标题(单行省略) */}
         <div
           title={item.title}
           className="truncate text-[12px] font-medium text-ink-800 group-hover:text-leaf-700"
@@ -335,14 +335,21 @@ function GridCard({ item }: { item: ListingItem }) {
           {item.title}
         </div>
 
-        {/* 价格 */}
-        <div className="mt-1.5 text-[15px] font-bold text-rose-600">
-          {formatPrice(item.price)}
+        {/* 价格 + 发货地(同一行,价格左,发货地最右) */}
+        <div className="flex items-baseline gap-2">
+          <span className="text-[14px] font-bold text-rose-600">
+            {formatPrice(item.price)}
+          </span>
+          {item.shipFrom && (
+            <span className="ml-auto truncate text-[10px] text-leaf-700/60">
+              📍 {item.shipFrom}
+            </span>
+          )}
         </div>
 
-        {/* 卖家 + 时间 - mt-auto 推到卡底 */}
+        {/* 卖家 + 时间 */}
         {item.seller && (
-          <div className="mt-auto flex items-center gap-1.5 pt-2">
+          <div className="flex items-center gap-1.5">
             {item.seller.avatar && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
