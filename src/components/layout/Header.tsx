@@ -621,39 +621,126 @@ function timeShort(iso: string): string {
 // 顶部搜索框(form + Enter 跳 /search?q=xxx)
 // ============================================================
 
+interface HotItem {
+  q: string;
+  kind: 'species' | 'topic';
+  count?: number;
+}
+
 function HeaderSearch() {
   const router = useRouter();
   const sp = useSearchParams();
   const [q, setQ] = useState(sp?.get('q') || '');
+  const [open, setOpen] = useState(false);
+  const [hot, setHot] = useState<HotItem[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // 切换路由后同步 input(从 /search 跳走时清空)
   useEffect(() => {
     setQ(sp?.get('q') || '');
   }, [sp]);
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const v = q.trim();
+  // 首次焦点时拉热词
+  const ensureHot = async () => {
+    if (hot.length > 0) return;
+    try {
+      const r = await fetch('/api/search/hot');
+      const data = await r.json();
+      if (data?.data?.hot) setHot(data.data.hot);
+    } catch {}
+  };
+
+  // 点外部关闭
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [open]);
+
+  const go = (term: string) => {
+    const v = term.trim();
     if (!v) return;
+    setOpen(false);
     router.push(`/search?q=${encodeURIComponent(v)}`);
   };
 
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    go(q);
+  };
+
   return (
-    <form onSubmit={submit} className="relative">
-      <Icon
-        name="search"
-        className="absolute left-3 top-1/2 -translate-y-1/2 text-leaf-400 pointer-events-none"
-        size={16}
-      />
-      <input
-        type="search"
-        name="q"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        className="input pl-9"
-        placeholder="搜索帖子、品种、用户、板块"
-        aria-label="搜索"
-      />
-    </form>
+    <div ref={containerRef} className="relative">
+      <form onSubmit={submit} className="relative">
+        <Icon
+          name="search"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-leaf-400"
+          size={16}
+        />
+        <input
+          type="search"
+          name="q"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onFocus={() => {
+            setOpen(true);
+            void ensureHot();
+          }}
+          className="input pl-9"
+          placeholder="搜索帖子、品种、用户、板块"
+          aria-label="搜索"
+          autoComplete="off"
+        />
+      </form>
+
+      {/* 下拉:输入空时显示热词;有输入时显示「搜索 xxx」 */}
+      {open && (
+        <div className="absolute left-0 right-0 top-full z-40 mt-1 overflow-hidden rounded-xl border border-leaf-100 bg-white shadow-card">
+          {q.trim().length > 0 ? (
+            <button
+              type="button"
+              onClick={() => go(q)}
+              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-ink-800 hover:bg-leaf-50"
+            >
+              <Icon name="search" size={14} className="text-leaf-500" />
+              <span>
+                搜索 <b>「{q}」</b>
+              </span>
+            </button>
+          ) : (
+            <>
+              <div className="border-b border-leaf-50 px-3 py-2 text-[11px] text-leaf-700/60">
+                🔥 热门搜索
+              </div>
+              <div className="flex flex-wrap gap-1.5 p-3">
+                {hot.length === 0 && (
+                  <div className="px-1 text-xs text-leaf-700/50">加载中…</div>
+                )}
+                {hot.map((h) => (
+                  <button
+                    key={`${h.kind}-${h.q}`}
+                    type="button"
+                    onClick={() => go(h.q)}
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] transition-colors ${
+                      h.kind === 'species'
+                        ? 'bg-leaf-50 text-leaf-700 hover:bg-leaf-100'
+                        : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                    }`}
+                  >
+                    {h.kind === 'species' ? h.q : `#${h.q}`}
+                    {h.count !== undefined && h.count > 0 && (
+                      <span className="ml-1 text-[10px] text-leaf-700/50">{h.count}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
