@@ -150,6 +150,9 @@ export function Sidebar() {
         )}
       </div>
 
+      {/* 热门板块下面:商品 + 拍卖紧凑列表 */}
+      <SidebarMarket />
+
       {user && (
         <div className="mt-6 rounded-2xl border border-leaf-100 bg-gradient-to-br from-leaf-50 to-white p-4">
           <div className="mb-1 flex items-center gap-1.5 text-xs text-leaf-700/80">
