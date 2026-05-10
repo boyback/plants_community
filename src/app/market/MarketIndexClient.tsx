@@ -326,21 +326,20 @@ function GridCard({ item }: { item: ListingItem }) {
           </>
         )}
       </div>
-      <div className="space-y-1.5 px-3 py-2.5">
+      <div className="flex min-h-[120px] flex-col px-3 py-2.5">
         {/* 标题:全显示,不截断 */}
         <div className="break-words text-[13px] font-medium leading-5 text-ink-800 group-hover:text-leaf-700">
           {item.title}
         </div>
 
         {/* 价格 */}
-        <div className="flex items-baseline gap-1.5">
-          {isAuction && <span className="text-[10px] text-leaf-700/50">起拍</span>}
-          <span className="text-[15px] font-bold text-rose-600">{formatPrice(item.price)}</span>
+        <div className="mt-1.5 text-[15px] font-bold text-rose-600">
+          {formatPrice(item.price)}
         </div>
 
-        {/* 卖家 + 时间 同一行 */}
+        {/* 卖家 + 时间 - mt-auto 推到卡底 */}
         {item.seller && (
-          <div className="flex items-center gap-1.5">
+          <div className="mt-auto flex items-center gap-1.5 pt-2">
             {item.seller.avatar && (
               // eslint-disable-next-line @next/next/no-img-element
               <img

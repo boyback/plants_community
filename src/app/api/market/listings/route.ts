@@ -161,9 +161,9 @@ export async function GET(req: Request) {
     const where: Record<string, unknown> = {
       status: { in: ['live', 'scheduled'] as AuctionStatus[] },
     };
-    // 拍卖按 startPrice 过滤(没有 price 字段)
-    if (priceMin) where.startPrice = { ...(where.startPrice as object), gte: priceMin };
-    if (priceMax) where.startPrice = { ...(where.startPrice as object), lte: priceMax };
+    // 拍卖按 currentPrice 过滤
+    if (priceMin) where.currentPrice = { ...(where.currentPrice as object), gte: priceMin };
+    if (priceMax) where.currentPrice = { ...(where.currentPrice as object), lte: priceMax };
     const ANDs: unknown[] = [];
     if (orFilters.length) ANDs.push({ OR: orFilters });
     if (taxonFilter) ANDs.push(taxonFilter);
@@ -173,8 +173,8 @@ export async function GET(req: Request) {
     const list = await prisma.auction.findMany({
       where,
       orderBy:
-        sort === 'price_asc' ? [{ startPrice: 'asc' }] :
-        sort === 'price_desc' ? [{ startPrice: 'desc' }] :
+        sort === 'price_asc' ? [{ currentPrice: 'asc' }] :
+        sort === 'price_desc' ? [{ currentPrice: 'desc' }] :
         sort === 'oldest' ? [{ createdAt: 'asc' }] :
         [{ createdAt: 'desc' }],
       take: limit,
@@ -182,7 +182,7 @@ export async function GET(req: Request) {
         id: true,
         title: true,
         cover: true,
-        startPrice: true,
+        currentPrice: true,
         createdAt: true,
         endAt: true,
         seller: { select: { id: true, name: true, avatar: true } },
@@ -193,7 +193,7 @@ export async function GET(req: Request) {
       id: a.id,
       title: a.title,
       cover: a.cover,
-      price: a.startPrice,
+      price: a.currentPrice, // 当前价(初始 = startPrice)
       createdAt: a.createdAt.toISOString(),
       endAt: a.endAt.toISOString(),
       url: `/auction/${a.id}`,
