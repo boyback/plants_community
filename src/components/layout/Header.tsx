@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Logo } from '@/components/ui/Logo';
 import { Icon, type IconName } from '@/components/ui/Icon';
@@ -196,10 +196,17 @@ function HeaderLink({
   children: React.ReactNode;
   icon: Parameters<typeof Icon>[0]['name'];
 }) {
+  const pathname = usePathname();
+  const active =
+    href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/');
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-ink-800 hover:bg-leaf-50 hover:text-leaf-700"
+      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+        active
+          ? 'bg-leaf-100 font-medium text-leaf-700'
+          : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700'
+      }`}
     >
       <Icon name={icon} size={16} />
       {children}

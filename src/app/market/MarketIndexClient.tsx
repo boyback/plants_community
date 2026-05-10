@@ -159,7 +159,20 @@ export function MarketIndexClient() {
     <>
       {/* ============================== 过滤栏 ============================== */}
       <div className="mb-5 space-y-3">
-        {/* 行 1:类目(科 + 其他子类) */}
+        {/* 行 1:交易类型(放最上) */}
+        <FilterRow label="交易">
+          {TYPE_OPTIONS.map((opt) => (
+            <Chip
+              key={opt.key}
+              active={type === opt.key}
+              onClick={() => setType(opt.key)}
+            >
+              {opt.label}
+            </Chip>
+          ))}
+        </FilterRow>
+
+        {/* 行 2:类目(科 + 其他子类) */}
         <FilterRow label="类目">
           <Chip active={!topPick} onClick={() => { setTopPick(''); setSelectedGenus(''); }}>
             全部
@@ -190,7 +203,7 @@ export function MarketIndexClient() {
           ))}
         </FilterRow>
 
-        {/* 行 2:动态属(选科后展开) */}
+        {/* 行 3:动态属(选科后展开) */}
         {isFamily && currentGenera.length > 0 && (
           <FilterRow label="属">
             <Chip active={!selectedGenus} onClick={() => setSelectedGenus('')}>
@@ -207,19 +220,6 @@ export function MarketIndexClient() {
             ))}
           </FilterRow>
         )}
-
-        {/* 行 3:交易类型 */}
-        <FilterRow label="交易">
-          {TYPE_OPTIONS.map((opt) => (
-            <Chip
-              key={opt.key}
-              active={type === opt.key}
-              onClick={() => setType(opt.key)}
-            >
-              {opt.label}
-            </Chip>
-          ))}
-        </FilterRow>
 
         {/* 行 4:价格 + 排序 + 清空 + 搜索(右下) */}
         <div className="flex flex-wrap items-center gap-2 text-xs">

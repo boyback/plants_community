@@ -11,7 +11,6 @@ export default function MarketPage() {
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_240px]">
         {/* 主内容 */}
         <div className="min-w-0">
-          <h1 className="mb-4 text-2xl font-bold">交易市场</h1>
           <MarketIndexClient />
         </div>
 
