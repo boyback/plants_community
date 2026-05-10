@@ -5,10 +5,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { VipBadge } from '@/components/ui/VipBadge';
 import { BoardsTreeMenu } from '@/components/layout/BoardsTreeMenu';
-import { AnnouncementCard } from '@/components/home/AnnouncementCard';
 
 /**
- * Sidebar — 公告 + 板块树 + 账号卡
+ * Sidebar — 板块树 + 账号卡
  */
 export function Sidebar() {
   const { user, vip, pointsBalance, expProgress } = useAuth();
@@ -16,9 +15,6 @@ export function Sidebar() {
 
   return (
     <aside className="sticky top-[60px] hidden h-[calc(100vh-72px)] w-56 shrink-0 space-y-4 overflow-y-auto pr-2 lg:block">
-      {/* 公告卡(放最上) */}
-      <AnnouncementCard />
-
       {/* 板块树(科 → 属) */}
       <BoardsTreeMenu />
 
