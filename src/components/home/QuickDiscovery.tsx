@@ -75,11 +75,6 @@ export function QuickDiscovery({
 
   return (
     <div className="card overflow-hidden">
-      {/* 卡顶大标题 */}
-      <div className="border-b border-leaf-100/60 px-4 py-2.5">
-        <span className="text-[13px] font-semibold text-ink-800">✨ 快速发现</span>
-      </div>
-
       <div className="divide-y divide-leaf-100/60">
         {hasSpecies && (
           <Section
