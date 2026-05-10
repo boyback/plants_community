@@ -12,8 +12,21 @@ import type { User } from '@/lib/types';
 export function RecommendUsers({ users }: { users: User[] }) {
   const { user: me } = useAuth();
   const { t } = useI18n();
-  const list = users.filter((u) => !me || u.id !== me.id).slice(0, 5);
+  const initial = users.filter((u) => !me || u.id !== me.id).slice(0, 5);
+  const [list, setList] = useState<User[]>(initial);
+  const [refreshing, setRefreshing] = useState(false);
   const [followed, setFollowed] = useState<Record<string, boolean>>({});
+
+  const refresh = async () => {
+    setRefreshing(true);
+    try {
+      const res = await api.get<User[]>('/api/users?limit=5&random=1');
+      const next = (res || []).filter((u) => !me || u.id !== me.id).slice(0, 5);
+      if (next.length > 0) setList(next);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const toggle = async (uid: string) => {
     if (!me) {
@@ -32,9 +45,13 @@ export function RecommendUsers({ users }: { users: User[] }) {
     <div className="card p-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="text-sm font-semibold text-ink-800">🌱 {t('home.recommend.title')}</div>
-        <Link href="/board" className="text-[11px] text-leaf-700 hover:underline">
-          {t('home.recommend.refresh')}
-        </Link>
+        <button
+          onClick={refresh}
+          disabled={refreshing}
+          className="text-[11px] text-leaf-700 hover:underline disabled:opacity-50"
+        >
+          {refreshing ? '换一换…' : t('home.recommend.refresh')}
+        </button>
       </div>
       <ul className="space-y-2.5">
         {list.map((u) => (

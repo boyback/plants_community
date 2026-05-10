@@ -5,7 +5,7 @@ import { FeedTabs } from '@/components/home/FeedTabs';
 import { TopicsCard } from '@/components/home/TopicsCard';
 import { RecommendUsers } from '@/components/home/RecommendUsers';
 import { AppDownloadCard } from '@/components/home/AppDownloadCard';
-import { QuickDiscovery } from '@/components/home/QuickDiscovery';
+import { QuickDiscovery, loadQuickDiscoveryData } from '@/components/home/QuickDiscovery';
 import { prisma } from '@/lib/db';
 import { postInclude } from '@/lib/post-include';
 import { serializePost, serializeUser } from '@/lib/serializers';
@@ -16,7 +16,7 @@ import { jsonLdScript, websiteJsonLd, organizationJsonLd } from '@/lib/jsonld';
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const [postsRaw, bannersRaw, recommendUsersRaw] = await Promise.all([
+  const [postsRaw, bannersRaw, recommendUsersRaw, discovery] = await Promise.all([
     prisma.post.findMany({
       where: {
         deleted: false,
@@ -38,6 +38,7 @@ export default async function HomePage() {
         badges: { include: { badge: true } },
       },
     }),
+    loadQuickDiscoveryData({ n: 12 }),
   ]);
 
   const posts = postsRaw.map(serializePost);
@@ -63,16 +64,16 @@ export default async function HomePage() {
         </div>
 
         <div className="space-y-5">
-          {/* 1. 话题 */}
+          {/* 1. 快速发现(SEO 内链 + 用户探索) */}
+          <QuickDiscovery initialSpecies={discovery.species} categories={discovery.categories} />
+          {/* 2. 话题 */}
           <TopicsCard />
-          {/* 2. 推荐肉友 */}
+          {/* 3. 推荐肉友 */}
           <RecommendUsers users={recommendUsers} />
-          {/* 3. 签到 + 月历(整合) */}
+          {/* 4. 签到 + 月历(整合) */}
           <SignInCard />
-          {/* 4. APP 下载 */}
+          {/* 5. APP 下载 */}
           <AppDownloadCard />
-          {/* 5. 快速发现(SEO 内链区) */}
-          <QuickDiscovery />
           {/* 法律入口已挪到全站 Footer,这里不再重复 */}
         </div>
       </div>

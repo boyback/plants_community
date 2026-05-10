@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Logo } from '@/components/ui/Logo';
 import { Icon } from '@/components/ui/Icon';
@@ -86,18 +87,7 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
         </nav>
 
         <div className="ml-auto hidden flex-1 max-w-md md:block">
-          <div className="relative">
-            <Icon
-              name="search"
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-leaf-400"
-              size={16}
-            />
-            <input
-              className="input pl-9"
-              placeholder={t('nav.search')}
-              aria-label={t('common.search')}
-            />
-          </div>
+          <HeaderSearch />
         </div>
 
         <div className="ml-auto flex items-center gap-1 md:ml-0">
@@ -625,4 +615,45 @@ function timeShort(iso: string): string {
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}天前`;
   return new Date(iso).toLocaleDateString('zh-CN');
+}
+
+// ============================================================
+// 顶部搜索框(form + Enter 跳 /search?q=xxx)
+// ============================================================
+
+function HeaderSearch() {
+  const router = useRouter();
+  const sp = useSearchParams();
+  const [q, setQ] = useState(sp?.get('q') || '');
+
+  // 切换路由后同步 input(从 /search 跳走时清空)
+  useEffect(() => {
+    setQ(sp?.get('q') || '');
+  }, [sp]);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const v = q.trim();
+    if (!v) return;
+    router.push(`/search?q=${encodeURIComponent(v)}`);
+  };
+
+  return (
+    <form onSubmit={submit} className="relative">
+      <Icon
+        name="search"
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-leaf-400 pointer-events-none"
+        size={16}
+      />
+      <input
+        type="search"
+        name="q"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        className="input pl-9"
+        placeholder="搜索帖子、品种、用户、板块"
+        aria-label="搜索"
+      />
+    </form>
+  );
 }
