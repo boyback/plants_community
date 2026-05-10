@@ -2,10 +2,13 @@
  * 首页右栏「快速发现」单卡
  *
  * 一张卡里 2 段:
- *   - 🌱 热门品种(从 API 抽)— 点击 chip 跳 /topic/[name],查看相关帖子
- *   - 🏷️ 板块(本地洗牌)— 点击进入板块
+ *   - 🔥 热门话题  — 词池随机抽 8 个,点击进 /topic/[name] 查看相关帖子
+ *   - 🏷️ 板块       — 本地洗牌,点击进板块页
  *
- * 每段右侧有独立「换一换 ↻」按钮,只刷自己那一段。
+ * 每段右上有独立「换一换 ↻」,只刷自己那一段。
+ *
+ * 注:为兼容旧的 page.tsx 调用,仍接收 initialSpecies 但忽略;
+ *     未来想把这字段删掉,得连 page.tsx + lib/quick-discovery 一起改。
  */
 'use client';
 
@@ -16,7 +19,6 @@ import { cn } from '@/lib/utils';
 export interface DiscoverySpecies {
   id: string;
   name: string;
-  /** 来源 API 给的品种图鉴 URL,本组件改用 /topic/[name],此字段保留兼容 */
   url: string;
 }
 
@@ -26,28 +28,35 @@ export interface DiscoveryCategory {
   name: string;
 }
 
+/** 养护话题词池 — chip 用,点击进 /topic/[name] */
+const TOPIC_POOL = [
+  '度夏', '配土', '叶插', '黑腐', '徒长', '上色', '浇水', '换盆',
+  '砍头', '播种', '繁殖', '日烧', '冻伤', '介壳虫', '红蜘蛛',
+  '老桩', '群生', '锦化', '出状态', '化水', '休眠', '醒水',
+  '光照', '通风', '颗粒土', '泥炭', '园艺盆', '陶盆',
+];
+
+function pickTopics(n = 8): string[] {
+  return [...TOPIC_POOL].sort(() => Math.random() - 0.5).slice(0, n);
+}
+
 export function QuickDiscovery({
-  initialSpecies,
   initialCategories,
 }: {
-  initialSpecies: DiscoverySpecies[];
+  // 保留入参签名向后兼容,但 species 这条线已不再使用
+  initialSpecies?: DiscoverySpecies[];
   initialCategories: DiscoveryCategory[];
 }) {
-  const [species, setSpecies] = useState(initialSpecies);
+  const [topics, setTopics] = useState<string[]>(() => TOPIC_POOL.slice(0, 8));
   const [categories, setCategories] = useState(initialCategories);
 
-  const [speciesBusy, setSpeciesBusy] = useState(false);
+  const [topicsBusy, setTopicsBusy] = useState(false);
   const [boardsBusy, setBoardsBusy] = useState(false);
 
-  const refreshSpecies = async () => {
-    setSpeciesBusy(true);
-    try {
-      const r = await fetch('/api/home/quick-discovery?n=12&shuffle=1');
-      const data = await r.json();
-      if (data?.data?.species) setSpecies(data.data.species);
-    } finally {
-      setSpeciesBusy(false);
-    }
+  const refreshTopics = () => {
+    setTopicsBusy(true);
+    setTopics(pickTopics());
+    setTimeout(() => setTopicsBusy(false), 150);
   };
 
   const refreshBoards = () => {
@@ -56,40 +65,27 @@ export function QuickDiscovery({
     setTimeout(() => setBoardsBusy(false), 200);
   };
 
-  const hasSpecies = species.length > 0;
   const hasCategories = categories.length > 0;
-
-  if (!hasSpecies && !hasCategories) return null;
 
   return (
     <div className="card overflow-hidden">
       <div className="divide-y divide-leaf-100/60">
-        {hasSpecies && (
-          <Section
-            title="🌱 热门品种"
-            onRefresh={refreshSpecies}
-            busy={speciesBusy}
-          >
-            <div className="flex flex-wrap gap-1.5">
-              {species.map((s) => (
-                <Link
-                  key={s.id}
-                  href={`/topic/${encodeURIComponent(s.name)}`}
-                  className="inline-flex items-center rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-700 transition-colors hover:bg-leaf-100"
-                >
-                  {s.name}
-                </Link>
-              ))}
-            </div>
-          </Section>
-        )}
+        <Section title="🔥 热门话题" onRefresh={refreshTopics} busy={topicsBusy}>
+          <div className="flex flex-wrap gap-1.5">
+            {topics.map((t) => (
+              <Link
+                key={t}
+                href={`/topic/${encodeURIComponent(t)}`}
+                className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700 transition-colors hover:bg-amber-100"
+              >
+                #{t}
+              </Link>
+            ))}
+          </div>
+        </Section>
 
         {hasCategories && (
-          <Section
-            title="🏷️ 板块"
-            onRefresh={refreshBoards}
-            busy={boardsBusy}
-          >
+          <Section title="🏷️ 板块" onRefresh={refreshBoards} busy={boardsBusy}>
             <div className="flex flex-wrap gap-1.5">
               {categories.map((c) => (
                 <Link
