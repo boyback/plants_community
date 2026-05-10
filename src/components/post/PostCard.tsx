@@ -103,11 +103,13 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
         </div>
 
         {/* —— 类型预览块(只展示,不可交互) —— */}
-        {post.type === 'short' && post.content && (
-          <p className="line-clamp-2 text-xs leading-4 text-ink-700/80">
-            {post.content}
-          </p>
-        )}
+        {/* short / rich / help 都展示纯文本预览;富文本剥 HTML 标签 */}
+        {(post.type === 'short' || post.type === 'rich' || post.type === 'help') &&
+          (post.contentText || stripHtml(post.content)) && (
+            <p className="line-clamp-2 text-xs leading-4 text-ink-700/80">
+              {post.contentText || stripHtml(post.content)}
+            </p>
+          )}
 
         {post.type === 'vote' && post.vote && <VotePreview post={post} />}
 
@@ -453,4 +455,9 @@ function SpeciesChip({
       )}
     </Link>
   );
+}
+
+function stripHtml(html: string | undefined | null): string {
+  if (!html) return '';
+  return html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 }

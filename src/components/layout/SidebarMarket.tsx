@@ -1,8 +1,9 @@
 /**
- * 左侧 Sidebar · 商品/拍卖推荐(紧凑列表版)
+ * 左侧 Sidebar · 商品/拍卖推荐
  *
- * 4 个商品 + 4 个拍卖,小图小字适配 Sidebar 56 宽度。
- * 客户端组件,挂载后异步拉数据(Sidebar 整体已是 'use client')。
+ * 两个独立卡片(拍卖会 / 商品推荐):
+ *  - 各自有独立的「换一换 ↻」按钮(只刷新本卡)
+ *  - 各自有「×」关闭按钮,关闭后 6 小时内不再出现(localStorage 存 dismissedAt)
  */
 'use client';
 
@@ -25,40 +26,98 @@ interface AuctionItem {
   startPrice: number;
 }
 
+const DISMISS_TTL_MS = 6 * 60 * 60 * 1000; // 6 小时
+const KEY_AUCTION = 'sidebar.dismissAuctionAt';
+const KEY_PRODUCT = 'sidebar.dismissProductAt';
+
+function isDismissed(key: string): boolean {
+  if (typeof window === 'undefined') return false;
+  const v = Number(localStorage.getItem(key) || '0');
+  if (!v) return false;
+  return Date.now() - v < DISMISS_TTL_MS;
+}
+
+function dismiss(key: string) {
+  try {
+    localStorage.setItem(key, String(Date.now()));
+  } catch {}
+}
+
 export function SidebarMarket() {
   const [products, setProducts] = useState<ProductItem[] | null>(null);
   const [auctions, setAuctions] = useState<AuctionItem[] | null>(null);
+  const [auctionRefreshing, setAuctionRefreshing] = useState(false);
+  const [productRefreshing, setProductRefreshing] = useState(false);
+  // dismiss 状态需要在 mount 后读 localStorage,避免 SSR/CSR 不一致
+  const [auctionHidden, setAuctionHidden] = useState(false);
+  const [productHidden, setProductHidden] = useState(false);
+
+  // 拉取拍卖(独立)
+  const loadAuctions = async (shuffle = false) => {
+    setAuctionRefreshing(true);
+    try {
+      const data = await api.get<{ auctions: AuctionItem[] }>(
+        `/api/home/sidebar-market?only=auctions${shuffle ? '&shuffle=1' : ''}`,
+      );
+      setAuctions(data?.auctions ?? []);
+    } catch {
+      setAuctions([]);
+    } finally {
+      setAuctionRefreshing(false);
+    }
+  };
+
+  // 拉取商品(独立)
+  const loadProducts = async (shuffle = false) => {
+    setProductRefreshing(true);
+    try {
+      const data = await api.get<{ products: ProductItem[] }>(
+        `/api/home/sidebar-market?only=products${shuffle ? '&shuffle=1' : ''}`,
+      );
+      setProducts(data?.products ?? []);
+    } catch {
+      setProducts([]);
+    } finally {
+      setProductRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    api
-      .get<{ products: ProductItem[]; auctions: AuctionItem[] }>(
-        '/api/home/sidebar-market',
-      )
-      .then((data) => {
-        setProducts(data?.products ?? []);
-        setAuctions(data?.auctions ?? []);
-      })
-      .catch(() => {
-        setProducts([]);
-        setAuctions([]);
-      });
+    setAuctionHidden(isDismissed(KEY_AUCTION));
+    setProductHidden(isDismissed(KEY_PRODUCT));
   }, []);
 
-  // 加载中 / 都为空时不渲染
-  if (products === null || auctions === null) return null;
-  if (products.length === 0 && auctions.length === 0) return null;
+  // 只在没被隐藏时才拉数据,省请求
+  useEffect(() => {
+    if (!auctionHidden) void loadAuctions(false);
+  }, [auctionHidden]);
+
+  useEffect(() => {
+    if (!productHidden) void loadProducts(false);
+  }, [productHidden]);
+
+  const showAuction = !auctionHidden && auctions !== null && auctions.length > 0;
+  const showProduct = !productHidden && products !== null && products.length > 0;
+
+  // 两块都不展示时整段不渲染(包括标题)
+  if (!showAuction && !showProduct) return null;
 
   return (
     <div className="mt-6 space-y-4">
-      {auctions.length > 0 && (
+      {showAuction && (
         <Block
           title="拍卖会"
           icon="🔨"
           moreHref="/auction"
-          moreLabel="全部"
           accent="rose"
+          refreshing={auctionRefreshing}
+          onRefresh={() => void loadAuctions(true)}
+          onDismiss={() => {
+            dismiss(KEY_AUCTION);
+            setAuctionHidden(true);
+          }}
         >
-          {auctions.map((a) => (
+          {auctions!.map((a) => (
             <Row
               key={a.id}
               href={`/auction/${a.id}`}
@@ -66,20 +125,24 @@ export function SidebarMarket() {
               title={a.title}
               price={a.startPrice}
               priceLabel="起拍"
-              accent="rose"
             />
           ))}
         </Block>
       )}
 
-      {products.length > 0 && (
+      {showProduct && (
         <Block
           title="商品推荐"
           icon="🛒"
           moreHref="/market"
-          moreLabel="全部"
+          refreshing={productRefreshing}
+          onRefresh={() => void loadProducts(true)}
+          onDismiss={() => {
+            dismiss(KEY_PRODUCT);
+            setProductHidden(true);
+          }}
         >
-          {products.map((p) => (
+          {products!.map((p) => (
             <Row
               key={p.id}
               href={`/market/${p.id}`}
@@ -98,33 +161,56 @@ function Block({
   title,
   icon,
   moreHref,
-  moreLabel,
   accent,
+  refreshing,
+  onRefresh,
+  onDismiss,
   children,
 }: {
   title: string;
   icon: string;
   moreHref: string;
-  moreLabel: string;
   accent?: 'rose';
+  refreshing: boolean;
+  onRefresh: () => void;
+  onDismiss: () => void;
   children: React.ReactNode;
 }) {
   return (
     <div>
-      <div className="mb-1.5 flex items-center justify-between px-3 text-[11px] uppercase tracking-wider text-leaf-600/70">
-        <span>
+      <div className="mb-1.5 flex items-center justify-between px-3 text-[11px]">
+        <span className="text-leaf-600/70">
           {icon} {title}
         </span>
-        <Link
-          href={moreHref}
-          className={
-            accent === 'rose'
-              ? 'text-rose-700 hover:underline'
-              : 'text-leaf-700 hover:underline'
-          }
-        >
-          {moreLabel} →
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={refreshing}
+            className="text-leaf-700/70 hover:text-leaf-700 disabled:opacity-50"
+            title="换一换"
+          >
+            {refreshing ? '换…' : '换 ↻'}
+          </button>
+          <Link
+            href={moreHref}
+            className={
+              accent === 'rose'
+                ? 'text-rose-700 hover:underline'
+                : 'text-leaf-700 hover:underline'
+            }
+          >
+            全部 →
+          </Link>
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="text-leaf-700/40 hover:text-rose-600"
+            title="关闭(6 小时内不再显示)"
+          >
+            ✕
+          </button>
+        </div>
       </div>
       <div className="space-y-0.5">{children}</div>
     </div>
@@ -137,14 +223,12 @@ function Row({
   title,
   price,
   priceLabel,
-  accent,
 }: {
   href: string;
   cover: string;
   title: string;
   price: number;
   priceLabel?: string;
-  accent?: 'rose';
 }) {
   const yuan = (price / 100).toFixed(price % 100 === 0 ? 0 : 2);
   return (
@@ -158,18 +242,8 @@ function Row({
       <div className="min-w-0 flex-1">
         <div className="line-clamp-1 text-[12px] text-ink-800">{title}</div>
         <div className="mt-0.5 flex items-baseline gap-1 text-[11px]">
-          {priceLabel && (
-            <span className="text-leaf-700/50">{priceLabel}</span>
-          )}
-          <span
-            className={
-              accent === 'rose'
-                ? 'font-semibold text-rose-600'
-                : 'font-semibold text-rose-600'
-            }
-          >
-            ¥{yuan}
-          </span>
+          {priceLabel && <span className="text-leaf-700/50">{priceLabel}</span>}
+          <span className="font-semibold text-rose-600">¥{yuan}</span>
         </div>
       </div>
     </Link>

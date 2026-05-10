@@ -150,7 +150,7 @@ export function Sidebar() {
         )}
       </div>
 
-      {/* 热门板块下面:商品 + 拍卖紧凑列表 */}
+      {/* 热门板块下面 → 商品/拍卖(放在账号卡之前) */}
       <SidebarMarket />
 
       {user && (

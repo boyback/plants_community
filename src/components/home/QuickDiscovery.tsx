@@ -24,18 +24,31 @@ export interface DiscoveryCategory {
   name: string;
 }
 
-const HOT_TOPICS = [
+// 话题池 — 实际显示时从池里随机抽 8 个
+const TOPIC_POOL = [
   '度夏', '配土', '叶插', '黑腐', '徒长', '上色', '浇水', '换盆',
+  '砍头', '播种', '繁殖', '日烧', '冻伤', '介壳虫', '红蜘蛛',
+  '老桩', '群生', '锦化', '出状态', '化水', '休眠', '醒水',
+  '光照', '通风', '颗粒土', '泥炭', '园艺盆', '陶盆',
 ];
+
+function pickTopics(): string[] {
+  return [...TOPIC_POOL].sort(() => Math.random() - 0.5).slice(0, 8);
+}
 
 export function QuickDiscovery({
   initialSpecies,
-  categories,
+  initialCategories,
 }: {
   initialSpecies: DiscoverySpecies[];
-  categories: DiscoveryCategory[];
+  initialCategories: DiscoveryCategory[];
 }) {
   const [species, setSpecies] = useState(initialSpecies);
+  const [categories, setCategories] = useState(initialCategories);
+  const [topics, setTopics] = useState<string[]>(() =>
+    // 初始保留写死前 8 个,刷新后才走随机
+    TOPIC_POOL.slice(0, 8),
+  );
   const [refreshing, setRefreshing] = useState(false);
 
   const refresh = async () => {
@@ -44,6 +57,13 @@ export function QuickDiscovery({
       const r = await fetch('/api/home/quick-discovery?n=12&shuffle=1');
       const data = await r.json();
       if (data?.data?.species) setSpecies(data.data.species);
+      if (data?.data?.categories) {
+        // 板块也乱序展示
+        const shuffled = [...data.data.categories].sort(() => Math.random() - 0.5);
+        setCategories(shuffled);
+      }
+      // 话题前端洗牌
+      setTopics(pickTopics());
     } finally {
       setRefreshing(false);
     }
@@ -99,7 +119,7 @@ export function QuickDiscovery({
       <div className="px-4 py-3">
         <div className="mb-2 text-[11px] text-leaf-700/60">养护话题</div>
         <div className="flex flex-wrap gap-1.5">
-          {HOT_TOPICS.map((t) => (
+          {topics.map((t) => (
             <Link
               key={t}
               href={`/search?q=${encodeURIComponent(t)}`}

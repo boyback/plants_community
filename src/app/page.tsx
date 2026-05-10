@@ -66,7 +66,10 @@ export default async function HomePage() {
 
         <div className="space-y-5">
           {/* 1. 快速发现(SEO 内链 + 用户探索) */}
-          <QuickDiscovery initialSpecies={discovery.species} categories={discovery.categories} />
+          <QuickDiscovery
+            initialSpecies={discovery.species}
+            initialCategories={discovery.categories}
+          />
           {/* 2. 话题 */}
           <TopicsCard />
           {/* 3. 推荐肉友 */}

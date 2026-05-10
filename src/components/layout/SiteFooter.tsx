@@ -10,7 +10,7 @@
  */
 import Link from 'next/link';
 
-const SUPPORT_EMAIL = 'support@plantcommunity.cn';
+const SUPPORT_EMAIL = 'admin@plantcommunity.cn';
 
 export function SiteFooter() {
   return (
