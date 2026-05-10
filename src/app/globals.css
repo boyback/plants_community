@@ -738,3 +738,12 @@ img, video, svg {
     gap: 12px;
   }
 }
+
+/* BoardsDrawer 左侧滑入动画 */
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+.animate-slide-in-left {
+  animation: slide-in-left 220ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}

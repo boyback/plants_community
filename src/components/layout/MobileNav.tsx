@@ -10,10 +10,11 @@ import { Avatar } from '@/components/ui/Avatar';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/client-api';
 import type { Board } from '@/lib/types';
+import { BoardsDrawer } from '@/components/layout/BoardsDrawer';
 
+// 全部板块从 mainNav 拆出 - 改为按钮 + Drawer
 const mainNav: { href: string; labelKey: string; icon: IconName }[] = [
   { href: '/', labelKey: 'nav.home', icon: 'home' },
-  { href: '/board', labelKey: 'nav.sidebar.allBoards', icon: 'board' },
   { href: '/plants', labelKey: 'nav.sidebar.plants', icon: 'plants' },
   { href: '/orders', labelKey: 'nav.myOrders', icon: 'check' },
   { href: '/addresses', labelKey: 'nav.shippingAddress', icon: 'board' },
@@ -30,6 +31,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
   const { user } = useAuth();
   const { t } = useI18n();
   const [boards, setBoards] = useState<Board[]>([]);
+  const [boardsDrawerOpen, setBoardsDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (open && boards.length === 0) {
@@ -81,7 +83,32 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
           </div>
         )}
         <nav className="space-y-0.5 p-3">
-          {mainNav.map((n) => (
+          {/* 首页 */}
+          {mainNav.slice(0, 1).map((n) => (
+            <Link
+              key={n.href}
+              href={n.href}
+              onClick={onClose}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm hover:bg-leaf-50"
+            >
+              <Icon name={n.icon} size={18} />
+              {t(n.labelKey)}
+            </Link>
+          ))}
+
+          {/* 全部板块 - 弹 Drawer */}
+          <button
+            type="button"
+            onClick={() => setBoardsDrawerOpen(true)}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm hover:bg-leaf-50"
+          >
+            <Icon name="board" size={18} />
+            {t('nav.sidebar.allBoards')}
+            <span className="ml-auto text-xs text-leaf-700/40">▸</span>
+          </button>
+
+          {/* 其余项 */}
+          {mainNav.slice(1).map((n) => (
             <Link
               key={n.href}
               href={n.href}
@@ -141,6 +168,14 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
           </div>
         )}
       </aside>
+
+      <BoardsDrawer
+        open={boardsDrawerOpen}
+        onClose={() => {
+          setBoardsDrawerOpen(false);
+          onClose();
+        }}
+      />
     </>
   );
 }

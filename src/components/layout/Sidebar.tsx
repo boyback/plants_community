@@ -10,6 +10,7 @@ import { useI18n } from '@/i18n/I18nContext';
 import { api } from '@/lib/client-api';
 import { VipBadge } from '@/components/ui/VipBadge';
 import { SidebarMarket } from '@/components/layout/SidebarMarket';
+import { BoardsDrawer } from '@/components/layout/BoardsDrawer';
 import type { Board } from '@/lib/types';
 
 interface HotGenus {
@@ -27,9 +28,9 @@ interface HotGenus {
  * Sidebar 主导航 - 5 项核心入口。
  * 用户中心相关(订单/地址/积分/VIP/任务/私信/通知)挪到 Header 右上角头像菜单。
  */
+// 注:「全部板块」从 Link 改成 button(点开 BoardsDrawer)
 const mainNav: { href: string; labelKey: string; icon: IconName }[] = [
   { href: '/', labelKey: 'nav.home', icon: 'home' },
-  { href: '/board', labelKey: 'nav.sidebar.allBoards', icon: 'board' },
   { href: '/plants', labelKey: 'nav.sidebar.plants', icon: 'plants' },
 ];
 
@@ -43,6 +44,7 @@ export function Sidebar() {
   const [hotGenera, setHotGenera] = useState<HotGenus[]>([]);
   const [followedBoards, setFollowedBoards] = useState<Board[] | null>(null);
   const [tab, setTab] = useState<BoardTab>('hot');
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     api
@@ -108,7 +110,39 @@ export function Sidebar() {
   return (
     <aside className="sticky top-[60px] hidden h-[calc(100vh-72px)] w-56 shrink-0 overflow-y-auto pr-2 lg:block">
       <nav className="space-y-0.5">
-        {mainNav.map((n) => {
+        {/* 首页 */}
+        {mainNav.slice(0, 1).map((n) => {
+          const active = pathname === n.href;
+          return (
+            <Link
+              key={n.href}
+              href={n.href}
+              className={cn(
+                'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
+                active
+                  ? 'bg-leaf-100 text-leaf-800 font-medium'
+                  : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700',
+              )}
+            >
+              <Icon name={n.icon} size={17} />
+              {t(n.labelKey)}
+            </Link>
+          );
+        })}
+
+        {/* 全部板块 - 点击打开三级树 Drawer */}
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ink-800 transition-colors hover:bg-leaf-50 hover:text-leaf-700"
+        >
+          <Icon name="board" size={17} />
+          {t('nav.sidebar.allBoards')}
+          <span className="ml-auto text-[10px] text-leaf-700/40">▸</span>
+        </button>
+
+        {/* 多肉图鉴 */}
+        {mainNav.slice(1).map((n) => {
           const active =
             pathname === n.href || (n.href !== '/' && pathname.startsWith(n.href));
           return (
@@ -119,7 +153,7 @@ export function Sidebar() {
                 'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
                 active
                   ? 'bg-leaf-100 text-leaf-800 font-medium'
-                  : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700'
+                  : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700',
               )}
             >
               <Icon name={n.icon} size={17} />
@@ -128,6 +162,8 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      <BoardsDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       <div className="mt-6">
         {showFollowingTab ? (
