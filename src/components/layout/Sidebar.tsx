@@ -10,7 +10,7 @@ import { useI18n } from '@/i18n/I18nContext';
 import { api } from '@/lib/client-api';
 import { VipBadge } from '@/components/ui/VipBadge';
 import { SidebarMarket } from '@/components/layout/SidebarMarket';
-import { BoardsDrawer } from '@/components/layout/BoardsDrawer';
+import { BoardsTreeMenu } from '@/components/layout/BoardsTreeMenu';
 import type { Board } from '@/lib/types';
 
 interface HotGenus {
@@ -44,7 +44,7 @@ export function Sidebar() {
   const [hotGenera, setHotGenera] = useState<HotGenus[]>([]);
   const [followedBoards, setFollowedBoards] = useState<Board[] | null>(null);
   const [tab, setTab] = useState<BoardTab>('hot');
-  const [drawerOpen, setDrawerOpen] = useState(false);
+
 
   useEffect(() => {
     api
@@ -130,22 +130,8 @@ export function Sidebar() {
           );
         })}
 
-        {/* 全部板块 - 点击在右边展开三级树(anchor 模式) */}
-        <button
-          type="button"
-          data-boards-toggle
-          onClick={() => setDrawerOpen((v) => !v)}
-          className={cn(
-            'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
-            drawerOpen
-              ? 'bg-leaf-100 text-leaf-800 font-medium'
-              : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700',
-          )}
-        >
-          <Icon name="board" size={17} />
-          {t('nav.sidebar.allBoards')}
-          <span className="ml-auto text-[10px] text-leaf-700/40">▸</span>
-        </button>
+        {/* 全部板块 - 内联可展开三级树 */}
+        <BoardsTreeMenu />
 
         {/* 多肉图鉴 */}
         {mainNav.slice(1).map((n) => {
@@ -169,11 +155,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <BoardsDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        mode="anchor"
-      />
+
 
       <div className="mt-6">
         {showFollowingTab ? (

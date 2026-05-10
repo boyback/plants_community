@@ -10,7 +10,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/client-api';
 import type { Board } from '@/lib/types';
-import { BoardsDrawer } from '@/components/layout/BoardsDrawer';
+import { BoardsTreeMenu } from '@/components/layout/BoardsTreeMenu';
 
 // 全部板块从 mainNav 拆出 - 改为按钮 + Drawer
 const mainNav: { href: string; labelKey: string; icon: IconName }[] = [
@@ -31,7 +31,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
   const { user } = useAuth();
   const { t } = useI18n();
   const [boards, setBoards] = useState<Board[]>([]);
-  const [boardsDrawerOpen, setBoardsDrawerOpen] = useState(false);
+
 
   useEffect(() => {
     if (open && boards.length === 0) {
@@ -96,16 +96,8 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
             </Link>
           ))}
 
-          {/* 全部板块 - 弹 Drawer */}
-          <button
-            type="button"
-            onClick={() => setBoardsDrawerOpen(true)}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm hover:bg-leaf-50"
-          >
-            <Icon name="board" size={18} />
-            {t('nav.sidebar.allBoards')}
-            <span className="ml-auto text-xs text-leaf-700/40">▸</span>
-          </button>
+          {/* 全部板块 - 内联折叠树 */}
+          <BoardsTreeMenu onNavigate={onClose} />
 
           {/* 其余项 */}
           {mainNav.slice(1).map((n) => (
@@ -168,14 +160,6 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
           </div>
         )}
       </aside>
-
-      <BoardsDrawer
-        open={boardsDrawerOpen}
-        onClose={() => {
-          setBoardsDrawerOpen(false);
-          onClose();
-        }}
-      />
     </>
   );
 }
