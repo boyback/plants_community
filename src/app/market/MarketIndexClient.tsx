@@ -32,6 +32,8 @@ interface ListingItem {
   createdAt: string;
   endAt?: string;
   url: string;
+  shipFrom?: string | null;
+  seller?: { id: string; name: string; avatar: string } | null;
 }
 
 // 顶层「其他」类目直接平铺,key 用 other:xxx
@@ -311,16 +313,23 @@ function ListingCard({ item }: { item: ListingItem }) {
       <div className="relative aspect-square bg-leaf-50">
         <Image src={item.cover} alt={item.title} fill className="object-cover" unoptimized />
         {isAuction && (
-          <span className="absolute left-2 top-2 inline-flex items-center gap-0.5 rounded-md bg-rose-500/95 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-sm">
-            🔨 拍卖
-          </span>
+          <>
+            <span className="absolute left-2 top-2 inline-flex items-center gap-0.5 rounded-md bg-rose-500/95 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-sm">
+              🔨 拍卖
+            </span>
+            {item.endAt && (
+              <span className="absolute right-2 top-2 rounded-md bg-ink-900/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+                <Countdown to={item.endAt} />
+              </span>
+            )}
+          </>
         )}
       </div>
-      <div className="px-2.5 py-2">
+      <div className="space-y-1 px-2.5 py-2">
         <div className="line-clamp-1 text-[13px] font-medium text-ink-800 group-hover:text-leaf-700">
           {item.title}
         </div>
-        <div className="mt-1 flex items-baseline gap-1.5">
+        <div className="flex items-baseline gap-1.5">
           {isAuction && <span className="text-[10px] text-leaf-700/50">起拍</span>}
           <span className="text-[15px] font-bold text-rose-600">{formatPrice(item.price)}</span>
           {item.originalPrice && (
@@ -329,9 +338,69 @@ function ListingCard({ item }: { item: ListingItem }) {
             </span>
           )}
         </div>
+
+        {/* 卖家 + 发货地 */}
+        {item.seller && (
+          <div className="flex items-center gap-1 text-[10px] text-leaf-700/60">
+            {item.seller.avatar && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={item.seller.avatar}
+                alt=""
+                className="h-3.5 w-3.5 rounded-full object-cover"
+              />
+            )}
+            <span className="truncate">{item.seller.name}</span>
+            {item.shipFrom && (
+              <>
+                <span className="text-leaf-700/30">·</span>
+                <span className="truncate">📍 {item.shipFrom}</span>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* 发布时间 */}
+        <div className="text-[10px] text-leaf-700/50">{relTime(item.createdAt)}</div>
       </div>
     </Link>
   );
+}
+
+function Countdown({ to }: { to: string }) {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => force((n) => n + 1), 30_000); // 30s 刷一次足够
+    return () => clearInterval(id);
+  }, []);
+  const target = new Date(to).getTime();
+  const diff = target - Date.now();
+  if (diff <= 0) return <>已结束</>;
+  const days = Math.floor(diff / 86400000);
+  if (days >= 1) return <>剩 {days} 天</>;
+  const hours = Math.floor(diff / 3600000);
+  if (hours >= 1) {
+    const mins = Math.floor((diff % 3600000) / 60000);
+    return (
+      <>
+        剩 {hours}h{String(mins).padStart(2, '0')}
+      </>
+    );
+  }
+  const mins = Math.floor(diff / 60000);
+  return <>剩 {mins} 分</>;
+}
+
+function relTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return '刚刚';
+  if (m < 60) return `${m} 分前`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} 小时前`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d} 天前`;
+  return new Date(iso).toLocaleDateString('zh-CN');
 }
 
 /**

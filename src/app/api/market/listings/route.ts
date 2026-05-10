@@ -30,6 +30,12 @@ interface ListingItem {
   createdAt: string;
   endAt?: string; // 拍卖才有
   url: string; // 详情页 URL
+  shipFrom?: string | null; // 发货地
+  seller?: {
+    id: string;
+    name: string;
+    avatar: string;
+  } | null;
 }
 
 const OTHER_KEYWORDS: Record<string, string[]> = {
@@ -130,6 +136,9 @@ export async function GET(req: Request) {
         price: true,
         originalPrice: true,
         createdAt: true,
+        shipFrom: true,
+        sellerId: true,
+        seller: { select: { id: true, name: true, avatar: true } },
       },
     });
     products = list.map((p) => ({
@@ -141,6 +150,8 @@ export async function GET(req: Request) {
       originalPrice: p.originalPrice,
       createdAt: p.createdAt.toISOString(),
       url: `/market/${p.id}`,
+      shipFrom: p.shipFrom,
+      seller: p.seller,
     }));
   }
 
@@ -174,6 +185,7 @@ export async function GET(req: Request) {
         startPrice: true,
         createdAt: true,
         endAt: true,
+        seller: { select: { id: true, name: true, avatar: true } },
       },
     });
     auctions = list.map((a) => ({
@@ -185,6 +197,7 @@ export async function GET(req: Request) {
       createdAt: a.createdAt.toISOString(),
       endAt: a.endAt.toISOString(),
       url: `/auction/${a.id}`,
+      seller: a.seller,
     }));
   }
 
