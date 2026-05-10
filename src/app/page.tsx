@@ -7,6 +7,8 @@ import { RecommendUsers } from '@/components/home/RecommendUsers';
 import { AppDownloadCard } from '@/components/home/AppDownloadCard';
 import { QuickDiscovery } from '@/components/home/QuickDiscovery';
 import { loadQuickDiscoveryData } from '@/lib/quick-discovery';
+import { MarketShowcase } from '@/components/home/MarketShowcase';
+import { loadMarketShowcase } from '@/lib/market-showcase';
 import { prisma } from '@/lib/db';
 import { postInclude } from '@/lib/post-include';
 import { serializePost, serializeUser } from '@/lib/serializers';
@@ -17,7 +19,7 @@ import { jsonLdScript, websiteJsonLd, organizationJsonLd } from '@/lib/jsonld';
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const [postsRaw, bannersRaw, recommendUsersRaw, discovery] = await Promise.all([
+  const [postsRaw, bannersRaw, recommendUsersRaw, discovery, market] = await Promise.all([
     prisma.post.findMany({
       where: {
         deleted: false,
@@ -40,6 +42,7 @@ export default async function HomePage() {
       },
     }),
     loadQuickDiscoveryData({ n: 12 }),
+    loadMarketShowcase(),
   ]);
 
   const posts = postsRaw.map(serializePost);
@@ -62,6 +65,7 @@ export default async function HomePage() {
         <div className="min-w-0 space-y-6">
           {banners.length > 0 && <BannerCarousel items={banners} />}
           <FeedTabs initial={posts} />
+          <MarketShowcase products={market.products} auctions={market.auctions} />
         </div>
 
         <div className="space-y-5">
