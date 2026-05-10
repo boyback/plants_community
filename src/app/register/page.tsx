@@ -332,25 +332,25 @@ export default function RegisterPage() {
                     maxLength={24}
                   />
                 </div>
+
+                {/* Step 2 自己的错误条 + 注册按钮 */}
+                {err && (
+                  <div className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                    {err}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={
+                    submitting || handleStatus.state !== 'ok' || password.length < 6
+                  }
+                >
+                  {submitting ? '注册中…' : '完成注册'}
+                </button>
               </div>
             )}
-
-            {err && (
-              <div className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{err}</div>
-            )}
-
-            <button
-              type="submit"
-              className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={
-                submitting ||
-                !emailVerified ||
-                handleStatus.state !== 'ok' ||
-                password.length < 6
-              }
-            >
-              {submitting ? '注册中…' : '完成注册'}
-            </button>
           </form>
 
           <div className="mt-4 text-center text-xs text-leaf-700/70">
