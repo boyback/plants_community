@@ -40,6 +40,7 @@ const NAV: { section: string; items: { href: string; label: string; minRole: Rol
   {
     section: '图鉴 / 板块',
     items: [
+      { href: '/admin/boards/tree', label: '🌲 板块树状(拖拽)', minRole: 'admin' },
       { href: '/admin/boards', label: '🌿 板块 CRUD', minRole: 'admin' },
       { href: '/admin/species', label: '📚 品种数据', minRole: 'admin' },
     ],
