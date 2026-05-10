@@ -203,7 +203,8 @@ services:
   # 用 host 网络模式 — 直接占宿主机端口,绕过 docker-proxy
   # -----------------------------------------------
   nginx:
-    profiles: ["nginx"]
+    # 注:之前用 profiles 隔离 nginx,导致 deploy.sh up 时不起 nginx,
+    # 上线 https 后必须保证 nginx 默认就跟其他容器一起拉起。
     image: nginx:1.27-alpine
     container_name: rouyou-nginx
     restart: unless-stopped

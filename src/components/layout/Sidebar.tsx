@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api } from '@/lib/client-api';
 import { VipBadge } from '@/components/ui/VipBadge';
+import { SidebarMarket } from '@/components/layout/SidebarMarket';
 import type { Board } from '@/lib/types';
 
 /**
