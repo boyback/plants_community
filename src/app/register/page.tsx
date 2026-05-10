@@ -193,8 +193,6 @@ export default function RegisterPage() {
             {/* ====================== Step 1 屏:验证邮箱 ====================== */}
             {!emailVerified && (
               <div className="space-y-4 rounded-xl border border-leaf-100 bg-leaf-50/40 p-4">
-                <div className="text-xs font-semibold text-leaf-700">① 验证邮箱</div>
-
                 <div>
                   <label className="mb-1.5 block text-xs text-ink-800">
                     邮箱 <span className="text-rose-500">*</span>
@@ -265,8 +263,6 @@ export default function RegisterPage() {
                   <span className="text-base">✓</span>
                   <span className="flex-1 truncate">已验证 {email}</span>
                 </div>
-
-                <div className="text-xs font-semibold text-leaf-700">② 设置账号信息</div>
 
                 {/* —— handle —— */}
                 <div>
