@@ -279,39 +279,7 @@ export function MarketIndexClient() {
             </button>
           )}
 
-          {/* 列数切换(图标:疏 / 密) */}
-          <div className="inline-flex overflow-hidden rounded-md border border-leaf-200 bg-white">
-            <button
-              type="button"
-              onClick={() => updateCols(4)}
-              title="一排 4 个"
-              aria-label="一排 4 个"
-              className={cn(
-                'flex h-8 w-8 items-center justify-center transition-colors',
-                cols === 4
-                  ? 'bg-leaf-100 text-leaf-700'
-                  : 'text-leaf-700/50 hover:bg-leaf-50',
-              )}
-            >
-              <ColsIcon n={4} />
-            </button>
-            <button
-              type="button"
-              onClick={() => updateCols(5)}
-              title="一排 5 个"
-              aria-label="一排 5 个"
-              className={cn(
-                'flex h-8 w-8 items-center justify-center border-l border-leaf-200 transition-colors',
-                cols === 5
-                  ? 'bg-leaf-100 text-leaf-700'
-                  : 'text-leaf-700/50 hover:bg-leaf-50',
-              )}
-            >
-              <ColsIcon n={5} />
-            </button>
-          </div>
-
-          {/* 搜索框 — 始终最右 */}
+          {/* 搜索框 — 还是这一行最右(原位置) */}
           <div className="relative ml-auto">
             <Icon
               name="search"
@@ -334,20 +302,57 @@ export function MarketIndexClient() {
       ) : items.length === 0 ? (
         <Empty icon="🛒" title={hasFilter ? '没有匹配的内容' : '暂无商品'} />
       ) : (
-        <div
-          className={cn(
-            'grid grid-cols-2 gap-3 sm:grid-cols-3',
-            cols === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4',
-          )}
-        >
-          {items.map((item) => (
-            <GridCard
-              key={`${item.type}-${item.id}`}
-              item={item}
-              dense={cols === 5}
-            />
-          ))}
-        </div>
+        <>
+          {/* 列表上方 toolbar:左结果数 / 右列数切换(仅 lg+ 显示) */}
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[11px] text-leaf-700/50">{items.length} 个结果</span>
+            <div className="hidden lg:inline-flex overflow-hidden rounded-md border border-leaf-100 bg-white">
+              <button
+                type="button"
+                onClick={() => updateCols(4)}
+                title="一排 4 个"
+                aria-label="一排 4 个"
+                className={cn(
+                  'flex h-7 w-7 items-center justify-center transition-colors',
+                  cols === 4
+                    ? 'bg-leaf-100 text-leaf-700'
+                    : 'text-leaf-700/50 hover:bg-leaf-50',
+                )}
+              >
+                <ColsIcon n={4} />
+              </button>
+              <button
+                type="button"
+                onClick={() => updateCols(5)}
+                title="一排 5 个"
+                aria-label="一排 5 个"
+                className={cn(
+                  'flex h-7 w-7 items-center justify-center border-l border-leaf-100 transition-colors',
+                  cols === 5
+                    ? 'bg-leaf-100 text-leaf-700'
+                    : 'text-leaf-700/50 hover:bg-leaf-50',
+                )}
+              >
+                <ColsIcon n={5} />
+              </button>
+            </div>
+          </div>
+
+          <div
+            className={cn(
+              'grid grid-cols-2 gap-3 sm:grid-cols-3',
+              cols === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4',
+            )}
+          >
+            {items.map((item) => (
+              <GridCard
+                key={`${item.type}-${item.id}`}
+                item={item}
+                dense={cols === 5}
+              />
+            ))}
+          </div>
+        </>
       )}
     </>
   );

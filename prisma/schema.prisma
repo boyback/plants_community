@@ -59,10 +59,12 @@ model User {
   privacyShowFollowers Boolean @default(true)
 
   // 管理员角色:user(默认) / moderator(版主) / admin(超管)
-  role        UserRole  @default(user)
+  role         UserRole  @default(user)
+  // 超级管理员:全站唯一(用户反馈消息收件人)
+  isSuperAdmin Boolean   @default(false)
   // 封禁:若 bannedUntil > now 则无法登录 / 发帖 / 评论;null 或过去时间 = 未封禁
-  bannedUntil DateTime?
-  banReason   String?   @db.Text
+  bannedUntil  DateTime?
+  banReason    String?   @db.Text
 
   // 语言偏好 / 节日主题开关
   locale         String  @default("zh-CN") // zh-CN / zh-TW / en / ja / ko
