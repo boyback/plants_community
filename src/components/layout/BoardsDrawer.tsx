@@ -1,15 +1,19 @@
 /**
- * 「全部板块」 Drawer — 从左侧滑出的全屏三级树
+ * 「全部板块」 Drawer
+ *
+ * 桌面端(lg+):**从 Sidebar 右边贴着展开**(锚点在「全部板块」按钮旁)
+ *   - 不覆盖全屏,不需要遮罩
+ *   - 点外部 / ESC 关闭
+ *
+ * 移动端(< lg):全屏从左侧滑入,带遮罩
  *
  * 布局:
- *   左侧栏:科列表(图标+名+属计数),hover 切换右侧
- *   右侧:被选中科下的属网格,点属直达 /board/cat/genus
- *
- * 触发:Sidebar / MobileNav 的「全部板块」 onClick
+ *   左侧栏:科列表
+ *   右侧:科下属网格,点属直达 /board/cat/genus
  */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
@@ -32,15 +36,23 @@ interface CategoryFull {
   genera: GenusLite[];
 }
 
+/**
+ * mode:
+ *   - 'anchor':桌面 Sidebar 旁展开,无遮罩,小巧贴边
+ *   - 'fullscreen':移动端全屏抽屉,带遮罩
+ */
 export function BoardsDrawer({
   open,
   onClose,
+  mode = 'fullscreen',
 }: {
   open: boolean;
   onClose: () => void;
+  mode?: 'anchor' | 'fullscreen';
 }) {
   const [data, setData] = useState<CategoryFull[] | null>(null);
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // 打开时拉数据(只拉一次)
   useEffect(() => {
@@ -54,37 +66,113 @@ export function BoardsDrawer({
       .catch(() => setData([]));
   }, [open, data]);
 
-  // ESC 关闭 + 锁滚动
+  // ESC 关闭 + 锁滚动(仅 fullscreen 锁)
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
+    if (mode === 'fullscreen') {
+      document.body.style.overflow = 'hidden';
+    }
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = '';
     };
-  }, [open, onClose]);
+  }, [open, onClose, mode]);
+
+  // anchor 模式:点外部关闭
+  useEffect(() => {
+    if (!open || mode !== 'anchor') return;
+    const onDown = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        // 但要排除「全部板块」按钮本身,否则 button 的 onClick 又会重开
+        const target = e.target as HTMLElement;
+        if (target.closest('[data-boards-toggle]')) return;
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [open, onClose, mode]);
 
   if (!open) return null;
 
   const activeCat = data?.find((c) => c.id === activeCatId) ?? null;
 
+  // ============================================================
+  // anchor 模式 — 桌面端贴 Sidebar 右边
+  // ============================================================
+  if (mode === 'anchor') {
+    return (
+      <div
+        ref={panelRef}
+        // sidebar 宽 14rem (w-56=14rem=224px),Drawer 紧贴右边
+        className="fixed left-[14rem] top-[60px] z-[100] hidden h-[calc(100vh-72px)] w-[640px] max-w-[calc(100vw-15rem)] overflow-hidden rounded-r-2xl border border-l-0 border-leaf-100 bg-white shadow-2xl animate-slide-in-left lg:flex"
+      >
+        <DrawerInner
+          data={data}
+          activeCat={activeCat}
+          activeCatId={activeCatId}
+          setActiveCatId={setActiveCatId}
+          onClose={onClose}
+          showHeader
+        />
+      </div>
+    );
+  }
+
+  // ============================================================
+  // fullscreen 模式 — 移动端全屏 + 遮罩
+  // ============================================================
   return (
-    <div className="fixed inset-0 z-[200] flex">
-      {/* 半透明遮罩 */}
+    <div className="fixed inset-0 z-[200] flex lg:hidden">
       <button
         type="button"
         className="absolute inset-0 cursor-default bg-ink-900/50 backdrop-blur-[2px]"
         onClick={onClose}
         aria-label="关闭"
       />
+      <div
+        ref={panelRef}
+        className="relative ml-0 flex h-full w-[88%] max-w-[720px] flex-col bg-white shadow-2xl animate-slide-in-left"
+      >
+        <DrawerInner
+          data={data}
+          activeCat={activeCat}
+          activeCatId={activeCatId}
+          setActiveCatId={setActiveCatId}
+          onClose={onClose}
+          showHeader
+        />
+      </div>
+    </div>
+  );
+}
 
-      {/* Drawer 主面板 — 左侧滑出,占 88% 宽 max 720px */}
-      <div className="relative ml-0 flex h-full w-[88%] max-w-[720px] flex-col bg-white shadow-2xl animate-slide-in-left">
-        {/* 顶部 */}
+// ============================================================
+// 内部主体(两种模式共用)
+// ============================================================
+
+function DrawerInner({
+  data,
+  activeCat,
+  activeCatId,
+  setActiveCatId,
+  onClose,
+  showHeader,
+}: {
+  data: CategoryFull[] | null;
+  activeCat: CategoryFull | null;
+  activeCatId: string | null;
+  setActiveCatId: (id: string) => void;
+  onClose: () => void;
+  showHeader?: boolean;
+}) {
+  return (
+    <div className="flex h-full flex-1 flex-col overflow-hidden">
+      {showHeader && (
         <div className="flex items-center justify-between border-b border-leaf-100 px-4 py-3">
           <h2 className="text-base font-semibold text-ink-800">🌿 全部板块</h2>
           <button
@@ -96,9 +184,8 @@ export function BoardsDrawer({
             ✕
           </button>
         </div>
-
-        {/* 主体:左科 / 右属 */}
-        <div className="flex flex-1 overflow-hidden">
+      )}
+      <div className="flex flex-1 overflow-hidden">
           {/* 科列表 */}
           <ul className="w-40 shrink-0 overflow-y-auto border-r border-leaf-100/60 py-1">
             {data === null && (
@@ -184,7 +271,6 @@ export function BoardsDrawer({
                 选择左侧的科以查看属
               </div>
             )}
-          </div>
         </div>
       </div>
     </div>

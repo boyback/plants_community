@@ -130,11 +130,17 @@ export function Sidebar() {
           );
         })}
 
-        {/* 全部板块 - 点击打开三级树 Drawer */}
+        {/* 全部板块 - 点击在右边展开三级树(anchor 模式) */}
         <button
           type="button"
-          onClick={() => setDrawerOpen(true)}
-          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ink-800 transition-colors hover:bg-leaf-50 hover:text-leaf-700"
+          data-boards-toggle
+          onClick={() => setDrawerOpen((v) => !v)}
+          className={cn(
+            'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
+            drawerOpen
+              ? 'bg-leaf-100 text-leaf-800 font-medium'
+              : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700',
+          )}
         >
           <Icon name="board" size={17} />
           {t('nav.sidebar.allBoards')}
@@ -163,7 +169,11 @@ export function Sidebar() {
         })}
       </nav>
 
-      <BoardsDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <BoardsDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        mode="anchor"
+      />
 
       <div className="mt-6">
         {showFollowingTab ? (
