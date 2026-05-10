@@ -60,19 +60,6 @@ export default function AuctionPage() {
 
   return (
     <Shell>
-      {/* 与 /market 一致的市场 tab */}
-      <div className="mb-4 flex gap-1 border-b border-leaf-100">
-        <Link
-          href="/market"
-          className="px-4 py-2 text-sm text-ink-700/60 hover:text-leaf-700"
-        >
-          🛒 一口价
-        </Link>
-        <span className="border-b-2 border-leaf-500 px-4 py-2 text-sm font-medium text-leaf-700">
-          🔨 拍卖会
-        </span>
-      </div>
-
       <div className="card mb-6 overflow-hidden">
         <div className="bg-gradient-to-br from-rose-500 via-rose-400 to-amber-300 p-6 text-white">
           <div className="flex flex-wrap items-center justify-between gap-3">
