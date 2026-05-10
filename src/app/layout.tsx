@@ -3,7 +3,10 @@ import './globals.css';
 import { startEmailBroadcastWorker } from '@/lib/email-broadcast-worker';
 
 // 启动后台 worker(单进程,layout 模块加载即跑;幂等)
-startEmailBroadcastWorker();
+// build 期(NEXT_PHASE=phase-production-build)跳过,避免预渲染时启动 worker 反复查 DB
+if (process.env.NEXT_PHASE !== 'phase-production-build' && process.env.DATABASE_URL) {
+  startEmailBroadcastWorker();
+}
 import { cookies, headers } from 'next/headers';
 import { AuthProvider } from '@/context/AuthContext';
 import { I18nProvider } from '@/i18n/I18nContext';

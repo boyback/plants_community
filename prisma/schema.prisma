@@ -1267,6 +1267,7 @@ model Genus {
   latinName   String? // 如 "Astrophytum"
   description String   @db.Text
   cover       String?
+  /// 同一 category 下同辈 Genus 排序;数字小的在前
   orderIdx    Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -1306,6 +1307,9 @@ model Species {
   // 用户打分汇总(由 SpeciesRating 触发更新)
   ratingSum   Int @default(0) // 所有打分之和
   ratingCount Int @default(0) // 总打分人数
+
+  /// 同一 genus 下同辈 Species 排序
+  orderIdx Int @default(0)
 
   posts    Post[]
   ratings  SpeciesRating[]

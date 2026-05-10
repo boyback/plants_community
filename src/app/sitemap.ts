@@ -23,6 +23,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: p.priority,
   }));
 
+  // build 期没 DATABASE_URL,直接返回静态部分(运行时再被请求时会真查)
+  if (!process.env.DATABASE_URL) {
+    return out;
+  }
+
   // 三级板块(科 / 属 / 品种)
   try {
     const [categories, genera, species] = await Promise.all([
@@ -102,4 +107,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 }
 
 // 让 sitemap 实时生成(也可以加 ISR)
-export const revalidate = 3600; // 每小时刷新一次
+// build 期不预渲染(避免 prisma 没 DATABASE_URL 报错);运行时按需渲染
+export const dynamic = 'force-dynamic';
