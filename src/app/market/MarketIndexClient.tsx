@@ -67,6 +67,19 @@ export function MarketIndexClient() {
   const [selectedGenus, setSelectedGenus] = useState<string>('');
 
   const [type, setType] = useState<string>('all');
+  // 网格列数 4 | 5,localStorage 持久化(只影响 lg+ 布局,小屏永远 2 列)
+  const [cols, setCols] = useState<4 | 5>(4);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const v = Number(localStorage.getItem('market.cols'));
+    if (v === 4 || v === 5) setCols(v as 4 | 5);
+  }, []);
+  const updateCols = (n: 4 | 5) => {
+    setCols(n);
+    try {
+      localStorage.setItem('market.cols', String(n));
+    } catch {}
+  };
   const [priceMin, setPriceMin] = useState<string>('');
   const [priceMax, setPriceMax] = useState<string>('');
   const [sort, setSort] = useState<string>('latest');
@@ -266,8 +279,29 @@ export function MarketIndexClient() {
             </button>
           )}
 
+          {/* 列数切换 4 / 5 */}
+          <div className="ml-auto inline-flex overflow-hidden rounded-md border border-leaf-200 bg-white">
+            {[4, 5].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => updateCols(n as 4 | 5)}
+                title={`一排 ${n} 个`}
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center text-[11px] transition-colors',
+                  n === 5 && 'border-l border-leaf-200',
+                  cols === n
+                    ? 'bg-leaf-100 font-medium text-leaf-700'
+                    : 'text-leaf-700/50 hover:bg-leaf-50',
+                )}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+
           {/* 搜索框 — 右下 */}
-          <div className="relative ml-auto">
+          <div className="relative">
             <Icon
               name="search"
               size={14}
@@ -289,9 +323,18 @@ export function MarketIndexClient() {
       ) : items.length === 0 ? (
         <Empty icon="🛒" title={hasFilter ? '没有匹配的内容' : '暂无商品'} />
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div
+          className={cn(
+            'grid grid-cols-2 gap-3 sm:grid-cols-3',
+            cols === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4',
+          )}
+        >
           {items.map((item) => (
-            <GridCard key={`${item.type}-${item.id}`} item={item} />
+            <GridCard
+              key={`${item.type}-${item.id}`}
+              item={item}
+              dense={cols === 5}
+            />
           ))}
         </div>
       )}
@@ -304,8 +347,31 @@ export function MarketIndexClient() {
 // ============================================================
 
 /* ===== 网格模式:图 + 标题(全展示)+ 价格 + 卖家+发布时间 ===== */
-function GridCard({ item }: { item: ListingItem }) {
+function GridCard({ item, dense = false }: { item: ListingItem; dense?: boolean }) {
   const isAuction = item.type === 'auction';
+  // dense (5 列) 整体字号、padding、avatar 都更小
+  const cls = dense
+    ? {
+        title: 'text-[11px]',
+        price: 'text-[12px]',
+        ship: 'text-[9px]',
+        seller: 'text-[10px]',
+        date: 'text-[9px]',
+        avatar: 'h-3.5 w-3.5',
+        badge: 'text-[9px] px-1 py-0.5',
+        body: 'gap-0.5 px-1.5 py-1',
+      }
+    : {
+        title: 'text-[12px]',
+        price: 'text-[14px]',
+        ship: 'text-[10px]',
+        seller: 'text-[11px]',
+        date: 'text-[10px]',
+        avatar: 'h-4 w-4',
+        badge: 'text-[10px] px-1.5 py-0.5',
+        body: 'gap-1 px-2 py-1.5',
+      };
+
   return (
     <Link
       href={item.url}
@@ -315,53 +381,60 @@ function GridCard({ item }: { item: ListingItem }) {
         <Image src={item.cover} alt={item.title} fill className="object-cover" unoptimized />
         {isAuction && (
           <>
-            <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-0.5 rounded bg-rose-500/95 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-sm">
+            <span
+              className={cn(
+                'absolute left-1.5 top-1.5 inline-flex items-center gap-0.5 rounded bg-rose-500/95 font-medium text-white shadow-sm',
+                cls.badge,
+              )}
+            >
               🔨 拍卖
             </span>
             {item.endAt && (
-              <span className="absolute right-1.5 top-1.5 rounded bg-ink-900/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+              <span
+                className={cn(
+                  'absolute right-1.5 top-1.5 rounded bg-ink-900/60 font-medium text-white backdrop-blur-sm',
+                  cls.badge,
+                )}
+              >
                 <Countdown to={item.endAt} />
               </span>
             )}
           </>
         )}
       </div>
-      <div className="flex flex-col gap-1 px-2 py-1.5">
-        {/* 标题(单行省略) */}
+      <div className={cn('flex flex-col', cls.body)}>
         <div
           title={item.title}
-          className="truncate text-[12px] font-medium text-ink-800 group-hover:text-leaf-700"
+          className={cn('truncate font-medium text-ink-800 group-hover:text-leaf-700', cls.title)}
         >
           {item.title}
         </div>
 
-        {/* 价格 + 发货地(同一行,价格左,发货地最右) */}
-        <div className="flex items-baseline gap-2">
-          <span className="text-[14px] font-bold text-rose-600">
+        <div className="flex items-baseline gap-1.5">
+          <span className={cn('font-bold text-rose-600', cls.price)}>
             {formatPrice(item.price)}
           </span>
           {item.shipFrom && (
-            <span className="ml-auto truncate text-[10px] text-leaf-700/60">
+            <span className={cn('ml-auto truncate text-leaf-700/60', cls.ship)}>
               📍 {item.shipFrom}
             </span>
           )}
         </div>
 
-        {/* 卖家 + 时间 */}
         {item.seller && (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             {item.seller.avatar && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={item.seller.avatar}
                 alt=""
-                className="h-4 w-4 shrink-0 rounded-full object-cover"
+                className={cn('shrink-0 rounded-full object-cover', cls.avatar)}
               />
             )}
-            <span className="truncate text-[11px] text-ink-700/70">
+            <span className={cn('truncate text-ink-700/70', cls.seller)}>
               {item.seller.name}
             </span>
-            <span className="ml-auto shrink-0 text-[10px] text-leaf-700/50">
+            <span className={cn('ml-auto shrink-0 text-leaf-700/50', cls.date)}>
               {fmtDate(item.createdAt)}
             </span>
           </div>
