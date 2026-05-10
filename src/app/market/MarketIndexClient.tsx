@@ -339,29 +339,30 @@ function ListingCard({ item }: { item: ListingItem }) {
           )}
         </div>
 
-        {/* 卖家 + 发货地 */}
+        {/* 底部 footer:头像 / 昵称+时间 / 地址 */}
         {item.seller && (
-          <div className="flex items-center gap-1 text-[10px] text-leaf-700/60">
+          <div className="flex items-center gap-1.5 pt-0.5 text-[10px] text-leaf-700/60">
             {item.seller.avatar && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={item.seller.avatar}
                 alt=""
-                className="h-3.5 w-3.5 rounded-full object-cover"
+                className="h-7 w-7 shrink-0 rounded-full object-cover"
               />
             )}
-            <span className="truncate">{item.seller.name}</span>
+            <div className="flex min-w-0 flex-col leading-tight">
+              <span className="truncate text-[11px] text-ink-700/80">{item.seller.name}</span>
+              <span className="text-[10px] text-leaf-700/50">
+                {fmtDate(item.createdAt)}
+              </span>
+            </div>
             {item.shipFrom && (
-              <>
-                <span className="text-leaf-700/30">·</span>
-                <span className="truncate">📍 {item.shipFrom}</span>
-              </>
+              <span className="ml-auto shrink-0 truncate text-[10px] text-leaf-700/60">
+                📍 {item.shipFrom}
+              </span>
             )}
           </div>
         )}
-
-        {/* 发布时间 */}
-        <div className="text-[10px] text-leaf-700/50">{relTime(item.createdAt)}</div>
       </div>
     </Link>
   );
@@ -370,7 +371,7 @@ function ListingCard({ item }: { item: ListingItem }) {
 function Countdown({ to }: { to: string }) {
   const [, force] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => force((n) => n + 1), 30_000); // 30s 刷一次足够
+    const id = setInterval(() => force((n) => n + 1), 30_000);
     return () => clearInterval(id);
   }, []);
   const target = new Date(to).getTime();
@@ -391,16 +392,16 @@ function Countdown({ to }: { to: string }) {
   return <>剩 {mins} 分</>;
 }
 
-function relTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return '刚刚';
-  if (m < 60) return `${m} 分前`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} 小时前`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d} 天前`;
-  return new Date(iso).toLocaleDateString('zh-CN');
+/** 卡片显示绝对日期(月/日 时:分),不要相对「N 天前」 */
+function fmtDate(iso: string): string {
+  const d = new Date(iso);
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  // 同年仅显示「月/日 hh:mm」,跨年附年份
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return sameYear ? `${m}/${day} ${hh}:${mm}` : `${d.getFullYear()}/${m}/${day}`;
 }
 
 /**
