@@ -18,21 +18,34 @@ const FALLBACK_TOPICS = [
   '度夏', '配土', '叶插', '黑腐', '徒长', '上色', '浇水', '换盆',
 ];
 
-export async function GET() {
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const shuffle = url.searchParams.get('shuffle') === '1';
+
   try {
-    const top = await prisma.species.findMany({
+    // shuffle=1 时取 top 30 后随机抽 8(否则 top 8 一直一样)
+    const pool = await prisma.species.findMany({
       include: { _count: { select: { posts: true } } },
       orderBy: [{ posts: { _count: 'desc' } }, { name: 'asc' }],
-      take: 8,
+      take: shuffle ? 30 : 8,
     });
 
-    const fromSpecies = top.map((s) => ({
+    const speciesPicked = shuffle
+      ? [...pool].sort(() => Math.random() - 0.5).slice(0, 8)
+      : pool;
+
+    const fromSpecies = speciesPicked.map((s) => ({
       q: s.name,
       kind: 'species' as const,
       count: s._count.posts,
     }));
 
-    const fromTopics = FALLBACK_TOPICS.map((q) => ({
+    // 话题也按 shuffle 处理
+    const topicsPicked = shuffle
+      ? [...FALLBACK_TOPICS].sort(() => Math.random() - 0.5)
+      : FALLBACK_TOPICS;
+
+    const fromTopics = topicsPicked.map((q) => ({
       q,
       kind: 'topic' as const,
     }));
@@ -43,9 +56,10 @@ export async function GET() {
         hot: [...fromSpecies, ...fromTopics],
       },
     });
-  } catch (e) {
-    return NextResponse.json(
-      { ok: true, data: { hot: FALLBACK_TOPICS.map((q) => ({ q, kind: 'topic' as const })) } },
-    );
+  } catch {
+    return NextResponse.json({
+      ok: true,
+      data: { hot: FALLBACK_TOPICS.map((q) => ({ q, kind: 'topic' as const })) },
+    });
   }
 }

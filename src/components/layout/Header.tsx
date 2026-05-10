@@ -633,6 +633,7 @@ function HeaderSearch() {
   const [q, setQ] = useState(sp?.get('q') || '');
   const [open, setOpen] = useState(false);
   const [hot, setHot] = useState<HotItem[]>([]);
+  const [hotRefreshing, setHotRefreshing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // 切换路由后同步 input(从 /search 跳走时清空)
@@ -640,14 +641,23 @@ function HeaderSearch() {
     setQ(sp?.get('q') || '');
   }, [sp]);
 
+  const fetchHot = async (shuffle = false) => {
+    setHotRefreshing(true);
+    try {
+      const r = await fetch(`/api/search/hot${shuffle ? '?shuffle=1' : ''}`);
+      const data = await r.json();
+      if (data?.data?.hot) setHot(data.data.hot);
+    } catch {
+      // ignore
+    } finally {
+      setHotRefreshing(false);
+    }
+  };
+
   // 首次焦点时拉热词
   const ensureHot = async () => {
     if (hot.length > 0) return;
-    try {
-      const r = await fetch('/api/search/hot');
-      const data = await r.json();
-      if (data?.data?.hot) setHot(data.data.hot);
-    } catch {}
+    void fetchHot();
   };
 
   // 点外部关闭
@@ -712,8 +722,20 @@ function HeaderSearch() {
             </button>
           ) : (
             <>
-              <div className="border-b border-leaf-50 px-3 py-2 text-[11px] text-leaf-700/60">
-                🔥 热门搜索
+              <div className="flex items-center justify-between border-b border-leaf-50 px-3 py-2 text-[11px]">
+                <span className="text-leaf-700/60">🔥 热门搜索</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void fetchHot(true);
+                  }}
+                  disabled={hotRefreshing}
+                  className="text-leaf-700/70 hover:text-leaf-700 disabled:opacity-50"
+                >
+                  {hotRefreshing ? '换一换…' : '换一换 ↻'}
+                </button>
               </div>
               <div className="flex flex-wrap gap-1.5 p-3">
                 {hot.length === 0 && (
