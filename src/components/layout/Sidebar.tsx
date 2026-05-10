@@ -1,228 +1,27 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { cn, boardUrl } from '@/lib/utils';
-import { Icon, type IconName } from '@/components/ui/Icon';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
-import { api } from '@/lib/client-api';
 import { VipBadge } from '@/components/ui/VipBadge';
 import { SidebarMarket } from '@/components/layout/SidebarMarket';
 import { BoardsTreeMenu } from '@/components/layout/BoardsTreeMenu';
-import type { Board } from '@/lib/types';
-
-interface HotGenus {
-  id: string;
-  slug: string;
-  name: string;
-  latinName: string | null;
-  posts: number;
-  categorySlug: string;
-  categoryName: string;
-  categoryIcon: string;
-}
 
 /**
- * Sidebar 主导航 - 5 项核心入口。
- * 用户中心相关(订单/地址/积分/VIP/任务/私信/通知)挪到 Header 右上角头像菜单。
+ * Sidebar — 板块树 + 商品/拍卖 + 账号卡
+ *
+ * 已去掉:首页、我的关注/热门 tab、多肉图鉴主导航 — 用户改用顶部 nav。
  */
-// 注:「全部板块」从 Link 改成 button(点开 BoardsDrawer)
-const mainNav: { href: string; labelKey: string; icon: IconName }[] = [
-  { href: '/', labelKey: 'nav.home', icon: 'home' },
-  { href: '/plants', labelKey: 'nav.sidebar.plants', icon: 'plants' },
-];
-
-type BoardTab = 'following' | 'hot';
-
 export function Sidebar() {
-  const pathname = usePathname();
   const { user, vip, pointsBalance, expProgress } = useAuth();
   const { t } = useI18n();
 
-  const [hotGenera, setHotGenera] = useState<HotGenus[]>([]);
-  const [followedBoards, setFollowedBoards] = useState<Board[] | null>(null);
-  const [tab, setTab] = useState<BoardTab>('hot');
-
-
-  useEffect(() => {
-    api
-      .get<HotGenus[]>('/api/genera?limit=12&sort=hot')
-      .then((list) => setHotGenera(list || []))
-      .catch(() => null);
-  }, []);
-
-  // 登录后拉「我关注的板块」
-  useEffect(() => {
-    if (!user) {
-      setFollowedBoards(null);
-      setTab('hot');
-      return;
-    }
-    api
-      .get<Board[]>('/api/boards/followed')
-      .then((list) => {
-        setFollowedBoards(list);
-        // 有关注板块时,默认展示「我的关注」tab
-        if (list.length > 0) setTab('following');
-      })
-      .catch(() => setFollowedBoards([]));
-  }, [user]);
-
-  const showFollowingTab = !!user && (followedBoards?.length ?? 0) > 0;
-
-  // 把热门属和「我的关注」(可能是科/属/品种混合)统一成 sidebar 行模型
-  type SidebarRow = {
-    key: string;
-    href: string;
-    icon: string;
-    name: string;
-    subtitle?: string;
-    posts: number;
-  };
-  const currentList: SidebarRow[] = (() => {
-    if (tab === 'following' && followedBoards) {
-      return followedBoards.slice(0, 12).map((b) => ({
-        key: b.id,
-        href: boardUrl(b),
-        icon: b.icon || '🌿',
-        name: b.name,
-        subtitle:
-          b.level === 'genus'
-            ? b.path[0]?.name
-            : b.level === 'species'
-              ? b.path[1]?.name
-              : undefined,
-        posts: b.posts,
-      }));
-    }
-    return hotGenera.slice(0, 12).map((g) => ({
-      key: g.id,
-      href: `/board/${g.categorySlug}/${g.slug}`,
-      icon: g.categoryIcon,
-      name: g.name,
-      subtitle: g.categoryName,
-      posts: g.posts,
-    }));
-  })();
-
   return (
     <aside className="sticky top-[60px] hidden h-[calc(100vh-72px)] w-56 shrink-0 overflow-y-auto pr-2 lg:block">
-      <nav className="space-y-0.5">
-        {/* 首页 */}
-        {mainNav.slice(0, 1).map((n) => {
-          const active = pathname === n.href;
-          return (
-            <Link
-              key={n.href}
-              href={n.href}
-              className={cn(
-                'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
-                active
-                  ? 'bg-leaf-100 text-leaf-800 font-medium'
-                  : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700',
-              )}
-            >
-              <Icon name={n.icon} size={17} />
-              {t(n.labelKey)}
-            </Link>
-          );
-        })}
+      {/* 板块树(科 → 属) */}
+      <BoardsTreeMenu />
 
-        {/* 全部板块 - 内联可展开三级树 */}
-        <BoardsTreeMenu />
-
-        {/* 多肉图鉴 */}
-        {mainNav.slice(1).map((n) => {
-          const active =
-            pathname === n.href || (n.href !== '/' && pathname.startsWith(n.href));
-          return (
-            <Link
-              key={n.href}
-              href={n.href}
-              className={cn(
-                'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
-                active
-                  ? 'bg-leaf-100 text-leaf-800 font-medium'
-                  : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700',
-              )}
-            >
-              <Icon name={n.icon} size={17} />
-              {t(n.labelKey)}
-            </Link>
-          );
-        })}
-      </nav>
-
-
-
-      <div className="mt-6">
-        {showFollowingTab ? (
-          <div className="mb-2 flex items-center gap-1 rounded-full bg-leaf-50 p-0.5 text-[11px]">
-            <TabBtn active={tab === 'following'} onClick={() => setTab('following')}>
-              {t('nav.sidebar.myFollowing')}
-            </TabBtn>
-            <TabBtn active={tab === 'hot'} onClick={() => setTab('hot')}>
-              {t('nav.sidebar.hot')}
-            </TabBtn>
-          </div>
-        ) : (
-          <div className="mb-2 px-3 text-[11px] font-medium uppercase tracking-wider text-leaf-600/70">
-            {t('nav.sidebar.hotBoards')}
-          </div>
-        )}
-
-        {currentList.length === 0 ? (
-          <div className="rounded-lg bg-leaf-50/50 px-3 py-4 text-center text-[11px] text-leaf-700/60">
-            {tab === 'following' ? t('nav.sidebar.emptyFollowingHint') : t('nav.sidebar.emptyHot')}
-          </div>
-        ) : (
-          <div className="space-y-0.5">
-            {currentList.map((row) => {
-              const active = pathname === row.href;
-              return (
-                <Link
-                  key={row.key}
-                  href={row.href}
-                  className={cn(
-                    'flex items-center justify-between rounded-lg px-3 py-2 text-sm',
-                    active
-                      ? 'bg-leaf-100 text-leaf-800 font-medium'
-                      : 'text-ink-800 hover:bg-leaf-50',
-                  )}
-                >
-                  <span className="flex items-center gap-2 min-w-0">
-                    <span className="text-base shrink-0">{row.icon}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate">{row.name}</span>
-                      {row.subtitle && (
-                        <span className="block truncate text-[10px] text-leaf-600/70">
-                          {row.subtitle}
-                        </span>
-                      )}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-[11px] text-leaf-600/70">
-                    {row.posts > 999 ? `${(row.posts / 1000).toFixed(1)}k` : row.posts}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-
-        {tab === 'following' && followedBoards && followedBoards.length > 12 && (
-          <Link
-            href={`/user/${user!.id}?tab=following-boards`}
-            className="mt-2 block text-center text-[10px] text-leaf-700 hover:underline"
-          >
-            {t('nav.sidebar.viewAllFollow', { n: followedBoards.length })}
-          </Link>
-        )}
-      </div>
-
-      {/* 热门板块下面 → 商品/拍卖(放在账号卡之前) */}
+      {/* 商品 / 拍卖(放在账号卡之前) */}
       <SidebarMarket />
 
       {user && (
@@ -283,27 +82,3 @@ export function Sidebar() {
   );
 }
 
-function TabBtn({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'flex-1 rounded-full px-2.5 py-1.5 transition-colors',
-        active
-          ? 'bg-white text-leaf-700 shadow-sm font-medium'
-          : 'text-ink-700/60 hover:text-leaf-700'
-      )}
-    >
-      {children}
-    </button>
-  );
-}

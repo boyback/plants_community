@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Logo } from '@/components/ui/Logo';
 import { Icon, type IconName } from '@/components/ui/Icon';
-import { BoardMegaMenu } from '@/components/layout/BoardMegaMenu';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 
 import { LocaleSwitcher } from '@/components/ui/LocaleSwitcher';
@@ -82,7 +81,6 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
 
         <nav className="ml-4 hidden items-center gap-1 lg:flex">
           <HeaderLink href="/" icon="home">{t('nav.home')}</HeaderLink>
-          <BoardMegaMenu />
           <HeaderLink href="/plants" icon="plants">{t('nav.plants')}</HeaderLink>
           <HeaderLink href="/tasks" icon="check">{t('nav.tasks')}</HeaderLink>
         </nav>
