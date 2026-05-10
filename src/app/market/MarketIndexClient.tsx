@@ -496,17 +496,17 @@ function fmtDate(iso: string): string {
 /**
  * 过滤行容器 — 左侧固定标签 + 右侧 chips wrap
  */
-/** 列数切换的小方格图标(密度示意,n=4 / 5) */
+/** 列数切换图标 — 横排 N 个小条,直观表达「一排 N 个」 */
 function ColsIcon({ n }: { n: 4 | 5 }) {
   return (
     <span
       className={cn(
-        'grid h-3.5 gap-[1.5px]',
-        n === 4 ? 'w-3.5 grid-cols-2' : 'w-4 grid-cols-3',
+        'flex h-3.5 items-stretch gap-[1.5px]',
+        n === 4 ? 'w-3.5' : 'w-4',
       )}
     >
-      {Array.from({ length: n === 4 ? 4 : 6 }).map((_, i) => (
-        <span key={i} className="block rounded-[1px] bg-current" />
+      {Array.from({ length: n }).map((_, i) => (
+        <span key={i} className="flex-1 rounded-[1px] bg-current" />
       ))}
     </span>
   );
