@@ -17,6 +17,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { Theme } from '@/lib/themes';
+import { useAuth } from '@/context/AuthContext';
 
 interface Preferences {
   globalDisabled: boolean;
@@ -62,24 +63,34 @@ async function fetchPrefs(): Promise<Preferences> {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [activeThemes, setActive] = useState<Theme[]>([]);
   const [ready, setReady] = useState(false);
   const [previewDate, setPreviewDate] = useState<Date | null>(null);
   const [prefs, setPrefs] = useState<Preferences>({ globalDisabled: false, disabledSlugs: [] });
 
-  // 启动:并行拉 active + preferences
+  // 启动:并行拉 active + preferences(prefs 仅登录用户拉,避免无谓 401)
   useEffect(() => {
     let cancelled = false;
-    Promise.all([fetchActive(previewDate), fetchPrefs()]).then(([act, pr]) => {
-      if (cancelled) return;
-      setActive(act.themes ?? []);
-      setPrefs(pr);
-      setReady(true);
+    const tasks: Promise<unknown>[] = [
+      fetchActive(previewDate).then((act) => {
+        if (!cancelled) setActive(act.themes ?? []);
+      }),
+    ];
+    if (user) {
+      tasks.push(
+        fetchPrefs().then((pr) => {
+          if (!cancelled) setPrefs(pr);
+        }),
+      );
+    }
+    Promise.all(tasks).finally(() => {
+      if (!cancelled) setReady(true);
     });
     return () => {
       cancelled = true;
     };
-  }, [previewDate]);
+  }, [previewDate, user]);
 
   const previewAt = useCallback(async (at: Date | null) => {
     setPreviewDate(at);
