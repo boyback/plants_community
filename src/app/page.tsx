@@ -4,6 +4,7 @@ import { SignInCard } from '@/components/home/SignInCard';
 import { FeedTabs } from '@/components/home/FeedTabs';
 import { TopicsCard } from '@/components/home/TopicsCard';
 import { RecommendUsers } from '@/components/home/RecommendUsers';
+import { FeedbackCard } from '@/components/home/FeedbackCard';
 import { AppDownloadCard } from '@/components/home/AppDownloadCard';
 import { QuickDiscovery } from '@/components/home/QuickDiscovery';
 import { loadQuickDiscoveryData } from '@/lib/quick-discovery';
@@ -76,7 +77,9 @@ export default async function HomePage() {
           <RecommendUsers users={recommendUsers} />
           {/* 4. 签到 + 月历(整合) */}
           <SignInCard />
-          {/* 5. APP 下载 */}
+          {/* 5. 用户反馈 */}
+          <FeedbackCard />
+          {/* 6. APP 下载 */}
           <AppDownloadCard />
           {/* 法律入口已挪到全站 Footer,这里不再重复 */}
         </div>
