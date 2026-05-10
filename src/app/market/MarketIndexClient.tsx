@@ -67,19 +67,6 @@ export function MarketIndexClient() {
   const [selectedGenus, setSelectedGenus] = useState<string>('');
 
   const [type, setType] = useState<string>('all');
-  // 视图模式 grid / list,localStorage 持久化
-  const [view, setView] = useState<'grid' | 'list'>('grid');
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const v = localStorage.getItem('market.view');
-    if (v === 'list' || v === 'grid') setView(v);
-  }, []);
-  const updateView = (v: 'grid' | 'list') => {
-    setView(v);
-    try {
-      localStorage.setItem('market.view', v);
-    } catch {}
-  };
   const [priceMin, setPriceMin] = useState<string>('');
   const [priceMax, setPriceMax] = useState<string>('');
   const [sort, setSort] = useState<string>('latest');
@@ -279,40 +266,8 @@ export function MarketIndexClient() {
             </button>
           )}
 
-          {/* 视图切换 grid/list */}
-          <div className="ml-auto inline-flex overflow-hidden rounded-md border border-leaf-200 bg-white">
-            <button
-              type="button"
-              onClick={() => updateView('grid')}
-              title="网格"
-              className={cn(
-                'flex h-8 w-8 items-center justify-center transition-colors',
-                view === 'grid'
-                  ? 'bg-leaf-100 text-leaf-700'
-                  : 'text-leaf-700/50 hover:bg-leaf-50',
-              )}
-              aria-label="网格视图"
-            >
-              ▦
-            </button>
-            <button
-              type="button"
-              onClick={() => updateView('list')}
-              title="列表"
-              className={cn(
-                'flex h-8 w-8 items-center justify-center border-l border-leaf-200 transition-colors',
-                view === 'list'
-                  ? 'bg-leaf-100 text-leaf-700'
-                  : 'text-leaf-700/50 hover:bg-leaf-50',
-              )}
-              aria-label="列表视图"
-            >
-              ☰
-            </button>
-          </div>
-
           {/* 搜索框 — 右下 */}
-          <div className="relative">
+          <div className="relative ml-auto">
             <Icon
               name="search"
               size={14}
@@ -333,16 +288,10 @@ export function MarketIndexClient() {
         <div className="py-10 text-center text-sm text-leaf-700/60">加载中…</div>
       ) : items.length === 0 ? (
         <Empty icon="🛒" title={hasFilter ? '没有匹配的内容' : '暂无商品'} />
-      ) : view === 'grid' ? (
+      ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {items.map((item) => (
             <GridCard key={`${item.type}-${item.id}`} item={item} />
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {items.map((item) => (
-            <ListCard key={`${item.type}-${item.id}`} item={item} />
           ))}
         </div>
       )}
@@ -387,14 +336,9 @@ function GridCard({ item }: { item: ListingItem }) {
         <div className="flex items-baseline gap-1.5">
           {isAuction && <span className="text-[10px] text-leaf-700/50">起拍</span>}
           <span className="text-[15px] font-bold text-rose-600">{formatPrice(item.price)}</span>
-          {item.originalPrice && (
-            <span className="text-[10px] text-leaf-700/40 line-through">
-              {formatPrice(item.originalPrice)}
-            </span>
-          )}
         </div>
 
-        {/* 卖家行:头像 + 昵称 */}
+        {/* 卖家 + 时间 同一行 */}
         {item.seller && (
           <div className="flex items-center gap-1.5">
             {item.seller.avatar && (
@@ -408,87 +352,9 @@ function GridCard({ item }: { item: ListingItem }) {
             <span className="truncate text-[11px] text-ink-700/70">
               {item.seller.name}
             </span>
-            {item.shipFrom && (
-              <span className="ml-auto shrink-0 truncate text-[10px] text-leaf-700/60">
-                📍 {item.shipFrom}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* 发布时间(年月日时分) */}
-        <div className="text-[10px] text-leaf-700/50">{fmtDate(item.createdAt)}</div>
-      </div>
-    </Link>
-  );
-}
-
-/* ===== 列表模式:横排,信息全 ===== */
-function ListCard({ item }: { item: ListingItem }) {
-  const isAuction = item.type === 'auction';
-  return (
-    <Link
-      href={item.url}
-      className="group flex gap-3 overflow-hidden rounded-xl border border-leaf-100 bg-white p-2.5 transition-all hover:border-leaf-300 hover:shadow-sm"
-    >
-      {/* 左:封面 */}
-      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-leaf-50 sm:h-28 sm:w-28">
-        <Image src={item.cover} alt={item.title} fill className="object-cover" unoptimized />
-        {isAuction && (
-          <span className="absolute left-1 top-1 rounded bg-rose-500/95 px-1 py-0.5 text-[9px] font-medium text-white">
-            🔨
-          </span>
-        )}
-      </div>
-
-      {/* 中:标题 + 卖家 + 时间 */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="break-words text-sm font-medium leading-5 text-ink-800 group-hover:text-leaf-700">
-          {item.title}
-        </div>
-        {/* 卖家行 */}
-        {item.seller && (
-          <div className="mt-1 flex items-center gap-1.5">
-            {item.seller.avatar && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={item.seller.avatar}
-                alt=""
-                className="h-5 w-5 shrink-0 rounded-full object-cover"
-              />
-            )}
-            <span className="truncate text-[11px] text-ink-700/70">{item.seller.name}</span>
-            {item.shipFrom && (
-              <>
-                <span className="text-leaf-700/30">·</span>
-                <span className="truncate text-[11px] text-leaf-700/60">📍 {item.shipFrom}</span>
-              </>
-            )}
-          </div>
-        )}
-        <div className="mt-auto pt-1 text-[11px] text-leaf-700/50">
-          {fmtDate(item.createdAt)}
-        </div>
-      </div>
-
-      {/* 右:价格 + 拍卖倒计时 */}
-      <div className="flex shrink-0 flex-col items-end justify-between text-right">
-        <div>
-          {isAuction && (
-            <div className="text-[10px] text-leaf-700/50">起拍</div>
-          )}
-          <div className="text-lg font-bold leading-tight text-rose-600">
-            {formatPrice(item.price)}
-          </div>
-          {item.originalPrice && (
-            <div className="text-[10px] text-leaf-700/40 line-through">
-              {formatPrice(item.originalPrice)}
-            </div>
-          )}
-        </div>
-        {isAuction && item.endAt && (
-          <div className="rounded-md bg-rose-50 px-2 py-0.5 text-[10px] font-medium text-rose-700">
-            <Countdown to={item.endAt} />
+            <span className="ml-auto shrink-0 text-[10px] text-leaf-700/50">
+              {fmtDate(item.createdAt)}
+            </span>
           </div>
         )}
       </div>
@@ -526,9 +392,7 @@ function fmtDate(iso: string): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  return `${y}-${m}-${day} ${hh}:${mm}`;
+  return `${y}-${m}-${day}`;
 }
 
 /**

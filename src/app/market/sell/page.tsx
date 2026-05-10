@@ -22,7 +22,7 @@ export default function SellPage() {
   const [descriptionJson, setDescriptionJson] = useState<unknown>(null);
   const [category, setCategory] = useState(DEFAULT_CATEGORIES[0]);
   const [priceYuan, setPriceYuan] = useState('');
-  const [originalPriceYuan, setOriginalPriceYuan] = useState('');
+
   const [cover, setCover] = useState('');
   const [imagesText, setImagesText] = useState('');
   const [tags, setTags] = useState<string[]>([]);
@@ -77,9 +77,6 @@ export default function SellPage() {
     if (!cover.trim()) return setErr(t('market.sell.coverRequired'));
     const price = Math.round(Number(priceYuan) * 100);
     if (!Number.isFinite(price) || price <= 0) return setErr(t('market.sell.priceInvalid'));
-    const originalPrice = originalPriceYuan
-      ? Math.round(Number(originalPriceYuan) * 100)
-      : undefined;
     const images = imagesText
       .split(/\s+/)
       .map((s) => s.trim())
@@ -97,7 +94,6 @@ export default function SellPage() {
         descriptionJson,
         category,
         price,
-        originalPrice,
         cover,
         images: images.length ? images : [cover],
         tags,
@@ -157,26 +153,15 @@ export default function SellPage() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Field label={t('market.sell.fieldPrice')}>
-                <input
-                  className="input"
-                  value={priceYuan}
-                  onChange={(e) => setPriceYuan(e.target.value)}
-                  placeholder={t('market.sell.fieldPricePlaceholder')}
-                  inputMode="decimal"
-                />
-              </Field>
-              <Field label={t('market.sell.fieldOriginalPrice')}>
-                <input
-                  className="input"
-                  value={originalPriceYuan}
-                  onChange={(e) => setOriginalPriceYuan(e.target.value)}
-                  placeholder={t('market.sell.fieldOriginalPricePlaceholder')}
-                  inputMode="decimal"
-                />
-              </Field>
-            </div>
+            <Field label={t('market.sell.fieldPrice')}>
+              <input
+                className="input"
+                value={priceYuan}
+                onChange={(e) => setPriceYuan(e.target.value)}
+                placeholder={t('market.sell.fieldPricePlaceholder')}
+                inputMode="decimal"
+              />
+            </Field>
 
             <Field label={t('market.sell.fieldCover')}>
               <input
