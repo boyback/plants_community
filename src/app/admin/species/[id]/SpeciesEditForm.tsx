@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/client-api';
+import { UploadField } from '@/components/upload/UploadField';
 
 interface SpeciesData {
   id: string;
@@ -173,24 +174,24 @@ export function SpeciesEditForm({
       </Section>
 
       <Section title="图片">
-        <Field label="封面图 URL *">
-          <input
-            className="w-full rounded-lg border border-ink-200 px-3 py-2 font-mono text-[11px]"
-            value={cover}
-            onChange={(e) => setCover(e.target.value)}
+        <Field label="封面图 *">
+          <UploadField
+            kind="image"
+            value={cover ? [cover] : []}
+            onChange={(arr) => setCover(arr[0] ?? '')}
+            max={1}
           />
         </Field>
-        {cover && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={cover} alt="" className="h-40 w-full rounded-lg object-cover" />
-        )}
-        <Field label="图集(JSON 数组)">
-          <textarea
-            className="w-full min-h-[60px] rounded-lg border border-ink-200 px-3 py-2 font-mono text-[11px]"
-            value={gallery}
-            onChange={(e) => setGallery(e.target.value)}
-            placeholder='["https://...","https://..."]'
+        <Field label="图集(可选,展示在品种详情页)">
+          <UploadField
+            kind="image"
+            value={parseGalleryJson(gallery)}
+            onChange={(arr) => setGallery(JSON.stringify(arr))}
+            max={9}
           />
+          <div className="mt-1 text-[10px] text-ink-500">
+            最多 9 张,首张可作为详情页大图,其他作为缩略
+          </div>
         </Field>
       </Section>
 
@@ -307,4 +308,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </label>
   );
+}
+
+function parseGalleryJson(s: string): string[] {
+  try {
+    const arr = JSON.parse(s || '[]');
+    return Array.isArray(arr) ? arr.filter((v) => typeof v === 'string') : [];
+  } catch {
+    return [];
+  }
 }

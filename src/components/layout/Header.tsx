@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Logo } from '@/components/ui/Logo';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 
 import { LocaleSwitcher } from '@/components/ui/LocaleSwitcher';
@@ -319,14 +319,14 @@ function SettingsSubmenu({ onNavigate }: { onNavigate: () => void }) {
     setTimer(t);
   };
 
-  const items: { href: string; icon: string; label: string }[] = [
-    { href: '/settings/profile', icon: '👤', label: '个人资料' },
-    { href: '/settings/appearance', icon: '🎨', label: '外观与语言' },
-    { href: '/settings/privacy', icon: '🔒', label: '隐私设置' },
-    { href: '/orders', icon: '📦', label: '我的订单' },
-    { href: '/addresses', icon: '📮', label: '收件地址' },
-    { href: '/vip', icon: '✨', label: '大会员' },
-    { href: '/points', icon: '💎', label: '积分中心' },
+  const items: { href: string; icon: IconName; label: string }[] = [
+    { href: '/settings/profile', icon: 'user', label: '个人资料' },
+    { href: '/settings/appearance', icon: 'palette', label: '外观与语言' },
+    { href: '/settings/privacy', icon: 'lock', label: '隐私设置' },
+    { href: '/orders', icon: 'package', label: '我的订单' },
+    { href: '/addresses', icon: 'mail', label: '收件地址' },
+    { href: '/vip', icon: 'crown', label: '大会员' },
+    { href: '/points', icon: 'diamond', label: '积分中心' },
   ];
 
   return (
@@ -354,7 +354,7 @@ function SettingsSubmenu({ onNavigate }: { onNavigate: () => void }) {
               onClick={onNavigate}
               className="flex items-center gap-2 px-3 py-2 text-sm text-ink-800 hover:bg-leaf-50"
             >
-              <span className="w-5 text-center">{it.icon}</span>
+              <Icon name={it.icon} size={16} className="text-leaf-700" />
               <span>{it.label}</span>
             </Link>
           ))}
