@@ -326,9 +326,12 @@ function GridCard({ item }: { item: ListingItem }) {
           </>
         )}
       </div>
-      <div className="flex min-h-[120px] flex-col px-3 py-2.5">
-        {/* 标题:全显示,不截断 */}
-        <div className="break-words text-[13px] font-medium leading-5 text-ink-800 group-hover:text-leaf-700">
+      <div className="flex min-h-[110px] flex-col px-3 py-2.5">
+        {/* 标题:单行省略,hover 原生 tooltip 显示全 */}
+        <div
+          title={item.title}
+          className="truncate text-[12px] font-medium text-ink-800 group-hover:text-leaf-700"
+        >
           {item.title}
         </div>
 
