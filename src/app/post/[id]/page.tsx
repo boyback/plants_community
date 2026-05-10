@@ -85,7 +85,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
     include: {
       ...postInclude({ withJournalEntries: true }),
       comments: {
-        where: { parentId: null },
+        where: { parentId: null, deleted: false },
         orderBy: { createdAt: 'desc' },
         take: 50,
         include: {
@@ -96,6 +96,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
             },
           },
           replies: {
+            where: { deleted: false },
             orderBy: { createdAt: 'asc' },
             include: {
               author: {
