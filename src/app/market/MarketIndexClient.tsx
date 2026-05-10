@@ -279,29 +279,40 @@ export function MarketIndexClient() {
             </button>
           )}
 
-          {/* 列数切换 4 / 5 */}
-          <div className="ml-auto inline-flex overflow-hidden rounded-md border border-leaf-200 bg-white">
-            {[4, 5].map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => updateCols(n as 4 | 5)}
-                title={`一排 ${n} 个`}
-                className={cn(
-                  'flex h-8 w-8 items-center justify-center text-[11px] transition-colors',
-                  n === 5 && 'border-l border-leaf-200',
-                  cols === n
-                    ? 'bg-leaf-100 font-medium text-leaf-700'
-                    : 'text-leaf-700/50 hover:bg-leaf-50',
-                )}
-              >
-                {n}
-              </button>
-            ))}
+          {/* 列数切换(图标:疏 / 密) */}
+          <div className="inline-flex overflow-hidden rounded-md border border-leaf-200 bg-white">
+            <button
+              type="button"
+              onClick={() => updateCols(4)}
+              title="一排 4 个"
+              aria-label="一排 4 个"
+              className={cn(
+                'flex h-8 w-8 items-center justify-center transition-colors',
+                cols === 4
+                  ? 'bg-leaf-100 text-leaf-700'
+                  : 'text-leaf-700/50 hover:bg-leaf-50',
+              )}
+            >
+              <ColsIcon n={4} />
+            </button>
+            <button
+              type="button"
+              onClick={() => updateCols(5)}
+              title="一排 5 个"
+              aria-label="一排 5 个"
+              className={cn(
+                'flex h-8 w-8 items-center justify-center border-l border-leaf-200 transition-colors',
+                cols === 5
+                  ? 'bg-leaf-100 text-leaf-700'
+                  : 'text-leaf-700/50 hover:bg-leaf-50',
+              )}
+            >
+              <ColsIcon n={5} />
+            </button>
           </div>
 
-          {/* 搜索框 — 右下 */}
-          <div className="relative">
+          {/* 搜索框 — 始终最右 */}
+          <div className="relative ml-auto">
             <Icon
               name="search"
               size={14}
@@ -480,6 +491,22 @@ function fmtDate(iso: string): string {
 /**
  * 过滤行容器 — 左侧固定标签 + 右侧 chips wrap
  */
+/** 列数切换的小方格图标(密度示意,n=4 / 5) */
+function ColsIcon({ n }: { n: 4 | 5 }) {
+  return (
+    <span
+      className={cn(
+        'grid h-3.5 gap-[1.5px]',
+        n === 4 ? 'w-3.5 grid-cols-2' : 'w-4 grid-cols-3',
+      )}
+    >
+      {Array.from({ length: n === 4 ? 4 : 6 }).map((_, i) => (
+        <span key={i} className="block rounded-[1px] bg-current" />
+      ))}
+    </span>
+  );
+}
+
 function FilterRow({
   label,
   children,
