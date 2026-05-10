@@ -14,6 +14,7 @@ import { postInclude } from '@/lib/post-include';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 import { PostMasonry } from '@/components/post/PostMasonry';
 import { Icon } from '@/components/ui/Icon';
+import { GenusBannerMosaic } from '@/components/board/GenusBannerMosaic';
 import { Empty } from '@/components/ui/Empty';
 import { SpeciesRatingPanel } from '@/components/species/SpeciesRatingPanel';
 
@@ -318,40 +319,52 @@ async function GenusView({
     <Shell>
       <BoardBreadcrumb path={genus.path} />
 
-      {/* Header */}
+      {/* Header — 拼图墙 banner */}
       <div className="card mb-6 overflow-hidden">
-        <div className="relative aspect-[21/7] bg-gradient-to-br from-leaf-300 to-leaf-600">
-          <Image src={g.category.cover} alt={g.name} fill className="object-cover opacity-60" unoptimized />
-          <div className="absolute inset-0 bg-gradient-to-t from-ink-900/60 to-transparent" />
-          <div className="absolute inset-0 flex flex-col justify-end p-6 text-white">
-            <div className="mb-1 text-xs opacity-90">{g.category.name}</div>
-            <h1 className="text-2xl font-bold md:text-3xl">
-              {g.name}
-              {g.latinName && (
-                <span className="ml-3 text-sm font-normal italic opacity-80">{g.latinName}</span>
-              )}
-            </h1>
+        <GenusBannerMosaic
+          cells={g.species.slice(0, 8).map((s) => ({
+            id: s.id,
+            name: s.name,
+            cover: s.cover,
+            href: `/board/${g.category.slug}/${g.slug}/${s.slug}`,
+          }))}
+          fallbackCover={g.cover || g.category.cover}
+        >
+          <div className="mb-1 text-xs opacity-90">{g.category.name}</div>
+          <h1 className="text-2xl font-bold md:text-3xl">
+            {g.name}
+            {g.latinName && (
+              <span className="ml-3 text-sm font-normal italic opacity-80">
+                {g.latinName}
+              </span>
+            )}
+          </h1>
+          {g.description && (
             <p className="mt-1 max-w-xl text-xs opacity-90 md:text-sm">{g.description}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-              <span>🌱 <I18nText k="board.speciesCount" vars={{ n: g._count?.species ?? 0 }} /></span>
-              <span>📝 <I18nText k="board.stats.posts" vars={{ n: g._count?.posts ?? 0 }} /></span>
-              <div className="ml-auto flex gap-2">
-                <Link
-                  href={`/editor?genus=${encodeURIComponent(g.slug)}`}
-                  className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-leaf-700 hover:bg-leaf-50"
-                >
-                  <Icon name="plus" size={13} />
-                  <I18nText k="board.postInGenus" fallback="在本属发帖" />
-                </Link>
-                <FollowBoardButton
-                  type="genus"
-                  slug={g.slug}
-                  categorySlug={g.category.slug}
-                />
-              </div>
+          )}
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+            <span>
+              🌱 <I18nText k="board.speciesCount" vars={{ n: g._count?.species ?? 0 }} />
+            </span>
+            <span>
+              📝 <I18nText k="board.stats.posts" vars={{ n: g._count?.posts ?? 0 }} />
+            </span>
+            <div className="ml-auto flex gap-2">
+              <Link
+                href={`/editor?genus=${encodeURIComponent(g.slug)}`}
+                className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-leaf-700 hover:bg-leaf-50"
+              >
+                <Icon name="plus" size={13} />
+                <I18nText k="board.postInGenus" fallback="在本属发帖" />
+              </Link>
+              <FollowBoardButton
+                type="genus"
+                slug={g.slug}
+                categorySlug={g.category.slug}
+              />
             </div>
           </div>
-        </div>
+        </GenusBannerMosaic>
       </div>
 
       {g.species.length > 0 && (
