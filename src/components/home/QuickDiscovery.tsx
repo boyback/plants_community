@@ -1,10 +1,9 @@
 /**
  * 首页右栏「快速发现」单卡
  *
- * 一张卡里 3 段:
- *   - 🌱 热门品种(从 API 抽)
- *   - 🏷️ 板块(本地洗牌)
- *   - 🔥 养护话题(本地词池抽)
+ * 一张卡里 2 段:
+ *   - 🌱 热门品种(从 API 抽)— 点击 chip 跳 /topic/[name],查看相关帖子
+ *   - 🏷️ 板块(本地洗牌)— 点击进入板块
  *
  * 每段右侧有独立「换一换 ↻」按钮,只刷自己那一段。
  */
@@ -17,6 +16,7 @@ import { cn } from '@/lib/utils';
 export interface DiscoverySpecies {
   id: string;
   name: string;
+  /** 来源 API 给的品种图鉴 URL,本组件改用 /topic/[name],此字段保留兼容 */
   url: string;
 }
 
@@ -24,17 +24,6 @@ export interface DiscoveryCategory {
   id: string;
   slug: string;
   name: string;
-}
-
-const TOPIC_POOL = [
-  '度夏', '配土', '叶插', '黑腐', '徒长', '上色', '浇水', '换盆',
-  '砍头', '播种', '繁殖', '日烧', '冻伤', '介壳虫', '红蜘蛛',
-  '老桩', '群生', '锦化', '出状态', '化水', '休眠', '醒水',
-  '光照', '通风', '颗粒土', '泥炭', '园艺盆', '陶盆',
-];
-
-function shuffleTopics(): string[] {
-  return [...TOPIC_POOL].sort(() => Math.random() - 0.5).slice(0, 8);
 }
 
 export function QuickDiscovery({
@@ -46,7 +35,6 @@ export function QuickDiscovery({
 }) {
   const [species, setSpecies] = useState(initialSpecies);
   const [categories, setCategories] = useState(initialCategories);
-  const [topics, setTopics] = useState<string[]>(() => TOPIC_POOL.slice(0, 8));
 
   const [speciesBusy, setSpeciesBusy] = useState(false);
   const [boardsBusy, setBoardsBusy] = useState(false);
@@ -68,10 +56,10 @@ export function QuickDiscovery({
     setTimeout(() => setBoardsBusy(false), 200);
   };
 
-  const refreshTopics = () => setTopics(shuffleTopics());
-
   const hasSpecies = species.length > 0;
   const hasCategories = categories.length > 0;
+
+  if (!hasSpecies && !hasCategories) return null;
 
   return (
     <div className="card overflow-hidden">
@@ -86,7 +74,7 @@ export function QuickDiscovery({
               {species.map((s) => (
                 <Link
                   key={s.id}
-                  href={s.url}
+                  href={`/topic/${encodeURIComponent(s.name)}`}
                   className="inline-flex items-center rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-700 transition-colors hover:bg-leaf-100"
                 >
                   {s.name}
@@ -115,20 +103,6 @@ export function QuickDiscovery({
             </div>
           </Section>
         )}
-
-        <Section title="🔥 养护话题" onRefresh={refreshTopics}>
-          <div className="flex flex-wrap gap-1.5">
-            {topics.map((t) => (
-              <Link
-                key={t}
-                href={`/search?q=${encodeURIComponent(t)}`}
-                className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700 transition-colors hover:bg-amber-100"
-              >
-                #{t}
-              </Link>
-            ))}
-          </div>
-        </Section>
       </div>
     </div>
   );

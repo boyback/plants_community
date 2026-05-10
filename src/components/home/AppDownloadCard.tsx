@@ -142,19 +142,14 @@ export function AppDownloadCard() {
         </div>
       </div>
 
-      {/* 底部:用户协议 / 隐私政策 */}
-      <div className="mt-3 grid grid-cols-2 gap-1.5">
-        <Link
-          href="/terms"
-          className="grid place-items-center rounded-lg border border-leaf-100 bg-white px-1 py-1.5 text-[11px] text-leaf-700 transition-colors hover:border-leaf-300 hover:bg-leaf-50/60"
-        >
-          📄 用户协议
+      {/* 底部:用户协议 / 隐私政策(纯文字链) */}
+      <div className="mt-3 flex items-center justify-center gap-3 text-[11px] text-leaf-700/70">
+        <Link href="/terms" className="hover:text-leaf-700 hover:underline">
+          用户协议
         </Link>
-        <Link
-          href="/privacy"
-          className="grid place-items-center rounded-lg border border-leaf-100 bg-white px-1 py-1.5 text-[11px] text-leaf-700 transition-colors hover:border-leaf-300 hover:bg-leaf-50/60"
-        >
-          🔒 隐私政策
+        <span className="text-leaf-700/30">·</span>
+        <Link href="/privacy" className="hover:text-leaf-700 hover:underline">
+          隐私政策
         </Link>
       </div>
     </div>
