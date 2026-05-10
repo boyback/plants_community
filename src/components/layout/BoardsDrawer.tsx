@@ -73,22 +73,17 @@ export function BoardsDrawer({
   const activeCat = data?.find((c) => c.id === activeCatId) ?? null;
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex"
-      onClick={(e) => {
-        // 点击遮罩区域关闭(直接点 div 不点子元素时)
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
+    <div className="fixed inset-0 z-[200] flex">
       {/* 半透明遮罩 */}
-      <div
-        className="absolute inset-0 bg-ink-900/40 backdrop-blur-[1px]"
+      <button
+        type="button"
+        className="absolute inset-0 cursor-default bg-ink-900/50 backdrop-blur-[2px]"
         onClick={onClose}
         aria-label="关闭"
       />
 
-      {/* Drawer 主面板 — 左侧滑出,占 80% 宽 max 720px */}
-      <div className="relative ml-0 flex h-full w-[88%] max-w-[720px] flex-col bg-white shadow-xl animate-slide-in-left">
+      {/* Drawer 主面板 — 左侧滑出,占 88% 宽 max 720px */}
+      <div className="relative ml-0 flex h-full w-[88%] max-w-[720px] flex-col bg-white shadow-2xl animate-slide-in-left">
         {/* 顶部 */}
         <div className="flex items-center justify-between border-b border-leaf-100 px-4 py-3">
           <h2 className="text-base font-semibold text-ink-800">🌿 全部板块</h2>
