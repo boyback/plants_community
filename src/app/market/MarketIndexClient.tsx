@@ -155,10 +155,10 @@ export function MarketIndexClient() {
 
   return (
     <>
-      {/* ============================== 过滤卡 ============================== */}
-      <div className="mb-5 rounded-2xl border border-leaf-100 bg-white p-4 shadow-sm">
-        {/* 行 1:类目 chips(科 + 其他子类同级平铺) */}
-        <div className="flex flex-wrap items-center gap-1.5">
+      {/* ============================== 过滤栏 ============================== */}
+      <div className="mb-5 space-y-3">
+        {/* 行 1:类目(科 + 其他子类) */}
+        <FilterRow label="类目">
           <Chip active={!topPick} onClick={() => { setTopPick(''); setSelectedGenus(''); }}>
             全部
           </Chip>
@@ -171,7 +171,6 @@ export function MarketIndexClient() {
                 setSelectedGenus('');
               }}
             >
-              <span className="mr-0.5">{f.icon}</span>
               {f.name}
             </Chip>
           ))}
@@ -184,53 +183,50 @@ export function MarketIndexClient() {
                 setSelectedGenus('');
               }}
             >
-              <span className="mr-0.5">{o.icon}</span>
               {o.label}
             </Chip>
           ))}
-        </div>
+        </FilterRow>
 
-        {/* 行 1.5:动态属(只有选了科才展开) */}
+        {/* 行 2:动态属(选科后展开) */}
         {isFamily && currentGenera.length > 0 && (
-          <div className="mt-2.5 flex flex-wrap items-center gap-1.5 rounded-lg bg-leaf-50/60 px-2 py-2">
-            <span className="ml-1 mr-1 shrink-0 text-[11px] text-leaf-700/70">
-              {families.find((f) => f.slug === topPick)?.name} 属:
-            </span>
-            <Chip size="sm" active={!selectedGenus} onClick={() => setSelectedGenus('')}>
+          <FilterRow label="属">
+            <Chip active={!selectedGenus} onClick={() => setSelectedGenus('')}>
               全部
             </Chip>
             {currentGenera.map((g) => (
               <Chip
                 key={g.slug}
-                size="sm"
                 active={selectedGenus === g.slug}
                 onClick={() => setSelectedGenus(selectedGenus === g.slug ? '' : g.slug)}
               >
                 {g.name}
               </Chip>
             ))}
-          </div>
+          </FilterRow>
         )}
 
-        {/* 行 2:交易类型 + 价格 + 排序 + 搜索(右下) */}
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+        {/* 行 3:交易类型 */}
+        <FilterRow label="交易">
           {TYPE_OPTIONS.map((opt) => (
             <Chip
               key={opt.key}
-              size="sm"
               active={type === opt.key}
               onClick={() => setType(opt.key)}
             >
               {opt.label}
             </Chip>
           ))}
+        </FilterRow>
 
-          <span className="ml-2 text-leaf-700/60">¥</span>
+        {/* 行 4:价格 + 排序 + 清空 + 搜索(右下) */}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="w-12 shrink-0 text-leaf-700/60">价格</span>
           <input
             type="number"
             min={0}
             placeholder="最低"
-            className="h-7 w-20 rounded-md border border-leaf-200 bg-white px-2 text-xs outline-none focus:border-leaf-400"
+            className="h-8 w-20 rounded-md border border-leaf-200 bg-white px-2 text-xs outline-none transition-colors focus:border-leaf-400"
             value={priceMin}
             onChange={(e) => setPriceMin(e.target.value)}
           />
@@ -239,13 +235,15 @@ export function MarketIndexClient() {
             type="number"
             min={0}
             placeholder="最高"
-            className="h-7 w-20 rounded-md border border-leaf-200 bg-white px-2 text-xs outline-none focus:border-leaf-400"
+            className="h-8 w-20 rounded-md border border-leaf-200 bg-white px-2 text-xs outline-none transition-colors focus:border-leaf-400"
             value={priceMax}
             onChange={(e) => setPriceMax(e.target.value)}
           />
+          <span className="text-leaf-700/40">元</span>
 
+          <span className="ml-3 text-leaf-700/60">排序</span>
           <select
-            className="h-7 rounded-md border border-leaf-200 bg-white px-2 text-xs outline-none focus:border-leaf-400"
+            className="h-8 rounded-md border border-leaf-200 bg-white px-2 text-xs outline-none transition-colors focus:border-leaf-400"
             value={sort}
             onChange={(e) => setSort(e.target.value)}
           >
@@ -257,21 +255,25 @@ export function MarketIndexClient() {
           </select>
 
           {hasFilter && (
-            <button onClick={reset} type="button" className="text-leaf-700/70 hover:text-leaf-700">
-              清空
+            <button
+              onClick={reset}
+              type="button"
+              className="rounded-md border border-leaf-200 bg-white px-2 py-1 text-leaf-700/70 hover:border-rose-300 hover:text-rose-600"
+            >
+              清空筛选
             </button>
           )}
 
-          {/* 搜索框靠右(右下角) */}
-          <div className="ml-auto relative">
+          {/* 搜索框 — 右下 */}
+          <div className="relative ml-auto">
             <Icon
               name="search"
               size={14}
               className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-leaf-500"
             />
             <input
-              className="h-7 w-44 rounded-md border border-leaf-200 bg-white pl-7 pr-2 text-xs outline-none focus:border-leaf-400 sm:w-56"
-              placeholder="搜索…"
+              className="h-8 w-48 rounded-md border border-leaf-200 bg-white pl-7 pr-2 text-xs outline-none transition-colors focus:border-leaf-400 sm:w-64"
+              placeholder="搜索 标题 / 标签 / 发货地…"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
@@ -332,27 +334,45 @@ function ListingCard({ item }: { item: ListingItem }) {
   );
 }
 
+/**
+ * 过滤行容器 — 左侧固定标签 + 右侧 chips wrap
+ */
+function FilterRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-2">
+      <span className="mt-1 w-12 shrink-0 text-xs text-leaf-700/60">{label}</span>
+      <div className="flex flex-1 flex-wrap items-center gap-1.5">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * 标签态 chip(扁平,不带边框,选中变绿底)
+ */
 function Chip({
   children,
   active,
   onClick,
-  size = 'md',
 }: {
   children: React.ReactNode;
   active?: boolean;
   onClick?: () => void;
-  size?: 'sm' | 'md';
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        'inline-flex items-center rounded-full border transition-colors',
-        size === 'sm' ? 'h-6 px-2.5 text-[11px]' : 'h-7 px-3 text-xs',
+        'inline-flex h-7 items-center rounded-md px-2.5 text-xs transition-colors',
         active
-          ? 'border-leaf-500 bg-leaf-500 text-white shadow-sm'
-          : 'border-leaf-200 bg-white text-ink-700 hover:border-leaf-400 hover:bg-leaf-50',
+          ? 'bg-leaf-100 font-medium text-leaf-700'
+          : 'text-ink-700/80 hover:bg-leaf-50 hover:text-leaf-700',
       )}
     >
       {children}
