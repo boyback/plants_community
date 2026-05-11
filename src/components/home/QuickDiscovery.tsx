@@ -2,7 +2,7 @@
  * 首页右栏「快速发现」单卡
  *
  * 一张卡里 2 段:
- *   - 🔥 热门话题  — 来自后端按近 30 天 tag 频次聚合,点击进 /topic/[name]
+ *   - 🌱 热门品种  — 从 API 抽,点击跳品种页
  *   - 🏷️ 板块       — 全部板块,本地洗牌,点击进板块页
  *
  * 每段右上有独立「换一换 ↻」按钮,只刷自己那一段。
@@ -13,6 +13,12 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
+export interface DiscoverySpecies {
+  id: string;
+  name: string;
+  url: string;
+}
+
 export interface DiscoveryCategory {
   id: string;
   slug: string;
@@ -20,26 +26,26 @@ export interface DiscoveryCategory {
 }
 
 export function QuickDiscovery({
-  initialTopics,
+  initialSpecies,
   initialCategories,
 }: {
-  initialTopics: string[];
+  initialSpecies: DiscoverySpecies[];
   initialCategories: DiscoveryCategory[];
 }) {
-  const [topics, setTopics] = useState<string[]>(initialTopics);
+  const [species, setSpecies] = useState(initialSpecies);
   const [categories, setCategories] = useState(initialCategories);
 
-  const [topicsBusy, setTopicsBusy] = useState(false);
+  const [speciesBusy, setSpeciesBusy] = useState(false);
   const [boardsBusy, setBoardsBusy] = useState(false);
 
-  const refreshTopics = async () => {
-    setTopicsBusy(true);
+  const refreshSpecies = async () => {
+    setSpeciesBusy(true);
     try {
-      const r = await fetch('/api/home/quick-discovery?n=8&shuffle=1');
+      const r = await fetch('/api/home/quick-discovery?n=12&shuffle=1');
       const data = await r.json();
-      if (Array.isArray(data?.data?.topics)) setTopics(data.data.topics);
+      if (data?.data?.species) setSpecies(data.data.species);
     } finally {
-      setTopicsBusy(false);
+      setSpeciesBusy(false);
     }
   };
 
@@ -49,24 +55,24 @@ export function QuickDiscovery({
     setTimeout(() => setBoardsBusy(false), 200);
   };
 
-  const hasTopics = topics.length > 0;
+  const hasSpecies = species.length > 0;
   const hasCategories = categories.length > 0;
 
-  if (!hasTopics && !hasCategories) return null;
+  if (!hasSpecies && !hasCategories) return null;
 
   return (
     <div className="card overflow-hidden">
       <div className="divide-y divide-leaf-100/60">
-        {hasTopics && (
-          <Section title="🔥 热门话题" onRefresh={refreshTopics} busy={topicsBusy}>
+        {hasSpecies && (
+          <Section title="🌱 热门品种" onRefresh={refreshSpecies} busy={speciesBusy}>
             <div className="flex flex-wrap gap-1.5">
-              {topics.map((t) => (
+              {species.map((s) => (
                 <Link
-                  key={t}
-                  href={`/topic/${encodeURIComponent(t)}`}
-                  className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700 transition-colors hover:bg-amber-100"
+                  key={s.id}
+                  href={s.url}
+                  className="inline-flex items-center rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-700 transition-colors hover:bg-leaf-100"
                 >
-                  #{t}
+                  {s.name}
                 </Link>
               ))}
             </div>

@@ -20,7 +20,7 @@ export function TopicsCard() {
     <div className="card p-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="text-sm font-semibold text-ink-800">🔥 {t('home.topics.title')}</div>
-        <Link href="/board" className="text-[11px] text-leaf-700 hover:underline">
+        <Link href="/search" className="text-[11px] text-leaf-700 hover:underline">
           {t('home.topics.moreLink')}
         </Link>
       </div>
@@ -28,7 +28,7 @@ export function TopicsCard() {
         {topics.map((item, i) => (
           <li key={item.tag}>
             <Link
-              href={`/board`}
+              href={`/topic/${encodeURIComponent(item.tag)}`}
               className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-leaf-50"
             >
               <span className="flex items-center gap-2">
