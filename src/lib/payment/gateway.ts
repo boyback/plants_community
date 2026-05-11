@@ -385,3 +385,4 @@ export function pickGateway(channel?: 'alipay' | 'wechat' | 'points'): PaymentGa
   if (chosen === 'wechat') return WechatGateway;
   return MockGateway;
 }
+
