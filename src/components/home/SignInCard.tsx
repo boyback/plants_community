@@ -8,7 +8,6 @@ import { Icon } from '@/components/ui/Icon';
 import { api } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
 
-/** 拉取今日全站签到人数(公开接口,未登录也能访问) */
 function useTodaySignedCount(): number {
   const [n, setN] = useState(0);
   useEffect(() => {
@@ -26,12 +25,6 @@ function useTodaySignedCount(): number {
   return n;
 }
 
-/**
- * 签到 + 月历 整合卡(右栏最顶)
- * - 头部:用户彩条(头像 + level/帖子/粉丝)
- * - 中部:连续天数 + 「立即签到」按钮 + 提示
- * - 底部:本月日历(7 列周一开头),已签实色 / 今天虚框 / 未来淡显
- */
 export function SignInCard() {
   const { user, signedInToday, signIn, signInStreak } = useAuth();
   const { t } = useI18n();
@@ -70,87 +63,98 @@ export function SignInCard() {
 
   return (
     <div className="card overflow-hidden">
-      {/* 用户彩条 + 提示 */}
-      {/* 顶部细绿条:tip 提示 */}
-      <div className="bg-gradient-to-br from-leaf-400 to-leaf-600 px-4 py-2.5 text-[11px] leading-5 text-white">
-        {t('home.signIn.tip')}
-      </div>
-
-      {/* 主区:按钮 + 今日 N · 连签 N 一行 */}
-      <div className="p-4">
-        <div className="flex items-center gap-2">
+      {/* 顶部渐变头 */}
+      <div className="bg-gradient-to-r from-leaf-500 to-leaf-600 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm">
+              <Icon name="check" size={16} className="text-white" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-white">
+                {signedInToday ? '今日已签到' : '每日签到'}
+              </div>
+              <div className="text-[11px] text-white/80">
+                {signInStreak > 0 ? `已连续 ${signInStreak} 天` : '开始你的连续签到'}
+              </div>
+            </div>
+          </div>
           <button
             type="button"
             onClick={() => void signIn()}
             disabled={signedInToday}
             className={cn(
-              'btn shrink-0 !px-3',
+              'rounded-full px-4 py-1.5 text-sm font-medium transition-all',
               signedInToday
-                ? 'cursor-not-allowed bg-leaf-100 text-leaf-600'
-                : 'bg-leaf-500 text-white hover:bg-leaf-600'
+                ? 'cursor-not-allowed bg-white/20 text-white/70'
+                : 'bg-white text-leaf-600 hover:bg-white/90 shadow-sm'
             )}
           >
             {signedInToday ? (
-              <>
+              <span className="flex items-center gap-1">
                 <Icon name="check" size={14} />
-                已签到
-              </>
+                已签
+              </span>
             ) : (
               '签到'
             )}
           </button>
-          <div className="min-w-0 flex-1 text-right text-[11px] text-leaf-700/80">
-            今日 <b className="text-leaf-700 tabular-nums">{todaySignedCount}</b> 人 · 连签{' '}
-            <b className="tabular-nums text-leaf-700">{signInStreak}</b> 天
-          </div>
+        </div>
+      </div>
+
+      {/* 统计行 */}
+      <div className="flex items-center justify-between border-b border-leaf-100 px-4 py-2.5">
+        <div className="text-[11px] text-leaf-700/70">
+          今日 <b className="text-leaf-700">{todaySignedCount}</b> 人签到
+        </div>
+        <div className="text-[11px] text-leaf-700/70">
+          连续 <b className="text-leaf-700">{signInStreak}</b> 天
+        </div>
+      </div>
+
+      {/* 月历 */}
+      <div className="p-4">
+        <div className="mb-2.5 text-right text-[10px] text-leaf-700/60">
+          {monthLabel}
         </div>
 
-        {/* 月历 */}
-        <div className="mt-3 border-t border-leaf-100 pt-3">
-          <div className="mb-2 text-right text-[10px] text-leaf-700/60">
-            {monthLabel}
-          </div>
+        <div className="mb-1.5 grid grid-cols-7 gap-1 text-center text-[10px] text-leaf-700/60">
+          {['一', '二', '三', '四', '五', '六', '日'].map((d) => (
+            <div key={d}>{d}</div>
+          ))}
+        </div>
 
-          {/* 周次表头 */}
-          <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[10px] text-leaf-700/60">
-            {['一', '二', '三', '四', '五', '六', '日'].map((d) => (
-              <div key={d}>{d}</div>
-            ))}
-          </div>
-
-          {/* 日期格 */}
-          <div className="grid grid-cols-7 gap-1">
-            {cells.map((c, i) =>
-              c == null ? (
-                <div key={i} />
-              ) : (
-                <div
-                  key={i}
-                  className={cn(
-                    'grid h-7 place-items-center rounded-md text-[10px] tabular-nums transition-colors',
-                    c.signed
-                      ? 'bg-leaf-500 text-white shadow-sm'
-                      : c.today
-                      ? 'border-2 border-dashed border-leaf-400 font-semibold text-leaf-600'
-                      : c.future
-                      ? 'text-leaf-300'
-                      : 'bg-leaf-50/50 text-leaf-700/70'
-                  )}
-                  title={
-                    c.signed
-                      ? `${c.day} 日 已签到`
-                      : c.today
-                      ? `今天(${c.day} 日)`
-                      : c.future
-                      ? `${c.day} 日(未来)`
-                      : `${c.day} 日`
-                  }
-                >
-                  {c.day}
-                </div>
-              )
-            )}
-          </div>
+        <div className="grid grid-cols-7 gap-1">
+          {cells.map((c, i) =>
+            c == null ? (
+              <div key={i} />
+            ) : (
+              <div
+                key={i}
+                className={cn(
+                  'grid h-7 place-items-center rounded-md text-[10px] tabular-nums transition-colors',
+                  c.signed
+                    ? 'bg-leaf-500 text-white shadow-sm'
+                    : c.today
+                    ? 'border-2 border-dashed border-leaf-400 font-semibold text-leaf-600'
+                    : c.future
+                    ? 'text-leaf-300'
+                    : 'bg-leaf-50/50 text-leaf-700/70'
+                )}
+                title={
+                  c.signed
+                    ? `${c.day} 日 已签到`
+                    : c.today
+                    ? `今天(${c.day} 日)`
+                    : c.future
+                    ? `${c.day} 日(未来)`
+                    : `${c.day} 日`
+                }
+              >
+                {c.day}
+              </div>
+            )
+          )}
         </div>
       </div>
     </div>
@@ -164,10 +168,6 @@ interface Cell {
   future: boolean;
 }
 
-/**
- * 构建当月日历单元格(周一为第一列)
- * 「已签」根据 signInStreak 推断:今日已签则从今日往前 N 天;未签则从昨日往前 N 天
- */
 function buildCells(streak: number, todayDone: boolean): (Cell | null)[] {
   const now = new Date();
   const year = now.getFullYear();
@@ -175,7 +175,7 @@ function buildCells(streak: number, todayDone: boolean): (Cell | null)[] {
   const todayDate = now.getDate();
 
   const first = new Date(year, month, 1);
-  const firstWeekIdx = (first.getDay() + 6) % 7; // 周一=0
+  const firstWeekIdx = (first.getDay() + 6) % 7;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const signedDays = new Set<number>();

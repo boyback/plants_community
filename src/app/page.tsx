@@ -65,17 +65,17 @@ export default async function HomePage() {
         </div>
 
         <div className="space-y-5">
-          {/* 1. 快速发现(SEO 内链 + 用户探索) */}
+          {/* 1. 签到 + 月历(整合) */}
+          <SignInCard />
+          {/* 2. 快速发现(SEO 内链 + 用户探索) */}
           <QuickDiscovery
             initialSpecies={discovery.species}
             initialCategories={discovery.categories}
           />
-          {/* 2. 话题 */}
+          {/* 3. 话题 */}
           <TopicsCard />
-          {/* 3. 推荐肉友 */}
+          {/* 4. 推荐肉友 */}
           <RecommendUsers users={recommendUsers} />
-          {/* 4. 签到 + 月历(整合) */}
-          <SignInCard />
           {/* 5. APP 下载 */}
           <AppDownloadCard />
           {/* 法律入口已挪到全站 Footer,这里不再重复 */}

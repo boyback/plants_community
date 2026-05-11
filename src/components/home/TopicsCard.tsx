@@ -20,7 +20,7 @@ export function TopicsCard() {
     <div className="card p-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="text-sm font-semibold text-ink-800">🔥 {t('home.topics.title')}</div>
-        <Link href="/search" className="text-[11px] text-leaf-700 hover:underline">
+        <Link href="/topics" className="text-[11px] text-leaf-700 hover:underline">
           {t('home.topics.moreLink')}
         </Link>
       </div>

@@ -1537,3 +1537,23 @@ model PostView {
   @@index([anonId, createdAt])
   @@map("post_views")
 }
+
+// ============== 话题排行榜(预聚合) ==============
+
+/**
+ * 从 Post.tags 聚合的话题排行数据。
+ * 由 POST /api/admin/topics/refresh 手动触发全量重建。
+ */
+model TopicRanking {
+  id             String   @id @default(cuid())
+  tag            String   @unique       // 话题关键词
+  postCount      Int      @default(0)   // 帖子总数
+  hotScoreSum    Float    @default(0)   // 热度分之和
+  recent30dCount Int      @default(0)   // 近 30 天帖子数
+  firstSeenAt    DateTime               // 最早帖子时间
+  lastPostAt     DateTime               // 最新帖子时间
+  updatedAt      DateTime @updatedAt
+
+  @@index([postCount])
+  @@map("topic_rankings")
+}
