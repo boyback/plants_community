@@ -1546,12 +1546,12 @@ model PostView {
  */
 model TopicRanking {
   id             String   @id @default(cuid())
-  tag            String   @unique       // 话题关键词
-  postCount      Int      @default(0)   // 帖子总数
-  hotScoreSum    Float    @default(0)   // 热度分之和
-  recent30dCount Int      @default(0)   // 近 30 天帖子数
-  firstSeenAt    DateTime               // 最早帖子时间
-  lastPostAt     DateTime               // 最新帖子时间
+  tag            String   @unique // 话题关键词
+  postCount      Int      @default(0) // 帖子总数
+  hotScoreSum    Float    @default(0) // 热度分之和
+  recent30dCount Int      @default(0) // 近 30 天帖子数
+  firstSeenAt    DateTime // 最早帖子时间
+  lastPostAt     DateTime // 最新帖子时间
   updatedAt      DateTime @updatedAt
 
   @@index([postCount])
