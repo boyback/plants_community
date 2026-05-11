@@ -91,7 +91,7 @@ services:
       # 第一次部署:先单独跑 init-db 完成 seed,后续 up 不再阻塞
     environment:
       DATABASE_URL: "mysql://root:${MYSQL_ROOT_PASSWORD:-root123456}@mysql:3306/${MYSQL_DATABASE:-plants_community}"
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 必须设置}
+      JWT_SECRET: ${JWT_SECRET:-rouyou-community-prod-secret-please-change}
       AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-rouyou_token}
       AUTH_COOKIE_MAX_AGE: ${AUTH_COOKIE_MAX_AGE:-2592000}
       # 支付(可选)
@@ -182,7 +182,7 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: "mysql://root:${MYSQL_ROOT_PASSWORD:-root123456}@mysql:3306/${MYSQL_DATABASE:-plants_community}"
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 必须设置}
+      JWT_SECRET: ${JWT_SECRET:-rouyou-community-prod-secret-please-change}
       AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-rouyou_token}
       AUTH_COOKIE_MAX_AGE: ${AUTH_COOKIE_MAX_AGE:-2592000}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
