@@ -46,3 +46,9 @@ tests
 
 # 上传产物(运行时挂 volume)
 public/uploads
+
+# 宿主侧持久化数据(MySQL 数据 / 上传分片),通过 compose volumes 挂载,
+# 不应进入 build context;./data/mysql 还含 mysql.sock,buildkit 扫到 socket 会直接报:
+#   ERROR: invalid file request data/mysql/mysql.sock
+data
+
