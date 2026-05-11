@@ -557,17 +557,18 @@ async function SpeciesView({
             </div>
           )}
 
-          {/* 图集 */}
+          {/* 照片墙 */}
           {full.gallery.length > 1 && (
             <div className="card p-5">
               <h2 className="mb-3 text-lg font-semibold text-ink-800">📸 <I18nText k="board.species.gallery" fallback="图集" /></h2>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
                 {full.gallery.map((g, i) => (
                   <div
                     key={i}
-                    className="relative aspect-square overflow-hidden rounded-lg bg-leaf-50"
+                    className="aspect-square overflow-hidden rounded-lg bg-leaf-50"
                   >
-                    <Image src={g} alt="" fill className="object-cover" unoptimized />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={g} alt="" className="h-full w-full object-cover" loading="lazy" />
                   </div>
                 ))}
               </div>

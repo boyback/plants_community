@@ -574,7 +574,7 @@ function EditorInner() {
                   kind="image"
                   value={images}
                   onChange={setImages}
-                  max={9}
+                  max={999}
                 />
               </Row>
 

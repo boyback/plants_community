@@ -179,7 +179,7 @@ export function PostEditor({ post }: { post: InitialPost }) {
                 kind="image"
                 value={images}
                 onChange={setImages}
-                max={9}
+                max={999}
               />
             </Row>
 

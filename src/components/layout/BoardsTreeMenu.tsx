@@ -1,16 +1,3 @@
-/**
- * Sidebar / MobileNav 内联折叠树(2 级:科 → 属)
- *
- *  🌿 景天科 ▸           ← 点击展开
- *      拟石莲属
- *      风车草属
- *      ...
- *  🪨 番杏科 ▸
- *  ...
- *
- * 顶级直接是科,无「全部板块」根节点。
- * 首次 mount 拉数据。
- */
 'use client';
 
 import Link from 'next/link';
@@ -44,7 +31,6 @@ export function BoardsTreeMenu({
   const [data, setData] = useState<CategoryFull[] | null>(null);
   const [openCatIds, setOpenCatIds] = useState<Set<string>>(new Set());
 
-  // mount 即拉(默认显示科一级)
   useEffect(() => {
     api
       .get<CategoryFull[]>('/api/categories?kind=family&withGenera=1')
@@ -91,7 +77,6 @@ export function BoardsTreeMenu({
               </span>
             </button>
 
-            {/* 二级:属 */}
             {open && (
               <div className="ml-4 mt-0.5 space-y-0.5 border-l border-leaf-100 pl-2">
                 {c.genera.length === 0 ? (

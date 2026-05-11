@@ -1,48 +1,54 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { useChunkUpload } from '@/lib/hooks/useChunkUpload';
 import { useAuth } from '@/context/AuthContext';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
+import { CropImageDialog } from './CropImageDialog';
+import { Lightbox } from '@/components/ui/Lightbox';
 
 export type UploadKind = 'image' | 'video';
 
 interface Props {
   kind: UploadKind;
-  /** 已经选择/上传完成的 URL 列表(图片可多张,视频只 1 个) */
   value: string[];
   onChange: (next: string[]) => void;
-  /** 图片可上传多少张,视频默认 1 */
   max?: number;
-  /** 是否允许 URL 外链(默认 true) */
   allowExternal?: boolean;
   className?: string;
 }
 
-/** 子模式:普通文件 / 外链 / 实况(仅 admin) */
 type Mode = 'file' | 'url' | 'live';
 
 const ACCEPT: Record<UploadKind, string> = {
-  // 普通图片不再接受 .mov(避免误传单个 MOV 当图片);
-  // HEIC 仍允许(服务端会自动转 JPEG)
   image:
     'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif',
   video: 'video/mp4,video/webm,video/quicktime',
 };
 
-/** 实况图模式:必须同时选 1 HEIC + 1 MOV */
 const ACCEPT_LIVE = '.heic,.heif,.mov,image/heic,image/heif,video/quicktime';
 
 function basename(name: string): string {
   return name.replace(/\.[^.]+$/, '');
 }
 
+/** 单张图片的上传状态 */
+interface UploadingItem {
+  id: string;
+  file: File;
+  localUrl: string;
+  progress: number;
+  status: 'hashing' | 'uploading' | 'uploaded' | 'error';
+  error?: string;
+  resultUrl?: string;
+}
+
 export function UploadField({
   kind,
   value,
   onChange,
-  max = kind === 'image' ? 9 : 1,
+  max = kind === 'image' ? 999 : 1,
   allowExternal = true,
   className,
 }: Props) {
@@ -51,17 +57,25 @@ export function UploadField({
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const liveRef = useRef<HTMLInputElement>(null);
-  const { upload, progress, status, error, abort } = useChunkUpload();
   const { user } = useAuth();
-  // 仅管理员/版主可见「实况」模式(普通用户传 Live Photo 太复杂,留给运营)
+
+  // 上传队列（单图独立进度）
+  const [uploading, setUploading] = useState<UploadingItem[]>([]);
+
+  // 裁剪相关
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropQueue, setCropQueue] = useState<string[]>([]);
+
+  // Lightbox
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+
   const canUseLive =
     kind === 'image' &&
     (user?.role === 'admin' || user?.role === 'moderator');
 
   const remaining = Math.max(0, max - value.length);
 
-  const removeAt = (i: number) =>
-    onChange(value.filter((_, k) => k !== i));
+  const removeAt = (i: number) => onChange(value.filter((_, k) => k !== i));
 
   const pushUrl = () => {
     const u = urlInput.trim();
@@ -75,28 +89,118 @@ export function UploadField({
     setUrlInput('');
   };
 
+  // 单文件上传（独立进度追踪）
+  const uploadSingle = useCallback(
+    async (file: File): Promise<string | null> => {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const localUrl = URL.createObjectURL(file);
+
+      const item: UploadingItem = {
+        id,
+        file,
+        localUrl,
+        progress: 0,
+        status: 'hashing',
+      };
+      setUploading((prev) => [...prev, item]);
+
+      try {
+        // 使用 hook 的 upload，但我们需要手动追踪进度
+        // 由于 useChunkUpload 是单实例，我们改用独立的 fetch 上传
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const resp = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!resp.ok) throw new Error('上传失败');
+        const data = await resp.json();
+        const url = data.url || data.data?.url;
+
+        setUploading((prev) =>
+          prev.map((u) =>
+            u.id === id ? { ...u, status: 'uploaded', resultUrl: url, progress: 100 } : u
+          )
+        );
+
+        return url;
+      } catch (e) {
+        setUploading((prev) =>
+          prev.map((u) =>
+            u.id === id
+              ? { ...u, status: 'error', error: e instanceof Error ? e.message : '上传失败' }
+              : u
+          )
+        );
+        return null;
+      }
+    },
+    []
+  );
+
+  // 重试单个上传
+  const retryUpload = useCallback(
+    async (item: UploadingItem) => {
+      setUploading((prev) =>
+        prev.map((u) =>
+          u.id === item.id ? { ...u, status: 'hashing', progress: 0, error: undefined } : u
+        )
+      );
+      const url = await uploadSingle(item.file);
+      if (url) {
+        // 上传成功后弹出裁剪
+        setCropQueue((prev) => [...prev, url]);
+      }
+    },
+    [uploadSingle]
+  );
+
+  // 从上传队列移除
+  const removeUploading = (id: string) => {
+    setUploading((prev) => prev.filter((u) => u.id !== id));
+  };
+
+  // 处理文件选择
   const handleFiles = async (files: FileList | File[]) => {
     const list = Array.from(files);
     if (list.length === 0) return;
 
-    const next = [...value];
-    let usedSlots = 0;
-
     for (const f of list) {
-      if (value.length + usedSlots >= max) break;
-      // 普通模式:不再处理 .mov(避免误传单个 mov 当图传)
-      // 单独的 .heic 服务端会自动转 JPEG
-      const r = await upload(f, kind);
-      if (r?.url) {
-        next.push(r.url);
-        usedSlots++;
+      if (value.length + uploading.length >= max) break;
+
+      if (kind === 'image' && !f.type.startsWith('image/')) continue;
+      if (kind === 'video' && !f.type.startsWith('video/')) continue;
+
+      const url = await uploadSingle(f);
+      if (url) {
+        // 上传成功后弹出裁剪
+        setCropQueue((prev) => [...prev, url]);
       }
     }
-
-    onChange(next);
   };
 
-  /** 实况图专用上传:严格校验 1 HEIC + 1 MOV 同名 */
+  // 裁剪确认
+  const onCropConfirm = (croppedUrl: string) => {
+    onChange([...value, croppedUrl]);
+    // 处理下一个裁剪队列
+    setCropQueue((prev) => prev.slice(1));
+    setCropSrc(null);
+  };
+
+  // 裁剪取消
+  const onCropCancel = () => {
+    // 跳过当前裁剪，处理下一个
+    setCropQueue((prev) => prev.slice(1));
+    setCropSrc(null);
+  };
+
+  // 当 cropQueue 变化时，弹出第一个
+  if (cropQueue.length > 0 && !cropSrc) {
+    setCropSrc(cropQueue[0]);
+  }
+
   const handleLiveFiles = async (files: FileList | File[]) => {
     const list = Array.from(files);
     if (list.length !== 2) {
@@ -120,36 +224,47 @@ export function UploadField({
       return;
     }
 
-    const imgRes = await upload(heic, 'image');
-    if (!imgRes?.url) return;
-    const movRes = await upload(mov, 'video');
-    if (movRes?.url && imgRes.id && movRes.id) {
+    const imgFormData = new FormData();
+    imgFormData.append('file', heic);
+    const imgResp = await fetch('/api/upload', { method: 'POST', body: imgFormData });
+    if (!imgResp.ok) return;
+    const imgData = await imgResp.json();
+    const imgUrl = imgData.url || imgData.data?.url;
+    if (!imgUrl) return;
+
+    const movFormData = new FormData();
+    movFormData.append('file', mov);
+    const movResp = await fetch('/api/upload', { method: 'POST', body: movFormData });
+    if (!movResp.ok) return;
+    const movData = await movResp.json();
+    const movUrl = movData.url || movData.data?.url;
+
+    if (movUrl && imgData.id && movData.id) {
       try {
         await fetch('/api/upload/link-live-photo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            imageId: imgRes.id,
-            movId: movRes.id,
+            imageId: imgData.id,
+            movId: movData.id,
           }),
         });
       } catch {
         // ignore
       }
     }
-    onChange([...value, imgRes.url]);
+    onChange([...value, imgUrl]);
   };
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
-    if (status === 'uploading' || status === 'hashing') return;
     if (e.dataTransfer.files.length > 0) {
       void handleFiles(e.dataTransfer.files);
     }
   };
 
-  const busy = status === 'uploading' || status === 'hashing';
+  const busy = uploading.some((u) => u.status === 'uploading' || u.status === 'hashing');
 
   return (
     <div className={cn('space-y-2', className)}>
@@ -191,7 +306,7 @@ export function UploadField({
                 ? 'bg-leaf-500 text-white'
                 : 'bg-leaf-50 text-leaf-700 hover:bg-leaf-100'
             )}
-            title="管理员专用 · 上传 iOS Live Photo(同时选 1 HEIC + 1 同名 MOV)"
+            title="管理员专用 · 上传 iOS Live Photo"
           >
             📸 实况图
           </button>
@@ -204,22 +319,9 @@ export function UploadField({
         </span>
       </div>
 
-      {/* 文件 / URL / 实况 三种渲染分支 */}
+      {/* 文件上传区 - 所有图片在同一个网格 */}
       {mode === 'file' && (
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={onDrop}
-          className={cn(
-            'rounded-xl border-2 border-dashed p-4 text-center text-xs transition-colors',
-            dragOver
-              ? 'border-leaf-500 bg-leaf-50/60'
-              : 'border-leaf-200 bg-leaf-50/30 hover:border-leaf-300'
-          )}
-        >
+        <>
           <input
             ref={fileRef}
             type="file"
@@ -232,30 +334,141 @@ export function UploadField({
               e.target.value = '';
             }}
           />
-          <button
-            type="button"
-            disabled={busy || remaining === 0}
-            onClick={() => fileRef.current?.click()}
-            className="btn-outline !text-xs"
-          >
-            <Icon name="plus" size={12} />
-            {kind === 'image' ? '选择图片' : '选择视频'}
-          </button>
-          <div className="mt-2 text-[10px] text-leaf-700/70">
-            {kind === 'image'
-              ? '支持 jpg/png/webp/gif/heic,单张 ≤ 10MB,可拖拽'
-              : '支持 mp4/webm/mov,≤ 100MB,可拖拽'}
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+            {/* 已确认的图片 */}
+            {value.map((u, i) => (
+              <div key={`done-${i}`} className="group relative aspect-square overflow-hidden rounded-lg">
+                {kind === 'image' ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={u}
+                    alt=""
+                    className="h-full w-full cursor-pointer object-cover hover:opacity-90 transition-opacity"
+                    onClick={() => setLightboxIdx(i)}
+                  />
+                ) : (
+                  <video
+                    src={u}
+                    controls
+                    preload="metadata"
+                    className="h-full w-full object-cover"
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeAt(i)}
+                  className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-[11px] text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="移除"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+
+            {/* 上传中的图片 */}
+            {uploading.map((item) => (
+              <div
+                key={item.id}
+                className="group relative aspect-square overflow-hidden rounded-lg bg-leaf-50"
+              >
+                <img
+                  src={item.localUrl}
+                  alt=""
+                  className={cn(
+                    'h-full w-full object-cover',
+                    item.status === 'uploaded' && 'opacity-60'
+                  )}
+                />
+                {/* 进度覆盖层 */}
+                {item.status !== 'uploaded' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
+                    {item.status === 'hashing' && (
+                      <div className="text-[10px] text-white">校验中…</div>
+                    )}
+                    {item.status === 'uploading' && (
+                      <>
+                        <div className="mb-1 h-1 w-16 overflow-hidden rounded-full bg-white/30">
+                          <div
+                            className="h-full bg-leaf-400 transition-[width]"
+                            style={{ width: `${item.progress}%` }}
+                          />
+                        </div>
+                        <div className="text-[10px] text-white">{Math.round(item.progress)}%</div>
+                      </>
+                    )}
+                    {item.status === 'error' && (
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="text-[10px] text-rose-300">失败</div>
+                        <button type="button" onClick={() => retryUpload(item)} className="text-[10px] text-white underline">
+                          重试
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {/* 上传完成 - 裁剪按钮 */}
+                {item.status === 'uploaded' && (
+                  <div className="absolute right-1 top-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (item.resultUrl) {
+                          setCropQueue((prev) => [...prev, item.resultUrl!]);
+                          removeUploading(item.id);
+                        }
+                      }}
+                      className="grid h-6 w-6 place-items-center rounded-full bg-black/60 text-[10px] text-white hover:bg-black/80"
+                      title="裁剪"
+                    >
+                      ✂️
+                    </button>
+                  </div>
+                )}
+                {/* 移除按钮 */}
+                {item.status !== 'uploaded' && (
+                  <button
+                    type="button"
+                    onClick={() => removeUploading(item.id)}
+                    className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-[11px] text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
+
+            {/* 上传按钮 - 在最后 */}
+            {remaining > 0 && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => fileRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  if (e.dataTransfer.files.length > 0) void handleFiles(e.dataTransfer.files);
+                }}
+                className={cn(
+                  'flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed text-xs transition-colors',
+                  dragOver
+                    ? 'border-leaf-500 bg-leaf-50/60'
+                    : 'border-leaf-200 bg-leaf-50/30 hover:border-leaf-400 hover:bg-leaf-50/50',
+                  busy && 'opacity-40 cursor-not-allowed'
+                )}
+              >
+                <Icon name="plus" size={16} className="text-leaf-600" />
+                <span className="text-[10px] text-leaf-700/70">
+                  {kind === 'image' ? '图片' : '视频'}
+                </span>
+              </button>
+            )}
           </div>
-          <UploadProgress
-            busy={busy}
-            error={error}
-            status={status}
-            progress={progress}
-            abort={abort}
-          />
-        </div>
+        </>
       )}
 
+      {/* 裁剪对话框 */}
       {mode === 'url' && (
         <div className="space-y-2">
           <div className="flex gap-2">
@@ -293,8 +506,9 @@ export function UploadField({
         </div>
       )}
 
+      {/* 实况图上传 - 正方形网格 */}
       {mode === 'live' && (
-        <div className="rounded-xl border-2 border-dashed border-leaf-200 bg-leaf-50/30 p-4 text-center text-xs">
+        <>
           <input
             ref={liveRef}
             type="file"
@@ -307,121 +521,44 @@ export function UploadField({
               e.target.value = '';
             }}
           />
-          <button
-            type="button"
-            disabled={busy || remaining === 0}
-            onClick={() => liveRef.current?.click()}
-            className="btn-outline !text-xs"
-          >
-            <Icon name="plus" size={12} />
-            选择实况图(同时选 2 个文件)
-          </button>
-          <div className="mt-2 space-y-1 text-[10px] text-leaf-700/70">
-            <div>
-              📌 同时选 <b>1 个 .HEIC</b> + <b>1 个同名 .MOV</b>(Cmd/Ctrl + 点击多选)
-            </div>
-            <div className="text-amber-700/80">
-              ⚠️ 仅管理员可见 · 用于运营级 Live Photo 上传 · 文件名前缀必须一致
-            </div>
-            <div className="text-leaf-700/60">
-              示例:IMG_2968.HEIC + IMG_2968.MOV
-            </div>
-          </div>
-          <UploadProgress
-            busy={busy}
-            error={error}
-            status={status}
-            progress={progress}
-            abort={abort}
-          />
-        </div>
-      )}
-
-      {/* 已选预览 */}
-      {value.length > 0 && (
-        <div
-          className={cn(
-            'grid gap-2',
-            kind === 'image' ? 'grid-cols-3 md:grid-cols-6' : 'grid-cols-1'
-          )}
-        >
-          {value.map((u, i) => (
-            <div key={i} className="group relative">
-              {kind === 'image' ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={u}
-                  alt=""
-                  className="aspect-square w-full rounded-lg object-cover"
-                />
-              ) : (
-                <video
-                  src={u}
-                  controls
-                  preload="metadata"
-                  className="block w-full rounded-lg"
-                />
-              )}
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+            {/* 上传按钮 */}
+            {remaining > 0 && (
               <button
                 type="button"
-                onClick={() => removeAt(i)}
-                className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-[11px] text-white hover:bg-black/80"
-                title="移除"
+                disabled={busy}
+                onClick={() => liveRef.current?.click()}
+                className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-leaf-200 bg-leaf-50/30 text-xs transition-colors hover:border-leaf-400 hover:bg-leaf-50/50"
               >
-                ×
+                <Icon name="plus" size={16} className="text-leaf-600" />
+                <span className="text-[10px] text-leaf-700/70">实况图</span>
               </button>
-            </div>
-          ))}
-        </div>
+            )}
+          </div>
+          <div className="text-[10px] text-leaf-700/60">
+            同时选 <b>1 个 .HEIC</b> + <b>1 个同名 .MOV</b>(Cmd/Ctrl + 点击多选)
+          </div>
+        </>
       )}
-    </div>
-  );
-}
 
-function UploadProgress({
-  busy,
-  error,
-  status,
-  progress,
-  abort,
-}: {
-  busy: boolean;
-  error: string | null;
-  status: string;
-  progress: number;
-  abort: () => void;
-}) {
-  if (!busy && !error) return null;
-  return (
-    <div className="mt-2 space-y-1">
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-leaf-100">
-        <div
-          className="h-full bg-leaf-500 transition-[width]"
-          style={{ width: `${Math.round(progress * 100)}%` }}
+      {/* 裁剪对话框 */}
+      {cropSrc && (
+        <CropImageDialog
+          src={cropSrc}
+          onCancel={onCropCancel}
+          onConfirm={onCropConfirm}
         />
-      </div>
-      <div className="flex items-center justify-between text-[10px]">
-        <span className="text-leaf-700/70">
-          {status === 'hashing'
-            ? '校验中…'
-            : status === 'uploading'
-            ? `上传中 ${Math.round(progress * 100)}%`
-            : status === 'aborted'
-            ? '已取消'
-            : status === 'error'
-            ? error ?? '失败'
-            : ''}
-        </span>
-        {busy && (
-          <button
-            type="button"
-            onClick={abort}
-            className="text-rose-600 hover:underline"
-          >
-            取消
-          </button>
-        )}
-      </div>
+      )}
+
+      {/* Lightbox */}
+      {kind === 'image' && value.length > 0 && (
+        <Lightbox
+          images={value}
+          index={lightboxIdx}
+          onClose={() => setLightboxIdx(null)}
+          onChange={setLightboxIdx}
+        />
+      )}
     </div>
   );
 }
