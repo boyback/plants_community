@@ -23,6 +23,7 @@ import { api, ApiError } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
 import { CategoryEditDialog } from './CategoryEditDialog';
 import { GenusEditDialog } from './GenusEditDialog';
+import { SpeciesEditDialog } from './SpeciesEditDialog';
 
 interface SpeciesNode {
   id: string;
@@ -70,8 +71,10 @@ export function BoardsManager({ initial }: { initial: CategoryNode[] }) {
   const [tree, setTree] = useState<CategoryNode[]>(initial);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [collapsedGenera, setCollapsedGenera] = useState<Set<string>>(new Set());
   const [editingCategory, setEditingCategory] = useState<CategoryNode | 'new' | null>(null);
   const [editingGenus, setEditingGenus] = useState<{ genus: GenusNode | 'new'; categoryId: string } | null>(null);
+  const [editingSpecies, setEditingSpecies] = useState<{ species: SpeciesNode | 'new'; genusId: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
@@ -279,116 +282,21 @@ export function BoardsManager({ initial }: { initial: CategoryNode[] }) {
         />
       ) : (
         /* ===== 树状视图 ===== */
-        <div className="space-y-2">
-          {tree.map((cat, catIdx) => (
-            <div key={cat.id} className={cn('rounded-xl border bg-white overflow-hidden', cat.enabled ? 'border-leaf-200' : 'border-ink-200 opacity-50')}>
-              {/* 科 */}
-              <DndItem
-                id={cat.id}
-                index={catIdx}
-                total={tree.length}
-                onReorder={(from, to) => {
-                  const ids = tree.map((x) => x.id);
-                  const tmp = ids.splice(from, 1)[0];
-                  ids.splice(to, 0, tmp);
-                  setTree((p) => { const m = new Map(p.map((x) => [x.id, x])); return ids.map((id) => m.get(id)!).filter(Boolean); });
-                  startTransition(() => void api.post('/api/admin/boards/reorder', { kind: 'category', orderedIds: ids }));
-                }}
-              >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <button onClick={() => setCollapsed((s) => { const n = new Set(s); n.has(cat.id) ? n.delete(cat.id) : n.add(cat.id); return n; })}
-                    className="shrink-0 w-5 h-5 flex items-center justify-center rounded text-leaf-600/60 hover:text-leaf-700 text-xs">
-                    {collapsed.has(cat.id) ? '▸' : '▾'}
-                  </button>
-                  <span className="text-base shrink-0">{cat.icon}</span>
-                  <span className="font-semibold text-sm text-ink-800 truncate">{cat.name}</span>
-                  {cat.latinName && <span className="text-[11px] italic text-ink-400 shrink-0">{cat.latinName}</span>}
-                  <span className="text-[10px] text-ink-400 shrink-0 ml-1">{cat.genera.length}属·{cat.postsCount}帖</span>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Link href={`/board/${cat.slug}`} target="_blank" className="rounded-md border border-ink-200 px-2 py-1 text-[10px] text-ink-600 hover:bg-ink-50">查看</Link>
-                  <button onClick={() => setEditingCategory(cat)} className="rounded-md border border-ink-200 px-2 py-1 text-[10px] text-ink-600 hover:bg-ink-50">编辑</button>
-                  <button onClick={() => removeCategory(cat)} className="rounded-md bg-rose-50 border border-rose-200 px-2 py-1 text-[10px] text-rose-600 hover:bg-rose-100">删除</button>
-                </div>
-              </DndItem>
-
-              {/* 属 */}
-              {!collapsed.has(cat.id) && (
-                <div className="border-t border-leaf-100/60 bg-leaf-50/20 px-4 py-2">
-                  {cat.genera.length === 0 ? (
-                    <div className="py-2 text-center text-[11px] text-ink-400">暂无属</div>
-                  ) : (
-                    <div className="space-y-3">
-                      {cat.genera.map((genus, gIdx) => (
-                        <div key={genus.id}>
-                          <DndItem
-                            id={genus.id}
-                            index={gIdx}
-                            total={cat.genera.length}
-                            onReorder={(from, to) => {
-                              const ids = cat.genera.map((x) => x.id);
-                              const tmp = ids.splice(from, 1)[0];
-                              ids.splice(to, 0, tmp);
-                              setTree((p) => p.map((c) => c.id !== cat.id ? c : { ...c, genera: ids.map((id) => c.genera.find((g) => g.id === id)!).filter(Boolean) }));
-                              startTransition(() => void api.post('/api/admin/boards/reorder', { kind: 'genus', orderedIds: ids }));
-                            }}
-                            className="bg-white"
-                          >
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <Link href={`/board/${cat.slug}/${genus.slug}`} target="_blank" className="text-sm font-medium text-ink-700 hover:text-leaf-600 truncate">
-                                {genus.name}
-                              </Link>
-                              {genus.latinName && <span className="text-[10px] italic text-ink-400 shrink-0">{genus.latinName}</span>}
-                              <span className="text-[10px] text-ink-400 shrink-0">{genus.species.length}品种</span>
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <button onClick={() => setEditingGenus({ genus, categoryId: cat.id })} className="rounded-md border border-ink-200 px-2 py-1 text-[10px] text-ink-600 hover:bg-ink-50">编辑</button>
-                              <button onClick={() => removeGenus(genus)} className="rounded-md bg-rose-50 border border-rose-200 px-2 py-1 text-[10px] text-rose-600 hover:bg-rose-100">删除</button>
-                            </div>
-                          </DndItem>
-
-                          {/* 该属下的品种卡片 */}
-                          {genus.species.length > 0 && (
-                            <div className="ml-8 mt-1.5 grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-                              {genus.species.map((sp, sIdx) => (
-                                <DndItem
-                                  key={sp.id}
-                                  id={sp.id}
-                                  index={sIdx}
-                                  total={genus.species.length}
-                                  onReorder={(from, to) => {
-                                    const ids = genus.species.map((x) => x.id);
-                                    const tmp = ids.splice(from, 1)[0];
-                                    ids.splice(to, 0, tmp);
-                                    setTree((p) => p.map((c) => c.id !== cat.id ? c : { ...c, genera: c.genera.map((g) => g.id !== genus.id ? g : { ...g, species: ids.map((id) => g.species.find((s) => s.id === id)!).filter(Boolean) }) }));
-                                    startTransition(() => void api.post('/api/admin/boards/reorder', { kind: 'species', orderedIds: ids }));
-                                  }}
-                                  className="!p-0 overflow-hidden"
-                                  handleClassName="!absolute !right-0.5 !top-0.5"
-                                >
-                                  <div className="relative aspect-square bg-leaf-50">
-                                    {sp.cover && <Image src={sp.cover} alt={sp.name} fill className="object-cover" unoptimized />}
-                                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-1.5">
-                                      <div className="text-[10px] font-medium text-white truncate">{sp.name}</div>
-                                    </div>
-                                    <button onClick={(e) => { e.stopPropagation(); removeSpecies(sp); }}
-                                      className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-rose-500 text-[8px] text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                                      ×
-                                    </button>
-                                  </div>
-                                </DndItem>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        <TreeDndView
+          tree={tree}
+          setTree={setTree}
+          collapsed={collapsed}
+          setCollapsed={setCollapsed}
+          collapsedGenera={collapsedGenera}
+          setCollapsedGenera={setCollapsedGenera}
+          setEditingCategory={setEditingCategory}
+          setEditingGenus={setEditingGenus}
+          setEditingSpecies={setEditingSpecies}
+          removeCategory={removeCategory}
+          removeGenus={removeGenus}
+          removeSpecies={removeSpecies}
+          busy={busy}
+        />
       )}
 
       {editingCategory && (
@@ -406,6 +314,14 @@ export function BoardsManager({ initial }: { initial: CategoryNode[] }) {
           onSaved={() => { setEditingGenus(null); refresh(); }}
         />
       )}
+      {editingSpecies && (
+        <SpeciesEditDialog
+          genusId={editingSpecies.genusId}
+          species={editingSpecies.species === 'new' ? null : editingSpecies.species}
+          onClose={() => setEditingSpecies(null)}
+          onSaved={() => { setEditingSpecies(null); refresh(); }}
+        />
+      )}
     </div>
   );
 }
@@ -421,6 +337,7 @@ function DndItem({
   children,
   className,
   handleClassName,
+  flex = true,
 }: {
   id: string;
   index: number;
@@ -429,6 +346,7 @@ function DndItem({
   children: React.ReactNode;
   className?: string;
   handleClassName?: string;
+  flex?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
@@ -444,7 +362,8 @@ function DndItem({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group relative flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition-colors hover:bg-leaf-50/80',
+        'group relative rounded-lg px-2 py-1.5 text-xs transition-colors hover:bg-leaf-50/80',
+        flex && 'flex items-center gap-2',
         isDragging && 'z-10 bg-leaf-50 shadow-md ring-1 ring-leaf-200',
         className,
       )}
@@ -599,5 +518,320 @@ function SortableRow({
         </div>
       </td>
     </tr>
+  );
+}
+
+/* ============================================================
+ * 树状视图 - 支持跨属跨科拖拽
+ * ============================================================ */
+function TreeDndView({
+  tree,
+  setTree,
+  collapsed,
+  setCollapsed,
+  collapsedGenera,
+  setCollapsedGenera,
+  setEditingCategory,
+  setEditingGenus,
+  setEditingSpecies,
+  removeCategory,
+  removeGenus,
+  removeSpecies,
+  busy,
+}: {
+  tree: CategoryNode[];
+  setTree: React.Dispatch<React.SetStateAction<CategoryNode[]>>;
+  collapsed: Set<string>;
+  setCollapsed: React.Dispatch<React.SetStateAction<Set<string>>>;
+  collapsedGenera: Set<string>;
+  setCollapsedGenera: React.Dispatch<React.SetStateAction<Set<string>>>;
+  setEditingCategory: (c: CategoryNode | 'new' | null) => void;
+  setEditingGenus: (g: { genus: GenusNode | 'new'; categoryId: string } | null) => void;
+  setEditingSpecies: (s: { species: SpeciesNode | 'new'; genusId: string } | null) => void;
+  removeCategory: (c: CategoryNode) => void;
+  removeGenus: (g: GenusNode) => void;
+  removeSpecies: (s: SpeciesNode) => void;
+  busy: string | null;
+}) {
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const [, startTransition] = useTransition();
+
+  // 查找元素所属的科和属
+  const findLocation = (id: string): { type: 'category' | 'genus' | 'species'; catId?: string; genusId?: string } | null => {
+    for (const cat of tree) {
+      if (cat.id === id) return { type: 'category', catId: cat.id };
+      for (const genus of cat.genera) {
+        if (genus.id === id) return { type: 'genus', catId: cat.id, genusId: genus.id };
+        for (const sp of genus.species) {
+          if (sp.id === id) return { type: 'species', catId: cat.id, genusId: genus.id };
+        }
+      }
+    }
+    return null;
+  };
+
+  // 移动科（同级排序）
+  const moveCategory = (fromIdx: number, toIdx: number) => {
+    const ids = tree.map((x) => x.id);
+    const [removed] = ids.splice(fromIdx, 1);
+    ids.splice(toIdx, 0, removed);
+    setTree((p) => {
+      const m = new Map(p.map((x) => [x.id, x]));
+      return ids.map((id) => m.get(id)!).filter(Boolean);
+    });
+    startTransition(() => void api.post('/api/admin/boards/reorder', { kind: 'category', orderedIds: ids }));
+  };
+
+  // 移动属（仅同科内排序）
+  const moveGenus = (activeId: string, overId: string) => {
+    const activeLoc = findLocation(activeId);
+    const overLoc = findLocation(overId);
+    if (!activeLoc || !overLoc || activeLoc.type !== 'genus' || overLoc.type !== 'genus') return;
+    // 必须在同一科内
+    if (activeLoc.catId !== overLoc.catId) return;
+
+    setTree((prev) => {
+      const next = [...prev];
+      const catIdx = next.findIndex((c) => c.id === activeLoc.catId);
+      if (catIdx === -1) return prev;
+
+      const cat = { ...next[catIdx] };
+      const fromIdx = cat.genera.findIndex((g) => g.id === activeId);
+      const toIdx = cat.genera.findIndex((g) => g.id === overId);
+      if (fromIdx === -1 || toIdx === -1) return prev;
+
+      const newGenera = [...cat.genera];
+      const [removed] = newGenera.splice(fromIdx, 1);
+      newGenera.splice(toIdx, 0, removed);
+      cat.genera = newGenera;
+      next[catIdx] = cat;
+
+      // 保存排序
+      const allGenusIds = next.flatMap((c) => c.genera.map((g) => g.id));
+      startTransition(() => void api.post('/api/admin/boards/reorder', { kind: 'genus', orderedIds: allGenusIds }));
+
+      return next;
+    });
+  };
+
+  // 移动品种（支持跨属跨科）
+  const moveSpecies = (activeId: string, overId: string) => {
+    const activeLoc = findLocation(activeId);
+    const overLoc = findLocation(overId);
+    if (!activeLoc || !overLoc || activeLoc.type !== 'species' || overLoc.type !== 'species') return;
+
+    setTree((prev) => {
+      const next = [...prev];
+
+      // 找到源和目标的科、属
+      const srcCatIdx = next.findIndex((c) => c.id === activeLoc.catId);
+      if (srcCatIdx === -1) return prev;
+      const srcCat = { ...next[srcCatIdx] };
+      const srcGenusIdx = srcCat.genera.findIndex((g) => g.id === activeLoc.genusId);
+      if (srcGenusIdx === -1) return prev;
+      const srcGenus = { ...srcCat.genera[srcGenusIdx] };
+
+      // 从源移除品种
+      const spIdx = srcGenus.species.findIndex((s) => s.id === activeId);
+      if (spIdx === -1) return prev;
+      const [species] = srcGenus.species.splice(spIdx, 1);
+      srcGenus.species = [...srcGenus.species];
+      srcCat.genera[srcGenusIdx] = srcGenus;
+
+      // 找到目标位置
+      const dstCatIdx = next.findIndex((c) => c.id === overLoc.catId);
+      if (dstCatIdx === -1) return prev;
+      const dstCat = srcCatIdx === dstCatIdx ? srcCat : { ...next[dstCatIdx] };
+      const dstGenusIdx = dstCat.genera.findIndex((g) => g.id === overLoc.genusId);
+      if (dstGenusIdx === -1) return prev;
+      const dstGenus = { ...dstCat.genera[dstGenusIdx] };
+
+      // 插入品种
+      const overSpIdx = dstGenus.species.findIndex((s) => s.id === overId);
+      if (overSpIdx !== -1) {
+        dstGenus.species.splice(overSpIdx, 0, species);
+      } else {
+        dstGenus.species.push(species);
+      }
+      dstCat.genera[dstGenusIdx] = dstGenus;
+
+      next[srcCatIdx] = srcCat;
+      if (srcCatIdx !== dstCatIdx) {
+        next[dstCatIdx] = dstCat;
+      }
+
+      // 保存排序
+      const allSpeciesIds = next.flatMap((c) => c.genera.flatMap((g) => g.species.map((s) => s.id)));
+      startTransition(() => void api.post('/api/admin/boards/reorder', { kind: 'species', orderedIds: allSpeciesIds }));
+
+      return next;
+    });
+  };
+
+  // 处理拖拽结束
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const activeLoc = findLocation(active.id as string);
+    const overLoc = findLocation(over.id as string);
+    if (!activeLoc || !overLoc) return;
+
+    // 同类型才能拖拽
+    if (activeLoc.type !== overLoc.type) return;
+
+    switch (activeLoc.type) {
+      case 'category': {
+        const fromIdx = tree.findIndex((c) => c.id === active.id);
+        const toIdx = tree.findIndex((c) => c.id === over.id);
+        if (fromIdx !== -1 && toIdx !== -1) {
+          moveCategory(fromIdx, toIdx);
+        }
+        break;
+      }
+      case 'genus':
+        moveGenus(active.id as string, over.id as string);
+        break;
+      case 'species':
+        moveSpecies(active.id as string, over.id as string);
+        break;
+    }
+  };
+
+  // 收集所有可拖拽的 ID
+  const allIds = [
+    ...tree.map((c) => c.id),
+    ...tree.flatMap((c) => c.genera.map((g) => g.id)),
+    ...tree.flatMap((c) => c.genera.flatMap((g) => g.species.map((s) => s.id))),
+  ];
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <SortableContext items={allIds} strategy={verticalListSortingStrategy}>
+        <div className="space-y-2">
+          {tree.map((cat, catIdx) => {
+            const isCatCollapsed = collapsed.has(cat.id);
+            return (
+              <div key={cat.id} className={cn('rounded-xl border bg-white overflow-hidden', cat.enabled ? 'border-leaf-200' : 'border-ink-200 opacity-50')}>
+                {/* 科 - 卡片头部 */}
+                <DndItem
+                  id={cat.id}
+                  index={catIdx}
+                  total={tree.length}
+                  onReorder={() => {}}
+                >
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <button onClick={() => setCollapsed((s) => { const n = new Set(s); n.has(cat.id) ? n.delete(cat.id) : n.add(cat.id); return n; })}
+                      className="shrink-0 w-5 h-5 flex items-center justify-center rounded text-leaf-600/60 hover:text-leaf-700 text-xs">
+                      {isCatCollapsed ? '▸' : '▾'}
+                    </button>
+                    <span className="text-base shrink-0">{cat.icon}</span>
+                    <span className="font-semibold text-sm text-ink-800 truncate">{cat.name}</span>
+                    {cat.latinName && <span className="text-[11px] italic text-ink-400 shrink-0">{cat.latinName}</span>}
+                    <span className="text-[10px] text-ink-400 shrink-0 ml-1">{cat.genera.length}属·{cat.postsCount}帖</span>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Link href={`/board/${cat.slug}`} target="_blank" className="rounded-md border border-ink-200 px-2 py-1 text-[10px] text-ink-600 hover:bg-ink-50">查看</Link>
+                    <button onClick={() => setEditingCategory(cat)} className="rounded-md border border-ink-200 px-2 py-1 text-[10px] text-ink-600 hover:bg-ink-50">编辑</button>
+                    <button onClick={() => removeCategory(cat)} className="rounded-md bg-rose-50 border border-rose-200 px-2 py-1 text-[10px] text-rose-600 hover:bg-rose-100">删除</button>
+                  </div>
+                </DndItem>
+
+                {/* 属列表 - 可折叠 */}
+                {!isCatCollapsed && (
+                  <div className="border-t border-leaf-100/60 bg-leaf-50/20 px-4 py-2">
+                    {cat.genera.length === 0 ? (
+                      <div className="py-2 text-center text-[11px] text-ink-400">暂无属</div>
+                    ) : (
+                      <div className="space-y-2">
+                        {cat.genera.map((genus, gIdx) => {
+                          const isGenusCollapsed = collapsedGenera.has(genus.id);
+                          return (
+                            <div key={genus.id} className="rounded-lg border border-leaf-100 bg-white overflow-hidden">
+                              {/* 属 - 可折叠头部 */}
+                              <DndItem
+                                id={genus.id}
+                                index={gIdx}
+                                total={cat.genera.length}
+                                onReorder={() => {}}
+                                className="bg-white"
+                              >
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <button onClick={() => setCollapsedGenera((s) => { const n = new Set(s); n.has(genus.id) ? n.delete(genus.id) : n.add(genus.id); return n; })}
+                                    className="shrink-0 w-4 h-4 flex items-center justify-center rounded text-leaf-600/50 hover:text-leaf-700 text-[10px]">
+                                    {isGenusCollapsed ? '▸' : '▾'}
+                                  </button>
+                                  <Link href={`/board/${cat.slug}/${genus.slug}`} target="_blank" className="text-sm font-medium text-ink-700 hover:text-leaf-600 truncate">
+                                    {genus.name}
+                                  </Link>
+                                  {genus.latinName && <span className="text-[10px] italic text-ink-400 shrink-0">{genus.latinName}</span>}
+                                  <span className="text-[10px] text-ink-400 shrink-0">{genus.species.length}品种</span>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <button onClick={() => setEditingGenus({ genus, categoryId: cat.id })} className="rounded-md border border-ink-200 px-2 py-1 text-[10px] text-ink-600 hover:bg-ink-50">编辑</button>
+                                  <button onClick={() => removeGenus(genus)} className="rounded-md bg-rose-50 border border-rose-200 px-2 py-1 text-[10px] text-rose-600 hover:bg-rose-100">删除</button>
+                                </div>
+                              </DndItem>
+
+                              {/* 品种卡片网格 */}
+                              {!isGenusCollapsed && (
+                                <div className="border-t border-leaf-100/40 bg-leaf-50/10 px-3 py-2">
+                                  {genus.species.length === 0 ? (
+                                    <div className="py-1 text-center text-[10px] text-ink-400">暂无品种</div>
+                                  ) : (
+                                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                                      {genus.species.map((sp, sIdx) => (
+                                        <DndItem
+                                          key={sp.id}
+                                          id={sp.id}
+                                          index={sIdx}
+                                          total={genus.species.length}
+                                          onReorder={() => {}}
+                                          className="!p-0 overflow-hidden border border-leaf-100 rounded-lg bg-white"
+                                          handleClassName="!absolute !right-0.5 !top-0.5"
+                                          flex={false}
+                                        >
+                                          <div className="relative aspect-square bg-leaf-50">
+                                            {sp.cover && <Image src={sp.cover} alt={sp.name} fill className="object-cover" unoptimized />}
+                                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-1.5">
+                                              <div className="text-[10px] font-medium text-white truncate">{sp.name}</div>
+                                            </div>
+                                          </div>
+                                          <div className="px-1.5 py-1">
+                                            <div className="text-[10px] font-medium text-ink-800 truncate">{sp.name}</div>
+                                            {sp.latinName && (
+                                              <div className="text-[9px] italic text-ink-400 truncate">{sp.latinName}</div>
+                                            )}
+                                            <div className="text-[9px] text-ink-400">{sp.postsCount}帖</div>
+                                            <div className="mt-1 flex gap-1">
+                                              <button onClick={(e) => { e.stopPropagation(); setEditingSpecies({ species: sp, genusId: genus.id }); }}
+                                                className="rounded border border-ink-200 px-1.5 py-0.5 text-[8px] text-ink-600 hover:bg-ink-50">
+                                                编辑
+                                              </button>
+                                              <button onClick={(e) => { e.stopPropagation(); removeSpecies(sp); }}
+                                                className="rounded bg-rose-50 border border-rose-200 px-1.5 py-0.5 text-[8px] text-rose-600 hover:bg-rose-100">
+                                                删除
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </DndItem>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </SortableContext>
+    </DndContext>
   );
 }
