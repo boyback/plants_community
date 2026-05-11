@@ -32,6 +32,16 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
+# 关键变量内容校验:仅文件存在不够,docker-compose 里这些变量是必填的,
+# 缺失会让 docker compose up 直接 abort,先在这里挡住更友好。
+for k in JWT_SECRET MYSQL_ROOT_PASSWORD; do
+  if ! grep -qE "^${k}=.+" .env; then
+    echo "❌ .env 缺少 ${k}(或为空)"
+    echo "   参考 .env.production.example 设置后重试"
+    exit 1
+  fi
+done
+
 # 1. 代码同步:在 CI/CD 调用时,workflow 已经 reset --hard 过了。
 #    手动调用时,这里也兜底 fetch 一下(失败不阻塞)。
 echo "→ git fetch (best-effort)"
