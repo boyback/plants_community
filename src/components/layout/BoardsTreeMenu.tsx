@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { api } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
 
@@ -23,26 +24,88 @@ interface CategoryFull {
   genera: GenusLite[];
 }
 
+// 全局缓存，避免重复加载
+let cachedData: CategoryFull[] | null = null;
+let cachePromise: Promise<CategoryFull[]> | null = null;
+
 export function BoardsTreeMenu({
   onNavigate,
 }: {
   onNavigate?: () => void;
 }) {
-  const [data, setData] = useState<CategoryFull[] | null>(null);
-  const [openCatIds, setOpenCatIds] = useState<Set<string>>(new Set());
+  const pathname = usePathname();
+  const [data, setData] = useState<CategoryFull[] | null>(cachedData);
+  const [openCatIds, setOpenCatIds] = useState<Set<string>>(() => {
+    // 从 localStorage 恢复展开状态
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('boards.openCatIds');
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+      } catch {
+        return new Set();
+      }
+    }
+    return new Set();
+  });
 
+  // 解析当前路径，提取 categorySlug 和 genusSlug
+  const currentPath = pathname?.startsWith('/board/') 
+    ? pathname.slice(7).split('/').filter(Boolean) 
+    : [];
+  const [currentCategorySlug, currentGenusSlug] = currentPath;
+
+  // 首次加载数据（使用全局缓存）
   useEffect(() => {
-    api
-      .get<CategoryFull[]>('/api/categories?kind=family&withGenera=1')
-      .then((list) => setData(list || []))
-      .catch(() => setData([]));
+    if (cachedData) {
+      setData(cachedData);
+      return;
+    }
+
+    if (!cachePromise) {
+      cachePromise = api
+        .get<CategoryFull[]>('/api/categories?kind=family&withGenera=1')
+        .then((list) => {
+          cachedData = list || [];
+          return cachedData;
+        })
+        .catch(() => {
+          cachedData = [];
+          return [];
+        })
+        .finally(() => {
+          cachePromise = null;
+        });
+    }
+
+    cachePromise.then((list) => setData(list));
   }, []);
+
+  // 当路径变化时，自动展开对应的科
+  useEffect(() => {
+    if (currentCategorySlug && data) {
+      const currentCat = data.find((c) => c.slug === currentCategorySlug);
+      if (currentCat && !openCatIds.has(currentCat.id)) {
+        setOpenCatIds((prev) => {
+          const next = new Set([...prev, currentCat.id]);
+          // 持久化到 localStorage
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('boards.openCatIds', JSON.stringify([...next]));
+          }
+          return next;
+        });
+      }
+    }
+  }, [currentCategorySlug, data, openCatIds]);
 
   const toggleCat = (id: string) => {
     setOpenCatIds((s) => {
       const n = new Set(s);
       if (n.has(id)) n.delete(id);
       else n.add(id);
+      // 持久化到 localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('boards.openCatIds', JSON.stringify([...n]));
+      }
       return n;
     });
   };
@@ -70,7 +133,11 @@ export function BoardsTreeMenu({
                   : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700',
               )}
             >
-              <span className="text-base shrink-0">{c.icon}</span>
+              {c.icon && (c.icon.startsWith('http') || c.icon.startsWith('/')) ? (
+                <img src={c.icon} alt="" className="h-5 w-5 shrink-0 rounded object-cover" />
+              ) : (
+                <span className="text-base shrink-0">{c.icon || '🌿'}</span>
+              )}
               <span className="truncate">{c.name}</span>
               <span className="ml-auto shrink-0 text-[10px] text-leaf-700/40">
                 {open ? '▾' : '▸'}
@@ -84,26 +151,40 @@ export function BoardsTreeMenu({
                     该科暂无属
                   </div>
                 ) : (
-                  c.genera.map((g) => (
-                    <Link
-                      key={g.id}
-                      href={`/board/${c.slug}/${g.slug}`}
-                      onClick={onNavigate}
-                      className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-[12px] text-ink-700 hover:bg-leaf-50 hover:text-leaf-700"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate">{g.name}</span>
-                        {g.latinName && (
-                          <span className="block truncate text-[10px] italic text-leaf-700/50">
-                            {g.latinName}
-                          </span>
+                  c.genera.map((g) => {
+                    const isActive = c.slug === currentCategorySlug && g.slug === currentGenusSlug;
+                    return (
+                      <Link
+                        key={g.id}
+                        href={`/board/${c.slug}/${g.slug}`}
+                        onClick={onNavigate}
+                        className={cn(
+                          "flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-[12px] transition-colors",
+                          isActive
+                            ? "bg-leaf-500 text-white font-medium"
+                            : "text-ink-700 hover:bg-leaf-50 hover:text-leaf-700"
                         )}
-                      </span>
-                      <span className="shrink-0 text-[10px] text-leaf-700/40">
-                        {g._count.posts}
-                      </span>
-                    </Link>
-                  ))
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate">{g.name}</span>
+                          {g.latinName && (
+                            <span className={cn(
+                              "block truncate text-[10px] italic",
+                              isActive ? "text-white/80" : "text-leaf-700/50"
+                            )}>
+                              {g.latinName}
+                            </span>
+                          )}
+                        </span>
+                        <span className={cn(
+                          "shrink-0 text-[10px]",
+                          isActive ? "text-white/80" : "text-leaf-700/40"
+                        )}>
+                          {g._count.posts}
+                        </span>
+                      </Link>
+                    );
+                  })
                 )}
               </div>
             )}

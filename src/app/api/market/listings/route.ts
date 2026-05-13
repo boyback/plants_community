@@ -24,7 +24,9 @@ interface ListingItem {
   type: 'product' | 'auction';
   id: string;
   title: string;
+  description?: string;
   cover: string;
+  images?: string[];
   price: number; // 商品 = price; 拍卖 = startPrice
   originalPrice?: number | null;
   createdAt: string;
@@ -36,6 +38,14 @@ interface ListingItem {
     name: string;
     avatar: string;
   } | null;
+  tags?: string[];
+  genus?: {
+    slug: string;
+    name: string;
+    cover?: string | null;
+  } | null;
+  views?: number;
+  comments?: number;
 }
 
 const OTHER_KEYWORDS: Record<string, string[]> = {
@@ -47,17 +57,18 @@ const OTHER_KEYWORDS: Record<string, string[]> = {
 };
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const q = url.searchParams.get('q')?.trim() || '';
-  const family = url.searchParams.get('family')?.trim() || '';
-  const genus = url.searchParams.get('genus')?.trim() || '';
-  const species = url.searchParams.get('species')?.trim() || '';
-  const other = url.searchParams.get('other')?.trim() || '';
-  const priceMin = Number(url.searchParams.get('priceMin') || 0);
-  const priceMax = Number(url.searchParams.get('priceMax') || 0);
-  const type = url.searchParams.get('type') || 'all';
-  const sort = url.searchParams.get('sort') || 'latest';
-  const limit = Math.min(60, Math.max(10, Number(url.searchParams.get('limit') || 30)));
+  try {
+    const url = new URL(req.url);
+    const q = url.searchParams.get('q')?.trim() || '';
+    const family = url.searchParams.get('family')?.trim() || '';
+    const genus = url.searchParams.get('genus')?.trim() || '';
+    const species = url.searchParams.get('species')?.trim() || '';
+    const other = url.searchParams.get('other')?.trim() || '';
+    const priceMin = Number(url.searchParams.get('priceMin') || 0);
+    const priceMax = Number(url.searchParams.get('priceMax') || 0);
+    const type = url.searchParams.get('type') || 'all';
+    const sort = url.searchParams.get('sort') || 'latest';
+    const limit = Math.min(60, Math.max(10, Number(url.searchParams.get('limit') || 30)));
 
   // —— where 公共部分(产品 / 拍卖)——
   // q + family/genus/species + other 都用 LIKE 匹配 title/description/tags
@@ -132,26 +143,34 @@ export async function GET(req: Request) {
       select: {
         id: true,
         title: true,
+        description: true,
         cover: true,
+        images: true,
+        tags: true,
         price: true,
         originalPrice: true,
         createdAt: true,
         shipFrom: true,
         sellerId: true,
         seller: { select: { id: true, name: true, avatar: true } },
+        genus: { select: { slug: true, name: true, cover: true } },
       },
     });
     products = list.map((p) => ({
       type: 'product',
       id: p.id,
       title: p.title,
+      description: p.description || undefined,
       cover: p.cover,
+      images: p.images ? JSON.parse(p.images) : undefined,
       price: p.price,
       originalPrice: p.originalPrice,
       createdAt: p.createdAt.toISOString(),
       url: `/market/${p.id}`,
       shipFrom: p.shipFrom,
       seller: p.seller,
+      tags: p.tags ? JSON.parse(p.tags) : undefined,
+      genus: p.genus || undefined,
     }));
   }
 
@@ -181,23 +200,34 @@ export async function GET(req: Request) {
       select: {
         id: true,
         title: true,
+        description: true,
         cover: true,
+        images: true,
+        tags: true,
         currentPrice: true,
         createdAt: true,
         endAt: true,
+        sellerId: true,
         seller: { select: { id: true, name: true, avatar: true } },
+        bidCount: true,
+        genus: { select: { slug: true, name: true, cover: true } },
       },
     });
     auctions = list.map((a) => ({
       type: 'auction',
       id: a.id,
       title: a.title,
+      description: a.description || undefined,
       cover: a.cover,
+      images: a.images ? JSON.parse(a.images) : undefined,
       price: a.currentPrice, // 当前价(初始 = startPrice)
       createdAt: a.createdAt.toISOString(),
       endAt: a.endAt.toISOString(),
       url: `/auction/${a.id}`,
       seller: a.seller,
+      tags: a.tags ? JSON.parse(a.tags) : undefined,
+      comments: a.bidCount, // 拍卖用出价数作为评论数
+      genus: a.genus || undefined,
     }));
   }
 
@@ -211,4 +241,11 @@ export async function GET(req: Request) {
   });
 
   return NextResponse.json({ ok: true, data: { items: merged.slice(0, limit) } });
+  } catch (error) {
+    console.error('Error in /api/market/listings:', error);
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }

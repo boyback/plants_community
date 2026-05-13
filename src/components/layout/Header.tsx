@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Logo } from '@/components/ui/Logo';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { BoardsTreeMenu } from '@/components/layout/BoardsTreeMenu';
 
 import { LocaleSwitcher } from '@/components/ui/LocaleSwitcher';
 import { ColorThemeSwitcher } from '@/components/ui/ColorThemeSwitcher';
@@ -81,8 +82,9 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
 
         <nav className="ml-4 hidden items-center gap-1 lg:flex">
           <HeaderLink href="/" icon="home">{t('nav.home')}</HeaderLink>
+          <BoardsDropdown />
           <HeaderLink href="/plants" icon="plants">{t('nav.plants')}</HeaderLink>
-          <HeaderLink href="/market" icon="shop">交易市场</HeaderLink>
+          <HeaderLink href="/market" icon="shop">交易广场</HeaderLink>
         </nav>
 
         <div className="ml-auto hidden flex-1 max-w-md md:block">
@@ -624,6 +626,51 @@ function timeShort(iso: string): string {
 }
 
 // ============================================================
+// 板块下拉菜单
+// ============================================================
+function BoardsDropdown() {
+  const [open, setOpen] = useState(false);
+  const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const pathname = usePathname();
+  const active = pathname.startsWith('/board');
+
+  const onEnter = () => {
+    if (timer) clearTimeout(timer);
+    setOpen(true);
+  };
+
+  const onLeave = () => {
+    const t = setTimeout(() => setOpen(false), 150);
+    setTimer(t);
+  };
+
+  return (
+    <div className="relative" onMouseEnter={onEnter} onMouseLeave={onLeave}>
+      <button
+        type="button"
+        className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+          active
+            ? 'bg-leaf-100 font-medium text-leaf-700'
+            : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700'
+        }`}
+      >
+        <span className="text-base">🌿</span>
+        <span>板块</span>
+        <span className="text-[10px] text-leaf-500">{open ? '▴' : '▾'}</span>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full z-40 mt-1 w-64 overflow-hidden rounded-xl border border-leaf-100 bg-white shadow-card">
+          <div className="max-h-[60vh] overflow-y-auto p-2">
+            <BoardsTreeMenu onNavigate={() => setOpen(false)} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
 // 顶部搜索框(form + Enter 跳 /search?q=xxx)
 // ============================================================
 
@@ -640,7 +687,22 @@ function HeaderSearch() {
   const [open, setOpen] = useState(false);
   const [hot, setHot] = useState<HotItem[]>([]);
   const [hotRefreshing, setHotRefreshing] = useState(false);
+  const [history, setHistory] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // 从 localStorage 加载搜索历史
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('search.history');
+        if (saved) {
+          setHistory(JSON.parse(saved));
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }, []);
 
   // 切换路由后同步 input(从 /search 跳走时清空)
   useEffect(() => {
@@ -676,9 +738,30 @@ function HeaderSearch() {
     return () => document.removeEventListener('mousedown', onDocClick);
   }, [open]);
 
+  const saveToHistory = (term: string) => {
+    const v = term.trim();
+    if (!v) return;
+    
+    // 更新历史记录（去重，最新的放前面，最多保留10条）
+    const newHistory = [v, ...history.filter((h) => h !== v)].slice(0, 10);
+    setHistory(newHistory);
+    
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('search.history', JSON.stringify(newHistory));
+    }
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('search.history');
+    }
+  };
+
   const go = (term: string) => {
     const v = term.trim();
     if (!v) return;
+    saveToHistory(v);
     setOpen(false);
     router.push(`/search?q=${encodeURIComponent(v)}`);
   };
@@ -690,29 +773,38 @@ function HeaderSearch() {
 
   return (
     <div ref={containerRef} className="relative">
-      <form onSubmit={submit} className="relative">
-        <Icon
-          name="search"
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-leaf-400"
-          size={16}
-        />
-        <input
-          type="search"
-          name="q"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onFocus={() => {
-            setOpen(true);
-            void ensureHot();
-          }}
-          className="input pl-9"
-          placeholder="搜索帖子、品种、用户、板块"
+      <form onSubmit={submit} className="relative flex items-center gap-1">
+        <div className="relative flex-1">
+          <Icon
+            name="search"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-leaf-400"
+            size={16}
+          />
+          <input
+            type="search"
+            name="q"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onFocus={() => {
+              setOpen(true);
+              void ensureHot();
+            }}
+            className="input pl-9 pr-3"
+            placeholder="搜索帖子、品种、用户、板块"
+            aria-label="搜索"
+            autoComplete="off"
+          />
+        </div>
+        <button
+          type="submit"
+          className="btn-primary h-9 px-3 text-xs shrink-0"
           aria-label="搜索"
-          autoComplete="off"
-        />
+        >
+          搜索
+        </button>
       </form>
 
-      {/* 下拉:输入空时显示热词;有输入时显示「搜索 xxx」 */}
+      {/* 下拉:输入空时显示历史+热词;有输入时显示「搜索 xxx」 */}
       {open && (
         <div className="absolute left-0 right-0 top-full z-40 mt-1 overflow-hidden rounded-xl border border-leaf-100 bg-white shadow-card">
           {q.trim().length > 0 ? (
@@ -728,6 +820,36 @@ function HeaderSearch() {
             </button>
           ) : (
             <>
+              {/* 搜索历史 */}
+              {history.length > 0 && (
+                <>
+                  <div className="flex items-center justify-between border-b border-leaf-50 px-3 py-2 text-[11px]">
+                    <span className="text-leaf-700/60">🕒 搜索历史</span>
+                    <button
+                      type="button"
+                      onClick={clearHistory}
+                      className="text-leaf-700/70 hover:text-leaf-700"
+                    >
+                      清空
+                    </button>
+                  </div>
+                  <div className="border-b border-leaf-50 px-3 py-2">
+                    {history.map((h, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => go(h)}
+                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-ink-800 hover:bg-leaf-50"
+                      >
+                        <Icon name="search" size={12} className="text-leaf-400" />
+                        <span className="flex-1 truncate">{h}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* 热门搜索 */}
               <div className="flex items-center justify-between border-b border-leaf-50 px-3 py-2 text-[11px]">
                 <span className="text-leaf-700/60">🔥 热门搜索</span>
                 <button

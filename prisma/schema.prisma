@@ -699,14 +699,17 @@ model Product {
   sellerId        String? // C2C 必填,官方为空
   shipFrom        String? // 发货地
   tags            String?       @db.Text // JSON array
+  genusId         String? // 所属属
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
   seller User?   @relation("ProductSeller", fields: [sellerId], references: [id])
+  genus  Genus?  @relation("ProductGenus", fields: [genusId], references: [id])
   orders Order[]
 
   @@index([source, status, createdAt])
   @@index([sellerId])
+  @@index([genusId])
   @@map("products")
 }
 
@@ -1148,6 +1151,7 @@ model Auction {
 
   category String // 与商品共享分类体系
   tags     String? @db.Text
+  genusId  String? // 所属属
 
   startPrice    Int // 起拍价(分)
   minIncrement  Int  @default(100) // 最小加价幅度,默认 1 元
@@ -1174,6 +1178,7 @@ model Auction {
 
   seller       User                 @relation("AuctionSeller", fields: [sellerId], references: [id])
   winner       User?                @relation("AuctionWinner", fields: [winnerId], references: [id])
+  genus        Genus?               @relation("AuctionGenus", fields: [genusId], references: [id])
   bids         Bid[]
   participants AuctionParticipant[]
   orders       Order[]
@@ -1181,6 +1186,7 @@ model Auction {
   @@index([status, endAt])
   @@index([sellerId, status])
   @@index([winnerId])
+  @@index([genusId])
   @@map("auctions")
 }
 
@@ -1284,6 +1290,8 @@ model Genus {
   category Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   species  Species[]
   posts    Post[]
+  products Product[] @relation("ProductGenus")
+  auctions Auction[] @relation("AuctionGenus")
 
   @@unique([categoryId, slug])
   @@index([slug])

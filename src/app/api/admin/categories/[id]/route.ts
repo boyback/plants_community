@@ -17,7 +17,7 @@ const Body = z.object({
   kind: z.enum(['family', 'discussion', 'market']).optional(),
   description: z.string().max(500).optional(),
   cover: z.string().url().optional(),
-  icon: z.string().max(20).optional(),
+  icon: z.string().max(500).optional(),
   members: z.number().int().min(0).optional(),
   orderIdx: z.number().int().optional(),
   enabled: z.boolean().optional(),

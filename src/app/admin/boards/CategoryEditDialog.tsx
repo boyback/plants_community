@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { api, ApiError } from '@/lib/client-api';
+import { CropImageDialog } from '@/components/upload/CropImageDialog';
 
 interface Category {
   id: string;
@@ -24,7 +25,7 @@ export function CategoryEditDialog({
 }: {
   category: Category | null;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (updated?: { id: string; icon: string; name: string; latinName: string | null }) => void;
 }) {
   const [slug, setSlug] = useState(category?.slug ?? '');
   const [name, setName] = useState(category?.name ?? '');
@@ -32,11 +33,57 @@ export function CategoryEditDialog({
   const [kind, setKind] = useState(category?.kind ?? 'family');
   const [description, setDescription] = useState(category?.description ?? '');
   const [cover, setCover] = useState(category?.cover ?? '');
-  const [icon, setIcon] = useState(category?.icon ?? '🌿');
+  const [icon, setIcon] = useState(category?.icon ?? '');
   const [orderIdx, setOrderIdx] = useState(category?.orderIdx ?? 0);
   const [enabled, setEnabled] = useState(category?.enabled ?? true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [iconDragOver, setIconDragOver] = useState(false);
+  const [iconUploading, setIconUploading] = useState(false);
+  const [iconCropEnabled, setIconCropEnabled] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const iconInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadIcon = async (file: File) => {
+    setIconUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const resp = await fetch('/api/upload', { method: 'POST', body: formData });
+      if (!resp.ok) throw new Error('上传失败');
+      const data = await resp.json();
+      const url = data.url || data.data?.url;
+      if (url) {
+        if (iconCropEnabled) {
+          setCropSrc(url);
+        } else {
+          setIcon(url);
+        }
+      }
+    } catch {
+      setErr('图标上传失败');
+    } finally {
+      setIconUploading(false);
+    }
+  };
+
+  const handleIconDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIconDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) void uploadIcon(file);
+  };
+
+  const handleIconClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    iconInputRef.current?.click();
+  };
+
+  const handleRemoveIcon = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIcon('');
+  };
 
   const submit = async () => {
     setErr(null);
@@ -52,16 +99,23 @@ export function CategoryEditDialog({
         kind,
         description: description.trim(),
         cover: cover.trim(),
-        icon: icon.trim() || '🌿',
+        icon: icon.trim() || '',
         orderIdx,
         enabled,
       };
       if (category) {
         await api.patch(`/api/admin/categories/${category.id}`, body);
+        // 返回更新后的数据
+        onSaved({
+          id: category.id,
+          icon: body.icon,
+          name: body.name,
+          latinName: body.latinName,
+        });
       } else {
         await api.post('/api/admin/categories', body);
+        onSaved();
       }
-      onSaved();
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : '保存失败');
     } finally {
@@ -82,8 +136,62 @@ export function CategoryEditDialog({
             <Field label="slug(英文 ID)*">
               <input className="w-full rounded-lg border border-ink-200 px-3 py-2 font-mono" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="jingtian" />
             </Field>
-            <Field label="图标 emoji">
-              <input className="w-full rounded-lg border border-ink-200 px-3 py-2 text-center text-2xl" value={icon} onChange={(e) => setIcon(e.target.value)} />
+            <Field label="图标">
+              <input
+                ref={iconInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void uploadIcon(file);
+                  e.target.value = '';
+                }}
+              />
+              <div
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIconDragOver(true); }}
+                onDragLeave={(e) => { e.stopPropagation(); setIconDragOver(false); }}
+                onDrop={handleIconDrop}
+                className={`relative flex h-20 w-20 rounded-xl border-2 border-dashed transition-colors ${
+                  iconDragOver
+                    ? 'border-leaf-500 bg-leaf-50'
+                    : 'border-ink-200 bg-ink-50'
+                }`}
+              >
+                {iconUploading ? (
+                  <div className="flex items-center justify-center w-full h-full text-[10px] text-leaf-600">上传中…</div>
+                ) : icon ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={icon} alt="" className="h-full w-full rounded-xl object-cover" />
+                    <button
+                      type="button"
+                      onClick={handleRemoveIcon}
+                      className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-rose-500 text-[10px] text-white hover:bg-rose-600"
+                    >
+                      ×
+                    </button>
+                  </>
+                ) : (
+                  <div
+                    onClick={handleIconClick}
+                    className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-leaf-50/50"
+                  >
+                    <div className="text-lg">📤</div>
+                    <div className="text-[9px] text-ink-400 mt-0.5">拖拽/点击</div>
+                  </div>
+                )}
+              </div>
+              {/* 裁剪开关 */}
+              <label className="flex items-center gap-1.5 mt-1.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={iconCropEnabled}
+                  onChange={(e) => setIconCropEnabled(e.target.checked)}
+                  className="h-3 w-3 accent-leaf-500 rounded"
+                />
+                <span className="text-[10px] text-ink-500">上传后裁剪</span>
+              </label>
             </Field>
           </div>
           <Field label="中文名 *">
@@ -131,6 +239,19 @@ export function CategoryEditDialog({
           </button>
         </div>
       </div>
+
+      {/* 裁剪对话框 */}
+      {cropSrc && (
+        <CropImageDialog
+          src={cropSrc}
+          outputSize={75}
+          onCancel={() => setCropSrc(null)}
+          onConfirm={(croppedUrl) => {
+            setIcon(croppedUrl);
+            setCropSrc(null);
+          }}
+        />
+      )}
     </div>
   );
 }

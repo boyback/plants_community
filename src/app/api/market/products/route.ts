@@ -103,6 +103,8 @@ const CreateBody = z.object({
   description: z.string().optional(),
   descriptionJson: z.unknown().optional(),
   category: z.string().min(1),
+  genus: z.string().optional(),         // 属 slug
+  species: z.string().optional(),       // 品种 slug
   price: z.number().int().min(1),       // 单位:分
   originalPrice: z.number().int().optional(),
   cover: z.string(),
@@ -127,6 +129,16 @@ export const POST = handler(async (req) => {
   });
   if (!stored.text) return fail(400, '商品描述不能为空');
 
+  // 根据 genusSlug 查找 genusId
+  let genusId: string | null = null;
+  if (body.genus) {
+    const genus = await prisma.genus.findFirst({
+      where: { slug: body.genus },
+      select: { id: true },
+    });
+    genusId = genus?.id || null;
+  }
+
   const product = await prisma.product.create({
     data: {
       source: 'c2c',
@@ -144,6 +156,7 @@ export const POST = handler(async (req) => {
       pointsBack: body.pointsBack ?? Math.round(body.price * 0.05) / 10, // 5% 回积分(粗略)
       shipFrom: body.shipFrom,
       sellerId: me.id,
+      genusId,
       status: 'on_sale',
     },
     include: productInclude(),

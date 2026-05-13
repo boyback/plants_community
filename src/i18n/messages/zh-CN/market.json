@@ -27,7 +27,7 @@
     "buyNeedLevel": "需要 Lv.5 起或大会员才能购买",
     "sellNeedLevel": "需要 Lv.8 起或大会员才能上架",
     "hero": {
-      "title": "交易市场",
+      "title": "交易广场",
       "subtitle": "官方甄选 + 肉友闲置,买卖肉肉、工具、盆器一站式",
       "iWantSell": "✨ 我要出售",
       "auctionBannerTitle": "拍卖会进行中",
@@ -41,7 +41,7 @@
       "sellerName": "卖家:{name}"
     },
     "detail": {
-      "crumbMarket": "交易市场",
+      "crumbMarket": "交易广场",
       "source": {
         "official": "官方甄选",
         "c2c": "肉友闲置"

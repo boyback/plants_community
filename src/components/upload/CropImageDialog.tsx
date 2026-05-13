@@ -7,6 +7,8 @@ interface Props {
   src: string;
   onCancel: () => void;
   onConfirm: (croppedUrl: string) => void;
+  /** 输出图片尺寸（宽=高），不传则自由尺寸 */
+  outputSize?: number;
 }
 
 const ASPECT_PRESETS = [
@@ -18,11 +20,11 @@ const ASPECT_PRESETS = [
   { label: '9:16', value: 9 / 16 },
 ];
 
-export function CropImageDialog({ src, onCancel, onConfirm }: Props) {
+export function CropImageDialog({ src, onCancel, onConfirm, outputSize }: Props) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [areaPx, setAreaPx] = useState<Area | null>(null);
-  const [aspect, setAspect] = useState<number | null>(null);
+  const [aspect, setAspect] = useState<number | null>(outputSize ? 1 : null);
   const [rotation, setRotation] = useState(0);
   const [flipH, setFlipH] = useState(false);
   const [flipV, setFlipV] = useState(false);
@@ -47,7 +49,7 @@ export function CropImageDialog({ src, onCancel, onConfirm }: Props) {
     setErr('');
     try {
       if (!areaPx) { setErr('请先调整裁剪框'); return; }
-      const url = await cropImage(src, areaPx, rotation, flipH, flipV);
+      const url = await cropImage(src, areaPx, rotation, flipH, flipV, false, outputSize);
       onConfirm(url);
     } catch (e) {
       setErr(e instanceof Error ? e.message : '裁剪失败');
@@ -80,34 +82,36 @@ export function CropImageDialog({ src, onCancel, onConfirm }: Props) {
         </div>
 
         {/* 裁剪区 */}
-        <div className="relative h-64 w-full flex-shrink-0 bg-black/90 sm:h-72">
-          <style>{`
-            .crop-area { touch-action: none; }
-            .crop-area .CropArea__cropArea {
-              border: 2px solid white !important;
-              box-shadow: 0 0 0 9999em rgba(0,0,0,0.5) !important;
-            }
-          `}</style>
-          <div className="crop-area h-full w-full">
-            <Cropper
-              image={src}
-              crop={crop}
-              zoom={zoom}
-              aspect={aspect ?? undefined}
-              rotation={rotation}
-              cropShape="rect"
-              showGrid={true}
-              restrictPosition={true}
-              onCropChange={setCrop}
-              onZoomChange={setZoom}
-              onCropComplete={onCropComplete}
-            />
-          </div>
-          {areaPx && (
-            <div className="absolute bottom-2 left-2 rounded bg-black/60 px-2 py-1 text-[10px] text-white/80 tabular-nums">
-              {Math.round(areaPx.width)} × {Math.round(areaPx.height)}
+        <div className="relative flex items-center justify-center w-full flex-shrink-0 bg-black/90 py-4">
+          <div className="relative" style={{ width: '75px', height: '75px' }}>
+            <style>{`
+              .crop-area { touch-action: none; }
+              .crop-area .CropArea__cropArea {
+                border: 2px solid white !important;
+                box-shadow: 0 0 0 9999em rgba(0,0,0,0.5) !important;
+              }
+            `}</style>
+            <div className="crop-area h-full w-full">
+              <Cropper
+                image={src}
+                crop={crop}
+                zoom={zoom}
+                aspect={aspect ?? undefined}
+                rotation={rotation}
+                cropShape="rect"
+                showGrid={true}
+                restrictPosition={true}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
             </div>
-          )}
+            {areaPx && (
+              <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 rounded bg-black/60 px-2 py-1 text-[10px] text-white/80 tabular-nums whitespace-nowrap">
+                {Math.round(areaPx.width)} × {Math.round(areaPx.height)}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 工具栏 */}
@@ -287,7 +291,8 @@ export function CropImageDialog({ src, onCancel, onConfirm }: Props) {
 
 async function cropImage(
   imageSrc: string, area: Area, rotation: number,
-  flipH: boolean, flipV: boolean, transformOnly = false
+  flipH: boolean, flipV: boolean, transformOnly = false,
+  outputSize?: number
 ): Promise<string> {
   const img = await loadImage(imageSrc);
   const rad = (rotation * Math.PI) / 180;
@@ -316,12 +321,16 @@ async function cropImage(
     });
   }
 
-  const maxOut = 2048;
-  let oW = area.width, oH = area.height;
-  if (oW > maxOut || oH > maxOut) {
-    const s = maxOut / Math.max(oW, oH);
-    oW = Math.round(oW * s);
-    oH = Math.round(oH * s);
+  // 输出尺寸
+  let oW = outputSize || area.width;
+  let oH = outputSize || area.height;
+  if (!outputSize) {
+    const maxOut = 2048;
+    if (oW > maxOut || oH > maxOut) {
+      const s = maxOut / Math.max(oW, oH);
+      oW = Math.round(oW * s);
+      oH = Math.round(oH * s);
+    }
   }
 
   const canvas = document.createElement('canvas');
@@ -333,7 +342,7 @@ async function cropImage(
   return new Promise<string>((resolve, reject) => {
     canvas.toBlob(
       (b) => b ? resolve(URL.createObjectURL(b)) : reject(new Error('toBlob 失败')),
-      'image/jpeg', 0.92
+      'image/png'
     );
   });
 }

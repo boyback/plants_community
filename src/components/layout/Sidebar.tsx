@@ -5,22 +5,26 @@ import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { VipBadge } from '@/components/ui/VipBadge';
 import { BoardsTreeMenu } from '@/components/layout/BoardsTreeMenu';
-import { FollowedBoardsCard } from '@/components/layout/FollowedBoardsCard';
 
 /**
- * Sidebar — 板块树 + 关注品种 + 账号卡
+ * Sidebar — 板块树 + 账号卡
  */
 export function Sidebar() {
   const { user, vip, pointsBalance, expProgress } = useAuth();
   const { t } = useI18n();
 
   return (
-    <aside className="sticky top-[60px] hidden h-[calc(100vh-72px)] w-56 shrink-0 space-y-4 overflow-y-auto pr-2 lg:block">
-      {/* 板块树(科 → 属) */}
-      <BoardsTreeMenu />
-
-      {/* 我关注的品种 */}
-      <FollowedBoardsCard />
+    <aside className="sticky top-[60px] hidden h-[calc(100vh-72px)] w-56 shrink-0 space-y-3 overflow-y-auto pr-2 lg:block">
+      {/* 板块 */}
+      <div className="rounded-xl border border-leaf-100 bg-white overflow-hidden">
+        <div className="flex items-center gap-2 px-3 py-2.5 border-b border-leaf-100/60">
+          <span className="text-base shrink-0">🌿</span>
+          <span className="text-sm font-medium text-ink-800">板块</span>
+        </div>
+        <div className="max-h-[40vh] overflow-y-auto">
+          <BoardsTreeMenu />
+        </div>
+      </div>
 
       {user && (
         <div className="mt-6 rounded-2xl border border-leaf-100 bg-gradient-to-br from-leaf-50 to-white p-4">

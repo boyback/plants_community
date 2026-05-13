@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { PostCard } from '@/components/post/PostCard';
 import { PostCardSkeleton } from '@/components/post/PostCardSkeleton';
@@ -19,16 +20,37 @@ const TAB_DEFS = [
 ] as const;
 
 type TabKey = (typeof TAB_DEFS)[number]['key'];
+type FollowingSubTab = 'posts' | 'users' | 'species';
 
 interface FeedResponse {
   items: Post[];
   nextCursor: string | null;
 }
 
+interface FollowedUser {
+  id: string;
+  handle?: string;
+  name: string;
+  avatar: string | null;
+  bio?: string;
+  posts: number;
+  followers: number;
+  following: number;
+}
+
+interface FollowedSpecies {
+  id: string;
+  name: string;
+  slug: string;
+  cover: string | null;
+  path?: { level: string; slug: string; name: string }[];
+}
+
 /** 4 个 tab 共用一个客户端组件,各自维护 items + cursor 状态 */
 export function FeedTabs({ initial }: { initial: Post[] }) {
   const { user } = useAuth();
   const [tab, setTab] = useState<TabKey>('recommend');
+  const [followingSubTab, setFollowingSubTab] = useState<FollowingSubTab>('posts');
 
   // 每 tab 的状态分开存,切回去时不丢
   const stateRef = useRef<Record<TabKey, { items: Post[]; cursor: string | null; loaded: boolean; err: string | null }>>({
@@ -154,10 +176,35 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
         onDesktopColsChange={updateDesktopCols}
       />
 
+      {/* 关注 tab 的子 tab */}
+      {tab === 'following' && user && (
+        <div className="mt-3 flex items-center gap-2 border-b border-leaf-100/60">
+          {(['posts', 'users', 'species'] as const).map((subTab) => (
+            <button
+              key={subTab}
+              onClick={() => setFollowingSubTab(subTab)}
+              className={cn(
+                'relative px-3 py-2 text-xs font-medium transition-colors',
+                followingSubTab === subTab ? 'text-leaf-700' : 'text-ink-700/60 hover:text-leaf-700'
+              )}
+            >
+              {subTab === 'posts' ? '动态' : subTab === 'users' ? '关注的人' : '关注的品种'}
+              {followingSubTab === subTab && (
+                <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-leaf-500" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
       {tab === 'following' && !user ? (
         <div className="mt-6 rounded-xl border border-dashed border-leaf-200 bg-white/60 py-12 text-center text-sm text-leaf-700/70">
           登录后查看你关注的肉友的最新动态
         </div>
+      ) : tab === 'following' && followingSubTab === 'users' ? (
+        <FollowedUsersList />
+      ) : tab === 'following' && followingSubTab === 'species' ? (
+        <FollowedSpeciesList />
       ) : cur.err ? (
         <div className="mt-6 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">
           {cur.err}
@@ -357,5 +404,164 @@ function ColsIcon({ n }: { n: 1 | 2 | 3 | 4 }) {
         <span key={i} className="block rounded-[1px] bg-current" />
       ))}
     </span>
+  );
+}
+
+/** 关注的用户列表 */
+function FollowedUsersList() {
+  const { user } = useAuth();
+  const [users, setUsers] = useState<FollowedUser[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    api
+      .get<{ items: FollowedUser[] }>(`/api/users/${user.id}/following`)
+      .then((data) => setUsers(data.items || []))
+      .catch(() => setUsers([]))
+      .finally(() => setLoading(false));
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="mt-6 space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="card animate-pulse">
+            <div className="flex items-center gap-3 p-4">
+              <div className="h-12 w-12 rounded-full bg-leaf-100" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-32 rounded bg-leaf-100" />
+                <div className="h-3 w-48 rounded bg-leaf-100" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (users.length === 0) {
+    return (
+      <div className="mt-6 rounded-xl border border-dashed border-leaf-200 bg-white/60 py-12 text-center text-sm text-leaf-700/70">
+        还没有关注任何人
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+      {users.map((u) => (
+        <Link
+          key={u.id}
+          href={`/user/${u.id}`}
+          className="card card-hoverable group"
+        >
+          <div className="flex items-center gap-3 p-4">
+            {u.avatar ? (
+              <img
+                src={u.avatar}
+                alt={u.name}
+                className="h-12 w-12 rounded-full object-cover ring-2 ring-leaf-100 group-hover:ring-leaf-300 transition-all"
+              />
+            ) : (
+              <div className="h-12 w-12 rounded-full bg-leaf-100 flex items-center justify-center text-leaf-600 text-lg">
+                {u.name[0]}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-ink-800 truncate">{u.name}</div>
+              {u.handle && <div className="text-xs text-ink-500 truncate">@{u.handle}</div>}
+              <div className="mt-1 flex items-center gap-3 text-[10px] text-ink-400">
+                <span>{u.posts} 帖</span>
+                <span>{u.followers} 粉丝</span>
+              </div>
+            </div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+/** 关注的品种列表 */
+function FollowedSpeciesList() {
+  const [species, setSpecies] = useState<FollowedSpecies[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api
+      .get<FollowedSpecies[]>('/api/boards/followed')
+      .then((list) => setSpecies((list || []).filter((f) => f)))
+      .catch(() => setSpecies([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="card animate-pulse">
+            <div className="aspect-square bg-leaf-100 rounded-t-xl" />
+            <div className="p-3 space-y-2">
+              <div className="h-4 w-24 rounded bg-leaf-100" />
+              <div className="h-3 w-32 rounded bg-leaf-100" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (species.length === 0) {
+    return (
+      <div className="mt-6 rounded-xl border border-dashed border-leaf-200 bg-white/60 py-12 text-center text-sm text-leaf-700/70">
+        还没有关注任何品种
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      {species.map((s) => {
+        const catPath = s.path?.find((p) => p.level === 'category');
+        const genusPath = s.path?.find((p) => p.level === 'genus');
+        const href =
+          catPath && genusPath
+            ? `/board/${catPath.slug}/${genusPath.slug}/${s.slug}`
+            : `/board/${s.slug}`;
+        return (
+          <Link
+            key={s.id}
+            href={href}
+            className="card card-hoverable group overflow-hidden"
+          >
+            <div className="relative aspect-square bg-leaf-50">
+              {s.cover ? (
+                <img
+                  src={s.cover}
+                  alt={s.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-4xl text-leaf-300">
+                  🌱
+                </div>
+              )}
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                <div className="text-xs font-medium text-white truncate">{s.name}</div>
+              </div>
+            </div>
+            <div className="p-3">
+              <div className="text-sm font-medium text-ink-800 truncate">{s.name}</div>
+              {catPath && genusPath && (
+                <div className="mt-1 text-[10px] text-ink-400 truncate">
+                  {catPath.name} · {genusPath.name}
+                </div>
+              )}
+            </div>
+          </Link>
+        );
+      })}
+    </div>
   );
 }

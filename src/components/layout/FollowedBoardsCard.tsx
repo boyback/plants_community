@@ -17,6 +17,7 @@ interface FollowedItem {
 export function FollowedBoardsCard() {
   const { user } = useAuth();
   const [items, setItems] = useState<FollowedItem[]>([]);
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -29,40 +30,38 @@ export function FollowedBoardsCard() {
   if (!user || items.length === 0) return null;
 
   return (
-    <div>
-      <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm bg-amber-50/80">
-        <span className="text-base shrink-0">⭐</span>
-        <span className="truncate font-medium text-amber-700">我关注的品种</span>
-        <span className="ml-auto rounded-full bg-amber-100 px-1.5 text-[10px] text-amber-600">
+    <div className="rounded-xl border border-leaf-100 bg-white overflow-hidden">
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="flex items-center gap-2 w-full px-3 py-2.5 text-left hover:bg-leaf-50/50 transition-colors"
+      >
+        <span className="flex-1 text-sm font-medium text-ink-800">关注的品种</span>
+        <span className="rounded-full bg-leaf-100 px-2 py-0.5 text-[10px] text-leaf-600 font-medium">
           {items.length}
         </span>
-      </div>
-      <div className="ml-4 mt-0.5 space-y-0.5 border-l border-amber-100 pl-2">
-        {items.map((f) => {
-          const catPath = f.path?.find((p) => p.level === 'category');
-          const genusPath = f.path?.find((p) => p.level === 'genus');
-          const href =
-            catPath && genusPath
-              ? `/board/${catPath.slug}/${genusPath.slug}/${f.slug}`
-              : `/board/${f.slug}`;
-          return (
-            <Link
-              key={f.id}
-              href={href}
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] text-ink-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
-            >
-              {f.cover && (
-                <img
-                  src={f.cover}
-                  alt=""
-                  className="h-4 w-4 shrink-0 rounded object-cover"
-                />
-              )}
-              <span className="min-w-0 truncate">{f.name}</span>
-            </Link>
-          );
-        })}
-      </div>
+        <span className="text-ink-300 text-xs">{collapsed ? '▸' : '▾'}</span>
+      </button>
+      {!collapsed && (
+        <div className="border-t border-leaf-100/60 px-2 py-1.5 space-y-0.5">
+          {items.map((f) => {
+            const catPath = f.path?.find((p) => p.level === 'category');
+            const genusPath = f.path?.find((p) => p.level === 'genus');
+            const href =
+              catPath && genusPath
+                ? `/board/${catPath.slug}/${genusPath.slug}/${f.slug}`
+                : `/board/${f.slug}`;
+            return (
+              <Link
+                key={f.id}
+                href={href}
+                className="block rounded-lg px-2.5 py-1.5 text-xs text-ink-700 hover:bg-leaf-50 hover:text-leaf-700 transition-colors"
+              >
+                <span className="font-medium">{f.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

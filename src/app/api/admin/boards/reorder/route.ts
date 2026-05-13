@@ -6,7 +6,7 @@
  * Body:
  *   { kind: 'category', orderedIds: ['idA','idB',...] }
  *   { kind: 'genus',    orderedIds: [...] }   (同一个 categoryId 下)
- *   { kind: 'species',  orderedIds: [...] }   (同一个 genusId 下)
+ *   { kind: 'species',  genusId: 'xxx', orderedIds: [...] }   (同一个 genusId 下)
  *
  * 实现:依次 update orderIdx = 0,1,2,...(简单可靠,~10ms 每条)
  */
@@ -17,12 +17,13 @@ import { prisma } from '@/lib/db';
 
 const Body = z.object({
   kind: z.enum(['category', 'genus', 'species']),
+  genusId: z.string().optional(),
   orderedIds: z.array(z.string()).min(1).max(500),
 });
 
 export const POST = handler(async (req) => {
   await requireAdmin();
-  const { kind, orderedIds } = Body.parse(await req.json());
+  const { kind, genusId, orderedIds } = Body.parse(await req.json());
 
   if (kind === 'category') {
     await prisma.$transaction(
@@ -37,9 +38,11 @@ export const POST = handler(async (req) => {
       ),
     );
   } else {
+    if (!genusId) return fail(400, 'species 排序需要 genusId');
+    // 更新品种的 orderIdx 和 genusId（支持跨属移动）
     await prisma.$transaction(
       orderedIds.map((id, idx) =>
-        prisma.species.update({ where: { id }, data: { orderIdx: idx } }),
+        prisma.species.update({ where: { id }, data: { orderIdx: idx, genusId } }),
       ),
     );
   }

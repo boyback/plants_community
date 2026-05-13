@@ -20,13 +20,16 @@ interface GenusOption {
   name: string;
   latinName: string | null;
   familySlug: string;
+  cover?: string | null;
 }
 
 interface ListingItem {
   type: 'product' | 'auction';
   id: string;
   title: string;
+  description?: string;
   cover: string;
+  images?: string[];
   price: number;
   originalPrice?: number | null;
   createdAt: string;
@@ -34,9 +37,12 @@ interface ListingItem {
   url: string;
   shipFrom?: string | null;
   seller?: { id: string; name: string; avatar: string } | null;
+  tags?: string[];
+  genus?: { slug: string; name: string; cover?: string | null } | null;
+  views?: number;
+  comments?: number;
 }
 
-// 顶层「其他」类目直接平铺,key 用 other:xxx
 const OTHER_KINDS = [
   { key: 'other:tools', label: '工具', icon: '🔧' },
   { key: 'other:pot', label: '盆器', icon: '🪴' },
@@ -58,28 +64,16 @@ const TYPE_OPTIONS = [
   { key: 'auction', label: '拍卖' },
 ];
 
+type LayoutMode = 'default';
+
 export function MarketIndexClient() {
   const [families, setFamilies] = useState<CategoryFamily[]>([]);
   const [generaByFamily, setGeneraByFamily] = useState<Record<string, GenusOption[]>>({});
 
-  // topPick 取值:'' (全部) | family slug (科) | 'other:xxx' (其他子类)
   const [topPick, setTopPick] = useState<string>('');
   const [selectedGenus, setSelectedGenus] = useState<string>('');
 
   const [type, setType] = useState<string>('all');
-  // 网格列数 4 | 5,localStorage 持久化(只影响 lg+ 布局,小屏永远 2 列)
-  const [cols, setCols] = useState<4 | 5>(4);
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const v = Number(localStorage.getItem('market.cols'));
-    if (v === 4 || v === 5) setCols(v as 4 | 5);
-  }, []);
-  const updateCols = (n: 4 | 5) => {
-    setCols(n);
-    try {
-      localStorage.setItem('market.cols', String(n));
-    } catch {}
-  };
   const [priceMin, setPriceMin] = useState<string>('');
   const [priceMax, setPriceMax] = useState<string>('');
   const [sort, setSort] = useState<string>('latest');
@@ -101,7 +95,6 @@ export function MarketIndexClient() {
       .catch(() => null);
   }, []);
 
-  // 选了某科 → 拉一次科+属
   const isFamily = topPick && !topPick.startsWith('other:');
   const isOther = topPick.startsWith('other:');
   useEffect(() => {
@@ -150,9 +143,7 @@ export function MarketIndexClient() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [topPick, selectedGenus, debouncedQ, priceMin, priceMax, type, sort, isFamily, isOther]);
 
   const reset = () => {
@@ -172,20 +163,14 @@ export function MarketIndexClient() {
     <>
       {/* ============================== 过滤栏 ============================== */}
       <div className="mb-5 space-y-3">
-        {/* 行 1:交易类型(放最上) */}
         <FilterRow label="交易">
           {TYPE_OPTIONS.map((opt) => (
-            <Chip
-              key={opt.key}
-              active={type === opt.key}
-              onClick={() => setType(opt.key)}
-            >
+            <Chip key={opt.key} active={type === opt.key} onClick={() => setType(opt.key)}>
               {opt.label}
             </Chip>
           ))}
         </FilterRow>
 
-        {/* 行 2:类目(科 + 其他子类) */}
         <FilterRow label="类目">
           <Chip active={!topPick} onClick={() => { setTopPick(''); setSelectedGenus(''); }}>
             全部
@@ -194,10 +179,7 @@ export function MarketIndexClient() {
             <Chip
               key={f.slug}
               active={topPick === f.slug}
-              onClick={() => {
-                setTopPick(topPick === f.slug ? '' : f.slug);
-                setSelectedGenus('');
-              }}
+              onClick={() => { setTopPick(topPick === f.slug ? '' : f.slug); setSelectedGenus(''); }}
             >
               {f.name}
             </Chip>
@@ -206,17 +188,13 @@ export function MarketIndexClient() {
             <Chip
               key={o.key}
               active={topPick === o.key}
-              onClick={() => {
-                setTopPick(topPick === o.key ? '' : o.key);
-                setSelectedGenus('');
-              }}
+              onClick={() => { setTopPick(topPick === o.key ? '' : o.key); setSelectedGenus(''); }}
             >
               {o.label}
             </Chip>
           ))}
         </FilterRow>
 
-        {/* 行 3:动态属(选科后展开) */}
         {isFamily && currentGenera.length > 0 && (
           <FilterRow label="属">
             <Chip active={!selectedGenus} onClick={() => setSelectedGenus('')}>
@@ -234,63 +212,38 @@ export function MarketIndexClient() {
           </FilterRow>
         )}
 
-        {/* 行 4:价格 + 排序 + 清空 + 搜索(右下) */}
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="w-12 shrink-0 text-leaf-700/60">价格</span>
-          <input
-            type="number"
-            min={0}
-            placeholder="最低"
-            className="h-8 w-20 rounded-md border border-leaf-200 bg-white px-2 text-xs outline-none transition-colors focus:border-leaf-400"
-            value={priceMin}
-            onChange={(e) => setPriceMin(e.target.value)}
-          />
+          <input type="number" min={0} placeholder="最低"
+            className="h-8 w-20 rounded-md border border-leaf-200 bg-white px-2 text-xs outline-none focus:border-leaf-400"
+            value={priceMin} onChange={(e) => setPriceMin(e.target.value)} />
           <span className="text-leaf-700/40">—</span>
-          <input
-            type="number"
-            min={0}
-            placeholder="最高"
-            className="h-8 w-20 rounded-md border border-leaf-200 bg-white px-2 text-xs outline-none transition-colors focus:border-leaf-400"
-            value={priceMax}
-            onChange={(e) => setPriceMax(e.target.value)}
-          />
+          <input type="number" min={0} placeholder="最高"
+            className="h-8 w-20 rounded-md border border-leaf-200 bg-white px-2 text-xs outline-none focus:border-leaf-400"
+            value={priceMax} onChange={(e) => setPriceMax(e.target.value)} />
           <span className="text-leaf-700/40">元</span>
 
           <span className="ml-3 text-leaf-700/60">排序</span>
           <select
-            className="h-8 rounded-md border border-leaf-200 bg-white px-2 text-xs outline-none transition-colors focus:border-leaf-400"
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
+            className="h-8 rounded-md border border-leaf-200 bg-white px-2 text-xs outline-none focus:border-leaf-400"
+            value={sort} onChange={(e) => setSort(e.target.value)}
           >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.key} value={o.key}>
-                {o.label}
-              </option>
-            ))}
+            {SORT_OPTIONS.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
           </select>
 
           {hasFilter && (
-            <button
-              onClick={reset}
-              type="button"
-              className="rounded-md border border-leaf-200 bg-white px-2 py-1 text-leaf-700/70 hover:border-rose-300 hover:text-rose-600"
-            >
+            <button onClick={reset} type="button"
+              className="rounded-md border border-leaf-200 bg-white px-2 py-1 text-leaf-700/70 hover:border-rose-300 hover:text-rose-600">
               清空筛选
             </button>
           )}
 
-          {/* 搜索框 — 还是这一行最右(原位置) */}
           <div className="relative ml-auto">
-            <Icon
-              name="search"
-              size={14}
-              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-leaf-500"
-            />
+            <Icon name="search" size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-leaf-500" />
             <input
-              className="h-8 w-48 rounded-md border border-leaf-200 bg-white pl-7 pr-2 text-xs outline-none transition-colors focus:border-leaf-400 sm:w-64"
+              className="h-8 w-48 rounded-md border border-leaf-200 bg-white pl-7 pr-2 text-xs outline-none focus:border-leaf-400 sm:w-64"
               placeholder="搜索 标题 / 标签 / 发货地…"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
+              value={q} onChange={(e) => setQ(e.target.value)}
             />
           </div>
         </div>
@@ -303,53 +256,13 @@ export function MarketIndexClient() {
         <Empty icon="🛒" title={hasFilter ? '没有匹配的内容' : '暂无商品'} />
       ) : (
         <>
-          {/* 列表上方 toolbar:左结果数 / 右列数切换(仅 lg+ 显示) */}
           <div className="mb-2 flex items-center justify-between">
             <span className="text-[11px] text-leaf-700/50">{items.length} 个结果</span>
-            <div className="hidden lg:inline-flex overflow-hidden rounded-md border border-leaf-100 bg-white">
-              <button
-                type="button"
-                onClick={() => updateCols(4)}
-                title="一排 4 个"
-                aria-label="一排 4 个"
-                className={cn(
-                  'flex h-7 w-7 items-center justify-center transition-colors',
-                  cols === 4
-                    ? 'bg-leaf-100 text-leaf-700'
-                    : 'text-leaf-700/50 hover:bg-leaf-50',
-                )}
-              >
-                <ColsIcon n={4} />
-              </button>
-              <button
-                type="button"
-                onClick={() => updateCols(5)}
-                title="一排 5 个"
-                aria-label="一排 5 个"
-                className={cn(
-                  'flex h-7 w-7 items-center justify-center border-l border-leaf-100 transition-colors',
-                  cols === 5
-                    ? 'bg-leaf-100 text-leaf-700'
-                    : 'text-leaf-700/50 hover:bg-leaf-50',
-                )}
-              >
-                <ColsIcon n={5} />
-              </button>
-            </div>
           </div>
 
-          <div
-            className={cn(
-              'grid grid-cols-2 gap-3 sm:grid-cols-3',
-              cols === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4',
-            )}
-          >
+          <div className="space-y-3">
             {items.map((item) => (
-              <GridCard
-                key={`${item.type}-${item.id}`}
-                item={item}
-                dense={cols === 5}
-              />
+              <DefaultCard key={`${item.type}-${item.id}`} item={item} />
             ))}
           </div>
         </>
@@ -359,166 +272,146 @@ export function MarketIndexClient() {
 }
 
 // ============================================================
-// 卡片
+// 默认卡片（详细信息模式）
 // ============================================================
-
-/* ===== 网格模式:图 + 标题(全展示)+ 价格 + 卖家+发布时间 ===== */
-function GridCard({ item, dense = false }: { item: ListingItem; dense?: boolean }) {
+function DefaultCard({ item }: { item: ListingItem }) {
   const isAuction = item.type === 'auction';
-  // dense (5 列) 整体字号、padding、avatar 都更小
-  const cls = dense
-    ? {
-        title: 'text-[11px]',
-        price: 'text-[12px]',
-        ship: 'text-[9px]',
-        seller: 'text-[10px]',
-        date: 'text-[9px]',
-        avatar: 'h-3.5 w-3.5',
-        badge: 'text-[9px] px-1 py-0.5',
-        body: 'gap-0.5 px-1.5 py-1',
-      }
-    : {
-        title: 'text-[12px]',
-        price: 'text-[14px]',
-        ship: 'text-[10px]',
-        seller: 'text-[11px]',
-        date: 'text-[10px]',
-        avatar: 'h-4 w-4',
-        badge: 'text-[10px] px-1.5 py-0.5',
-        body: 'gap-1 px-2 py-1.5',
-      };
+  const images = item.images?.length ? item.images : [item.cover];
+  const displayImages = images.slice(0, 4);
 
   return (
     <Link
       href={item.url}
-      className="group overflow-hidden rounded-xl border border-leaf-100 bg-white transition-colors hover:border-leaf-300 hover:shadow-sm"
+      className="block rounded-xl border border-leaf-100 bg-white p-4 transition-colors hover:border-leaf-300 hover:shadow-sm"
     >
-      <div className="relative aspect-square bg-leaf-50">
-        <Image src={item.cover} alt={item.title} fill className="object-cover" unoptimized />
-        {isAuction && (
-          <>
-            <span
-              className={cn(
-                'absolute left-1.5 top-1.5 inline-flex items-center gap-0.5 rounded bg-rose-500/95 font-medium text-white shadow-sm',
-                cls.badge,
-              )}
-            >
+      {/* 第一行：用户头像 + 昵称 */}
+      {item.seller && (
+        <div className="flex items-center gap-2 mb-3">
+          {item.seller.avatar ? (
+            <img
+              src={item.seller.avatar}
+              alt={item.seller.name}
+              className="h-8 w-8 rounded-full object-cover ring-2 ring-leaf-100"
+            />
+          ) : (
+            <div className="h-8 w-8 rounded-full bg-leaf-100 flex items-center justify-center text-leaf-600 text-sm">
+              {item.seller.name[0]}
+            </div>
+          )}
+          <span className="font-medium text-ink-800">{item.seller.name}</span>
+          {isAuction && (
+            <span className="ml-2 rounded bg-rose-500/95 px-2 py-0.5 text-[10px] font-medium text-white">
               🔨 拍卖
-            </span>
-            {item.endAt && (
-              <span
-                className={cn(
-                  'absolute right-1.5 top-1.5 rounded bg-ink-900/60 font-medium text-white backdrop-blur-sm',
-                  cls.badge,
-                )}
-              >
-                <Countdown to={item.endAt} />
-              </span>
-            )}
-          </>
-        )}
-      </div>
-      <div className={cn('flex flex-col', cls.body)}>
-        <div
-          title={item.title}
-          className={cn('truncate font-medium text-ink-800 group-hover:text-leaf-700', cls.title)}
-        >
-          {item.title}
-        </div>
-
-        <div className="flex items-baseline gap-1.5">
-          <span className={cn('font-bold text-rose-600', cls.price)}>
-            {formatPrice(item.price)}
-          </span>
-          {item.shipFrom && (
-            <span className={cn('ml-auto truncate text-leaf-700/60', cls.ship)}>
-              📍 {item.shipFrom}
             </span>
           )}
         </div>
+      )}
 
-        {item.seller && (
-          <div className="flex items-center gap-1">
-            {item.seller.avatar && (
-              // eslint-disable-next-line @next/next/no-img-element
+      {/* 第二行：标题 */}
+      <h3 className="text-base font-semibold text-ink-800 mb-2 hover:text-leaf-700 transition-colors">
+        {item.title}
+      </h3>
+
+      {/* 第三行：描述 */}
+      {item.description && (
+        <p className="text-sm text-ink-600 leading-relaxed mb-2 line-clamp-2">
+          {stripHtml(item.description)}
+        </p>
+      )}
+
+      {/* 第四行：话题标签 */}
+      {item.tags && item.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {item.tags.slice(0, 5).map((tag, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-700"
+            >
+              #{tag}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* 第五行：图片 */}
+      <div className="flex gap-2 mb-3">
+        {displayImages.map((img, i) => (
+          <div
+            key={i}
+            className="relative h-24 w-24 overflow-hidden rounded-lg bg-leaf-50 flex-shrink-0"
+          >
+            <Image src={img} alt="" fill className="object-cover" unoptimized />
+          </div>
+        ))}
+      </div>
+
+      {/* 最后一行：板块(属) + 时间 + 查看数 + 评论数 */}
+      <div className="flex items-center justify-between text-xs">
+        {/* 左侧：板块(属) */}
+        {item.genus && (
+          <div className="flex items-center gap-1.5 text-leaf-700">
+            {item.genus.cover ? (
               <img
-                src={item.seller.avatar}
-                alt=""
-                className={cn('shrink-0 rounded-full object-cover', cls.avatar)}
+                src={item.genus.cover}
+                alt={item.genus.name}
+                className="h-5 w-5 rounded object-cover"
               />
+            ) : (
+              <span>📁</span>
             )}
-            <span className={cn('truncate text-ink-700/70', cls.seller)}>
-              {item.seller.name}
-            </span>
-            <span className={cn('ml-auto shrink-0 text-leaf-700/50', cls.date)}>
-              {fmtDate(item.createdAt)}
-            </span>
+            <span>{item.genus.name}</span>
           </div>
         )}
+
+        {/* 右侧：时间 + 查看数 + 评论数 */}
+        <div className={cn(
+          "flex items-center gap-3 text-ink-500",
+          !item.genus && "ml-auto"
+        )}>
+          <span className="text-ink-400">{formatDateTime(item.createdAt)}</span>
+          {item.views !== undefined && (
+            <span className="flex items-center gap-1">
+              <Icon name="eye" size={14} />
+              {item.views}
+            </span>
+          )}
+          {item.comments !== undefined && (
+            <span className="flex items-center gap-1">
+              <Icon name="message" size={14} />
+              {item.comments}
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );
 }
 
-function Countdown({ to }: { to: string }) {
-  const [, force] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => force((n) => n + 1), 30_000);
-    return () => clearInterval(id);
-  }, []);
-  const target = new Date(to).getTime();
-  const diff = target - Date.now();
-  if (diff <= 0) return <>已结束</>;
-  const days = Math.floor(diff / 86400000);
-  if (days >= 1) return <>剩 {days} 天</>;
-  const hours = Math.floor(diff / 3600000);
-  if (hours >= 1) {
-    const mins = Math.floor((diff % 3600000) / 60000);
-    return (
-      <>
-        剩 {hours}h{String(mins).padStart(2, '0')}
-      </>
-    );
-  }
-  const mins = Math.floor(diff / 60000);
-  return <>剩 {mins} 分</>;
+// ============================================================
+// 工具函数
+// ============================================================
+function stripHtml(html: string): string {
+  // 去掉 HTML 标签，保留纯文本
+  return html.replace(/<[^>]*>/g, '').trim();
 }
 
-/** 卡片显示绝对日期(月/日 时:分),不要相对「N 天前」 */
 function fmtDate(iso: string): string {
   const d = new Date(iso);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
-/**
- * 过滤行容器 — 左侧固定标签 + 右侧 chips wrap
- */
-/** 列数切换图标 — 横排 N 个小条,直观表达「一排 N 个」 */
-function ColsIcon({ n }: { n: 4 | 5 }) {
-  return (
-    <span
-      className={cn(
-        'flex h-3.5 items-stretch gap-[1.5px]',
-        n === 4 ? 'w-3.5' : 'w-4',
-      )}
-    >
-      {Array.from({ length: n }).map((_, i) => (
-        <span key={i} className="flex-1 rounded-[1px] bg-current" />
-      ))}
-    </span>
-  );
-}
-
-function FilterRow({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2">
       <span className="mt-1 w-12 shrink-0 text-xs text-leaf-700/60">{label}</span>
@@ -527,29 +420,13 @@ function FilterRow({
   );
 }
 
-/**
- * 标签态 chip(扁平,不带边框,选中变绿底)
- */
-function Chip({
-  children,
-  active,
-  onClick,
-}: {
-  children: React.ReactNode;
-  active?: boolean;
-  onClick?: () => void;
-}) {
+function Chip({ children, active, onClick }: { children: React.ReactNode; active?: boolean; onClick?: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <button type="button" onClick={onClick}
       className={cn(
         'inline-flex h-7 items-center rounded-md px-2.5 text-xs transition-colors',
-        active
-          ? 'bg-leaf-100 font-medium text-leaf-700'
-          : 'text-ink-700/80 hover:bg-leaf-50 hover:text-leaf-700',
-      )}
-    >
+        active ? 'bg-leaf-100 font-medium text-leaf-700' : 'text-ink-700/80 hover:bg-leaf-50 hover:text-leaf-700',
+      )}>
       {children}
     </button>
   );

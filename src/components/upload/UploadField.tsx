@@ -17,6 +17,8 @@ interface Props {
   max?: number;
   allowExternal?: boolean;
   className?: string;
+  /** 是否显示裁剪开关（默认 false） */
+  showCropToggle?: boolean;
 }
 
 type Mode = 'file' | 'url' | 'live';
@@ -51,6 +53,7 @@ export function UploadField({
   max = kind === 'image' ? 999 : 1,
   allowExternal = true,
   className,
+  showCropToggle = false,
 }: Props) {
   const [mode, setMode] = useState<Mode>('file');
   const [urlInput, setUrlInput] = useState('');
@@ -63,6 +66,7 @@ export function UploadField({
   const [uploading, setUploading] = useState<UploadingItem[]>([]);
 
   // 裁剪相关
+  const [cropEnabled, setCropEnabled] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [cropQueue, setCropQueue] = useState<string[]>([]);
 
@@ -105,8 +109,6 @@ export function UploadField({
       setUploading((prev) => [...prev, item]);
 
       try {
-        // 使用 hook 的 upload，但我们需要手动追踪进度
-        // 由于 useChunkUpload 是单实例，我们改用独立的 fetch 上传
         const formData = new FormData();
         formData.append('file', file);
 
@@ -150,11 +152,15 @@ export function UploadField({
       );
       const url = await uploadSingle(item.file);
       if (url) {
-        // 上传成功后弹出裁剪
-        setCropQueue((prev) => [...prev, url]);
+        if (cropEnabled) {
+          setCropQueue((prev) => [...prev, url]);
+        } else {
+          onChange([...value, url]);
+          removeUploading(item.id);
+        }
       }
     },
-    [uploadSingle]
+    [uploadSingle, cropEnabled, value, onChange]
   );
 
   // 从上传队列移除
@@ -175,8 +181,14 @@ export function UploadField({
 
       const url = await uploadSingle(f);
       if (url) {
-        // 上传成功后弹出裁剪
-        setCropQueue((prev) => [...prev, url]);
+        if (cropEnabled) {
+          // 上传成功后弹出裁剪
+          setCropQueue((prev) => [...prev, url]);
+        } else {
+          // 直接添加到列表
+          onChange([...value, url]);
+          removeUploading(uploading[uploading.length - 1]?.id || '');
+        }
       }
     }
   };
@@ -334,7 +346,15 @@ export function UploadField({
               e.target.value = '';
             }}
           />
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={onDrop}
+            className={cn(
+              'grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 rounded-xl p-2 transition-colors',
+              dragOver && 'ring-2 ring-leaf-400 bg-leaf-50/40'
+            )}
+          >
             {/* 已确认的图片 */}
             {value.map((u, i) => (
               <div key={`done-${i}`} className="group relative aspect-square overflow-hidden rounded-lg">
@@ -465,6 +485,18 @@ export function UploadField({
               </button>
             )}
           </div>
+          {/* 裁剪开关 */}
+          {showCropToggle && kind === 'image' && (
+            <label className="flex items-center gap-2 text-xs text-leaf-700/70 mt-1 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={cropEnabled}
+                onChange={(e) => setCropEnabled(e.target.checked)}
+                className="h-3.5 w-3.5 accent-leaf-500 rounded"
+              />
+              上传后裁剪
+            </label>
+          )}
         </>
       )}
 

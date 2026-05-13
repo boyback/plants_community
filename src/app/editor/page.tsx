@@ -346,7 +346,7 @@ function EditorInner() {
                     <option value="">-- {t('editor.chooseBoard')} --</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.slug}>
-                        {c.icon} {c.name}
+                        {c.name}
                       </option>
                     ))}
                   </select>
