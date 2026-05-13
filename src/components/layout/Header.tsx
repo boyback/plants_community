@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Logo } from '@/components/ui/Logo';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { BoardsTreeMenu } from '@/components/layout/BoardsTreeMenu';
 
 import { LocaleSwitcher } from '@/components/ui/LocaleSwitcher';
 import { ColorThemeSwitcher } from '@/components/ui/ColorThemeSwitcher';
@@ -626,45 +625,188 @@ function timeShort(iso: string): string {
 }
 
 // ============================================================
-// 板块下拉菜单
+// 板块 Mega Menu — 全视口宽度 + 蒙层 + 瀑布流
 // ============================================================
+
+interface BoardMegaGenus {
+  id: string;
+  slug: string;
+  name: string;
+  latinName: string | null;
+  _count: { posts: number; species: number };
+}
+
+interface BoardMegaCategory {
+  id: string;
+  slug: string;
+  name: string;
+  latinName: string | null;
+  icon: string;
+  kind: 'family' | 'discussion' | 'market';
+  _count: { posts: number; genera: number };
+  genera: BoardMegaGenus[];
+}
+
 function BoardsDropdown() {
   const [open, setOpen] = useState(false);
-  const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [data, setData] = useState<BoardMegaCategory[] | null>(null);
   const pathname = usePathname();
   const active = pathname.startsWith('/board');
 
-  const onEnter = () => {
-    if (timer) clearTimeout(timer);
-    setOpen(true);
-  };
+  /* 懒加载全部板块数据 */
+  useEffect(() => {
+    if (open && data === null) {
+      api
+        .get<BoardMegaCategory[]>('/api/categories?withGenera=1')
+        .then((list) => setData(list || []))
+        .catch(() => setData([]));
+    }
+  }, [open, data]);
 
-  const onLeave = () => {
-    const t = setTimeout(() => setOpen(false), 150);
-    setTimer(t);
-  };
+  /* 打开时锁定 body 滚动 */
+  useEffect(() => {
+    if (open) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.overflow = 'hidden';
+    } else {
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    }
+    return () => {
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.overflow = '';
+      if (scrollY) window.scrollTo(0, parseInt(scrollY) * -1);
+    };
+  }, [open]);
+
+  /* 只保留有子级（genera）的板块 */
+  const visibleItems = (data ?? []).filter((c) => c.genera && c.genera.length > 0);
+
+  const close = () => setOpen(false);
 
   return (
-    <div className="relative" onMouseEnter={onEnter} onMouseLeave={onLeave}>
+    <div
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+    >
+      {/* 触发按钮 — 悬浮打开，无箭头 */}
       <button
         type="button"
+        onClick={() => setOpen((v) => !v)}
         className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors ${
-          active
+          active || open
             ? 'bg-leaf-100 font-medium text-leaf-700'
             : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700'
         }`}
       >
         <span className="text-base">🌿</span>
         <span>板块</span>
-        <span className="text-[10px] text-leaf-500">{open ? '▴' : '▾'}</span>
       </button>
 
+      {/* 蒙层 + 全宽下拉面板 */}
       {open && (
-        <div className="absolute left-0 top-full z-40 mt-1 w-64 overflow-hidden rounded-xl border border-leaf-100 bg-white shadow-card">
-          <div className="max-h-[60vh] overflow-y-auto p-2">
-            <BoardsTreeMenu onNavigate={() => setOpen(false)} />
+        <>
+          {/* 全屏蒙层 — 点击关闭 */}
+          <div
+            className="fixed inset-0 z-30 bg-ink-900/40 backdrop-blur-[2px]"
+            style={{ top: '57px' }}
+            onClick={close}
+          />
+
+          {/* 下拉面板 — 全视口宽度，紧贴导航栏 */}
+          <div
+            className="fixed left-0 right-0 z-40"
+            style={{ top: '57px' }}
+          >
+            <div
+              className="overflow-y-auto overflow-x-hidden border-b border-leaf-100/80 bg-white shadow-2xl dark:bg-leaf-50"
+              style={{
+                maxHeight: 'calc(100vh - 200px)',
+                animation: 'megaMenuSlideIn 0.2s ease-out',
+              }}
+            >
+              {/* 头部 */}
+              <div className="mx-auto max-w-[1280px] px-4">
+                <div className="flex items-center justify-between border-b border-leaf-100/60 py-3">
+                  <h3 className="text-sm font-semibold text-ink-800">全部板块</h3>
+                  <Link
+                    href="/board"
+                    onClick={close}
+                    className="text-xs text-leaf-600 hover:text-leaf-700 hover:underline"
+                  >
+                    查看全部 →
+                  </Link>
+                </div>
+              </div>
+
+              {/* 瀑布流内容区 */}
+              <div className="mx-auto max-w-[1280px] px-4 py-6">
+                {data === null ? (
+                  <div className="py-12 text-center text-sm text-leaf-700/60">加载中…</div>
+                ) : visibleItems.length === 0 ? (
+                  <div className="py-12 text-center text-sm text-leaf-700/60">暂无板块</div>
+                ) : (
+                  <div style={{ columnCount: 4, columnGap: '24px' }}>
+                    {visibleItems.map((cat) => (
+                      <div
+                        key={cat.id}
+                        className="break-inside-avoid"
+                        style={{ marginBottom: '52px' }}
+                      >
+                        {/* 板块标题 — 19px 加粗 */}
+                        <Link
+                          href={`/board/${cat.slug}`}
+                          onClick={close}
+                          className="group/cat mb-2 flex items-center gap-1.5"
+                        >
+                          {cat.icon && (cat.icon.startsWith('http') || cat.icon.startsWith('/')) ? (
+                            <img src={cat.icon} alt="" className="h-5 w-5 shrink-0 rounded object-cover" />
+                          ) : (
+                            <span style={{ fontSize: '19px' }}>{cat.icon || '🌿'}</span>
+                          )}
+                          <span
+                            className="font-bold text-ink-800 group-hover/cat:text-leaf-600"
+                            style={{ fontSize: '15px' }}
+                          >
+                            {cat.name}
+                          </span>
+                        </Link>
+
+                        {/* 属列表 — 18px 不加粗，间距 32px */}
+                        <div className="flex flex-col pl-7" style={{ gap: '24px' }}>
+                          {cat.genera.map((g) => (
+                            <Link
+                              key={g.id}
+                              href={`/board/${cat.slug}/${g.slug}`}
+                              onClick={close}
+                              className="text-leaf-700/80 transition-colors hover:text-leaf-600"
+                              style={{ fontSize: '14px' }}
+                            >
+                              {g.name}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
