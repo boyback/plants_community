@@ -31,7 +31,7 @@ export function Shell({
       <MobileNav open={mobileOpen} onClose={() => setMobileOpen(false)} />
 
       <div className="mx-auto flex max-w-[1280px] gap-6 px-4 py-4 lg:px-6">
-        {/* {withSidebar && <Sidebar />} */}
+        {withSidebar && <Sidebar />}
         <main className="min-w-0 flex-1">{children}</main>
       </div>
 

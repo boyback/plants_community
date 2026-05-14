@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import { GenusClient } from './GenusClient';
+import { CategoryIconName } from '@/components/ui/CategoryIcon';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +29,7 @@ export default async function CategoryGenusPage({
           ← 返回 Category 列表
         </Link>
         <h1 className="mt-2 text-2xl font-bold">
-          {category.icon} {category.name} · 属管理
+          <CategoryIconName icon={category.icon} name={category.name} size="lg" /> · 属管理
         </h1>
         <p className="mt-1 text-xs text-ink-600">
           slug: <code className="rounded bg-ink-100 px-1">{category.slug}</code> · 共 {genera.length} 个属

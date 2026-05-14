@@ -166,13 +166,21 @@ let driver: UploadDriver | null = null;
 export function getUploadDriver(): UploadDriver {
   if (driver) return driver;
   const which = (process.env.UPLOAD_DRIVER ?? 'local').toLowerCase();
+  console.log('[Upload] Initializing driver:', which);
   switch (which) {
     case 'qiniu':
-      driver = new QiniuDriver();
+      try {
+        driver = new QiniuDriver();
+        console.log('[Upload] QiniuDriver initialized successfully');
+      } catch (e) {
+        console.error('[Upload] QiniuDriver initialization failed, falling back to LocalDriver:', e);
+        driver = new LocalDriver();
+      }
       break;
     case 'local':
     default:
       driver = new LocalDriver();
+      console.log('[Upload] LocalDriver initialized');
       break;
   }
   return driver;

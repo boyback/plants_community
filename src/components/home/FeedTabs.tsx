@@ -3,14 +3,34 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
+import Image from 'next/image';
+import { cn, timeAgo, boardUrl } from '@/lib/utils';
+import { Avatar } from '@/components/ui/Avatar';
+import { Icon } from '@/components/ui/Icon';
+import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
 import { PostCard } from '@/components/post/PostCard';
 import { PostCardSkeleton } from '@/components/post/PostCardSkeleton';
+import { STAGE_META } from '@/lib/journal';
 import { useI18n } from '@/i18n/I18nContext';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from '@/lib/client-api';
 import { usePullToRefresh, PullIndicator } from '@/lib/hooks/usePullToRefresh';
 import type { Post, PostType } from '@/lib/types';
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').trim();
+}
+
+function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
 
 const TAB_DEFS = [
   { key: 'recommend', labelKey: 'home.feedTabs.recommend' },
@@ -140,13 +160,53 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
   const [mobileCols, setMobileCols] = useState<1 | 2>(2);
   // PC 端列数偏好:3 或 4,默认 3(localStorage 持久化)
   const [desktopCols, setDesktopCols] = useState<3 | 4>(3);
+  // 布局模式:grid(瀑布流) 或 list(列表),默认列表
+  const [layoutMode, setLayoutMode] = useState<'grid' | 'list'>('list');
+  const [initialized, setInitialized] = useState(false);
+  // 回到顶部按钮
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [backToTopVisible, setBackToTopVisible] = useState(false);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const savedM = Number(localStorage.getItem('rouyou.feed.mobileCols'));
     if (savedM === 1 || savedM === 2) setMobileCols(savedM as 1 | 2);
     const savedD = Number(localStorage.getItem('rouyou.feed.desktopCols'));
     if (savedD === 3 || savedD === 4) setDesktopCols(savedD as 3 | 4);
+    const savedLayout = localStorage.getItem('rouyou.feed.layout');
+    if (savedLayout === 'grid' || savedLayout === 'list') setLayoutMode(savedLayout);
+    setInitialized(true);
   }, []);
+
+  // 滚动监听：超过一屏显示回到顶部
+  useEffect(() => {
+    const onScroll = () => {
+      const shouldShow = window.scrollY > window.innerHeight;
+      if (shouldShow !== showBackToTop) {
+        setShowBackToTop(shouldShow);
+        // 延迟一帧让 CSS transition 生效
+        requestAnimationFrame(() => setBackToTopVisible(shouldShow));
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [showBackToTop]);
+
+  const scrollToTop = () => {
+    setBackToTopVisible(false);
+    // 重力加速度：先慢后快
+    const start = window.scrollY;
+    const startTime = performance.now();
+    const duration = Math.min(800, start / 3); // 越高越快
+    const ease = (t: number) => 1 - (1 - t) * (1 - t); // easeOutQuad
+    const step = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      window.scrollTo(0, start * (1 - ease(progress)));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
   const updateMobileCols = (n: 1 | 2) => {
     setMobileCols(n);
     try {
@@ -159,10 +219,21 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
       localStorage.setItem('rouyou.feed.desktopCols', String(n));
     } catch {}
   };
+  const updateLayoutMode = (mode: 'grid' | 'list') => {
+    setLayoutMode(mode);
+    try {
+      localStorage.setItem('rouyou.feed.layout', mode);
+    } catch {}
+  };
 
   // m 端 column class:1 或 2;md+ 按用户偏好 3 或 4
   const mobileColClass = mobileCols === 1 ? 'columns-1' : 'columns-2';
   const desktopColClass = desktopCols === 4 ? 'md:columns-4' : 'md:columns-3';
+
+  // 还没从 localStorage 读取完，不渲染内容避免闪烁
+  if (!initialized) {
+    return <div className="h-96" />;
+  }
 
   return (
     <div {...bind}>
@@ -174,6 +245,8 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
         onMobileColsChange={updateMobileCols}
         desktopCols={desktopCols}
         onDesktopColsChange={updateDesktopCols}
+        layoutMode={layoutMode}
+        onLayoutModeChange={updateLayoutMode}
       />
 
       {/* 关注 tab 的子 tab */}
@@ -210,33 +283,62 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
           {cur.err}
         </div>
       ) : !cur.loaded ? (
-        <FeedSkeleton mobileCols={mobileCols} desktopCols={desktopCols} />
+        layoutMode === 'list' ? (
+          <ListFeedSkeleton />
+        ) : (
+          <FeedSkeleton mobileCols={mobileCols} desktopCols={desktopCols} />
+        )
       ) : cur.items.length === 0 ? (
         <div className="mt-6 rounded-xl border border-dashed border-leaf-200 bg-white/60 py-12 text-center text-sm text-leaf-700/70">
           暂时没有内容
         </div>
       ) : (
         <>
-          {/* CSS columns 瀑布流:m 端按用户偏好 1/2,sm=2,md+ 按用户偏好 3/4 */}
-          {/* data-cols 用于 CSS 在 4 列时缩小卡片字号 */}
-          <div
-            data-cols={desktopCols}
-            className={`feed-grid mt-4 ${mobileColClass} gap-3 sm:columns-2 ${desktopColClass} [column-fill:_balance]`}
-          >
-            {cur.items.map((p) => (
-              <div key={p.id} className="mb-3 break-inside-avoid">
-                <FeedCard post={p} source={tabToSource(tab)} />
-              </div>
-            ))}
-            {/* 加载下一页时插入骨架屏占位 */}
-            {loading &&
-              cur.items.length > 0 &&
-              Array.from({ length: 6 }).map((_, i) => (
-                <div key={`sk-${i}`} className="mb-3 break-inside-avoid">
-                  <PostCardSkeleton variant={i} />
+          {layoutMode === 'list' ? (
+            /* 列表模式：所有卡片在一个大卡片中，用线隔开 */
+            <div className="mt-4 rounded-xl border border-leaf-100 bg-white overflow-hidden">
+              {cur.items.map((p, i) => (
+                <div key={p.id}>
+                  <FeedListCard post={p} source={tabToSource(tab)} />
+                  {i < cur.items.length - 1 && (
+                    <div className="mx-4 border-t border-leaf-100" />
+                  )}
                 </div>
               ))}
-          </div>
+              {loading &&
+                cur.items.length > 0 &&
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={`sk-${i}`}>
+                    <div className="h-32 animate-pulse bg-leaf-50" />
+                    <div className="mx-4 border-t border-leaf-100" />
+                  </div>
+                ))}
+            </div>
+          ) : (
+            /* 瀑布流模式 */
+            <>
+              {/* CSS columns 瀑布流:m 端按用户偏好 1/2,sm=2,md+ 按用户偏好 3/4 */}
+              {/* data-cols 用于 CSS 在 4 列时缩小卡片字号 */}
+              <div
+                data-cols={desktopCols}
+                className={`feed-grid mt-4 ${mobileColClass} gap-3 sm:columns-2 ${desktopColClass} [column-fill:_balance]`}
+              >
+                {cur.items.map((p) => (
+                  <div key={p.id} className="mb-3 break-inside-avoid">
+                    <FeedCard post={p} source={tabToSource(tab)} />
+                  </div>
+                ))}
+                {/* 加载下一页时插入骨架屏占位 */}
+                {loading &&
+                  cur.items.length > 0 &&
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <div key={`sk-${i}`} className="mb-3 break-inside-avoid">
+                      <PostCardSkeleton variant={i} />
+                    </div>
+                  ))}
+              </div>
+            </>
+          )}
           {/* 哨兵 */}
           {cur.cursor && (
             <div ref={sentinelRef} className="h-1 w-full" aria-hidden />
@@ -247,6 +349,37 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
             </div>
           )}
         </>
+      )}
+
+      {/* 回到顶部按钮 — 多肉风格 */}
+      {showBackToTop && (
+        <div
+          className="fixed right-6 z-40 flex flex-col items-center"
+          style={{ bottom: backToTopVisible ? '24px' : '-80px', transition: `bottom ${backToTopVisible ? '0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' : '0.3s ease-in'}` }}
+        >
+          {/* 连接线 */}
+          <div
+            className="w-0.5 bg-gradient-to-b from-leaf-300 to-leaf-500 rounded-full"
+            style={{
+              height: backToTopVisible ? '40px' : '0px',
+              transition: `height ${backToTopVisible ? '0.3s ease-out 0.2s' : '0.15s ease-in'}`,
+            }}
+          />
+          {/* 多肉按钮 */}
+          <button
+            type="button"
+            onClick={scrollToTop}
+            title="回到顶部"
+            className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-leaf-400 to-leaf-600 text-white shadow-lg shadow-leaf-500/30 hover:shadow-xl hover:shadow-leaf-500/40 hover:scale-110 active:scale-95 transition-all"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 19V5" />
+              <path d="M5 12l7-7 7 7" />
+              <path d="M8 8c-1-1-2.5-0.5-3 0.5" opacity="0.5" />
+              <path d="M16 8c1-1 2.5-0.5 3 0.5" opacity="0.5" />
+            </svg>
+          </button>
+        </div>
       )}
     </div>
   );
@@ -290,6 +423,271 @@ function FeedCard({
   );
 }
 
+/** 嵌套 Link — stopPropagation 让点击不触发父级卡片跳转 */
+function NestedLink({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={(e) => e.stopPropagation()}
+      className={className}
+    >
+      {children}
+    </Link>
+  );
+}
+
+/** 投票预览(只读):展示问题 + top 3 选项进度条 */
+function VotePreview({ post }: { post: Post }) {
+  if (!post.vote) return null;
+  const total = post.vote.options.reduce((s, o) => s + o.votes, 0);
+  const top = [...post.vote.options].sort((a, b) => b.votes - a.votes).slice(0, 3);
+  return (
+    <div className="space-y-1.5 rounded-lg bg-amber-50/60 p-2.5 text-amber-900 mb-2">
+      <div className="line-clamp-1 text-sm font-medium">🗳️ {post.vote.question}</div>
+      {top.map((o) => {
+        const pct = total ? Math.round((o.votes / total) * 100) : 0;
+        return (
+          <div
+            key={o.id}
+            className="relative overflow-hidden rounded bg-white/70 px-2 py-1 text-xs"
+          >
+            <div
+              className="absolute inset-y-0 left-0 bg-amber-200/70"
+              style={{ width: `${pct}%` }}
+            />
+            <div className="relative flex justify-between">
+              <span className="truncate">{o.label}</span>
+              <span className="ml-2 tabular-nums">{pct}%</span>
+            </div>
+          </div>
+        );
+      })}
+      <div className="flex items-center justify-between text-xs text-amber-700/80">
+        <span>{total} 人参与</span>
+        <span>
+          {new Date(post.vote.deadline).getTime() < Date.now() ? '已截止' : '进行中'}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** 活动预览(只读):位置 + 时间 + 已报名人数 */
+function EventPreview({ post }: { post: Post }) {
+  if (!post.event) return null;
+  return (
+    <div className="rounded-lg bg-violet-50/80 p-2 text-[11px] text-violet-900 mb-2">
+      <div className="flex items-center gap-1">
+        <span>📍</span>
+        <span className="truncate">{post.event.location}</span>
+      </div>
+      <div className="mt-0.5 flex items-center justify-between">
+        <span className="text-violet-800/80">
+          🕘 {new Date(post.event.startAt).toLocaleDateString()}
+        </span>
+        <span className="text-violet-700">{post.event.attendees} 人已报名</span>
+      </div>
+    </div>
+  );
+}
+
+/** 时间线预览(只读):显示前 3 条事件 */
+function JournalPreview({ post }: { post: Post }) {
+  if (!post.journal) return null;
+  const j = post.journal;
+  const shown = j.entries ?? [];
+
+  return (
+    <div className="rounded-lg bg-emerald-50/60 p-2.5 mb-2">
+      <div className="mb-1.5 flex items-center justify-between text-xs text-emerald-700/80">
+        <span className="truncate font-medium">📖 {j.subjectName}</span>
+        <span>第 {j.daysSinceStart} 天 · 共 {j.entriesCount} 条</span>
+      </div>
+
+      <div className="relative">
+        <ol className="space-y-2">
+          {shown.slice(0, 3).map((e) => {
+            const meta = STAGE_META[e.stage];
+            return (
+              <li key={e.id} className="flex items-start gap-2">
+                <span className="mt-1 block h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="font-medium text-ink-800">
+                      {new Date(e.entryDate).toLocaleDateString()}
+                    </span>
+                    <span className={cn('rounded px-1.5 py-0.5 text-[11px] border', meta.color)}>
+                      {meta.emoji} {meta.zh}
+                    </span>
+                  </div>
+                  {e.note && (
+                    <p className="line-clamp-1 text-xs text-ink-600/80 mt-0.5">{e.note}</p>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+        {j.entriesCount > 3 && (
+          <div className="mt-1.5 text-xs text-emerald-700/60">
+            + {j.entriesCount - 3} 条更多...
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** 列表模式卡片 — 一行一个，参考交易广场风格 */
+function FeedListCard({
+  post,
+  source,
+}: {
+  post: Post;
+  source: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const sentRef = useRef(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || sentRef.current) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (sentRef.current) return;
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            sentRef.current = true;
+            void api.post(`/api/posts/${post.id}/view`, { source }).catch(() => null);
+            io.disconnect();
+            break;
+          }
+        }
+      },
+      { threshold: 0.4 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [post.id, source]);
+
+  const cover = post.cover ?? post.images?.[0];
+  const images = post.images || (post.cover ? [post.cover] : []);
+  const displayImages = images.slice(0, 4);
+
+  return (
+    <div ref={ref}>
+      <Link
+        href={`/post/${post.id}`}
+        className="block p-4 transition-colors hover:bg-leaf-50/50"
+      >
+        {/* 第一行：用户头像 + 昵称 */}
+        <div className="flex items-center gap-2 mb-3">
+          <Avatar src={post.author.avatar} alt={post.author.name} size={28} />
+          <span className="font-medium text-[13px] text-ink-800">{post.author.name}</span>
+          {post.type !== 'rich' && (
+            <PostTypeBadge type={post.type} />
+          )}
+        </div>
+
+        {/* 第二行：标题 */}
+        <h3 className="text-[15px] font-semibold text-ink-800 mb-2 hover:text-leaf-700 transition-colors">
+          {post.title}
+        </h3>
+
+        {/* 第三行：描述 */}
+        {(post.type === 'short' || post.type === 'rich' || post.type === 'help') &&
+          (post.contentText || post.content) && (
+            <p className="text-[13px] text-ink-600 leading-relaxed mb-2 line-clamp-2">
+              {post.contentText || stripHtml(post.content)}
+            </p>
+          )}
+
+        {/* 投票预览 */}
+        {post.type === 'vote' && post.vote && <VotePreview post={post} />}
+
+        {/* 活动预览 */}
+        {post.type === 'event' && post.event && <EventPreview post={post} />}
+
+        {/* 时间线预览 */}
+        {post.type === 'journal' && post.journal && <JournalPreview post={post} />}
+
+        {/* 视频标识 */}
+        {post.type === 'video' && (
+          <div className="flex items-center gap-2 mb-2 text-sm text-ink-600">
+            <Icon name="video" size={16} />
+            <span>视频内容</span>
+          </div>
+        )}
+
+        {/* 第四行：话题标签 */}
+        {post.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {post.tags.slice(0, 5).map((tag, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* 第五行：图片 */}
+        {displayImages.length > 0 && (
+          <div className="flex gap-2 mb-3">
+            {displayImages.map((img, i) => (
+              <div
+                key={i}
+                className="relative h-24 w-24 overflow-hidden rounded-lg bg-leaf-50 flex-shrink-0"
+              >
+                <Image src={img} alt="" fill className="object-cover" unoptimized />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 最后一行：板块 + 时间 + 统计 */}
+        <div className="flex items-center justify-between text-[11px]">
+          <NestedLink
+            href={boardUrl(post.board)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-2.5 py-1 text-[12px] font-medium text-leaf-700 hover:bg-leaf-100"
+          >
+            {post.board.icon && (post.board.icon.startsWith('http') || post.board.icon.startsWith('/')) ? (
+              <img src={post.board.icon} alt="" className="h-5 w-5 rounded object-cover" />
+            ) : (
+              <span className="text-sm">{post.board.icon || '🌿'}</span>
+            )}
+            <span className="truncate max-w-[120px]">{post.board.name}</span>
+          </NestedLink>
+          <div className="flex items-center gap-3 text-[13px] text-ink-500">
+            <span className="text-ink-400">{formatDateTime(post.createdAt)}</span>
+            <span className="flex items-center gap-1">
+              <Icon name="eye" size={14} />
+              {post.views}
+            </span>
+            <span className="flex items-center gap-1">
+              <Icon name="heart" size={14} />
+              {post.likes}
+            </span>
+            <span className="flex items-center gap-1">
+              <Icon name="comment" size={14} />
+              {post.comments}
+            </span>
+          </div>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
 function FeedSkeleton({
   mobileCols = 2,
   desktopCols = 3,
@@ -304,6 +702,48 @@ function FeedSkeleton({
       {Array.from({ length: 9 }).map((_, i) => (
         <div key={i} className="mb-3 break-inside-avoid">
           <PostCardSkeleton variant={i} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** 列表模式骨架屏 */
+function ListFeedSkeleton() {
+  return (
+    <div className="mt-4 rounded-xl border border-leaf-100 bg-white overflow-hidden">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i}>
+          <div className="p-4 animate-pulse">
+            {/* 第一行：头像 + 昵称 */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-8 w-8 rounded-full bg-leaf-100" />
+              <div className="h-4 w-20 rounded bg-leaf-100" />
+              <div className="ml-auto h-3 w-16 rounded bg-leaf-100" />
+            </div>
+            {/* 标题 */}
+            <div className="h-5 w-3/4 rounded bg-leaf-100 mb-2" />
+            {/* 描述 */}
+            <div className="space-y-1.5 mb-3">
+              <div className="h-4 w-full rounded bg-leaf-100" />
+              <div className="h-4 w-2/3 rounded bg-leaf-100" />
+            </div>
+            {/* 图片 */}
+            <div className="flex gap-2 mb-3">
+              <div className="h-24 w-24 rounded-lg bg-leaf-100" />
+              <div className="h-24 w-24 rounded-lg bg-leaf-100" />
+            </div>
+            {/* 底部 */}
+            <div className="flex items-center justify-between">
+              <div className="h-5 w-16 rounded-full bg-leaf-100" />
+              <div className="flex gap-3">
+                <div className="h-4 w-10 rounded bg-leaf-100" />
+                <div className="h-4 w-10 rounded bg-leaf-100" />
+                <div className="h-4 w-10 rounded bg-leaf-100" />
+              </div>
+            </div>
+          </div>
+          {i < 4 && <div className="mx-4 border-t border-leaf-100" />}
         </div>
       ))}
     </div>
@@ -326,6 +766,8 @@ function TabHeader({
   onMobileColsChange,
   desktopCols,
   onDesktopColsChange,
+  layoutMode,
+  onLayoutModeChange,
 }: {
   tab: TabKey;
   setTab: (t: TabKey) => void;
@@ -333,64 +775,76 @@ function TabHeader({
   onMobileColsChange: (n: 1 | 2) => void;
   desktopCols: 3 | 4;
   onDesktopColsChange: (n: 3 | 4) => void;
+  layoutMode: 'grid' | 'list';
+  onLayoutModeChange: (mode: 'grid' | 'list') => void;
 }) {
   const { t } = useI18n();
   return (
-    <div className="flex items-center gap-1 border-b border-leaf-100">
-      {TAB_DEFS.map((tabItem) => (
-        <button
-          key={tabItem.key}
-          onClick={() => setTab(tabItem.key)}
-          className={cn(
-            'relative px-4 py-2.5 text-sm font-medium transition-colors',
-            tab === tabItem.key ? 'text-leaf-700' : 'text-ink-700/60 hover:text-leaf-700'
-          )}
-        >
-          {t(tabItem.labelKey)}
-          {tab === tabItem.key && (
-            <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-leaf-500" />
-          )}
-        </button>
-      ))}
-
-      {/* m 端 1/2 列切换(sm+ 自动隐藏) */}
-      <div className="ml-auto flex sm:hidden items-center gap-0.5 rounded-lg bg-leaf-50/60 p-0.5">
-        {([1, 2] as const).map((n) => (
+    <div className="flex items-center border-b border-leaf-100">
+      {/* 左侧：Tab 切换 */}
+      <div className="flex items-center gap-1">
+        {TAB_DEFS.map((tabItem) => (
           <button
-            key={n}
-            type="button"
-            onClick={() => onMobileColsChange(n)}
-            title={`${n} 列`}
+            key={tabItem.key}
+            onClick={() => setTab(tabItem.key)}
             className={cn(
-              'grid h-7 w-8 place-items-center rounded transition-colors',
-              mobileCols === n
-                ? 'bg-white text-leaf-700 shadow-sm'
-                : 'text-ink-500 hover:text-leaf-700'
+              'relative px-4 py-2.5 text-sm font-medium transition-colors',
+              tab === tabItem.key ? 'text-leaf-700' : 'text-ink-700/60 hover:text-leaf-700'
             )}
           >
-            <ColsIcon n={n} />
+            {t(tabItem.labelKey)}
+            {tab === tabItem.key && (
+              <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-leaf-500" />
+            )}
           </button>
         ))}
       </div>
 
-      {/* PC 端 3/4 列切换(m 端隐藏,md+ 显示) */}
-      <div className="ml-auto hidden md:flex items-center gap-0.5 rounded-lg bg-leaf-50/60 p-0.5">
-        {([3, 4] as const).map((n) => (
-          <button
-            key={n}
-            type="button"
-            onClick={() => onDesktopColsChange(n)}
-            title={`${n} 列`}
-            className={cn(
-              'grid h-7 w-9 place-items-center rounded transition-colors',
-              desktopCols === n
-                ? 'bg-white text-leaf-700 shadow-sm'
-                : 'text-ink-500 hover:text-leaf-700'
-            )}
-          >
-            <ColsIcon n={n} />
-          </button>
-        ))}
+      {/* 右侧：布局模式切换 */}
+      <div className="ml-auto flex items-center gap-0.5 rounded-lg bg-leaf-50/60 p-0.5">
+        <button
+          type="button"
+          onClick={() => onLayoutModeChange('list')}
+          title="列表"
+          className={cn(
+            'grid h-7 w-8 place-items-center rounded transition-colors',
+            layoutMode === 'list'
+              ? 'bg-white text-leaf-700 shadow-sm'
+              : 'text-ink-500 hover:text-leaf-700'
+          )}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+            <rect x="0" y="1" width="14" height="3" rx="1" />
+            <rect x="0" y="5.5" width="14" height="3" rx="1" />
+            <rect x="0" y="10" width="14" height="3" rx="1" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={() => { onLayoutModeChange('grid'); onDesktopColsChange(3); }}
+          title="3列瀑布流"
+          className={cn(
+            'grid h-7 w-8 place-items-center rounded transition-colors',
+            layoutMode === 'grid' && desktopCols === 3
+              ? 'bg-white text-leaf-700 shadow-sm'
+              : 'text-ink-500 hover:text-leaf-700'
+          )}
+        >
+          <ColsIcon n={3} />
+        </button>
+        <button
+          type="button"
+          onClick={() => { onLayoutModeChange('grid'); onDesktopColsChange(4); }}
+          title="4列瀑布流"
+          className={cn(
+            'grid h-7 w-8 place-items-center rounded transition-colors',
+            layoutMode === 'grid' && desktopCols === 4
+              ? 'bg-white text-leaf-700 shadow-sm'
+              : 'text-ink-500 hover:text-leaf-700'
+          )}
+        >
+          <ColsIcon n={4} />
+        </button>
       </div>
     </div>
   );

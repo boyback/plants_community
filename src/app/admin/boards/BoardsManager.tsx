@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { CategoryEditDialog } from './CategoryEditDialog';
 import { GenusEditDialog } from './GenusEditDialog';
 import { SpeciesEditDialog } from './SpeciesEditDialog';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 
 interface SpeciesNode {
   id: string;
@@ -516,11 +517,7 @@ function SortableRow({
         </button>
       </td>
       <td className="px-2 py-2">
-        {category.icon && (category.icon.startsWith('http') || category.icon.startsWith('/')) ? (
-          <img src={category.icon} alt="" className="h-8 w-8 rounded object-cover" />
-        ) : (
-          <span className="text-2xl">{category.icon || '🌿'}</span>
-        )}
+        <CategoryIcon icon={category.icon} name={category.name} size="lg" />
       </td>
       <td className="px-2 py-2"><div className="font-medium">{category.name}</div><div className="text-[10px] text-ink-500 font-mono">{category.slug}</div></td>
       <td className="px-2 py-2"><span className="rounded bg-ink-100 px-1.5 py-0.5 text-[10px]">{category.kind}</span></td>
@@ -774,11 +771,7 @@ function TreeDndView({
                         className="shrink-0 w-5 h-5 flex items-center justify-center rounded text-leaf-600/60 hover:text-leaf-700 text-xs">
                         {isCatCollapsed ? '▸' : '▾'}
                       </button>
-                      {cat.icon && (cat.icon.startsWith('http') || cat.icon.startsWith('/')) ? (
-                        <img src={cat.icon} alt="" className="h-6 w-6 shrink-0 rounded object-cover" />
-                      ) : (
-                        <span className="text-lg shrink-0">{cat.icon || '🌿'}</span>
-                      )}
+                      <CategoryIcon icon={cat.icon} name={cat.name} size="md" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-sm text-ink-800">{cat.name}</span>

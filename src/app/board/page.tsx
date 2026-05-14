@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Shell } from '@/components/layout/Shell';
 import { I18nText } from '@/components/ui/I18nText';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { prisma } from '@/lib/db';
 import { serializeCategory } from '@/lib/serializers';
 import { formatNumber } from '@/lib/utils';
@@ -160,7 +161,7 @@ function CategoryCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ink-900/70 via-ink-900/10 to-transparent" />
         <div className="absolute bottom-3 left-3 flex items-baseline gap-2 text-white">
-          <span className="text-2xl">{category.icon}</span>
+          <CategoryIcon icon={category.icon} name={category.name} size="lg" />
           <span className="text-lg font-semibold">{category.name}</span>
           {category.latinName && (
             <span className="text-[11px] italic opacity-80">{category.latinName}</span>

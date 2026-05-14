@@ -10,15 +10,9 @@ export type ColorThemeKey =
   | 'forest'
   | 'sakura'
   | 'ocean'
-  | 'vintage'
-  | 'dopamine-red'
   | 'dopamine-purple'
-  | 'latte'
-  | 'matcha'
-  | 'cybermist'
-  | 'rosegold'
-  | 'sapphire'
-  | 'beach';
+  | 'beach'
+  | 'lavender';
 
 export type ColorThemeMode = 'light' | 'dark';
 
@@ -61,22 +55,6 @@ export const COLOR_THEMES: ColorThemeMeta[] = [
     vibe: '专业',
   },
   {
-    key: 'vintage',
-    name: '记忆黄',
-    desc: '复古报纸',
-    logoEmoji: '📜',
-    swatch: { primary: '#a78229', bg: '#fbf5e6' },
-    vibe: '怀旧',
-  },
-  {
-    key: 'dopamine-red',
-    name: '多巴胺红',
-    desc: '热烈 · 充满能量',
-    logoEmoji: '🔥',
-    swatch: { primary: '#ef4444', bg: '#fff7f5' },
-    vibe: '年轻 · 游戏向',
-  },
-  {
     key: 'dopamine-purple',
     name: '多巴胺紫',
     desc: '魔幻 · 仙气',
@@ -85,52 +63,20 @@ export const COLOR_THEMES: ColorThemeMeta[] = [
     vibe: '少女 · 二次元',
   },
   {
-    key: 'latte',
-    name: '拿铁棕',
-    desc: '咖啡调 · 暖意',
-    logoEmoji: '☕',
-    swatch: { primary: '#a16b3f', bg: '#faf5ed' },
-    vibe: '中年 · 阅读',
-  },
-  {
-    key: 'matcha',
-    name: '抹茶酱',
-    desc: '低调 · 静',
-    logoEmoji: '🍵',
-    swatch: { primary: '#7d9a4a', bg: '#f6f8ed' },
-    vibe: '静心 · 文艺',
-  },
-  {
-    key: 'cybermist',
-    name: '冷雾纱',
-    desc: '赛博朋克',
-    logoEmoji: '⚡',
-    swatch: { primary: '#a855f7', bg: '#0d0e1c' },
-    vibe: 'Z 世代 · 鬼才',
-  },
-  {
-    key: 'rosegold',
-    name: '玫瑰金',
-    desc: '黑金 · 高贵',
-    logoEmoji: '⚜️',
-    swatch: { primary: '#b8860b', bg: '#1a1410' },
-    vibe: '商务 · VIP',
-  },
-  {
-    key: 'sapphire',
-    name: '蓝莉金刚',
-    desc: '宝石调 · 鲜艳',
-    logoEmoji: '💎',
-    swatch: { primary: '#1e40af', bg: '#f0f5ff' },
-    vibe: '高阶鲜颜',
-  },
-  {
     key: 'beach',
     name: '海滩蓝',
     desc: '夏日限定',
     logoEmoji: '🏖️',
     swatch: { primary: '#06b6d4', bg: '#f0fcff' },
     vibe: '夏季 · 通透',
+  },
+  {
+    key: 'lavender',
+    name: '薰衣草',
+    desc: '柔和紫调 · 治愈',
+    logoEmoji: '💜',
+    swatch: { primary: '#8b5cf6', bg: '#f5f3ff' },
+    vibe: '柔和 · 治愈系',
   },
 ];
 

@@ -19,6 +19,7 @@ import { SpeciesRatingPanel } from '@/components/species/SpeciesRatingPanel';
 
 import { I18nText } from '@/components/ui/I18nText';
 import { FollowBoardButton } from '@/components/board/FollowBoardButton';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { formatNumber } from '@/lib/utils';
 import type { Metadata } from 'next';
 import { parseJsonArray } from '@/lib/api';
@@ -706,7 +707,7 @@ function CategoryHeader({
         <div className="absolute inset-0 bg-gradient-to-t from-ink-900/70 via-ink-900/30 to-transparent" />
         <div className="absolute inset-0 flex flex-col justify-end p-6 text-white">
           <div className="flex items-baseline gap-3">
-            <span className="text-4xl">{category.icon}</span>
+            <CategoryIcon icon={category.icon} name={category.name} size="lg" />
             <h1 className="text-2xl font-bold md:text-3xl">{category.name}</h1>
             {latinName && (
               <span className="text-sm font-normal italic opacity-80">{latinName}</span>

@@ -23,12 +23,13 @@
  */
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { Icon } from '@/components/ui/Icon';
-import { useI18n } from '@/i18n/I18nContext';
+import Link from 'next/link';
 import { api } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { Icon } from '@/components/ui/Icon';
+import { useI18n } from '@/i18n/I18nContext';
 
 interface GenusLite {
   id: string;
@@ -128,7 +129,7 @@ export function BoardMegaMenu() {
                   )}
                 >
                   <span className="flex items-center gap-2 min-w-0">
-                    <span className="text-base shrink-0">{c.icon}</span>
+                    <CategoryIcon icon={c.icon} name={c.name} size="md" />
                     <span className="truncate">{c.name}</span>
                   </span>
                   <span className="text-[10px] text-leaf-700/40">▸</span>

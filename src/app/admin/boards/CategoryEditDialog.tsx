@@ -163,7 +163,12 @@ export function CategoryEditDialog({
                 ) : icon ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={icon} alt="" className="h-full w-full rounded-xl object-cover" />
+                    <img
+                      src={icon}
+                      alt=""
+                      className="h-full w-full rounded-xl object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={handleIconClick}
+                    />
                     <button
                       type="button"
                       onClick={handleRemoveIcon}
@@ -258,9 +263,9 @@ export function CategoryEditDialog({
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block">
+    <div className="block">
       <div className="mb-1 text-[11px] font-medium text-ink-600">{label}</div>
       {children}
-    </label>
+    </div>
   );
 }

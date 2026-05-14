@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Shell } from '@/components/layout/Shell';
 import { Icon } from '@/components/ui/Icon';
 import { AvatarField } from '@/components/upload/AvatarField';
 import { useAuth } from '@/context/AuthContext';
@@ -53,20 +52,12 @@ export default function ProfileSettingsPage() {
 
   if (loading || !user) {
     return (
-      <Shell>
-        <div className="card p-6 text-sm text-leaf-700/70">加载中…</div>
-      </Shell>
+      <div className="card p-6 text-sm text-leaf-700/70">加载中…</div>
     );
   }
 
   return (
-    <Shell>
-      <div className="mb-3 text-xs text-leaf-700/70">
-        <Link href="/settings" className="hover:text-leaf-700">
-          ← 设置
-        </Link>
-      </div>
-
+    <>
       <div className="card space-y-6 p-6">
         <h1 className="flex items-center gap-2 text-xl font-semibold">
           👤 个人资料
@@ -147,6 +138,6 @@ export default function ProfileSettingsPage() {
           {toast}
         </div>
       )}
-    </Shell>
+    </>
   );
 }

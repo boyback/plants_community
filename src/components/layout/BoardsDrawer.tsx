@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 
 interface GenusLite {
   id: string;
@@ -208,7 +209,7 @@ function DrawerInner({
                   )}
                 >
                   <span className="flex min-w-0 items-center gap-2">
-                    <span className="text-base shrink-0">{c.icon}</span>
+                    <CategoryIcon icon={c.icon} name={c.name} size="md" />
                     <span className="truncate">{c.name}</span>
                   </span>
                   <span className="shrink-0 text-[10px] text-leaf-700/50">

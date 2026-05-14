@@ -1,20 +1,85 @@
 'use client';
 
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { VipBadge } from '@/components/ui/VipBadge';
 import { BoardsTreeMenu } from '@/components/layout/BoardsTreeMenu';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { api } from '@/lib/client-api';
 
-/**
- * Sidebar — 板块树 + 账号卡
- */
+interface SpecialBoard {
+  id: string;
+  slug: string;
+  name: string;
+  icon: string;
+  kind: string;
+}
+
+const DEFAULT_BOARDS: SpecialBoard[] = [
+  { id: 'home', slug: '', name: '首页', icon: '🏠', kind: 'home' },
+  { id: 'market', slug: 'market', name: '交易广场', icon: '🛒', kind: 'market' },
+  { id: 'yangzhi', slug: 'yangzhi', name: '养殖交流', icon: '🌿', kind: 'discussion' },
+  { id: 'shaitu', slug: 'shaitu', name: '摄影大赛', icon: '📸', kind: 'discussion' },
+  { id: 'xinshou', slug: 'xinshou', name: '新手村落', icon: '🌱', kind: 'discussion' },
+];
+
 export function Sidebar() {
   const { user, vip, pointsBalance, expProgress } = useAuth();
   const { t } = useI18n();
+  const [specialBoards, setSpecialBoards] = useState<SpecialBoard[]>(DEFAULT_BOARDS);
+
+  useEffect(() => {
+    api
+      .get<SpecialBoard[]>('/api/categories?kind=discussion')
+      .then((list) => {
+        const home = { id: 'home', slug: '', name: '首页', icon: '🏠', kind: 'home' };
+        const market = { id: 'market', slug: 'market', name: '交易广场', icon: '🛒', kind: 'market' };
+        // 重命名晒图广场为摄影大赛
+        const renamed = (list || []).map(b => 
+          b.name === '晒图广场' ? { ...b, name: '摄影大赛', slug: 'shaitu' } : b
+        );
+        // 按照指定顺序排列
+        const ordered = [home, market];
+        const yangzhi = renamed.find(b => b.slug === 'yangzhi');
+        const shaitu = renamed.find(b => b.slug === 'shaitu');
+        const xinshou = renamed.find(b => b.slug === 'xinshou');
+        if (yangzhi) ordered.push(yangzhi);
+        if (shaitu) ordered.push(shaitu);
+        if (xinshou) ordered.push(xinshou);
+        // 添加其他未指定的板块
+        renamed.filter(b => !['yangzhi', 'shaitu', 'xinshou'].includes(b.slug)).forEach(b => ordered.push(b));
+        setSpecialBoards(ordered);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <aside className="sticky top-[60px] hidden h-[calc(100vh-72px)] w-56 shrink-0 space-y-3 overflow-y-auto pr-2 lg:block">
+      {/* 社区板块 */}
+      {specialBoards.length > 0 && (
+        <div className="rounded-xl border border-leaf-100 bg-white overflow-hidden">
+          <Link href="/" className="flex items-center gap-2 px-3 py-2.5 border-b border-leaf-100/60 hover:bg-leaf-50 transition-colors">
+            <span className="text-base shrink-0">🏠</span>
+            <span className="text-sm font-medium text-ink-800">社区</span>
+          </Link>
+          <div className="p-2 space-y-0.5">
+            {specialBoards.map((b) => (
+              <Link
+                key={b.id}
+                href={b.slug === '' ? '/' : `/${b.slug}`}
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-ink-700 hover:bg-leaf-50 hover:text-leaf-700 transition-colors"
+              >
+                <CategoryIcon icon={b.icon} name={b.name} size="sm" />
+                <span className="truncate">{b.name}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 板块 */}
       <div className="rounded-xl border border-leaf-100 bg-white overflow-hidden">
         <div className="flex items-center gap-2 px-3 py-2.5 border-b border-leaf-100/60">

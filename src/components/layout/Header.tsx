@@ -6,8 +6,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Logo } from '@/components/ui/Logo';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 
-import { LocaleSwitcher } from '@/components/ui/LocaleSwitcher';
 import { ColorThemeSwitcher } from '@/components/ui/ColorThemeSwitcher';
 
 import { useAuth } from '@/context/AuthContext';
@@ -66,42 +66,61 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
   }, [user, subscribe]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-leaf-100/70 bg-white shadow-sm dark:bg-leaf-50">
-      <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-3 px-4">
-        <button
-          type="button"
-          className="-ml-1 grid h-9 w-9 place-items-center rounded-lg text-leaf-700 hover:bg-leaf-50 lg:hidden"
-          aria-label={t('nav.openMenu')}
-          onClick={onToggleMobileNav}
-        >
-          <Icon name="menu" size={20} />
-        </button>
-
-        <Logo />
-
-        <nav className="ml-4 hidden items-center gap-1 lg:flex">
-          <HeaderLink href="/" icon="home">{t('nav.home')}</HeaderLink>
-          <BoardsDropdown />
-          <HeaderLink href="/plants" icon="plants">{t('nav.plants')}</HeaderLink>
-          <HeaderLink href="/market" icon="shop">交易广场</HeaderLink>
-        </nav>
-
-        <div className="ml-auto hidden flex-1 max-w-md md:block">
-          <HeaderSearch />
+    <header className="sticky top-0 z-40 border-b border-leaf-100/70 bg-white shadow-sm">
+      <div className="mx-auto flex h-14 max-w-[1280px] items-center px-4 lg:px-6">
+        {/* 左侧固定 - Logo (248px 对齐侧边栏) */}
+        <div className="flex items-center gap-3 w-[248px] shrink-0">
+          <button
+            type="button"
+            className="-ml-1 grid h-9 w-9 place-items-center rounded-lg text-leaf-700 hover:bg-leaf-50 lg:hidden"
+            aria-label={t('nav.openMenu')}
+            onClick={onToggleMobileNav}
+          >
+            <Icon name="menu" size={20} />
+          </button>
+          <Logo />
+          <ColorThemeSwitcher />
         </div>
 
-        <div className="ml-auto flex items-center gap-1 md:ml-0">
-          {user ? (
+        {/* 中间弹性 - 搜索框 */}
+        <div className="hidden lg:flex flex-1 justify-center">
+          <div className="w-full max-w-[732px]">
+            <HeaderSearch />
+          </div>
+        </div>
+
+        {/* 右侧固定 - 操作按钮 */}
+        <div className="flex items-center gap-2 w-[304px] shrink-0">
+          {/* 发帖按钮 - 最左边 */}
+          {user && (
             <>
               <Link
                 href="/editor"
-                className="hidden sm:inline-flex btn-primary h-9 !px-3 text-xs"
+                className="hidden sm:inline-flex btn-primary h-9 px-4 text-xs ml-6"
               >
                 <Icon name="plus" size={14} />
-                {t('nav.newPost')}
+                发帖
               </Link>
-              <ColorThemeSwitcher />
-              <LocaleSwitcher className="hidden md:block" />
+              <Link
+                href="/market/sell"
+                className="hidden sm:inline-flex btn-outline h-9 px-4 text-xs"
+              >
+                <Icon name="shop" size={14} />
+                发布商品
+              </Link>
+            </>
+          )}
+
+          {/* 移动端搜索图标 */}
+          <Link href="/search" className="lg:hidden grid h-9 w-9 place-items-center rounded-lg text-leaf-700 hover:bg-leaf-50">
+            <Icon name="search" size={18} />
+          </Link>
+
+          {/* 右侧其他按钮 */}
+          <div className="flex items-center gap-1 ml-auto">
+          {user ? (
+            <>
+              <NotificationBell unreadCount={unreadNotifs + unreadMsgs} onReadAll={() => setUnreadNotifs(0)} />
               <div
                 className="relative"
                 onMouseEnter={() => {
@@ -109,7 +128,6 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                   setMenuOpen(true);
                 }}
                 onMouseLeave={() => {
-                  // 给点延迟,避免鼠标快速划过菜单边缘时闪烁
                   if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
                   closeTimerRef.current = setTimeout(() => setMenuOpen(false), 150);
                 }}
@@ -117,7 +135,6 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                 <button
                   type="button"
                   className="ml-1 flex items-center gap-2 rounded-full p-0.5 hover:bg-leaf-50"
-                  // 移动端兜底:点击也能开关
                   onClick={() => setMenuOpen((o) => !o)}
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
@@ -131,40 +148,81 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
                   />
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 z-20 mt-2 w-36 overflow-visible rounded-xl border border-leaf-100 bg-white py-1 shadow-xl">
-                    {/* 1. 消息(hover 右侧展开 7 类) */}
-                    <MessagesSubmenu
-                      unreadTotal={unreadNotifs + unreadMsgs}
-                      onClose={() => setMenuOpen(false)}
-                      onReadAll={() => setUnreadNotifs(0)}
-                    />
-
-                    {/* 2. 设置(hover 右侧展开二级菜单) */}
-                    <SettingsSubmenu onNavigate={() => setMenuOpen(false)} />
-
-                    {/* 3. 个人主页 */}
+                  <div className="absolute right-0 z-20 mt-2 w-48 overflow-visible rounded-xl border border-leaf-100 bg-white shadow-xl">
+                    {/* 用户信息 */}
                     <Link
                       href={`/user/${user.id}`}
                       onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-ink-800 hover:bg-leaf-50"
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-leaf-50 transition-colors"
                     >
-                      <Icon name="home" size={14} />
-                      <span>个人主页</span>
+                      <UserAvatar
+                        src={user.avatar}
+                        alt={user.name}
+                        size={40}
+                        pendant={equip.pendant ?? null}
+                        isVip={vip.isVip}
+                      />
+                      <div className="min-w-0">
+                        <div className="font-medium text-ink-800 truncate">{user.name}</div>
+                        <div className="text-[11px] text-ink-500 truncate">@{user.id.slice(0, 8)}</div>
+                      </div>
                     </Link>
 
-                    <div className="my-1 border-t border-leaf-50" />
+                    <div className="border-t border-leaf-50" />
 
-                    {/* 4. 退出 */}
+                    {/* 我的订单 */}
+                    <Link
+                      href="/orders"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-ink-800 hover:bg-leaf-50"
+                    >
+                      <Icon name="package" size={14} />
+                      <span>我的订单</span>
+                    </Link>
+
+                    {/* 大会员 */}
+                    <Link
+                      href="/vip"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-ink-800 hover:bg-leaf-50"
+                    >
+                      <Icon name="crown" size={14} />
+                      <span>大会员</span>
+                    </Link>
+
+                    {/* 积分兑换 */}
+                    <Link
+                      href="/points"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-ink-800 hover:bg-leaf-50"
+                    >
+                      <Icon name="diamond" size={14} />
+                      <span>积分兑换</span>
+                    </Link>
+
+                    <div className="border-t border-leaf-50" />
+
+                    {/* 设置 */}
+                    <Link
+                      href="/settings"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-ink-800 hover:bg-leaf-50"
+                    >
+                      <Icon name="settings" size={14} />
+                      <span>设置</span>
+                    </Link>
+
+                    {/* 退出 */}
                     <button
                       type="button"
                       onClick={async () => {
                         setMenuOpen(false);
                         await logout();
                       }}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50"
+                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-rose-600 hover:bg-rose-50"
                     >
                       <Icon name="logout" size={14} />
-                      <span>{t('nav.logout')}</span>
+                      <span>退出</span>
                     </button>
                   </div>
                 )}
@@ -172,8 +230,6 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
             </>
           ) : (
             <>
-              <ColorThemeSwitcher />
-              <LocaleSwitcher className="mr-1" />
               <Link href="/login" className="btn-ghost h-9 text-xs">
                 {t('nav.login')}
               </Link>
@@ -182,6 +238,7 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
               </Link>
             </>
           )}
+          </div>
         </div>
       </div>
     </header>
@@ -308,295 +365,154 @@ function RowItem({
  * 设置二级菜单:hover 触发,从主项右侧弹出
  * 列出所有子设置项,点击直接跳页 + 关闭整个用户菜单
  */
-function SettingsSubmenu({ onNavigate }: { onNavigate: () => void }) {
-  // hook 必须 import,但本文件已 import Link/Icon,这里 inline 用 useState
-  // 保持简洁 — 不引入额外 hook 依赖
-  const [open, setOpen] = useState(false);
-  const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-
-  const onEnter = () => {
-    if (timer) {
-      clearTimeout(timer);
-      setTimer(null);
-    }
-    setOpen(true);
-  };
-  const onLeave = () => {
-    const t = setTimeout(() => setOpen(false), 150);
-    setTimer(t);
-  };
-
-  const items: { href: string; icon: IconName; label: string }[] = [
-    { href: '/settings/profile', icon: 'user', label: '个人资料' },
-    { href: '/settings/appearance', icon: 'palette', label: '外观与语言' },
-    { href: '/settings/privacy', icon: 'lock', label: '隐私设置' },
-    { href: '/orders', icon: 'package', label: '我的订单' },
-    { href: '/addresses', icon: 'mail', label: '收件地址' },
-    { href: '/vip', icon: 'crown', label: '大会员' },
-    { href: '/points', icon: 'diamond', label: '积分中心' },
-  ];
-
-  return (
-    <div
-      className="relative"
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-    >
-      <Link
-        href="/settings"
-        onClick={onNavigate}
-        className="flex items-center gap-2 px-3 py-2 text-sm text-ink-800 hover:bg-leaf-50"
-      >
-        <Icon name="settings" size={14} />
-        <span className="flex-1">设置</span>
-        <span className="text-leaf-500">▸</span>
-      </Link>
-
-      {open && (
-        <div className="absolute right-full top-0 z-30 mr-1 w-52 overflow-hidden rounded-xl border border-leaf-100 bg-white py-1 shadow-xl">
-          {items.map((it) => (
-            <Link
-              key={it.href}
-              href={it.href}
-              onClick={onNavigate}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-ink-800 hover:bg-leaf-50"
-            >
-              <Icon name={it.icon} size={16} className="text-leaf-700" />
-              <span>{it.label}</span>
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 /**
- * 消息子菜单(用户下拉中的一级项,hover 右侧弹出消息分类下拉)
- * - 复用 NotificationDropdown 的核心逻辑
- * - 不再走头部独立按钮,而是嵌入头像菜单
+ * 通知铃铛 — hover / click 显示通知面板，不进行 tab 分类
  */
-function MessagesSubmenu({
-  unreadTotal,
-  onClose,
+function NotificationBell({
+  unreadCount,
   onReadAll,
 }: {
-  unreadTotal: number;
-  onClose: () => void;
+  unreadCount: number;
   onReadAll: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-
-  const onEnter = () => {
-    if (timer) clearTimeout(timer);
-    setOpen(true);
-  };
-  const onLeave = () => {
-    const tt = setTimeout(() => setOpen(false), 150);
-    setTimer(tt);
-  };
-
-  return (
-    <div className="relative" onMouseEnter={onEnter} onMouseLeave={onLeave}>
-      <Link
-        href="/notifications"
-        onClick={onClose}
-        className="flex items-center gap-2 px-3 py-2 text-sm text-ink-800 hover:bg-leaf-50"
-      >
-        <Icon name="bell" size={14} />
-        <span className="flex-1">消息</span>
-        {unreadTotal > 0 && (
-          <span className="grid h-4 min-w-[16px] place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white">
-            {unreadTotal > 99 ? '99+' : unreadTotal}
-          </span>
-        )}
-        <span className="text-leaf-500">▸</span>
-      </Link>
-      {open && (
-        <div className="absolute right-full top-0 z-30 mr-1">
-          <NotificationDropdownInline
-            onClose={() => {
-              setOpen(false);
-              onClose();
-            }}
-            onReadAll={onReadAll}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** 内联版下拉:不带触发按钮,直接渲染面板内容 */
-function NotificationDropdownInline({
-  onClose,
-  onReadAll,
-}: {
-  onClose: () => void;
-  onReadAll: () => void;
-}) {
-  const [tab, setTab] = useState<
-    'all' | 'comment' | 'like' | 'mention' | 'follow' | 'system' | 'message'
-  >('all');
   const [items, setItems] = useState<Notification[]>([]);
   const [convs, setConvs] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const load = async () => {
     setLoading(true);
-    Promise.all([
-      api
-        .get<{ items: Notification[]; unread: number }>('/api/notifications?limit=20')
-        .catch(() => ({ items: [], unread: 0 })),
-      api.get<Conversation[]>('/api/conversations').catch(() => [] as Conversation[]),
-    ])
-      .then(([n, c]) => {
-        setItems(Array.isArray(n.items) ? n.items : []);
-        setConvs(Array.isArray(c) ? c.slice(0, 10) : []);
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const TABS = [
-    { key: 'all', label: '全部' },
-    { key: 'comment', label: '评论' },
-    { key: 'like', label: '点赞' },
-    { key: 'mention', label: '@我' },
-    { key: 'follow', label: '关注' },
-    { key: 'system', label: '系统' },
-    { key: 'message', label: '私信' },
-  ] as const;
-
-  const filtered =
-    tab === 'all' ? items : tab === 'message' ? [] : items.filter((n) => n.type === tab);
-  const showConvs = tab === 'all' || tab === 'message';
-
-  const markAllRead = async () => {
     try {
-      await api.post('/api/notifications/read', { all: true });
-      setItems((prev) => prev.map((n) => ({ ...n, read: true })));
-      onReadAll();
-    } catch {}
+      const [n, c] = await Promise.all([
+        api.get<{ items: Notification[]; unread: number }>('/api/notifications?limit=20').catch(() => ({ items: [], unread: 0 })),
+        api.get<Conversation[]>('/api/conversations').catch(() => [] as Conversation[]),
+      ]);
+      setItems(Array.isArray(n.items) ? n.items : []);
+      setConvs(Array.isArray(c) ? c.slice(0, 10) : []);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const onEnter = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (!open) { setOpen(true); load(); }
+  };
+
+  const onLeave = () => {
+    timerRef.current = setTimeout(() => setOpen(false), 150);
+  };
+
+  const toggle = () => {
+    const next = !open;
+    setOpen(next);
+    if (next) load();
+  };
+
+  // 点击外部关闭
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
   return (
-    <div className="w-[280px] overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-card">
-      <div className="flex items-center justify-between border-b border-leaf-100 px-3 py-2">
-        <span className="text-sm font-semibold text-ink-800">消息</span>
-        <button
-          type="button"
-          onClick={markAllRead}
-          className="text-[11px] text-leaf-700 hover:underline"
-        >
-          全部已读
-        </button>
-      </div>
-
-      <div className="flex gap-0.5 overflow-x-auto border-b border-leaf-50 px-1.5 py-1.5">
-        {TABS.map((tt) => (
-          <button
-            key={tt.key}
-            type="button"
-            onClick={() => setTab(tt.key)}
-            className={cn(
-              'shrink-0 rounded-full px-2.5 py-1 text-[11px] transition-colors',
-              tab === tt.key
-                ? 'bg-leaf-500 text-white'
-                : 'text-leaf-700 hover:bg-leaf-50'
-            )}
-          >
-            {tt.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="max-h-[420px] overflow-y-auto">
-        {loading ? (
-          <div className="py-8 text-center text-xs text-leaf-700/70">加载中…</div>
-        ) : (
-          <>
-            {showConvs &&
-              convs.map((c) => (
-                <Link
-                  key={c.id}
-                  href={`/messages?to=${c.user.id}`}
-                  onClick={onClose}
-                  className="flex items-start gap-2 border-b border-leaf-50 px-3 py-2 hover:bg-leaf-50/60"
-                >
-                  <UserAvatar src={c.user.avatar} alt={c.user.name} size={32} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="truncate text-xs font-medium text-ink-800">
-                        💬 {c.user.name}
-                      </span>
-                      <span className="ml-2 shrink-0 text-[10px] text-leaf-700/60">
-                        {timeShort(c.lastAt)}
-                      </span>
-                    </div>
-                    <p className="line-clamp-1 text-[11px] text-leaf-700/80">
-                      {c.lastMessage}
-                    </p>
-                  </div>
-                  {c.unread > 0 && (
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-rose-500" />
-                  )}
-                </Link>
-              ))}
-
-            {tab !== 'message' &&
-              filtered.map((n) => (
-                <Link
-                  key={n.id}
-                  href={n.link ?? '#'}
-                  onClick={onClose}
-                  className={cn(
-                    'flex items-start gap-2 border-b border-leaf-50 px-3 py-2 hover:bg-leaf-50/60',
-                    !n.read && 'bg-leaf-50/30'
-                  )}
-                >
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-leaf-50 text-base">
-                    {iconForType(n.type)}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="line-clamp-2 text-[11px] leading-5 text-ink-800">
-                      {n.text}
-                    </p>
-                    <span className="text-[10px] text-leaf-700/60">
-                      {timeShort(n.createdAt)}
-                    </span>
-                  </div>
-                  {!n.read && (
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-rose-500" />
-                  )}
-                </Link>
-              ))}
-
-            {filtered.length === 0 && (!showConvs || convs.length === 0) && (
-              <div className="py-8 text-center text-xs text-leaf-700/60">
-                没有相关消息
-              </div>
-            )}
-          </>
+    <div ref={containerRef} className="relative" onMouseEnter={onEnter} onMouseLeave={onLeave}>
+      <button
+        type="button"
+        onClick={toggle}
+        className="relative grid h-9 w-9 place-items-center rounded-lg text-leaf-700 hover:bg-leaf-50"
+      >
+        <Icon name="bell" size={18} />
+        {unreadCount > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 flex min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-medium text-white">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
         )}
-      </div>
+      </button>
 
-      <div className="flex border-t border-leaf-100 text-[12px]">
-        <Link
-          href="/notifications"
-          onClick={onClose}
-          className="flex-1 py-2 text-center text-leaf-700 hover:bg-leaf-50"
-        >
-          全部通知
-        </Link>
-        <Link
-          href="/messages"
-          onClick={onClose}
-          className="flex-1 border-l border-leaf-100 py-2 text-center text-leaf-700 hover:bg-leaf-50"
-        >
-          全部私信
-        </Link>
-      </div>
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-1 w-[300px] overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-xl">
+          <div className="flex items-center justify-between border-b border-leaf-100 px-3 py-2">
+            <span className="text-sm font-semibold text-ink-800">消息</span>
+            <Link href="/settings/notifications" onClick={() => setOpen(false)} className="text-[11px] text-leaf-700 hover:underline">
+              设置
+            </Link>
+          </div>
+
+          <div className="max-h-[420px] overflow-y-auto">
+            {loading ? (
+              <div className="py-8 text-center text-xs text-leaf-700/70">加载中…</div>
+            ) : (
+              <>
+                {/* 私信 */}
+                {convs.map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/messages?to=${c.user.id}`}
+                    onClick={() => setOpen(false)}
+                    className="flex items-start gap-2 border-b border-leaf-50 px-3 py-2 hover:bg-leaf-50/60"
+                  >
+                    <UserAvatar src={c.user.avatar} alt={c.user.name} size={32} />
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <div className="flex items-center justify-between">
+                        <span className="truncate text-xs font-medium text-ink-800">💬 {c.user.name}</span>
+                        {c.unread > 0 && <span className="ml-1 h-2 w-2 shrink-0 rounded-full bg-rose-500" />}
+                      </div>
+                      <p className="truncate text-[11px] text-leaf-700/80">{c.lastMessage}</p>
+                      <span className="text-[10px] text-leaf-700/60">{timeShort(c.lastAt)}</span>
+                    </div>
+                  </Link>
+                ))}
+
+                {/* 通知 */}
+                {items.map((n) => (
+                  <Link
+                    key={n.id}
+                    href={n.link ?? '#'}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      'flex items-start gap-2 border-b border-leaf-50 px-3 py-2 hover:bg-leaf-50/60',
+                      !n.read && 'bg-leaf-50/30',
+                    )}
+                  >
+                    {n.fromUser ? (
+                      <img
+                        src={n.fromUser.avatar || '/default-avatar.svg'}
+                        alt={n.fromUser.name}
+                        className="h-8 w-8 shrink-0 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-leaf-50 text-base">
+                        {iconForType(n.type)}
+                      </span>
+                    )}
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <div className="flex items-center gap-1">
+                        {n.fromUser && (
+                          <span className="text-xs font-medium text-ink-800 truncate">{n.fromUser.name}</span>
+                        )}
+                        {!n.read && <span className="ml-1 h-2 w-2 shrink-0 rounded-full bg-rose-500" />}
+                      </div>
+                      <p className="line-clamp-2 text-[11px] leading-5 text-ink-700">{n.text}</p>
+                      <span className="text-[10px] text-leaf-700/60">{timeShort(n.createdAt)}</span>
+                    </div>
+                  </Link>
+                ))}
+
+                {items.length === 0 && convs.length === 0 && (
+                  <div className="py-8 text-center text-xs text-leaf-700/60">暂无消息</div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -613,203 +529,14 @@ function iconForType(t: Notification['type']): string {
 }
 
 function timeShort(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return '刚刚';
-  if (m < 60) return `${m}分前`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}小时前`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d}天前`;
-  return new Date(iso).toLocaleDateString('zh-CN');
-}
-
-// ============================================================
-// 板块 Mega Menu — 全视口宽度 + 蒙层 + 瀑布流
-// ============================================================
-
-interface BoardMegaGenus {
-  id: string;
-  slug: string;
-  name: string;
-  latinName: string | null;
-  _count: { posts: number; species: number };
-}
-
-interface BoardMegaCategory {
-  id: string;
-  slug: string;
-  name: string;
-  latinName: string | null;
-  icon: string;
-  kind: 'family' | 'discussion' | 'market';
-  _count: { posts: number; genera: number };
-  genera: BoardMegaGenus[];
-}
-
-function BoardsDropdown() {
-  const [open, setOpen] = useState(false);
-  const [data, setData] = useState<BoardMegaCategory[] | null>(null);
-  const pathname = usePathname();
-  const active = pathname.startsWith('/board');
-
-  /* 懒加载全部板块数据 */
-  useEffect(() => {
-    if (open && data === null) {
-      api
-        .get<BoardMegaCategory[]>('/api/categories?withGenera=1')
-        .then((list) => setData(list || []))
-        .catch(() => setData([]));
-    }
-  }, [open, data]);
-
-  /* 打开时锁定 body 滚动 */
-  useEffect(() => {
-    if (open) {
-      const scrollY = window.scrollY;
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.left = '0';
-      document.body.style.right = '0';
-      document.body.style.overflow = 'hidden';
-    } else {
-      const scrollY = document.body.style.top;
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
-      document.body.style.overflow = '';
-      window.scrollTo(0, parseInt(scrollY || '0') * -1);
-    }
-    return () => {
-      const scrollY = document.body.style.top;
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
-      document.body.style.overflow = '';
-      if (scrollY) window.scrollTo(0, parseInt(scrollY) * -1);
-    };
-  }, [open]);
-
-  /* 只保留有子级（genera）的板块 */
-  const visibleItems = (data ?? []).filter((c) => c.genera && c.genera.length > 0);
-
-  const close = () => setOpen(false);
-
-  return (
-    <div
-      className="relative"
-      onMouseEnter={() => setOpen(true)}
-    >
-      {/* 触发按钮 — 悬浮打开，无箭头 */}
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors ${
-          active || open
-            ? 'bg-leaf-100 font-medium text-leaf-700'
-            : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700'
-        }`}
-      >
-        <span className="text-base">🌿</span>
-        <span>板块</span>
-      </button>
-
-      {/* 蒙层 + 全宽下拉面板 */}
-      {open && (
-        <>
-          {/* 全屏蒙层 — 点击关闭 */}
-          <div
-            className="fixed inset-0 z-30 bg-ink-900/40 backdrop-blur-[2px]"
-            style={{ top: '57px' }}
-            onClick={close}
-          />
-
-          {/* 下拉面板 — 全视口宽度，紧贴导航栏 */}
-          <div
-            className="fixed left-0 right-0 z-40"
-            style={{ top: '57px' }}
-          >
-            <div
-              className="overflow-y-auto overflow-x-hidden border-b border-leaf-100/80 bg-white shadow-2xl dark:bg-leaf-50"
-              style={{
-                maxHeight: 'calc(100vh - 200px)',
-                animation: 'megaMenuSlideIn 0.2s ease-out',
-              }}
-            >
-              {/* 头部 */}
-              <div className="mx-auto max-w-[1280px] px-4">
-                <div className="flex items-center justify-between border-b border-leaf-100/60 py-3">
-                  <h3 className="text-sm font-semibold text-ink-800">全部板块</h3>
-                  <Link
-                    href="/board"
-                    onClick={close}
-                    className="text-xs text-leaf-600 hover:text-leaf-700 hover:underline"
-                  >
-                    查看全部 →
-                  </Link>
-                </div>
-              </div>
-
-              {/* 瀑布流内容区 */}
-              <div className="mx-auto max-w-[1280px] px-4 py-6">
-                {data === null ? (
-                  <div className="py-12 text-center text-sm text-leaf-700/60">加载中…</div>
-                ) : visibleItems.length === 0 ? (
-                  <div className="py-12 text-center text-sm text-leaf-700/60">暂无板块</div>
-                ) : (
-                  <div style={{ columnCount: 4, columnGap: '24px' }}>
-                    {visibleItems.map((cat) => (
-                      <div
-                        key={cat.id}
-                        className="break-inside-avoid"
-                        style={{ marginBottom: '52px' }}
-                      >
-                        {/* 板块标题 — 19px 加粗 */}
-                        <Link
-                          href={`/board/${cat.slug}`}
-                          onClick={close}
-                          className="group/cat mb-2 flex items-center gap-1.5"
-                        >
-                          {cat.icon && (cat.icon.startsWith('http') || cat.icon.startsWith('/')) ? (
-                            <img src={cat.icon} alt="" className="h-5 w-5 shrink-0 rounded object-cover" />
-                          ) : (
-                            <span style={{ fontSize: '19px' }}>{cat.icon || '🌿'}</span>
-                          )}
-                          <span
-                            className="font-bold text-ink-800 group-hover/cat:text-leaf-600"
-                            style={{ fontSize: '15px' }}
-                          >
-                            {cat.name}
-                          </span>
-                        </Link>
-
-                        {/* 属列表 — 18px 不加粗，间距 32px */}
-                        <div className="flex flex-col pl-7" style={{ gap: '24px' }}>
-                          {cat.genera.map((g) => (
-                            <Link
-                              key={g.id}
-                              href={`/board/${cat.slug}/${g.slug}`}
-                              onClick={close}
-                              className="text-leaf-700/80 transition-colors hover:text-leaf-600"
-                              style={{ fontSize: '14px' }}
-                            >
-                              {g.name}
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
+  const d = new Date(iso);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 // ============================================================
@@ -915,35 +642,26 @@ function HeaderSearch() {
 
   return (
     <div ref={containerRef} className="relative">
-      <form onSubmit={submit} className="relative flex items-center gap-1">
-        <div className="relative flex-1">
-          <Icon
-            name="search"
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-leaf-400"
-            size={16}
-          />
-          <input
-            type="search"
-            name="q"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onFocus={() => {
-              setOpen(true);
-              void ensureHot();
-            }}
-            className="input pl-9 pr-3"
-            placeholder="搜索帖子、品种、用户、板块"
-            aria-label="搜索"
-            autoComplete="off"
-          />
-        </div>
-        <button
-          type="submit"
-          className="btn-primary h-9 px-3 text-xs shrink-0"
+      <form onSubmit={submit} className="relative">
+        <Icon
+          name="search"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-leaf-400"
+          size={16}
+        />
+        <input
+          type="search"
+          name="q"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onFocus={() => {
+            setOpen(true);
+            void ensureHot();
+          }}
+          className="input pl-9 pr-3"
+          placeholder="搜索帖子、品种、用户、板块"
           aria-label="搜索"
-        >
-          搜索
-        </button>
+          autoComplete="off"
+        />
       </form>
 
       {/* 下拉:输入空时显示历史+热词;有输入时显示「搜索 xxx」 */}

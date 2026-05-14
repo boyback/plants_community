@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { api } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 
 interface GenusLite {
   id: string;
@@ -133,11 +134,7 @@ export function BoardsTreeMenu({
                   : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700',
               )}
             >
-              {c.icon && (c.icon.startsWith('http') || c.icon.startsWith('/')) ? (
-                <img src={c.icon} alt="" className="h-5 w-5 shrink-0 rounded object-cover" />
-              ) : (
-                <span className="text-base shrink-0">{c.icon || '🌿'}</span>
-              )}
+              <CategoryIcon icon={c.icon} name={c.name} size="md" />
               <span className="truncate">{c.name}</span>
               <span className="ml-auto shrink-0 text-[10px] text-leaf-700/40">
                 {open ? '▾' : '▸'}

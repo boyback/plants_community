@@ -87,6 +87,7 @@ export function useChunkUpload() {
             signal: ac.signal,
           });
           const json = await res.json();
+          console.log(json);
           if (!res.ok || !json.ok) {
             throw new Error(json?.error?.message ?? '上传失败');
           }

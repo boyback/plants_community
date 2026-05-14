@@ -73,6 +73,8 @@ model User {
   disabledThemes String  @default("[]")
   // 若为 true,彻底关闭所有节日主题
   themesDisabled Boolean @default(false)
+  // 颜色主题:forest / sakura / ocean / vintage / neon / minimal
+  colorTheme    String  @default("forest")
 
   // 当前装扮(指向 SkinItem.id,可空)
   equipBubbleId   String? // 评论气泡
@@ -81,6 +83,7 @@ model User {
   equipPendantId  String? // 昵称挂件(头像框)
 
   // 关系
+  notificationPrefs NotificationPreference?
   posts            Post[]
   comments         Comment[]
   likes            PostLike[]
@@ -123,6 +126,11 @@ model User {
 
   // 关注板块(可跨三级:科/属/品种)
   boardFollows BoardFollow[]
+
+  // 相册
+  albums        Album[]
+  albumLikes    AlbumLike[]
+  albumComments AlbumComment[]
 
   @@map("users")
 }
@@ -1564,4 +1572,95 @@ model TopicRanking {
 
   @@index([postCount])
   @@map("topic_rankings")
+}
+
+// ============================================================
+// 相册系统（晒图广场）
+// ============================================================
+
+model Album {
+  id          String   @id @default(cuid())
+  userId      String   // 相册主人
+  title       String   // 相册标题
+  description String?  @db.Text // 相册描述
+  cover       String?  // 封面图 URL（默认取第一张图）
+  isPublic    Boolean  @default(true) // 是否公开
+  viewCount   Int      @default(0) // 浏览数
+  likeCount   Int      @default(0) // 点赞数（冗余字段）
+  imageCount  Int      @default(0) // 图片数（冗余字段）
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  images   AlbumImage[]
+  likes    AlbumLike[]
+  comments AlbumComment[]
+
+  @@index([userId])
+  @@index([isPublic, createdAt])
+  @@map("albums")
+}
+
+model AlbumImage {
+  id        String   @id @default(cuid())
+  albumId   String
+  url       String   @db.Text // 图片 URL
+  caption   String?  @db.Text // 图片说明
+  orderIdx  Int      @default(0) // 排序
+  createdAt DateTime @default(now())
+
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@index([albumId])
+  @@map("album_images")
+}
+
+model AlbumLike {
+  id        String   @id @default(cuid())
+  albumId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([albumId, userId])
+  @@index([userId])
+  @@map("album_likes")
+}
+
+model AlbumComment {
+  id        String   @id @default(cuid())
+  albumId   String
+  userId    String
+  content   String   @db.Text // 评论内容
+  createdAt DateTime @default(now())
+
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([albumId])
+  @@index([userId])
+  @@map("album_comments")
+}
+
+// ============================================================
+// 通知偏好设置
+// ============================================================
+
+model NotificationPreference {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  like      Boolean  @default(true)  // 点赞通知
+  comment   Boolean  @default(true)  // 评论通知
+  follow    Boolean  @default(true)  // 关注通知
+  mention   Boolean  @default(true)  // @提及通知
+  system    Boolean  @default(true)  // 系统通知
+  message   Boolean  @default(true)  // 私信通知
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
 }

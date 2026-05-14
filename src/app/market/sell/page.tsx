@@ -7,6 +7,7 @@ import { Shell } from '@/components/layout/Shell';
 import { Icon } from '@/components/ui/Icon';
 import { UploadField } from '@/components/upload/UploadField';
 import { PermissionGate } from '@/components/ui/PermissionGate';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from '@/lib/client-api';
@@ -204,7 +205,7 @@ export default function SellPage() {
                     <option value="">-- 选择科 --</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.slug}>
-                        {c.icon} {c.name}
+                        {c.name}
                       </option>
                     ))}
                   </select>

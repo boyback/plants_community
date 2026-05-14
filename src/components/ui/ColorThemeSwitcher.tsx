@@ -11,14 +11,14 @@ import { cn } from '@/lib/utils';
  * - 选中后立即生效,保存 localStorage
  */
 export function ColorThemeSwitcher({ className }: { className?: string }) {
-  const { theme, mode, meta, setTheme, toggleMode, themes } = useColorTheme();
+  const { theme, meta, setTheme, themes } = useColorTheme();
   const { open, bind, close } = useHoverOpen();
 
   return (
     <div className={cn('relative inline-block', className)} {...bind}>
       <button
         type="button"
-        title={`主题:${meta.name} · ${mode === 'dark' ? '暗黑' : '明亮'}`}
+        title={`主题:${meta.name}`}
         aria-haspopup="menu"
         aria-expanded={open}
         className="grid h-9 w-9 place-items-center rounded-full text-base hover:bg-leaf-50"
@@ -27,38 +27,8 @@ export function ColorThemeSwitcher({ className }: { className?: string }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-[300px] overflow-hidden rounded-2xl border border-leaf-100 bg-white p-3 shadow-card dark:bg-leaf-50">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="text-xs font-semibold text-ink-800">🎨 配色主题</div>
-            {/* iOS 风格明暗 toggle:左 ☀️ 明亮,右 🌙 暗黑 */}
-            <button
-              type="button"
-              role="switch"
-              aria-checked={mode === 'dark'}
-              onClick={toggleMode}
-              title={mode === 'dark' ? '切换到明亮' : '切换到暗黑'}
-              style={{
-                backgroundColor:
-                  mode === 'dark' ? meta.swatch.primary : `${meta.swatch.primary}33`,
-              }}
-              className="relative inline-flex h-6 w-12 items-center rounded-full transition-colors"
-            >
-              {/* 背景图标:始终显示在两端 */}
-              <span className="pointer-events-none absolute left-1 text-[10px] leading-none">
-                ☀️
-              </span>
-              <span className="pointer-events-none absolute right-1 text-[10px] leading-none">
-                🌙
-              </span>
-              {/* 滑块 */}
-              <span
-                className={cn(
-                  'inline-block h-5 w-5 transform rounded-full bg-white shadow ring-1 ring-black/5 transition-transform',
-                  mode === 'dark' ? 'translate-x-[26px]' : 'translate-x-0.5'
-                )}
-              />
-            </button>
-          </div>
+        <div className="absolute right-0 top-full z-50 mt-2 w-[300px] overflow-hidden rounded-2xl border border-leaf-100 bg-white p-3 shadow-card">
+          <div className="mb-2 text-xs font-semibold text-ink-800">🎨 配色主题</div>
 
           <div className="grid max-h-[420px] grid-cols-2 gap-1.5 overflow-y-auto pr-0.5">
             {themes.map((t) => {
