@@ -68,8 +68,8 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
   return (
     <header className="sticky top-0 z-40 border-b border-leaf-100/70 bg-white shadow-sm">
       <div className="mx-auto flex h-14 max-w-[1280px] items-center px-4 lg:px-6">
-        {/* 左侧固定 - Logo (248px 对齐侧边栏) */}
-        <div className="flex items-center gap-3 w-[248px] shrink-0">
+        {/* 左侧 - Logo + 主题 */}
+        <div className="flex items-center gap-3 shrink-0">
           <button
             type="button"
             className="-ml-1 grid h-9 w-9 place-items-center rounded-lg text-leaf-700 hover:bg-leaf-50 lg:hidden"
@@ -82,21 +82,26 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
           <ColorThemeSwitcher />
         </div>
 
+        {/* 社区导航 - 桌面端显示 */}
+        <nav className="hidden lg:flex items-center gap-1 ml-6">
+          <HeaderLink href="/" icon="home">花友家园</HeaderLink>
+          <HeaderLink href="/market" icon="shop">交易广场</HeaderLink>
+          <HeaderLink href="/shaitu" icon="image">摄影大赛</HeaderLink>
+        </nav>
+
         {/* 中间弹性 - 搜索框 */}
-        <div className="hidden lg:flex flex-1 justify-center">
-          <div className="w-full max-w-[732px]">
-            <HeaderSearch />
-          </div>
+        <div className="hidden lg:flex flex-1 ml-4">
+          <HeaderSearch />
         </div>
 
         {/* 右侧固定 - 操作按钮 */}
-        <div className="flex items-center gap-2 w-[304px] shrink-0">
-          {/* 发帖按钮 - 最左边 */}
+        <div className="flex items-center gap-2 shrink-0 ml-4">
+          {/* 发帖按钮 */}
           {user && (
             <>
               <Link
                 href="/editor"
-                className="hidden sm:inline-flex btn-primary h-9 px-4 text-xs ml-6"
+                className="hidden sm:inline-flex btn-primary h-9 px-4 text-xs"
               >
                 <Icon name="plus" size={14} />
                 发帖
