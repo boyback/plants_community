@@ -74,7 +74,7 @@ model User {
   // 若为 true,彻底关闭所有节日主题
   themesDisabled Boolean @default(false)
   // 颜色主题:forest / sakura / ocean / vintage / neon / minimal
-  colorTheme    String  @default("forest")
+  colorTheme     String  @default("forest")
 
   // 当前装扮(指向 SkinItem.id,可空)
   equipBubbleId   String? // 评论气泡
@@ -84,24 +84,24 @@ model User {
 
   // 关系
   notificationPrefs NotificationPreference?
-  posts            Post[]
-  comments         Comment[]
-  likes            PostLike[]
-  followers        Follow[]        @relation("Followees")
-  following        Follow[]        @relation("Followers")
-  badges           UserBadge[]
-  notifications    Notification[]  @relation("NotifRecipient")
-  notifFromMe      Notification[]  @relation("NotifSender")
-  reports          Report[]        @relation("ReportReporter")
-  postViews        PostView[]
-  speciesRatings   SpeciesRating[]
-  uploads          UploadFile[]
-  sentMessages     Message[]       @relation("MessageFrom")
-  receivedMessages Message[]       @relation("MessageTo")
-  drafts           Draft[]
-  votes            VoteRecord[]
-  collects         PostCollect[]
-  events           EventAttendee[]
+  posts             Post[]
+  comments          Comment[]
+  likes             PostLike[]
+  followers         Follow[]                @relation("Followees")
+  following         Follow[]                @relation("Followers")
+  badges            UserBadge[]
+  notifications     Notification[]          @relation("NotifRecipient")
+  notifFromMe       Notification[]          @relation("NotifSender")
+  reports           Report[]                @relation("ReportReporter")
+  postViews         PostView[]
+  speciesRatings    SpeciesRating[]
+  uploads           UploadFile[]
+  sentMessages      Message[]               @relation("MessageFrom")
+  receivedMessages  Message[]               @relation("MessageTo")
+  drafts            Draft[]
+  votes             VoteRecord[]
+  collects          PostCollect[]
+  events            EventAttendee[]
 
   // 新增关系
   pointsLedger   PointsLedger[]
@@ -1580,10 +1580,10 @@ model TopicRanking {
 
 model Album {
   id          String   @id @default(cuid())
-  userId      String   // 相册主人
-  title       String   // 相册标题
+  userId      String // 相册主人
+  title       String // 相册标题
   description String?  @db.Text // 相册描述
-  cover       String?  // 封面图 URL（默认取第一张图）
+  cover       String? // 封面图 URL（默认取第一张图）
   isPublic    Boolean  @default(true) // 是否公开
   viewCount   Int      @default(0) // 浏览数
   likeCount   Int      @default(0) // 点赞数（冗余字段）
@@ -1651,12 +1651,12 @@ model AlbumComment {
 model NotificationPreference {
   id        String   @id @default(cuid())
   userId    String   @unique
-  like      Boolean  @default(true)  // 点赞通知
-  comment   Boolean  @default(true)  // 评论通知
-  follow    Boolean  @default(true)  // 关注通知
-  mention   Boolean  @default(true)  // @提及通知
-  system    Boolean  @default(true)  // 系统通知
-  message   Boolean  @default(true)  // 私信通知
+  like      Boolean  @default(true) // 点赞通知
+  comment   Boolean  @default(true) // 评论通知
+  follow    Boolean  @default(true) // 关注通知
+  mention   Boolean  @default(true) // @提及通知
+  system    Boolean  @default(true) // 系统通知
+  message   Boolean  @default(true) // 私信通知
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
