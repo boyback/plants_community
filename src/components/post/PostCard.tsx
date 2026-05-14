@@ -7,6 +7,7 @@ import type { Post } from '@/lib/types';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { STAGE_META } from '@/lib/journal';
 import { formatNumber, timeAgo, cn, boardUrl } from '@/lib/utils';
 
@@ -74,12 +75,18 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
             href={boardUrl(post.board)}
             className="inline-flex items-center gap-0.5 rounded-full bg-leaf-50 px-2 py-0.5 text-[10px] font-medium text-leaf-700 hover:bg-leaf-100"
           >
-            <span>{post.board.icon}</span>
+            {post.board.icon && (post.board.icon.startsWith('http') || post.board.icon.startsWith('/')) ? (
+              <img src={post.board.icon} alt="" className="h-4 w-4 shrink-0 rounded object-cover" />
+            ) : post.board.icon ? (
+              <span className="text-xs">{post.board.icon}</span>
+            ) : null}
             <span className="truncate max-w-[100px]">{post.board.name}</span>
           </NestedLink>
 
-          {/* species 打分 chip(若有) */}
-          {post.species && <SpeciesChip species={post.species} board={post.board} />}
+          {/* species 打分 chip(若有，且 board 不是 species 级别) */}
+          {post.species && post.board.level !== 'species' && (
+            <SpeciesChip species={post.species} board={post.board} />
+          )}
 
           {/* 话题 / tag chips(最多前 3) — 点击进 /topic/[name] */}
           {post.tags.slice(0, 3).map((tag) => (
@@ -424,8 +431,7 @@ function Stat({ icon, n }: { icon: 'eye' | 'heart' | 'comment'; n: number }) {
 }
 
 /**
- * 品种 chip:🌱 月迷 ⭐ 4.2 (28)
- * - 当 ratingCount === 0 时只显示初始难度,不展示括号
+ * 品种 chip:🌱 月迷 (28)
  * - 点击进品种页(走 board 路径)
  */
 function SpeciesChip({
@@ -437,7 +443,6 @@ function SpeciesChip({
   board: Post['board'];
   compact?: boolean;
 }) {
-  const score = species.avgDifficulty.toFixed(1);
   return (
     <Link
       href={boardUrl(board)}
@@ -449,8 +454,6 @@ function SpeciesChip({
     >
       <span>🌱</span>
       <span className="font-medium">{species.name}</span>
-      <span className="text-amber-600">⭐</span>
-      <span className="tabular-nums">{score}</span>
       {species.ratingCount > 0 && (
         <span className="text-leaf-600/70">({species.ratingCount})</span>
       )}

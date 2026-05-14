@@ -90,8 +90,10 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
         </nav>
 
         {/* 中间弹性 - 搜索框 */}
-        <div className="hidden lg:flex flex-1 ml-4">
-          <HeaderSearch />
+        <div className="hidden lg:flex flex-1 justify-end">
+          <div className="w-full max-w-[984px]">
+            <HeaderSearch />
+          </div>
         </div>
 
         {/* 右侧固定 - 操作按钮 */}

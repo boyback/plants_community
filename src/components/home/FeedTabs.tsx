@@ -585,111 +585,134 @@ function FeedListCard({
 
   const cover = post.cover ?? post.images?.[0];
   const images = post.images || (post.cover ? [post.cover] : []);
-  const displayImages = images.slice(0, 4);
+  const displayImages = images.slice(0, 5);
+
+  const handleLike = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await api.post(`/api/posts/${post.id}/like`);
+    } catch {}
+  };
 
   return (
-    <div ref={ref}>
+    <div ref={ref} className="p-4 transition-colors hover:bg-leaf-50/50">
+      {/* 第一行：用户头像 + 昵称 */}
       <Link
-        href={`/post/${post.id}`}
-        className="block p-4 transition-colors hover:bg-leaf-50/50"
+        href={`/user/${post.author.id}`}
+        className="flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity"
       >
-        {/* 第一行：用户头像 + 昵称 */}
-        <div className="flex items-center gap-2 mb-3">
-          <Avatar src={post.author.avatar} alt={post.author.name} size={28} />
-          <span className="font-medium text-[13px] text-ink-800">{post.author.name}</span>
-          {post.type !== 'rich' && (
-            <PostTypeBadge type={post.type} />
-          )}
-        </div>
+        <Avatar src={post.author.avatar} alt={post.author.name} size={28} />
+        <span className="font-medium text-[13px] text-ink-800">{post.author.name}</span>
+        {post.type !== 'rich' && (
+          <PostTypeBadge type={post.type} />
+        )}
+      </Link>
 
-        {/* 第二行：标题 */}
+      {/* 第二行：标题 */}
+      <Link href={`/post/${post.id}`}>
         <h3 className="text-[15px] font-semibold text-ink-800 mb-2 hover:text-leaf-700 transition-colors">
           {post.title}
         </h3>
+      </Link>
 
-        {/* 第三行：描述 */}
-        {(post.type === 'short' || post.type === 'rich' || post.type === 'help') &&
-          (post.contentText || post.content) && (
-            <p className="text-[13px] text-ink-600 leading-relaxed mb-2 line-clamp-2">
+      {/* 第三行：描述 */}
+      {(post.type === 'short' || post.type === 'rich' || post.type === 'help') &&
+        (post.contentText || post.content) && (
+          <Link href={`/post/${post.id}`}>
+            <p className="text-[14px] text-ink-600 leading-relaxed mb-2 line-clamp-2">
               {post.contentText || stripHtml(post.content)}
             </p>
-          )}
-
-        {/* 投票预览 */}
-        {post.type === 'vote' && post.vote && <VotePreview post={post} />}
-
-        {/* 活动预览 */}
-        {post.type === 'event' && post.event && <EventPreview post={post} />}
-
-        {/* 时间线预览 */}
-        {post.type === 'journal' && post.journal && <JournalPreview post={post} />}
-
-        {/* 视频标识 */}
-        {post.type === 'video' && (
-          <div className="flex items-center gap-2 mb-2 text-sm text-ink-600">
-            <Icon name="video" size={16} />
-            <span>视频内容</span>
-          </div>
+          </Link>
         )}
 
-        {/* 第四行：话题标签 */}
-        {post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {post.tags.slice(0, 5).map((tag, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
+      {/* 投票预览 */}
+      {post.type === 'vote' && post.vote && <VotePreview post={post} />}
 
-        {/* 第五行：图片 */}
-        {displayImages.length > 0 && (
-          <div className="flex gap-2 mb-3">
-            {displayImages.map((img, i) => (
+      {/* 活动预览 */}
+      {post.type === 'event' && post.event && <EventPreview post={post} />}
+
+      {/* 时间线预览 */}
+      {post.type === 'journal' && post.journal && <JournalPreview post={post} />}
+
+      {/* 视频标识 */}
+      {post.type === 'video' && (
+        <Link href={`/post/${post.id}`} className="flex items-center gap-2 mb-2 text-sm text-ink-600">
+          <Icon name="video" size={16} />
+          <span>视频内容</span>
+        </Link>
+      )}
+
+      {/* 第四行：话题标签 */}
+      {post.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {post.tags.slice(0, 5).map((tag, i) => (
+            <Link
+              key={i}
+              href={`/topic/${encodeURIComponent(tag)}`}
+              className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700 hover:bg-amber-100 transition-colors"
+            >
+              #{tag}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* 第五行：图片 - 最多显示5张，均分宽度 */}
+      {displayImages.length > 0 && (
+        <Link href={`/post/${post.id}`} className="block mb-3">
+          <div className="grid grid-cols-5 gap-1.5">
+            {displayImages.slice(0, 5).map((img, i) => (
               <div
                 key={i}
-                className="relative h-24 w-24 overflow-hidden rounded-lg bg-leaf-50 flex-shrink-0"
+                className="relative aspect-square overflow-hidden rounded-lg bg-leaf-50"
               >
                 <Image src={img} alt="" fill className="object-cover" unoptimized />
+                {/* 第5张且有剩余 */}
+                {i === 4 && images.length > 5 && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                    <span className="text-lg font-bold text-white">+{images.length - 5}</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
-        )}
+        </Link>
+      )}
 
-        {/* 最后一行：板块 + 时间 + 统计 */}
-        <div className="flex items-center justify-between text-[11px]">
-          <NestedLink
-            href={boardUrl(post.board)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-2.5 py-1 text-[12px] font-medium text-leaf-700 hover:bg-leaf-100"
+      {/* 最后一行：板块 + 时间 + 统计 */}
+      <div className="flex items-center justify-between text-[11px]">
+        <NestedLink
+          href={boardUrl(post.board)}
+          className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-2.5 py-1 text-[12px] font-medium text-leaf-700 hover:bg-leaf-100"
+        >
+          {post.board.icon && (post.board.icon.startsWith('http') || post.board.icon.startsWith('/')) ? (
+            <img src={post.board.icon} alt="" className="h-5 w-5 rounded object-cover" />
+          ) : (
+            <span className="text-sm">{post.board.icon || '🌿'}</span>
+          )}
+          <span className="truncate max-w-[120px]">{post.board.name}</span>
+        </NestedLink>
+        <div className="flex items-center gap-3 text-[13px] text-ink-500">
+          <span className="text-ink-400">{formatDateTime(post.createdAt)}</span>
+          <Link href={`/post/${post.id}`} className="flex items-center gap-1 hover:text-leaf-600 transition-colors">
+            <Icon name="eye" size={14} />
+            {formatCount(post.views)}
+          </Link>
+          <button
+            type="button"
+            onClick={handleLike}
+            className="flex items-center gap-1 hover:text-rose-500 transition-colors"
           >
-            {post.board.icon && (post.board.icon.startsWith('http') || post.board.icon.startsWith('/')) ? (
-              <img src={post.board.icon} alt="" className="h-5 w-5 rounded object-cover" />
-            ) : (
-              <span className="text-sm">{post.board.icon || '🌿'}</span>
-            )}
-            <span className="truncate max-w-[120px]">{post.board.name}</span>
-          </NestedLink>
-          <div className="flex items-center gap-3 text-[13px] text-ink-500">
-            <span className="text-ink-400">{formatDateTime(post.createdAt)}</span>
-            <span className="flex items-center gap-1">
-              <Icon name="eye" size={14} />
-              {formatCount(post.views)}
-            </span>
-            <span className="flex items-center gap-1">
-              <Icon name="heart" size={14} />
-              {formatCount(post.likes)}
-            </span>
-            <span className="flex items-center gap-1">
-              <Icon name="comment" size={14} />
-              {formatCount(post.comments)}
-            </span>
-          </div>
+            <Icon name="heart" size={14} />
+            {formatCount(post.likes)}
+          </button>
+          <Link href={`/post/${post.id}`} className="flex items-center gap-1 hover:text-leaf-600 transition-colors">
+            <Icon name="comment" size={14} />
+            {formatCount(post.comments)}
+          </Link>
         </div>
-      </Link>
+      </div>
     </div>
   );
 }
@@ -723,7 +746,7 @@ function ListFeedSkeleton() {
           <div className="p-4 animate-pulse">
             {/* 第一行：头像 + 昵称 */}
             <div className="flex items-center gap-2 mb-3">
-              <div className="h-8 w-8 rounded-full bg-leaf-100" />
+              <div className="h-7 w-7 rounded-full bg-leaf-100" />
               <div className="h-4 w-20 rounded bg-leaf-100" />
               <div className="ml-auto h-3 w-16 rounded bg-leaf-100" />
             </div>
@@ -734,10 +757,11 @@ function ListFeedSkeleton() {
               <div className="h-4 w-full rounded bg-leaf-100" />
               <div className="h-4 w-2/3 rounded bg-leaf-100" />
             </div>
-            {/* 图片 */}
-            <div className="flex gap-2 mb-3">
-              <div className="h-24 w-24 rounded-lg bg-leaf-100" />
-              <div className="h-24 w-24 rounded-lg bg-leaf-100" />
+            {/* 图片 - 5张 */}
+            <div className="flex gap-1.5 mb-3">
+              {Array.from({ length: 5 }).map((_, j) => (
+                <div key={j} className="h-28 w-28 rounded-lg bg-leaf-100" />
+              ))}
             </div>
             {/* 底部 */}
             <div className="flex items-center justify-between">
