@@ -32,6 +32,12 @@ function formatDateTime(iso: string): string {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
+function formatCount(n: number): string {
+  if (n >= 10000) return `${(n / 10000).toFixed(1)}w`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  return String(n);
+}
+
 const TAB_DEFS = [
   { key: 'recommend', labelKey: 'home.feedTabs.recommend' },
   { key: 'latest', labelKey: 'home.feedTabs.latest' },
@@ -671,15 +677,15 @@ function FeedListCard({
             <span className="text-ink-400">{formatDateTime(post.createdAt)}</span>
             <span className="flex items-center gap-1">
               <Icon name="eye" size={14} />
-              {post.views}
+              {formatCount(post.views)}
             </span>
             <span className="flex items-center gap-1">
               <Icon name="heart" size={14} />
-              {post.likes}
+              {formatCount(post.likes)}
             </span>
             <span className="flex items-center gap-1">
               <Icon name="comment" size={14} />
-              {post.comments}
+              {formatCount(post.comments)}
             </span>
           </div>
         </div>

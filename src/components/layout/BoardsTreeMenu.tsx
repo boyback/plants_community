@@ -36,18 +36,7 @@ export function BoardsTreeMenu({
 }) {
   const pathname = usePathname();
   const [data, setData] = useState<CategoryFull[] | null>(cachedData);
-  const [openCatIds, setOpenCatIds] = useState<Set<string>>(() => {
-    // 从 localStorage 恢复展开状态
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('boards.openCatIds');
-        return saved ? new Set(JSON.parse(saved)) : new Set();
-      } catch {
-        return new Set();
-      }
-    }
-    return new Set();
-  });
+  const [openCatIds, setOpenCatIds] = useState<Set<string>>(new Set());
 
   // 解析当前路径，提取 categorySlug 和 genusSlug
   const currentPath = pathname?.startsWith('/board/') 
@@ -86,14 +75,7 @@ export function BoardsTreeMenu({
     if (currentCategorySlug && data) {
       const currentCat = data.find((c) => c.slug === currentCategorySlug);
       if (currentCat && !openCatIds.has(currentCat.id)) {
-        setOpenCatIds((prev) => {
-          const next = new Set([...prev, currentCat.id]);
-          // 持久化到 localStorage
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('boards.openCatIds', JSON.stringify([...next]));
-          }
-          return next;
-        });
+        setOpenCatIds((prev) => new Set([...prev, currentCat.id]));
       }
     }
   }, [currentCategorySlug, data, openCatIds]);
@@ -103,10 +85,6 @@ export function BoardsTreeMenu({
       const n = new Set(s);
       if (n.has(id)) n.delete(id);
       else n.add(id);
-      // 持久化到 localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('boards.openCatIds', JSON.stringify([...n]));
-      }
       return n;
     });
   };
@@ -122,6 +100,7 @@ export function BoardsTreeMenu({
     <div className="space-y-0.5">
       {data.map((c) => {
         const open = openCatIds.has(c.id);
+        const isActiveCategory = c.slug === currentCategorySlug;
         return (
           <div key={c.id}>
             <button
@@ -129,7 +108,7 @@ export function BoardsTreeMenu({
               onClick={() => toggleCat(c.id)}
               className={cn(
                 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
-                open
+                isActiveCategory
                   ? 'bg-leaf-100 font-medium text-leaf-800'
                   : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700',
               )}
