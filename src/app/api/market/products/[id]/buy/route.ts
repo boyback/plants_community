@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
-import { requireUser, isVipActive } from '@/lib/auth';
-import { hasPermission } from '@/lib/levels';
+import { requireUser } from '@/lib/auth';
+import { hasUserPermission } from '@/lib/permissions';
 import { genOrderNo } from '@/lib/auction';
 
 export const dynamic = 'force-dynamic';
@@ -34,8 +34,7 @@ const Body = z.object({
 
 export const POST = handler(async (req) => {
   const me = await requireUser();
-  const isVip = isVipActive(me);
-  if (!hasPermission({ level: me.level, isVip }, 'market:buy')) {
+  if (!(await hasUserPermission(me, 'market:buy'))) {
     return fail(403, '需要 Lv.5 以上才能购买,或开通大会员');
   }
 

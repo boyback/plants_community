@@ -7,7 +7,7 @@ import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from '@/lib/client-api';
-import { hasPermission } from '@/lib/levels';
+import { hasPermission, type Permission } from '@/lib/levels';
 import { cn, formatPrice } from '@/lib/utils';
 import {
   AddressPicker,
@@ -30,7 +30,14 @@ export function ProductDetailClient({ product }: { product: Product }) {
 
   const isMine = user && product.seller && user.id === product.seller.id;
   const canBuy = hasPermission(
-    user ? { level: user.level, isVip: vip.isVip } : null,
+    user
+      ? {
+          level: user.level,
+          isVip: vip.isVip,
+          grantedPermissions: user.grantedPermissions as Permission[] | undefined,
+          revokedPermissions: user.revokedPermissions as Permission[] | undefined,
+        }
+      : null,
     'market:buy'
   );
   const total = product.price * qty;

@@ -27,7 +27,14 @@ export function PermissionGate({
   const { t } = useI18n();
 
   const allowed = hasPermission(
-    user ? { level: user.level, isVip: !!vip?.isVip } : null,
+    user
+      ? {
+          level: user.level,
+          isVip: !!vip?.isVip,
+          grantedPermissions: user.grantedPermissions as Permission[] | undefined,
+          revokedPermissions: user.revokedPermissions as Permission[] | undefined,
+        }
+      : null,
     perm
   );
 

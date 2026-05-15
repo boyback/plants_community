@@ -26,28 +26,9 @@ export default async function PostEditPage({ params }: { params: { id: string } 
       tags: true,
       authorId: true,
       deleted: true,
-      category: { select: { id: true, name: true, slug: true, icon: true } },
-      genus: { 
-        select: { 
-          id: true, 
-          name: true, 
-          slug: true,
-          category: { select: { slug: true, icon: true } }
-        } 
-      },
-      species: { 
-        select: { 
-          id: true, 
-          name: true, 
-          slug: true,
-          genus: {
-            select: {
-              slug: true,
-              category: { select: { slug: true, icon: true } }
-            }
-          }
-        } 
-      },
+      category: { select: { slug: true } },
+      genus: { select: { slug: true } },
+      species: { select: { slug: true } },
     },
   });
 
@@ -91,34 +72,9 @@ export default async function PostEditPage({ params }: { params: { id: string } 
           images: parseJsonArray(post.images),
           videoUrl: post.videoUrl ?? '',
           tags: parseJsonArray(post.tags),
-          board: post.species
-            ? { 
-                id: post.species.id, 
-                name: post.species.name, 
-                icon: post.species.genus?.category?.icon || '🌿', 
-                slug: post.species.slug,
-                level: 'species',
-                categorySlug: post.species.genus?.category?.slug || '',
-                genusSlug: post.species.genus?.slug || '',
-              }
-            : post.genus
-            ? { 
-                id: post.genus.id, 
-                name: post.genus.name, 
-                icon: post.genus.category?.icon || '🌿', 
-                slug: post.genus.slug,
-                level: 'genus',
-                categorySlug: post.genus.category?.slug || '',
-              }
-            : post.category
-            ? { 
-                id: post.category.id, 
-                name: post.category.name, 
-                icon: post.category.icon || '🌿', 
-                slug: post.category.slug,
-                level: 'category',
-              }
-            : undefined,
+          categorySlug: post.category?.slug ?? '',
+          genusSlug: post.genus?.slug ?? '',
+          speciesSlug: post.species?.slug ?? '',
         }}
       />
     </Shell>

@@ -1,10 +1,11 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler, fail, stringifyJson } from '@/lib/api';
-import { requireUser, isVipActive } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
 import { serializePost } from '@/lib/serializers';
 import { postInclude } from '@/lib/post-include';
-import { hasPermission, type Permission } from '@/lib/levels';
+import type { Permission } from '@/lib/levels';
+import { hasUserPermission } from '@/lib/permissions';
 import { emitEvent } from '@/lib/events';
 import { processRichInput } from '@/lib/richtext';
 import { postNeedsReview } from '@/lib/post-review';
@@ -222,7 +223,6 @@ export const POST = handler(async (req) => {
   const me = await requireUser();
   const body = CreateBody.parse(await req.json());
 
-  const isVip = isVipActive(me);
   const permMap: Record<typeof body.type, Permission> = {
     rich: 'post:rich',
     short: 'post:short',
@@ -233,11 +233,11 @@ export const POST = handler(async (req) => {
     journal: 'post:rich',
   };
   const need = permMap[body.type];
-  if (!hasPermission({ level: me.level, isVip }, need)) {
+  if (!(await hasUserPermission(me, need))) {
     return fail(403, `当前等级不允许发布该类型帖子,开通大会员或升级即可解锁`);
   }
   if (body.images && body.images.length > 0) {
-    if (!hasPermission({ level: me.level, isVip }, 'post:image')) {
+    if (!(await hasUserPermission(me, 'post:image'))) {
       return fail(403, '需要 Lv.4 以上才能在帖子里附图,开通大会员可解锁');
     }
   }

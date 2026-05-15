@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
-import { requireUser, isVipActive } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
 import { serializeComment } from '@/lib/serializers';
 import { emitNotification } from '@/lib/realtime/notify';
-import { hasPermission } from '@/lib/levels';
+import { hasUserPermission } from '@/lib/permissions';
 import { emitEvent } from '@/lib/events';
 import { processRichInput } from '@/lib/richtext';
 
@@ -26,7 +26,7 @@ function pickPostId(req: Request) {
 
 export const POST = handler(async (req) => {
   const me = await requireUser();
-  if (!hasPermission({ level: me.level, isVip: isVipActive(me) }, 'comment')) {
+  if (!(await hasUserPermission(me, 'comment'))) {
     return fail(403, '需要 Lv.1 以上才能评论');
   }
   const postId = pickPostId(req);

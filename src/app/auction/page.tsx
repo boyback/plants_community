@@ -8,7 +8,7 @@ import { Icon } from '@/components/ui/Icon';
 import { AuctionCard } from '@/components/auction/AuctionCard';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
-import { hasPermission } from '@/lib/levels';
+import { hasPermission, type Permission } from '@/lib/levels';
 import { api } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
 import type { Auction } from '@/lib/types';
@@ -30,7 +30,14 @@ export default function AuctionPage() {
   const [loading, setLoading] = useState(true);
 
   const canPublish = hasPermission(
-    user ? { level: user.level, isVip: vip.isVip } : null,
+    user
+      ? {
+          level: user.level,
+          isVip: vip.isVip,
+          grantedPermissions: user.grantedPermissions as Permission[] | undefined,
+          revokedPermissions: user.revokedPermissions as Permission[] | undefined,
+        }
+      : null,
     'market:sell'
   );
 

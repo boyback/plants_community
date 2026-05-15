@@ -38,6 +38,7 @@ export default async function AdminUsersPage({
         id: true, name: true, avatar: true, level: true, exp: true,
         role: true, bannedUntil: true, banReason: true,
         pointsBalance: true, joinedAt: true,
+        permissionOverrides: { select: { permission: true, effect: true } },
         _count: { select: { posts: true, comments: true } },
       },
     }),
@@ -50,7 +51,7 @@ export default async function AdminUsersPage({
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">👥 用户管理</h1>
+        <h1 className="text-2xl font-bold">用户与权限管理</h1>
         <p className="mt-1 text-xs text-ink-600">
           共 {total} 人 · 第 {page}/{totalPages} 页
         </p>
@@ -83,6 +84,7 @@ export default async function AdminUsersPage({
             <tr>
               <th className="px-3 py-2 text-left">用户</th>
               <th className="px-3 py-2 text-left">角色</th>
+              <th className="px-3 py-2 text-left">功能权限</th>
               <th className="px-3 py-2 text-right">Lv / 积分</th>
               <th className="px-3 py-2 text-right">帖/评</th>
               <th className="px-3 py-2 text-left">注册</th>
@@ -109,6 +111,15 @@ export default async function AdminUsersPage({
                     }>
                       {u.role}
                     </span>
+                  </td>
+                  <td className="px-3 py-2 text-[11px] text-ink-500">
+                    {u.permissionOverrides.length > 0 ? (
+                      <span className="rounded-full bg-leaf-50 px-2 py-0.5 text-leaf-700">
+                        覆盖 {u.permissionOverrides.length} 项
+                      </span>
+                    ) : (
+                      <span>按等级默认</span>
+                    )}
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">
                     Lv.{u.level} / 💎{u.pointsBalance}
@@ -141,6 +152,8 @@ export default async function AdminUsersPage({
                       userName={u.name}
                       role={u.role}
                       banned={!!bannedNow}
+                      level={u.level}
+                      permissionOverrides={u.permissionOverrides}
                     />
                   </td>
                 </tr>
@@ -148,7 +161,7 @@ export default async function AdminUsersPage({
             })}
             {items.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-ink-500">
+                <td colSpan={8} className="px-3 py-10 text-center text-ink-500">
                   没有数据
                 </td>
               </tr>

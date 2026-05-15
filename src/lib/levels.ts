@@ -60,6 +60,21 @@ export const VIP_PERMISSIONS: Permission[] = [
   'market:pin',
 ];
 
+export const ALL_PERMISSIONS: Permission[] = [
+  'comment',
+  'post:short',
+  'post:rich',
+  'post:image',
+  'post:video',
+  'post:vote',
+  'post:event',
+  'post:collect',
+  'market:buy',
+  'market:sell',
+  'market:pin',
+  'badge:choose',
+];
+
 /** 由累计 EXP 计算应有等级 */
 export function levelByExp(exp: number): number {
   let lv = 1;
@@ -83,10 +98,20 @@ export function permissionsForLevel(level: number): Permission[] {
 
 /** 判断用户(可能是 VIP)是否拥有某权限 */
 export function hasPermission(
-  user: { level: number; isVip?: boolean } | null | undefined,
+  user:
+    | {
+        level: number;
+        isVip?: boolean;
+        grantedPermissions?: Permission[];
+        revokedPermissions?: Permission[];
+      }
+    | null
+    | undefined,
   perm: Permission
 ): boolean {
   if (!user) return false;
+  if (user.revokedPermissions?.includes(perm)) return false;
+  if (user.grantedPermissions?.includes(perm)) return true;
   if (user.isVip && VIP_PERMISSIONS.includes(perm)) return true;
   return permissionsForLevel(user.level).includes(perm);
 }

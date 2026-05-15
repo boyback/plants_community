@@ -74,6 +74,9 @@ const PatchBody = z.object({
   tags: z.array(z.string()).max(10).optional(),
   images: z.array(z.string()).max(9).optional(),
   videoUrl: z.string().nullable().optional(),
+  categorySlug: z.string().optional(),
+  genusSlug: z.string().optional(),
+  speciesSlug: z.string().optional(),
 });
 
 export const PATCH = handler(async (req) => {
@@ -116,6 +119,9 @@ export const PATCH = handler(async (req) => {
     content: finalContent,
   });
 
+  const boardIds = await resolveBoardIds(body);
+  if (!boardIds.ok) return fail(400, boardIds.error);
+
   await prisma.post.update({
     where: { id },
     data: {
@@ -131,6 +137,7 @@ export const PATCH = handler(async (req) => {
         cover: body.images[0] ?? null,
       }),
       ...(body.videoUrl !== undefined && { videoUrl: body.videoUrl }),
+      ...(boardIds.ids && boardIds.ids),
       ...(REVIEW_FILTER_ENABLED && {
         reviewStatus: needsReview ? 'pending' : 'published',
         reviewReason: needsReview ? '编辑后含外链,等待审核' : null,
@@ -141,3 +148,59 @@ export const PATCH = handler(async (req) => {
 
   return { ok: true, needsReview };
 });
+
+async function resolveBoardIds(body: {
+  categorySlug?: string;
+  genusSlug?: string;
+  speciesSlug?: string;
+}): Promise<
+  | { ok: true; ids: { categoryId: string; genusId: string | null; speciesId: string | null } | null }
+  | { ok: false; error: string }
+> {
+  if (body.speciesSlug) {
+    const sp = await prisma.species.findFirst({
+      where: { slug: body.speciesSlug },
+      include: { genus: { include: { category: true } } },
+    });
+    if (!sp) return { ok: false, error: '指定的品种不存在' };
+    return {
+      ok: true,
+      ids: {
+        categoryId: sp.genus.categoryId,
+        genusId: sp.genusId,
+        speciesId: sp.id,
+      },
+    };
+  }
+  if (body.genusSlug) {
+    const g = await prisma.genus.findFirst({
+      where: {
+        slug: body.genusSlug,
+        ...(body.categorySlug ? { category: { slug: body.categorySlug } } : {}),
+      },
+      include: { category: true },
+    });
+    if (!g) return { ok: false, error: '指定的属不存在' };
+    return {
+      ok: true,
+      ids: {
+        categoryId: g.categoryId,
+        genusId: g.id,
+        speciesId: null,
+      },
+    };
+  }
+  if (body.categorySlug) {
+    const c = await prisma.category.findUnique({ where: { slug: body.categorySlug } });
+    if (!c) return { ok: false, error: '指定的板块不存在' };
+    return {
+      ok: true,
+      ids: {
+        categoryId: c.id,
+        genusId: null,
+        speciesId: null,
+      },
+    };
+  }
+  return { ok: true, ids: null };
+}

@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
-import { requireUser, isVipActive } from '@/lib/auth';
-import { hasPermission } from '@/lib/levels';
+import { requireUser } from '@/lib/auth';
+import { hasUserPermission } from '@/lib/permissions';
 import { emitEvent } from '@/lib/events';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ function pickPostId(req: Request) {
 
 export const POST = handler(async (req) => {
   const me = await requireUser();
-  if (!hasPermission({ level: me.level, isVip: isVipActive(me) }, 'post:collect')) {
+  if (!(await hasUserPermission(me, 'post:collect'))) {
     return fail(403, '需要 Lv.3 以上才能收藏帖子,开通大会员可解锁');
   }
   const postId = pickPostId(req);

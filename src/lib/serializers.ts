@@ -45,6 +45,7 @@ type UserWithRelations = DBUser & {
     following?: number;
   };
   badges?: (DBUserBadge & { badge: DBBadge })[];
+  permissionOverrides?: { permission: string; effect: 'grant' | 'revoke' }[];
 };
 
 export function serializeUser(u: UserWithRelations): User {
@@ -61,6 +62,12 @@ export function serializeUser(u: UserWithRelations): User {
     badges: (u.badges ?? []).map((ub) => serializeBadge(ub.badge, ub.obtained)),
     role: u.role as 'user' | 'moderator' | 'admin',
     isSuperAdmin: u.isSuperAdmin ?? false,
+    grantedPermissions: (u.permissionOverrides ?? [])
+      .filter((p) => p.effect === 'grant')
+      .map((p) => p.permission),
+    revokedPermissions: (u.permissionOverrides ?? [])
+      .filter((p) => p.effect === 'revoke')
+      .map((p) => p.permission),
   };
 }
 

@@ -64,6 +64,8 @@ export interface User {
   role?: 'user' | 'moderator' | 'admin';
   /** 超级管理员 */
   isSuperAdmin?: boolean;
+  grantedPermissions?: string[];
+  revokedPermissions?: string[];
 }
 
 export interface Badge {

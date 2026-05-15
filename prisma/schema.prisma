@@ -126,6 +126,8 @@ model User {
 
   // 关注板块(可跨三级:科/属/品种)
   boardFollows BoardFollow[]
+  // 管理员对单个用户的功能权限覆盖(额外授予 / 显式收回)
+  permissionOverrides UserPermissionOverride[]
 
   // 相册
   albums        Album[]
@@ -1265,6 +1267,28 @@ enum CategoryKind {
   family // 科(植物学分类)
   discussion // 非分类讨论型板块(新手村、养殖交流等)
   market // 交易/活动型板块(若需要)
+}
+
+enum PermissionEffect {
+  grant
+  revoke
+}
+
+model UserPermissionOverride {
+  id         String           @id @default(cuid())
+  userId     String
+  permission String
+  effect     PermissionEffect
+  note       String?          @db.Text
+  createdBy  String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permission])
+  @@index([permission, effect])
+  @@map("user_permission_overrides")
 }
 
 model Category {

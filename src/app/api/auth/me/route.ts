@@ -15,6 +15,7 @@ export const GET = handler(async () => {
     include: {
       _count: { select: { posts: true, followers: true, following: true } },
       badges: { include: { badge: true } },
+      permissionOverrides: { select: { permission: true, effect: true } },
     },
   });
   if (!full) return null;

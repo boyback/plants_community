@@ -14,6 +14,7 @@ import { handler, fail } from '@/lib/api';
 import { requireAdmin } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { logAdmin } from '@/lib/admin-log';
+import { ALL_PERMISSIONS } from '@/lib/levels';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,10 +24,22 @@ const Body = z
     ban: z.object({ days: z.number().int().min(0).max(3650), reason: z.string().max(500).optional() }).optional(),
     unban: z.literal(true).optional(),
     pointsDelta: z.number().int().optional(),
+    permissions: z
+      .object({
+        grants: z.array(z.enum(ALL_PERMISSIONS as unknown as [string, ...string[]])).default([]),
+        revokes: z.array(z.enum(ALL_PERMISSIONS as unknown as [string, ...string[]])).default([]),
+        note: z.string().max(500).optional(),
+      })
+      .optional(),
     reason: z.string().max(500).optional(),
   })
   .refine(
-    (b) => b.role || b.ban || b.unban || typeof b.pointsDelta === 'number',
+    (b) =>
+      b.role ||
+      b.ban ||
+      b.unban ||
+      typeof b.pointsDelta === 'number' ||
+      b.permissions,
     { message: '必须指定至少一个操作' }
   );
 
@@ -86,6 +99,47 @@ export const PATCH = handler(async (req) => {
       targetId: id,
       reason: body.reason,
       meta: { delta: body.pointsDelta },
+    });
+  }
+
+  if (body.permissions) {
+    const grants = new Set(body.permissions.grants);
+    const revokes = new Set(body.permissions.revokes);
+    const overlap = [...grants].filter((p) => revokes.has(p));
+    if (overlap.length > 0) return fail(400, '同一权限不能同时授予和收回');
+
+    await prisma.$transaction(async (tx) => {
+      await tx.userPermissionOverride.deleteMany({ where: { userId: id } });
+      const rows = [
+        ...[...grants].map((permission) => ({
+          userId: id,
+          permission,
+          effect: 'grant' as const,
+          note: body.permissions?.note ?? null,
+          createdBy: me.id,
+        })),
+        ...[...revokes].map((permission) => ({
+          userId: id,
+          permission,
+          effect: 'revoke' as const,
+          note: body.permissions?.note ?? null,
+          createdBy: me.id,
+        })),
+      ];
+      if (rows.length > 0) {
+        await tx.userPermissionOverride.createMany({ data: rows });
+      }
+    });
+    await logAdmin({
+      actorId: me.id,
+      action: 'user.permissions',
+      targetType: 'user',
+      targetId: id,
+      reason: body.permissions.note,
+      meta: {
+        grants: [...grants],
+        revokes: [...revokes],
+      },
     });
   }
 

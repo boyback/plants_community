@@ -5,12 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
-import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { RichTextEditor } from '@/components/richtext/RichTextEditor';
 import { UploadField } from '@/components/upload/UploadField';
 import { PostPreview } from '@/components/editor/PostPreview';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from '@/lib/client-api';
+import type { Board } from '@/lib/types';
 
 type EditableType = 'rich' | 'short' | 'video';
 
@@ -23,15 +23,9 @@ interface InitialPost {
   images: string[];
   videoUrl: string;
   tags: string[];
-  board?: { 
-    id: string; 
-    name: string; 
-    icon: string; 
-    slug: string;
-    level?: 'category' | 'genus' | 'species';
-    categorySlug?: string;
-    genusSlug?: string;
-  };
+  categorySlug: string;
+  genusSlug: string;
+  speciesSlug: string;
 }
 
 /**
@@ -57,6 +51,12 @@ export function PostEditor({ post }: { post: InitialPost }) {
   const [videoUrl, setVideoUrl] = useState(post.videoUrl);
   const [tags, setTags] = useState<string[]>(post.tags);
   const [tagInput, setTagInput] = useState('');
+  const [categories, setCategories] = useState<Board[]>([]);
+  const [generaList, setGeneraList] = useState<Board[]>([]);
+  const [speciesList, setSpeciesList] = useState<Board[]>([]);
+  const [categorySlug, setCategorySlug] = useState(post.categorySlug);
+  const [genusSlug, setGenusSlug] = useState(post.genusSlug);
+  const [speciesSlug, setSpeciesSlug] = useState(post.speciesSlug);
 
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -65,6 +65,36 @@ export function PostEditor({ post }: { post: InitialPost }) {
     setToast(m);
     setTimeout(() => setToast(null), 2200);
   };
+
+  useEffect(() => {
+    api.get<Board[]>('/api/categories').then(setCategories).catch(() => null);
+  }, []);
+
+  useEffect(() => {
+    if (!categorySlug) {
+      setGeneraList([]);
+      setGenusSlug('');
+      return;
+    }
+    api
+      .get<{ genera: Board[] }>(`/api/categories/${encodeURIComponent(categorySlug)}`)
+      .then((r) => setGeneraList(r.genera ?? []))
+      .catch(() => setGeneraList([]));
+  }, [categorySlug]);
+
+  useEffect(() => {
+    if (!genusSlug) {
+      setSpeciesList([]);
+      setSpeciesSlug('');
+      return;
+    }
+    api
+      .get<{ species: Board[] }>(
+        `/api/genera/${encodeURIComponent(genusSlug)}?category=${encodeURIComponent(categorySlug)}`
+      )
+      .then((r) => setSpeciesList(r.species ?? []))
+      .catch(() => setSpeciesList([]));
+  }, [genusSlug, categorySlug]);
 
   const onAddTag = () => {
     const t = tagInput.trim();
@@ -90,6 +120,8 @@ export function PostEditor({ post }: { post: InitialPost }) {
     }
     if (post.type === 'video' && !videoUrl.trim())
       return showToast('请上传视频或填写视频 URL');
+    if (!categorySlug && !genusSlug && !speciesSlug)
+      return showToast('请选择板块');
 
     setSubmitting(true);
     try {
@@ -99,6 +131,11 @@ export function PostEditor({ post }: { post: InitialPost }) {
         ...(isRich ? { contentJson } : { content }),
         tags,
         images,
+        ...(speciesSlug
+          ? { speciesSlug }
+          : genusSlug
+          ? { genusSlug }
+          : { categorySlug }),
         ...(post.type === 'video' && { videoUrl }),
       };
       const r = await api.patch<{ ok: boolean; needsReview: boolean }>(
@@ -128,7 +165,6 @@ export function PostEditor({ post }: { post: InitialPost }) {
           </div>
 
           <div className="space-y-4">
-            {/* 帖子类型（只读）+ 板块（只读） */}
             <div className="flex items-start gap-4">
               <Row label={<><span className="text-rose-500">*</span> 类型</>}>
                 <div className="flex items-center gap-2">
@@ -136,14 +172,61 @@ export function PostEditor({ post }: { post: InitialPost }) {
                   <span className="text-xs text-ink-500">（不可修改）</span>
                 </div>
               </Row>
-              <Row label={<><span className="text-rose-500">*</span> 板块</>} className="flex-1">
-                <div className="flex items-center gap-2 rounded-lg border border-leaf-100 bg-leaf-50/30 px-3 py-2">
-                  <CategoryIcon icon={post.board?.icon || ''} name={post.board?.name || '未分类'} />
-                  <span className="text-sm text-ink-700">{post.board?.name || '未分类'}</span>
-                  <span className="ml-auto text-xs text-ink-500">（不可修改，需移贴请联系管理员）</span>
-                </div>
-              </Row>
             </div>
+
+            <Row label="板块">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                <select
+                  value={categorySlug}
+                  onChange={(e) => {
+                    setCategorySlug(e.target.value);
+                    setGenusSlug('');
+                    setSpeciesSlug('');
+                  }}
+                  className="input"
+                >
+                  <option value="">选择一级板块</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.slug}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={genusSlug}
+                  onChange={(e) => {
+                    setGenusSlug(e.target.value);
+                    setSpeciesSlug('');
+                  }}
+                  className="input"
+                  disabled={!categorySlug || generaList.length === 0}
+                >
+                  <option value="">
+                    {!categorySlug ? '先选一级板块' : generaList.length === 0 ? '无二级板块' : '选择二级板块'}
+                  </option>
+                  {generaList.map((g) => (
+                    <option key={g.id} value={g.slug}>
+                      {g.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={speciesSlug}
+                  onChange={(e) => setSpeciesSlug(e.target.value)}
+                  className="input"
+                  disabled={!genusSlug || speciesList.length === 0}
+                >
+                  <option value="">
+                    {!genusSlug ? '先选二级板块' : speciesList.length === 0 ? '无三级板块' : '选择三级板块'}
+                  </option>
+                  {speciesList.map((s) => (
+                    <option key={s.id} value={s.slug}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </Row>
 
             <Row label={<><span className="text-rose-500">*</span> 标题</>}>
               <input

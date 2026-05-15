@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler, fail, stringifyJson } from '@/lib/api';
-import { requireUser, isVipActive } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
 import { serializeProduct } from '@/lib/serializers';
 import { productInclude } from '@/lib/market-include';
-import { hasPermission } from '@/lib/levels';
+import { hasUserPermission } from '@/lib/permissions';
 import { processRichInput } from '@/lib/richtext';
 import type { ProductSource, ProductStatus } from '@prisma/client';
 
@@ -116,8 +116,7 @@ const CreateBody = z.object({
 
 export const POST = handler(async (req) => {
   const me = await requireUser();
-  const isVip = isVipActive(me);
-  if (!hasPermission({ level: me.level, isVip }, 'market:sell')) {
+  if (!(await hasUserPermission(me, 'market:sell'))) {
     return fail(403, '当前等级不允许在交易区出售,开通大会员或升级到 Lv.8 即可解锁');
   }
   const body = CreateBody.parse(await req.json());
