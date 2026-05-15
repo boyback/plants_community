@@ -71,6 +71,7 @@ function EditorInner() {
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
 
   // 拉一级(科)
   useEffect(() => {
@@ -212,26 +213,54 @@ function EditorInner() {
   };
 
   const onPublish = async () => {
-    if (!title.trim()) return showToast(t('editor.errors.titleRequired'));
-    if (type === 'short' && !content.trim()) return showToast(t('editor.errors.contentRequired'));
-    if (type === 'rich' && !hasContent()) return showToast(t('editor.errors.contentRequired'));
-    if (type === 'event' && !hasContent()) return showToast(t('editor.errors.contentRequired'));
-    if (type === 'video' && !videoUrl.trim()) return showToast(t('editor.errors.videoUrlRequired'));
-    if (type === 'vote' && voteOptions.filter((x) => x.trim()).length < 2)
-      return showToast(t('editor.errors.voteOptionsMin'));
-    if (type === 'vote' && !voteDeadline)
-      return showToast(t('editor.voteDeadline'));
-    if (type === 'event' && (!eventLocation.trim() || !eventStartAt))
-      return showToast(t('editor.event'));
-    if (type === 'journal') {
-      if (!journal.subjectName.trim())
-        return showToast('请填写植物昵称');
-      if (!journal.startDate) return showToast('请填写起始日期');
-      if (!journal.entries.length)
-        return showToast('至少需要一条记录');
-      const bad = journal.entries.find((e) => !e.entryDate);
-      if (bad) return showToast('每条记录都要填日期');
+    const errors = new Set<string>();
+    
+    if (!title.trim()) {
+      errors.add('title');
+      showToast(t('editor.errors.titleRequired'));
     }
+    if (!genusSlug && !categorySlug) {
+      errors.add('board');
+      showToast(t('editor.chooseBoard'));
+    }
+    if (type === 'short' && !content.trim()) {
+      errors.add('content');
+      showToast(t('editor.errors.contentRequired'));
+    }
+    if (type === 'rich' && !hasContent()) {
+      errors.add('content');
+      showToast(t('editor.errors.contentRequired'));
+    }
+    if (type === 'event' && !hasContent()) {
+      errors.add('content');
+      showToast(t('editor.errors.contentRequired'));
+    }
+    if (type === 'video' && !videoUrl.trim()) {
+      errors.add('content');
+      showToast(t('editor.errors.videoUrlRequired'));
+    }
+    if (type === 'vote' && voteOptions.filter((x) => x.trim()).length < 2) {
+      errors.add('content');
+      showToast(t('editor.errors.voteOptionsMin'));
+    }
+    if (type === 'vote' && !voteDeadline) {
+      errors.add('content');
+      showToast(t('editor.voteDeadline'));
+    }
+    if (type === 'event' && (!eventLocation.trim() || !eventStartAt)) {
+      errors.add('content');
+      showToast(t('editor.event'));
+    }
+    if (type === 'journal') {
+      if (!journal.subjectName.trim()) { errors.add('content'); showToast('请填写植物昵称'); }
+      if (!journal.startDate) { errors.add('content'); showToast('请填写起始日期'); }
+      if (!journal.entries.length) { errors.add('content'); showToast('至少需要一条记录'); }
+      const bad = journal.entries.find((e) => !e.entryDate);
+      if (bad) { errors.add('content'); showToast('每条记录都要填日期'); }
+    }
+
+    setValidationErrors(errors);
+    if (errors.size > 0) return;
 
     const isRich = type === 'rich' || type === 'event';
 
@@ -327,12 +356,14 @@ function EditorInner() {
           <div className="card p-6">
             <h1 className="mb-4 text-xl font-semibold">{t('editor.title')}</h1>
             <div className="mb-5">
-              <div className="mb-2 text-xs font-medium text-leaf-700/80">{t('editor.pickType')}</div>
+              <div className="mb-2 text-xs font-medium text-leaf-700/80">
+                <span className="text-rose-500">*</span> {t('editor.pickType')}
+              </div>
               <TypePicker value={type} onChange={setType} />
             </div>
 
-            <div className="space-y-4">
-              <Row label={t('editor.chooseBoard')}>
+            <div className="space-y-3">
+              <Row label={<><span className="text-rose-500">*</span> {t('editor.chooseBoard')}</>}>
                 <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
                   <select
                     value={categorySlug}
@@ -340,10 +371,11 @@ function EditorInner() {
                       setCategorySlug(e.target.value);
                       setGenusSlug('');
                       setSpeciesSlug('');
+                      setValidationErrors((prev) => { const n = new Set(prev); n.delete('board'); return n; });
                     }}
-                    className="input"
+                    className={cn('input', validationErrors.has('board') && !categorySlug && 'border-rose-300 bg-rose-50/30')}
                   >
-                    <option value="">-- {t('editor.chooseBoard')} --</option>
+                    <option value="">-- 选择科 --</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.slug}>
                         {c.name}
@@ -361,10 +393,10 @@ function EditorInner() {
                   >
                     <option value="">
                       {!categorySlug
-                        ? t('editor.chooseBoard')
+                        ? '请先选择科'
                         : generaList.length === 0
-                        ? t('common.empty')
-                        : '-- ' + t('editor.chooseBoard') + ' --'}
+                        ? '暂无属'
+                        : '-- 选择属 --'}
                     </option>
                     {generaList.map((g) => (
                       <option key={g.id} value={g.slug}>
@@ -380,10 +412,10 @@ function EditorInner() {
                   >
                     <option value="">
                       {!genusSlug
-                        ? t('editor.chooseBoard')
+                        ? '请先选择属'
                         : speciesList.length === 0
-                        ? t('common.empty')
-                        : '-- ' + t('editor.chooseBoard') + ' --'}
+                        ? '暂无品种'
+                        : '-- 选择品种（可选）--'}
                     </option>
                     {speciesList.map((s) => (
                       <option key={s.id} value={s.slug}>
@@ -392,12 +424,9 @@ function EditorInner() {
                     ))}
                   </select>
                 </div>
-                <div className="mt-1 text-[10px] text-leaf-700/60">
-                  {t('editor.chooseBoard')}
-                </div>
               </Row>
 
-              <Row label={t('editor.placeholderTitle')}>
+              <Row label={<><span className="text-rose-500">*</span> {t('editor.placeholderTitle')}</>}>
                 <input
                   className="input"
                   value={title}
@@ -416,7 +445,7 @@ function EditorInner() {
                     value={contentJson}
                     onChange={setContentJson}
                     placeholder={t('editor.placeholderRich')}
-                    minHeight={300}
+                    minHeight={200}
                     charLimit={20000}
                   />
                 </Row>
@@ -726,7 +755,7 @@ function EditorInner() {
   );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <div>
       <label className="mb-1.5 block text-xs font-medium text-leaf-700/80">{label}</label>

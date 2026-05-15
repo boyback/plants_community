@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { cn, timeAgo, boardUrl } from '@/lib/utils';
@@ -15,6 +15,7 @@ import { useI18n } from '@/i18n/I18nContext';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from '@/lib/client-api';
 import { usePullToRefresh, PullIndicator } from '@/lib/hooks/usePullToRefresh';
+import { ConfirmDialog, PromptDialog } from '@/components/ui/Dialog';
 import type { Post, PostType } from '@/lib/types';
 
 function stripHtml(html: string): string {
@@ -302,7 +303,7 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
         <>
           {layoutMode === 'list' ? (
             /* 列表模式：所有卡片在一个大卡片中，用线隔开 */
-            <div className="mt-4 rounded-xl border border-leaf-100 bg-white overflow-hidden">
+            <div className="mt-4 rounded-xl border border-leaf-100 bg-white">
               {cur.items.map((p, i) => (
                 <div key={p.id}>
                   <FeedListCard post={p} source={tabToSource(tab)} />
@@ -560,6 +561,8 @@ function FeedListCard({
   post: Post;
   source: string;
 }) {
+  const { user } = useAuth();
+  const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
   const sentRef = useRef(false);
   useEffect(() => {
@@ -595,25 +598,235 @@ function FeedListCard({
     } catch {}
   };
 
+  const handleAdminAction = async (action: string, extra?: Record<string, unknown>) => {
+    try {
+      const result = await api.post(`/api/posts/${post.id}/admin`, { action, ...extra });
+      // 刷新页面或更新状态
+      window.location.reload();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '操作失败');
+    }
+  };
+
+  const handleFollow = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await api.post(`/api/users/${post.author.id}/follow`);
+    } catch {}
+  };
+
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showBanPrompt, setShowBanPrompt] = useState(false);
+  const [banReason, setBanReason] = useState('');
+  const [banDays, setBanDays] = useState('7');
+
+  const handleAdminDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    setShowDeleteConfirm(false);
+    await handleAdminAction('delete');
+  };
+
+  const handlePin = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await handleAdminAction(post.pinned ? 'unpin' : 'pin');
+  };
+
+  const handleLock = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await handleAdminAction(post.locked ? 'unlock' : 'lock');
+  };
+
+  const handleBanUser = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setBanReason('');
+    setBanDays('7');
+    setShowBanPrompt(true);
+  };
+
+  const confirmBan = async () => {
+    if (!banReason.trim()) return;
+    setShowBanPrompt(false);
+    await handleAdminAction('ban_user', { 
+      userId: post.author.id, 
+      duration: Number(banDays), 
+      reason: banReason 
+    });
+  };
+
+  // 权限判断
+  const isAuthor = user?.id === post.author.id;
+  const isSuperAdmin = user?.isSuperAdmin === true;
+  const isModerator = user?.role === 'moderator';
+  const isAdmin = user?.role === 'admin';
+
+  // 发帖人：编辑、删除
+  // 板块管理员：删除、移贴、置顶、锁定（不能编辑他人帖子）
+  // 超级管理员：继承以上全部 + 封禁用户、审核
+  const canEdit = isAuthor; // 只有作者可编辑
+  const canDelete = isAuthor || isModerator || isAdmin || isSuperAdmin;
+  const canMove = isModerator || isAdmin || isSuperAdmin;
+  const canPin = isModerator || isAdmin || isSuperAdmin;
+  const canLock = isModerator || isAdmin || isSuperAdmin;
+  const canBan = isSuperAdmin;
+  const showMenu = canEdit || canDelete || canMove || canPin || canLock || canBan;
+
   return (
     <div ref={ref} className="p-4 transition-colors hover:bg-leaf-50/50">
-      {/* 第一行：用户头像 + 昵称 */}
-      <Link
-        href={`/user/${post.author.id}`}
-        className="flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity"
-      >
-        <Avatar src={post.author.avatar} alt={post.author.name} size={28} />
-        <span className="font-medium text-[13px] text-ink-800">{post.author.name}</span>
+      {/* 第一行：用户头像 + 昵称 + 关注按钮 + 管理员按钮 */}
+      <div className="flex items-center gap-2 mb-3">
+        <Link
+          href={`/user/${post.author.id}`}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        >
+          <Avatar src={post.author.avatar} alt={post.author.name} size={28} />
+          <span className="font-medium text-[13px] text-ink-800">{post.author.name}</span>
+        </Link>
         {post.type !== 'rich' && (
           <PostTypeBadge type={post.type} />
         )}
-      </Link>
+        {user && user.id !== post.author.id && (
+          <button
+            type="button"
+            onClick={handleFollow}
+            className="text-[11px] px-2.5 py-1 rounded-full border border-leaf-500 text-leaf-600 hover:bg-leaf-500 hover:text-white transition-colors"
+          >
+            +关注
+          </button>
+        )}
+        <div className="flex-1" />
+        {/* 管理按钮 - 根据权限显示 */}
+        {user && showMenu && (
+          <div className="relative">
+            <button
+              type="button"
+              onMouseEnter={() => setAdminMenuOpen(true)}
+              onMouseLeave={() => setAdminMenuOpen(false)}
+              className="grid h-7 w-7 place-items-center rounded-lg text-ink-400 hover:bg-ink-100 hover:text-ink-600 transition-colors"
+              title="管理"
+            >
+              <Icon name="settings" size={16} />
+            </button>
+            {adminMenuOpen && (
+              <div 
+                className="absolute right-1/2 translate-x-1/2 top-full z-50 pt-2"
+                onMouseEnter={() => setAdminMenuOpen(true)}
+                onMouseLeave={() => setAdminMenuOpen(false)}
+              >
+                <div className="relative w-16 rounded-lg border border-leaf-100 bg-white shadow-xl py-1">
+                  <div className="absolute left-1/2 -translate-x-1/2 -top-[6px] w-3 h-3 bg-white border-l border-t border-leaf-100 transform rotate-45" />
 
-      {/* 第二行：标题 */}
+                  {/* 作者：编辑 */}
+                  {canEdit && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/post/${post.id}/edit`);
+                      }}
+                      className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
+                    >
+                      编辑
+                    </button>
+                  )}
+
+                  {/* 管理员：移贴 */}
+                  {canMove && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        alert('移贴功能开发中');
+                      }}
+                      className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
+                    >
+                      移贴
+                    </button>
+                  )}
+
+                  {/* 管理员：置顶 */}
+                  {canPin && (
+                    <button
+                      type="button"
+                      onClick={handlePin}
+                      className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
+                    >
+                      {post.pinned ? '取消置顶' : '置顶'}
+                    </button>
+                  )}
+
+                  {/* 管理员：锁定 */}
+                  {canLock && (
+                    <button
+                      type="button"
+                      onClick={handleLock}
+                      className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
+                    >
+                      {post.locked ? '解锁' : '锁定'}
+                    </button>
+                  )}
+
+                  {/* 超管：封禁用户（不能封禁自己） */}
+                  {canBan && !isAuthor && (
+                    <button
+                      type="button"
+                      onClick={handleBanUser}
+                      className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
+                    >
+                      封禁用户
+                    </button>
+                  )}
+
+                  {/* 分割线 */}
+                  {canDelete && <div className="border-t border-leaf-50 my-0.5" />}
+
+                  {/* 发帖人 + 管理员：删除 */}
+                  {canDelete && (
+                    <button
+                      type="button"
+                      onClick={handleAdminDelete}
+                      className="w-full px-2 py-1.5 text-[11px] text-rose-600 hover:bg-rose-50 text-center"
+                    >
+                      删除
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 第二行：标题 + 置顶/锁定标识 */}
       <Link href={`/post/${post.id}`}>
-        <h3 className="text-[15px] font-semibold text-ink-800 mb-2 hover:text-leaf-700 transition-colors">
-          {post.title}
-        </h3>
+        <div className="flex items-start gap-2 mb-2">
+          <h3 className="text-[15px] font-semibold text-ink-800 flex-1 hover:text-leaf-700 transition-colors">
+            {post.title}
+          </h3>
+          <div className="flex items-center gap-1 shrink-0">
+            {post.pinned && (
+              <span className="inline-flex items-center gap-0.5 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                <Icon name="pin" size={10} />
+                置顶
+              </span>
+            )}
+            {post.locked && (
+              <span className="inline-flex items-center gap-0.5 rounded bg-ink-100 px-1.5 py-0.5 text-[10px] font-medium text-ink-600">
+                <Icon name="lock" size={10} />
+                锁定
+              </span>
+            )}
+          </div>
+        </div>
       </Link>
 
       {/* 第三行：描述 */}
@@ -713,6 +926,69 @@ function FeedListCard({
           </Link>
         </div>
       </div>
+
+      {/* 删除确认对话框 */}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDelete}
+        title="确认删除"
+        message="确定要删除这篇帖子吗？此操作无法撤销。"
+        confirmText="确认删除"
+        danger={true}
+      />
+
+      {/* 封禁用户对话框 */}
+      {showBanPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-ink-800 mb-4">封禁用户</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-ink-700 mb-1">
+                  封禁原因
+                </label>
+                <input
+                  type="text"
+                  value={banReason}
+                  onChange={(e) => setBanReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-leaf-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-leaf-500"
+                  placeholder="请输入封禁原因"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-ink-700 mb-1">
+                  封禁天数
+                </label>
+                <input
+                  type="number"
+                  value={banDays}
+                  onChange={(e) => setBanDays(e.target.value)}
+                  className="w-full px-3 py-2 border border-leaf-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-leaf-500"
+                  placeholder="7"
+                  min="1"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setShowBanPrompt(false)}
+                className="px-4 py-2 text-sm text-ink-600 hover:bg-ink-50 rounded-lg transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmBan}
+                disabled={!banReason.trim()}
+                className="px-4 py-2 text-sm bg-rose-500 text-white hover:bg-rose-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                确认封禁
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

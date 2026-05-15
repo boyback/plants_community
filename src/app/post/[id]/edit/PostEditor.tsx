@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { RichTextEditor } from '@/components/richtext/RichTextEditor';
 import { UploadField } from '@/components/upload/UploadField';
 import { PostPreview } from '@/components/editor/PostPreview';
@@ -22,6 +23,15 @@ interface InitialPost {
   images: string[];
   videoUrl: string;
   tags: string[];
+  board?: { 
+    id: string; 
+    name: string; 
+    icon: string; 
+    slug: string;
+    level?: 'category' | 'genus' | 'species';
+    categorySlug?: string;
+    genusSlug?: string;
+  };
 }
 
 /**
@@ -39,7 +49,10 @@ export function PostEditor({ post }: { post: InitialPost }) {
 
   const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content);
-  const [contentJson, setContentJson] = useState<unknown>(post.contentJson);
+  // 如果 contentJson 为空，尝试从 content (HTML) 创建一个基础结构
+  const [contentJson, setContentJson] = useState<unknown>(
+    post.contentJson || (post.content ? createJsonFromHtml(post.content) : null)
+  );
   const [images, setImages] = useState<string[]>(post.images);
   const [videoUrl, setVideoUrl] = useState(post.videoUrl);
   const [tags, setTags] = useState<string[]>(post.tags);
@@ -115,7 +128,24 @@ export function PostEditor({ post }: { post: InitialPost }) {
           </div>
 
           <div className="space-y-4">
-            <Row label="标题">
+            {/* 帖子类型（只读）+ 板块（只读） */}
+            <div className="flex items-start gap-4">
+              <Row label={<><span className="text-rose-500">*</span> 类型</>}>
+                <div className="flex items-center gap-2">
+                  <PostTypeBadge type={post.type} />
+                  <span className="text-xs text-ink-500">（不可修改）</span>
+                </div>
+              </Row>
+              <Row label={<><span className="text-rose-500">*</span> 板块</>} className="flex-1">
+                <div className="flex items-center gap-2 rounded-lg border border-leaf-100 bg-leaf-50/30 px-3 py-2">
+                  <CategoryIcon icon={post.board?.icon || ''} name={post.board?.name || '未分类'} />
+                  <span className="text-sm text-ink-700">{post.board?.name || '未分类'}</span>
+                  <span className="ml-auto text-xs text-ink-500">（不可修改，需移贴请联系管理员）</span>
+                </div>
+              </Row>
+            </div>
+
+            <Row label={<><span className="text-rose-500">*</span> 标题</>}>
               <input
                 className="input"
                 value={title}
@@ -276,13 +306,40 @@ export function PostEditor({ post }: { post: InitialPost }) {
   );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, children, className }: { label: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
-    <div>
+    <div className={className}>
       <label className="mb-1.5 block text-xs font-medium text-leaf-700/80">
         {label}
       </label>
       {children}
     </div>
   );
+}
+
+/**
+ * 从 HTML 创建一个基础的 ProseMirror JSON 结构
+ * 用于 contentJson 为空时的回退方案
+ */
+function createJsonFromHtml(html: string): unknown {
+  if (!html) return null;
+  // 创建一个简单的 ProseMirror 文档结构，包含一个段落
+  return {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [
+          {
+            type: 'text',
+            text: stripHtml(html),
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 }

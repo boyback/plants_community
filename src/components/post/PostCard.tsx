@@ -102,9 +102,23 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
 
         {/* 标题 + 紧贴的发布时间(4 列模式下时间挪到底部 — 通过 CSS 切换) */}
         <div className="space-y-0.5">
-          <h3 className="line-clamp-2 text-sm font-semibold text-ink-800 group-hover:text-leaf-700">
-            {post.title}
-          </h3>
+          <div className="flex items-start gap-2">
+            <h3 className="line-clamp-2 text-sm font-semibold text-ink-800 group-hover:text-leaf-700 flex-1">
+              {post.title}
+            </h3>
+            <div className="flex items-center gap-1 shrink-0">
+              {post.pinned && (
+                <span className="inline-flex items-center gap-0.5 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                  <Icon name="pin" size={10} />
+                </span>
+              )}
+              {post.locked && (
+                <span className="inline-flex items-center gap-0.5 rounded bg-ink-100 px-1.5 py-0.5 text-[10px] font-medium text-ink-600">
+                  <Icon name="lock" size={10} />
+                </span>
+              )}
+            </div>
+          </div>
           <div className="post-time-top text-[10px] text-leaf-700/60">
             {timeAgo(post.createdAt)}
           </div>

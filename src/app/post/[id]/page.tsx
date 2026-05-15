@@ -7,6 +7,7 @@ import { MobileActionBar } from '@/components/post/MobileActionBar';
 import { CommentSection } from '@/components/post/CommentSection';
 import { JournalTimeline } from '@/components/post/JournalTimeline';
 import { PostCard } from '@/components/post/PostCard';
+import { PostAdminMenu } from '@/components/post/PostAdminMenu';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -212,7 +213,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
   ]);
 
   return (
-    <Shell>
+    <Shell withSidebar={false}>
       {/* SEO: 帖子页 JSON-LD(DiscussionForumPosting + 面包屑) */}
       {jsonLdScript([ld, breadcrumb])}
       <div className="mb-4 flex items-center gap-1.5 text-xs text-leaf-700/70">
@@ -234,11 +235,22 @@ export default async function PostDetailPage({ params }: { params: { id: string 
         <span className="truncate text-ink-700">{post.title}</span>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_300px]">
-        <div className="space-y-4 min-w-0">
-          <article className="card p-6 md:p-8">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
+      <div className="max-w-4xl mx-auto">
+        <article className="card p-6 md:p-8">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
               <PostTypeBadge type={post.type} />
+              {post.pinned && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">
+                  <Icon name="pin" size={12} />
+                  置顶
+                </span>
+              )}
+              {post.locked && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2.5 py-0.5 text-xs font-medium text-ink-600">
+                  <Icon name="lock" size={12} />
+                  已锁定
+                </span>
+              )}
               <Link href={boardUrl(post.board)} className="chip hover:bg-leaf-100">
                 {post.board.icon} {post.board.name}
               </Link>
@@ -281,6 +293,8 @@ export default async function PostDetailPage({ params }: { params: { id: string 
                     编辑
                   </Link>
                 )}
+              {/* 超级管理员按钮 */}
+              {me?.isSuperAdmin && <PostAdminMenu post={post} user={me} />}
             </div>
 
             {/* 审核状态提示(仅作者本人 · 启用审核功能时才显示) */}
@@ -312,58 +326,57 @@ export default async function PostDetailPage({ params }: { params: { id: string 
               initialAttending={attending}
               livePhotoMap={livePhotoMap}
             />
-          </article>
+        </article>
 
-          <PostActions post={post} initialLiked={liked} initialCollected={collected} />
-          <MobileActionBar post={post} initialLiked={liked} initialCollected={collected} />
+        <PostActions post={post} initialLiked={liked} initialCollected={collected} />
+        <MobileActionBar post={post} initialLiked={liked} initialCollected={collected} />
 
-          {post.type === 'journal' && post.journal && <JournalTimeline post={post} />}
+        {post.type === 'journal' && post.journal && <JournalTimeline post={post} />}
 
-          <CommentSection post={post} />
-        </div>
+        <CommentSection post={post} />
 
-        <div className="space-y-5">
-          <div className="card p-5">
-            <div className="flex items-center gap-3">
-              <Avatar src={post.author.avatar} alt={post.author.name} size={48} ring />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-semibold">{post.author.name}</div>
-                <div className="mt-0.5 line-clamp-2 text-[11px] text-leaf-700/70">
-                  {post.author.bio}
-                </div>
+        {/* 作者信息卡片 */}
+        <div className="card p-5 mt-6">
+          <div className="flex items-center gap-3">
+            <Avatar src={post.author.avatar} alt={post.author.name} size={48} ring />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-semibold">{post.author.name}</div>
+              <div className="mt-0.5 line-clamp-2 text-[11px] text-leaf-700/70">
+                {post.author.bio}
               </div>
-            </div>
-            <div className="mt-3 grid grid-cols-3 border-t border-leaf-100 pt-3 text-center text-xs">
-              <div>
-                <div className="font-semibold text-ink-800">{post.author.posts}</div>
-                <div className="text-leaf-700/70"><I18nText k="detail.post.postsLabel" fallback="帖子" /></div>
-              </div>
-              <div>
-                <div className="font-semibold text-ink-800">{formatNumber(post.author.followers)}</div>
-                <div className="text-leaf-700/70"><I18nText k="detail.post.followersLabel" fallback="粉丝" /></div>
-              </div>
-              <div>
-                <div className="font-semibold text-ink-800">{formatNumber(post.author.following)}</div>
-                <div className="text-leaf-700/70"><I18nText k="detail.post.followingLabel" fallback="关注" /></div>
-              </div>
-            </div>
-            <div className="mt-3 flex gap-2">
-              <Link href={`/user/${post.author.id}`} className="btn-outline flex-1 justify-center !text-xs">
-                <I18nText k="nav.myProfile" fallback="主页" />
-              </Link>
-              <Link href={`/messages?to=${post.author.id}`} className="btn-primary flex-1 justify-center !text-xs">
-                <I18nText k="nav.messages" fallback="私信" />
-              </Link>
             </div>
           </div>
-
-          <div className="card p-4">
-            <div className="mb-3 text-sm font-semibold text-ink-800">📖 <I18nText k="detail.post.related" fallback="本版相关" /></div>
-            <div className="space-y-3">
-              {related.map((p) => (
-                <PostCard key={p.id} post={p} layout="compact" />
-              ))}
+          <div className="mt-3 grid grid-cols-3 border-t border-leaf-100 pt-3 text-center text-xs">
+            <div>
+              <div className="font-semibold text-ink-800">{post.author.posts}</div>
+              <div className="text-leaf-700/70"><I18nText k="detail.post.postsLabel" fallback="帖子" /></div>
             </div>
+            <div>
+              <div className="font-semibold text-ink-800">{formatNumber(post.author.followers)}</div>
+              <div className="text-leaf-700/70"><I18nText k="detail.post.followersLabel" fallback="粉丝" /></div>
+            </div>
+            <div>
+              <div className="font-semibold text-ink-800">{formatNumber(post.author.following)}</div>
+              <div className="text-leaf-700/70"><I18nText k="detail.post.followingLabel" fallback="关注" /></div>
+            </div>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <Link href={`/user/${post.author.id}`} className="btn-outline flex-1 justify-center !text-xs">
+              <I18nText k="nav.myProfile" fallback="主页" />
+            </Link>
+            <Link href={`/messages?to=${post.author.id}`} className="btn-primary flex-1 justify-center !text-xs">
+              <I18nText k="nav.messages" fallback="私信" />
+            </Link>
+          </div>
+        </div>
+
+        {/* 相关帖子 */}
+        <div className="card p-4 mt-4">
+          <div className="mb-3 text-sm font-semibold text-ink-800">📖 <I18nText k="detail.post.related" fallback="本版相关" /></div>
+          <div className="space-y-3">
+            {related.map((p) => (
+              <PostCard key={p.id} post={p} layout="compact" />
+            ))}
           </div>
         </div>
       </div>

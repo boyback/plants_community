@@ -177,6 +177,18 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
 
                     <div className="border-t border-leaf-50" />
 
+                    {/* 后台管理 - moderator/admin/superAdmin 可见 */}
+                    {(user.role === 'moderator' || user.role === 'admin' || user.isSuperAdmin) && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-ink-800 hover:bg-leaf-50"
+                      >
+                        <Icon name="settings" size={14} />
+                        <span>管理</span>
+                      </Link>
+                    )}
+
                     {/* 我的订单 */}
                     <Link
                       href="/orders"

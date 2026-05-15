@@ -70,15 +70,19 @@ export function BoardsTreeMenu({
     cachePromise.then((list) => setData(list));
   }, []);
 
-  // 当路径变化时，自动展开对应的科
+  // 当路径变化时，自动展开对应的科（只在路径变化时执行，不依赖 openCatIds）
   useEffect(() => {
     if (currentCategorySlug && data) {
       const currentCat = data.find((c) => c.slug === currentCategorySlug);
-      if (currentCat && !openCatIds.has(currentCat.id)) {
-        setOpenCatIds((prev) => new Set([...prev, currentCat.id]));
+      if (currentCat) {
+        setOpenCatIds((prev) => {
+          if (prev.has(currentCat.id)) return prev;
+          return new Set([...prev, currentCat.id]);
+        });
       }
     }
-  }, [currentCategorySlug, data, openCatIds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentCategorySlug, data]);
 
   const toggleCat = (id: string) => {
     setOpenCatIds((s) => {

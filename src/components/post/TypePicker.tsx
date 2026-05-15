@@ -12,11 +12,11 @@ interface Item {
 
 const items: Item[] = [
   { type: 'rich', emoji: '📝' },
+  { type: 'journal', emoji: '📖' },
   { type: 'short', emoji: '💬' },
   { type: 'vote', emoji: '🗳️', pcOnly: true },
   { type: 'video', emoji: '🎬' },
   { type: 'event', emoji: '🎉', pcOnly: true },
-  { type: 'journal', emoji: '📖' },
 ];
 
 export function TypePicker({

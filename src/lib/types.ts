@@ -62,6 +62,8 @@ export interface User {
   joinedAt: string;
   /** 管理员/版主等角色;未授权用户为 undefined */
   role?: 'user' | 'moderator' | 'admin';
+  /** 超级管理员 */
+  isSuperAdmin?: boolean;
 }
 
 export interface Badge {
@@ -183,6 +185,9 @@ export interface Post {
   comments: number;
   shares: number;
   views: number;
+  // 置顶 & 锁定
+  pinned?: boolean;
+  locked?: boolean;
   // 投票贴
   vote?: {
     question: string;

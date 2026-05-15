@@ -60,6 +60,7 @@ export function serializeUser(u: UserWithRelations): User {
     joinedAt: u.joinedAt.toISOString(),
     badges: (u.badges ?? []).map((ub) => serializeBadge(ub.badge, ub.obtained)),
     role: u.role as 'user' | 'moderator' | 'admin',
+    isSuperAdmin: u.isSuperAdmin ?? false,
   };
 }
 
@@ -281,6 +282,8 @@ export function serializePost(p: PostWithRelations): Post {
     comments: p._count?.comments ?? 0,
     shares: p.shares,
     views: p.views,
+    pinned: p.pinned ?? false,
+    locked: p.locked ?? false,
     vote: p.vote
       ? {
           question: p.vote.question,

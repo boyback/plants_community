@@ -351,6 +351,13 @@ model Post {
   deletedAt    DateTime?
   deletedBy    String? // 管理员 id
   deleteReason String?          @db.Text
+  // 置顶 & 锁定
+  pinned       Boolean          @default(false)
+  pinnedAt     DateTime?
+  pinnedBy     String?
+  locked       Boolean          @default(false)
+  lockedAt     DateTime?
+  lockedBy     String?
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 
