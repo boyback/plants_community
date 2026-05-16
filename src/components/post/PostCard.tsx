@@ -7,9 +7,9 @@ import type { Post } from '@/lib/types';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
-import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { STAGE_META } from '@/lib/journal';
-import { formatNumber, timeAgo, cn, boardUrl } from '@/lib/utils';
+import { formatNumber, formatDateTime, timeAgo, cn, boardUrl } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 /**
  * 推荐流/板块列表的帖子卡片
@@ -44,7 +44,68 @@ export function PostCard({
  * 嵌套 Link(作者头像、species chip)用 `stopPropagation` 让它们生效但不触发卡片跳转
  */
 function FeedCard({ post, className }: { post: Post; className?: string }) {
+  const { user } = useAuth();
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+
   const cover = post.cover ?? post.images?.[0];
+
+  // 管理员权限判断
+  const isAuthor = user?.id === post.author.id;
+  const isSuperAdmin = user?.isSuperAdmin === true;
+  const isModerator = user?.role === 'moderator';
+  const isAdmin = user?.role === 'admin';
+  const canEdit = isAuthor;
+  const canDelete = isAuthor || isModerator || isAdmin || isSuperAdmin;
+  const canMove = isModerator || isAdmin || isSuperAdmin;
+  const canPin = isModerator || isAdmin || isSuperAdmin;
+  const canLock = isModerator || isAdmin || isSuperAdmin;
+  const canBan = isSuperAdmin && !isAuthor;
+
+  const handlePin = async () => {
+    if (!confirm(post.pinned ? '确定取消置顶？' : '确定置顶？')) return;
+    const res = await fetch(`/api/posts/${post.id}/admin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: post.pinned ? 'unpin' : 'pin' }),
+    });
+    if (res.ok) globalThis.location.reload();
+  };
+
+  const handleLock = async () => {
+    if (!confirm(post.locked ? '确定解锁？' : '确定锁定？')) return;
+    const res = await fetch(`/api/posts/${post.id}/admin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: post.locked ? 'unlock' : 'lock' }),
+    });
+    if (res.ok) globalThis.location.reload();
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('确定删除这篇帖子？')) return;
+    const res = await fetch(`/api/posts/${post.id}/admin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', reason: '管理员删除' }),
+    });
+    if (res.ok) globalThis.location.href = '/';
+  };
+
+  const handleBanUser = async () => {
+    const reason = prompt('请输入封禁原因：');
+    if (!reason) return;
+    const days = prompt('封禁天数：', '7');
+    if (!days) return;
+    const res = await fetch(`/api/posts/${post.id}/admin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'ban_user', userId: post.author.id, reason, duration: Number(days) }),
+    });
+    if (res.ok) globalThis.location.reload();
+  };
+
+  const showAdminMenu = canEdit || canDelete || canMove || canPin || canLock || canBan;
+
   return (
     <Link
       href={`/post/${post.id}`}
@@ -55,73 +116,246 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
       )}
     >
       {cover ? (
-        <CoverImage
-          src={cover}
-          alt={post.title}
-          showVideoIcon={post.type === 'video'}
-          typeBadge={<PostTypeBadge type={post.type} />}
-        />
+        <div className="relative">
+          <CoverImage
+            src={cover}
+            alt={post.title}
+            showVideoIcon={post.type === 'video'}
+            typeBadge={<PostTypeBadge type={post.type} />}
+          />
+          {showAdminMenu && (
+            <div className="absolute top-2 right-2 z-10">
+              <div className="relative">
+                <button
+                  type="button"
+                  onMouseEnter={() => setAdminMenuOpen(true)}
+                  onMouseLeave={() => setAdminMenuOpen(false)}
+                  className="grid h-7 w-7 place-items-center rounded-none text-ink-400 hover:bg-ink-100 hover:text-ink-600 transition-colors"
+                  title="管理"
+                >
+                  <Icon name="settings" size={16} />
+                </button>
+                {adminMenuOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-full z-50 pt-2"
+                    onMouseEnter={() => setAdminMenuOpen(true)}
+                    onMouseLeave={() => setAdminMenuOpen(false)}
+                  >
+                    <div className="relative w-20 rounded-none border border-leaf-100 bg-white shadow-xl py-1">
+                      <div className="absolute right-2 -top-[5px] w-2.5 h-2.5 bg-white border-l border-t border-leaf-100 transform rotate-45" />
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            globalThis.location.href = `/post/${post.id}/edit`;
+                            setAdminMenuOpen(false);
+                          }}
+                          className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
+                        >
+                          编辑
+                        </button>
+                      )}
+                      {canMove && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            alert('移贴功能开发中');
+                            setAdminMenuOpen(false);
+                          }}
+                          className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
+                        >
+                          移贴
+                        </button>
+                      )}
+                      {canPin && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePin();
+                            setAdminMenuOpen(false);
+                          }}
+                          className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
+                        >
+                          {post.pinned ? '取消置顶' : '置顶'}
+                        </button>
+                      )}
+                      {canLock && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLock();
+                            setAdminMenuOpen(false);
+                          }}
+                          className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
+                        >
+                          {post.locked ? '解锁' : '锁定'}
+                        </button>
+                      )}
+                      {canBan && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBanUser();
+                            setAdminMenuOpen(false);
+                          }}
+                          className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
+                        >
+                          封禁用户
+                        </button>
+                      )}
+                      {canDelete && <div className="border-t border-leaf-50 my-0.5" />}
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete();
+                            setAdminMenuOpen(false);
+                          }}
+                          className="w-full px-2 py-1.5 text-[11px] text-rose-600 hover:bg-rose-50 text-center"
+                        >
+                          删除
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       ) : (
-        <div className="px-3 pt-3">
+        <div className="px-3 pt-3 flex items-center justify-between relative">
           <PostTypeBadge type={post.type} />
+          {showAdminMenu && (
+            <div className="relative">
+              <button
+                type="button"
+                onMouseEnter={() => setAdminMenuOpen(true)}
+                onMouseLeave={() => setAdminMenuOpen(false)}
+                className="grid h-7 w-7 place-items-center rounded-none text-ink-400 hover:bg-ink-100 hover:text-ink-600 transition-colors"
+                title="管理"
+              >
+                <Icon name="settings" size={16} />
+              </button>
+              {adminMenuOpen && (
+                <div
+                  role="menu"
+                  tabIndex={-1}
+                  className="absolute right-0 top-full z-50 pt-2"
+                  onMouseEnter={() => setAdminMenuOpen(true)}
+                  onMouseLeave={() => setAdminMenuOpen(false)}
+                >
+                  <div className="relative w-20 rounded-none border border-leaf-100 bg-white shadow-xl py-1">
+                    <div className="absolute right-2 -top-[5px] w-2.5 h-2.5 bg-white border-l border-t border-leaf-100 transform rotate-45" />
+                    {canEdit && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          globalThis.location.href = `/post/${post.id}/edit`;
+                          setAdminMenuOpen(false);
+                        }}
+                        className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
+                      >
+                        编辑
+                      </button>
+                    )}
+                    {canMove && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          alert('移贴功能开发中');
+                          setAdminMenuOpen(false);
+                        }}
+                        className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
+                      >
+                        移贴
+                      </button>
+                    )}
+                    {canPin && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePin();
+                          setAdminMenuOpen(false);
+                        }}
+                        className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
+                      >
+                        {post.pinned ? '取消置顶' : '置顶'}
+                      </button>
+                    )}
+                    {canLock && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLock();
+                          setAdminMenuOpen(false);
+                        }}
+                        className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
+                      >
+                        {post.locked ? '解锁' : '锁定'}
+                      </button>
+                    )}
+                    {canBan && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBanUser();
+                          setAdminMenuOpen(false);
+                        }}
+                        className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
+                      >
+                        封禁用户
+                      </button>
+                    )}
+                    {canDelete && <div className="border-t border-leaf-50 my-0.5" />}
+                    {canDelete && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete();
+                          setAdminMenuOpen(false);
+                        }}
+                        className="w-full px-2 py-1.5 text-[11px] text-rose-600 hover:bg-rose-50 text-center"
+                      >
+                        删除
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
       <div className="space-y-2 p-3">
-        {/* 板块 + 话题 chips(细脚标,点击跳板块/话题) */}
-        <div className="flex flex-wrap items-center gap-1">
-          {/* 板块名 chip */}
-          <NestedLink
-            href={boardUrl(post.board)}
-            className="inline-flex items-center gap-0.5 rounded-full bg-leaf-50 px-2 py-0.5 text-[10px] font-medium text-leaf-700 hover:bg-leaf-100"
-          >
-            {post.board.icon && (post.board.icon.startsWith('http') || post.board.icon.startsWith('/')) ? (
-              <img src={post.board.icon} alt="" className="h-4 w-4 shrink-0 rounded object-cover" />
-            ) : post.board.icon ? (
-              <span className="text-xs">{post.board.icon}</span>
-            ) : null}
-            <span className="truncate max-w-[100px]">{post.board.name}</span>
-          </NestedLink>
-
-          {/* species 打分 chip(若有，且 board 不是 species 级别) */}
-          {post.species && post.board.level !== 'species' && (
-            <SpeciesChip species={post.species} board={post.board} />
-          )}
-
-          {/* 话题 / tag chips(最多前 3) — 点击进 /topic/[name] */}
-          {post.tags.slice(0, 3).map((tag) => (
-            <NestedLink
-              key={tag}
-              href={`/topic/${encodeURIComponent(tag)}`}
-              className="inline-flex items-center rounded-full bg-amber-50/70 px-2 py-0.5 text-[10px] text-amber-700 hover:bg-amber-100"
-            >
-              #{tag}
-            </NestedLink>
-          ))}
+        {/* 作者 + 时间（最上面一行） */}
+        <div className="flex items-center justify-between gap-2 text-[9px] text-leaf-700/80">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Avatar src={post.author.avatar} alt={post.author.name} size={16} />
+            <span className="truncate font-medium">{post.author.name}</span>
+          </div>
+          <span className="shrink-0">{formatDateTime(post.createdAt)}</span>
         </div>
 
-        {/* 标题 + 紧贴的发布时间(4 列模式下时间挪到底部 — 通过 CSS 切换) */}
-        <div className="space-y-0.5">
-          <div className="flex items-start gap-2">
-            <h3 className="line-clamp-2 text-sm font-semibold text-ink-800 group-hover:text-leaf-700 flex-1">
-              {post.title}
-            </h3>
-            <div className="flex items-center gap-1 shrink-0">
-              {post.pinned && (
-                <span className="inline-flex items-center gap-0.5 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
-                  <Icon name="pin" size={10} />
-                </span>
-              )}
-              {post.locked && (
-                <span className="inline-flex items-center gap-0.5 rounded bg-ink-100 px-1.5 py-0.5 text-[10px] font-medium text-ink-600">
-                  <Icon name="lock" size={10} />
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="post-time-top text-[10px] text-leaf-700/60">
-            {timeAgo(post.createdAt)}
-          </div>
+        {/* 标题 */}
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="line-clamp-2 text-sm font-semibold text-ink-800 group-hover:text-leaf-700 flex-1 min-w-0">
+            {post.title}
+          </h3>
         </div>
 
         {/* —— 类型预览块(只展示,不可交互) —— */}
@@ -139,34 +373,38 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
 
         {post.type === 'journal' && post.journal && <JournalPreview post={post} />}
 
-        {/* 4 列模式:作者 + 时间(最右)独立成行,放在 footer 上方(默认隐藏) */}
-        <div className="post-author-block hidden items-center gap-1 text-[10px]">
-          <NestedLink
-            href={`/user/${post.author.id}`}
-            className="flex min-w-0 items-center gap-1 text-ink-700/80 hover:text-leaf-700"
-          >
-            <Avatar src={post.author.avatar} alt={post.author.name} size={16} />
-            <span className="truncate font-medium">{post.author.name}</span>
-          </NestedLink>
-          <span className="ml-auto shrink-0 text-leaf-700/60">
-            {timeAgo(post.createdAt)}
-          </span>
-        </div>
+        {/* 话题标签（单独一行） */}
+        {post.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 overflow-hidden">
+            {post.tags.slice(0, 5).map((tag) => (
+              <NestedLink
+                key={tag}
+                href={`/topic/${encodeURIComponent(tag)}`}
+                className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] text-amber-700 hover:bg-amber-100"
+              >
+                #{tag}
+              </NestedLink>
+            ))}
+            {post.tags.length > 5 && (
+              <span className="inline-flex items-center text-[10px] text-leaf-600/60">+{post.tags.length - 5}</span>
+            )}
+          </div>
+        )}
 
-        {/* footer:作者(左) + 看赞评(右) 同一行
-            4 列瀑布流:作者+时间隐藏到上方,看赞评各占 1/3 */}
-        <div className="post-footer flex items-center justify-between gap-2 border-t border-leaf-50 pt-1.5">
-          <NestedLink
-            href={`/user/${post.author.id}`}
-            className="post-footer-author flex min-w-0 items-center gap-1 text-[10px] text-ink-700/80 hover:text-leaf-700"
-          >
-            <Avatar src={post.author.avatar} alt={post.author.name} size={18} />
-            <span className="truncate font-medium">{post.author.name}</span>
-          </NestedLink>
-          <div className="post-stats flex shrink-0 items-center gap-2 text-[10px] text-leaf-700/70">
-            <Stat icon="eye" n={post.views} />
-            <Stat icon="heart" n={post.likes} />
-            <Stat icon="comment" n={post.comments} />
+        {/* 板块 + 统计数据（最下面一行） */}
+        <div className="flex items-center justify-between gap-2">
+          {post.board && (
+            <NestedLink
+              href={boardUrl(post.board)}
+              className="inline-flex items-center gap-1 rounded-full bg-leaf-50 px-2 py-0.5 text-[10px] text-leaf-700 hover:bg-leaf-100"
+            >
+              <span className="font-medium">{post.board.name}</span>
+            </NestedLink>
+          )}
+          <div className="flex items-center gap-2 shrink-0 text-[9px] text-leaf-700/70">
+            <span className="inline-flex items-center gap-1"><Icon name="eye" size={12} />{formatNumber(post.views)}</span>
+            <span className="inline-flex items-center gap-1"><Icon name="comment" size={12} />{formatNumber(post.comments)}</span>
+            <span className="inline-flex items-center gap-1"><Icon name="heart" size={12} />{formatNumber(post.likes)}</span>
           </div>
         </div>
       </div>
@@ -176,9 +414,9 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
 
 /**
  * 封面图组件
- * - 默认 max-h-[280px] + object-contain,极端比例图自动居中,不裁切不拉伸
- * - 当原图自然宽度 < 容器宽度时,放大到 1.5 倍原图尺寸(宽不超过容器),保持清晰且不变模糊
- *   仍不到容器宽时两边露 bg-leaf-50 兜底
+ * - 根据图片比例自动适配：
+ *   - 横图(宽>高)：保持原比例，最大高度 280px
+ *   - 竖图/长图(高>=宽)：使用 aspect-[3/4] 限制高度，避免太长
  */
 function CoverImage({
   src,
@@ -192,6 +430,7 @@ function CoverImage({
   typeBadge?: React.ReactNode;
 }) {
   const [naturalW, setNaturalW] = useState<number | null>(null);
+  const [naturalH, setNaturalH] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerW, setContainerW] = useState<number | null>(null);
 
@@ -207,18 +446,25 @@ function CoverImage({
     return () => ro.disconnect();
   }, []);
 
-  // 是否走「放大 1.5 倍」分支
+  // 检测图片类型：横图(宽>高) 还是 特别长的图(高 > 宽*2.5)
+  const aspectRatio = naturalW && naturalH ? naturalW / naturalH : null;
+  const isLandscape = aspectRatio !== null && aspectRatio > 1;
+  // 只有特别长的图片才限制高度
+  const isVeryTall = aspectRatio !== null && aspectRatio < 0.4; // 高是宽的2.5倍以上
+
+  // 小图放大 1.5 倍
   const isSmaller = naturalW != null && containerW != null && naturalW < containerW;
-  const scaledWidth = isSmaller
-    ? Math.min(naturalW! * 1.5, containerW!)
-    : null;
+  const scaledWidth = isSmaller ? Math.min(naturalW! * 1.5, containerW!) : null;
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full overflow-hidden bg-leaf-50"
+      className={cn(
+        'relative w-full overflow-hidden bg-leaf-50',
+        isVeryTall && 'aspect-[3/4]'
+      )}
     >
-      <div className="grid place-items-center">
+      <div className="grid h-full place-items-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={src}
@@ -227,10 +473,14 @@ function CoverImage({
           onLoad={(e) => {
             const img = e.currentTarget;
             if (img.naturalWidth) setNaturalW(img.naturalWidth);
+            if (img.naturalHeight) setNaturalH(img.naturalHeight);
           }}
-          className="block max-h-[280px] object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+          className={cn(
+            'block object-contain transition-transform duration-500 group-hover:scale-[1.02]',
+            isLandscape ? 'max-h-[280px]' : isVeryTall ? 'h-full' : ''
+          )}
           style={
-            scaledWidth
+            scaledWidth && isLandscape
               ? { width: scaledWidth }
               : { width: '100%' }
           }
@@ -453,15 +703,6 @@ function CompactCard({ post, className }: { post: Post; className?: string }) {
         </div>
       </div>
     </Link>
-  );
-}
-
-function Stat({ icon, n }: { icon: 'eye' | 'heart' | 'comment'; n: number }) {
-  return (
-    <span className="inline-flex items-center gap-1">
-      <Icon name={icon} size={13} />
-      {formatNumber(n)}
-    </span>
   );
 }
 
