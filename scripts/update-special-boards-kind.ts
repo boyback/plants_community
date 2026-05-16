@@ -6,21 +6,21 @@ async function main() {
   console.log('开始更新特殊板块类型...\n');
 
   // 更新晒图广场
-  const shaitu = await prisma.category.updateMany({
+  const shaitu = await prisma.board.updateMany({
     where: { slug: 'shaitu' },
     data: { kind: 'system' },
   });
   console.log(`✓ 更新晒图广场: ${shaitu.count} 条记录`);
 
   // 更新交易市场
-  const market = await prisma.category.updateMany({
+  const market = await prisma.board.updateMany({
     where: { slug: 'jiaoyi' },
     data: { kind: 'system' },
   });
   console.log(`✓ 更新交易市场: ${market.count} 条记录`);
 
   // 验证结果
-  const specialBoards = await prisma.category.findMany({
+  const specialBoards = await prisma.board.findMany({
     where: {
       slug: { in: ['shaitu', 'jiaoyi'] },
     },
@@ -34,7 +34,7 @@ async function main() {
   });
 
   console.log('\n当前特殊板块状态:');
-  specialBoards.forEach((board) => {
+  specialBoards.forEach((board: { id: string; slug: string; name: string; kind: string; enabled: boolean }) => {
     console.log(`  - ${board.name} (${board.slug}): kind=${board.kind}, enabled=${board.enabled}`);
   });
 

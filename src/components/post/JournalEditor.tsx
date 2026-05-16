@@ -10,7 +10,7 @@ import { Lightbox } from '@/components/ui/Lightbox';
 
 export interface JournalDraftEntry {
   entryDate: string; // yyyy-MM-dd
-  stage: JournalStage;
+  stage: JournalStage | '';
   note: string;
   images: string[];
 }

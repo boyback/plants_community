@@ -162,13 +162,12 @@ type ResolvedIds = {
   boardId: string | null;
   genusId: string | null;
   speciesId: string | null;
-  boardId: string | null;
 };
 type ResolveResult = { ok: true; ids: ResolvedIds } | { ok: false; error: string };
 
 /** 根据入参解析出 boardId / genusId / speciesId / boardId */
 async function resolveBoardIds(body: z.infer<typeof CreateBody>): Promise<ResolveResult> {
-  const ids: ResolvedIds = { boardId: null, genusId: null, speciesId: null, boardId: null };
+  const ids: ResolvedIds = { boardId: null, genusId: null, speciesId: null };
 
   if (body.speciesSlug) {
     const sp = await prisma.species.findFirst({
@@ -278,7 +277,6 @@ export const POST = handler(async (req) => {
       boardId: resolvedIds.boardId,
       genusId: resolvedIds.genusId,
       speciesId: resolvedIds.speciesId,
-      boardId: resolvedIds.boardId,
       authorId: me.id,
       ...(REVIEW_FILTER_ENABLED && {
         reviewStatus: needsReview ? 'pending' : 'published',

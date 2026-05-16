@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    if (!user || user.role !== 'ADMIN') {
+    if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: '无权限' }, { status: 403 });
     }
 
@@ -63,7 +63,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user || user.role !== 'ADMIN') {
+    if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: '无权限' }, { status: 403 });
     }
 

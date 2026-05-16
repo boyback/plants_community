@@ -36,7 +36,10 @@ type IconName =
   | 'palette'
   | 'globe'
   | 'shop'
-  | 'hammer';
+  | 'hammer'
+  | 'trophy'
+  | 'check-circle'
+  | 'x-circle';
 
 const paths: Record<IconName, string> = {
   home: 'M3 11.5 12 4l9 7.5V21h-6v-6H9v6H3v-9.5Z',
@@ -78,6 +81,9 @@ const paths: Record<IconName, string> = {
   globe: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10Z',
   shop: 'M3 9 4 5h16l1 4M3 9v10a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9M3 9h18M9 14h6',
   hammer: 'm15 12-8 8a2 2 0 0 1-3-3l8-8M14.5 5.5l4 4L21 7l-4-4-2.5 2.5Zm0 0L9 11l4 4 5.5-5.5',
+  trophy: 'M8 21h8m-4-4V9m0 0a4 4 0 0 0 4-4V3H8v2a4 4 0 0 0 4 4zM6 9H4.5a2.5 2.5 0 0 1 0-5H6m12 0h1.5a2.5 2.5 0 0 1 0 5H18',
+  'check-circle': 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0zm-7-5l-5 5-3-3-2 2 5 5 7-7-2-2z',
+  'x-circle': 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0zm-8-4l-4 4 4 4-2 2-4-4-4 4-2-2 4-4-4-4 2-2 4 4 4-4 2 2z',
 };
 
 export function Icon({

@@ -22,7 +22,7 @@ interface DuplicateGroup {
     id: string
     slug: string
     name: string
-    icon: string
+    icons: string
     orderIdx: number
   }>
 }
@@ -30,12 +30,12 @@ interface DuplicateGroup {
 async function findDuplicateCategories(): Promise<DuplicateGroup[]> {
   console.log('🔍 查找重复的科名...')
 
-  const categories = await prisma.category.findMany({
+  const categories = await prisma.board.findMany({
     select: {
       id: true,
       slug: true,
       name: true,
-      icon: true,
+      icons: true,
       orderIdx: true,
     },
     orderBy: { orderIdx: 'asc' }
@@ -62,7 +62,7 @@ async function findDuplicateCategories(): Promise<DuplicateGroup[]> {
 
 function selectTargetCategory(categories: DuplicateGroup['categories']) {
   // 优先选择有icon的
-  const withIcon = categories.filter(c => c.icon && c.icon.trim() !== '')
+  const withIcon = categories.filter(c => c.icons && c.icons !== '[]')
   if (withIcon.length > 0) {
     return withIcon[0]
   }
@@ -165,7 +165,7 @@ async function mergeGenusSpecies(sourceGenusId: string, targetGenusId: string) {
 
 async function mergeCategoryGenera(sourceCategoryId: string, targetCategoryId: string) {
   const genera = await prisma.genus.findMany({
-    where: { categoryId: sourceCategoryId },
+    where: { boardId: sourceCategoryId },
     select: { id: true, name: true, slug: true }
   })
 
@@ -179,7 +179,7 @@ async function mergeCategoryGenera(sourceCategoryId: string, targetCategoryId: s
     // 检查目标科中是否已存在同名属
     const existingGenus = await prisma.genus.findFirst({
       where: {
-        categoryId: targetCategoryId,
+        boardId: targetCategoryId,
         name: genus.name
       }
     })
@@ -222,7 +222,7 @@ async function mergeCategoryGenera(sourceCategoryId: string, targetCategoryId: s
       console.log(`  ➡️  移动属 "${genus.name}" 到目标科`)
       await prisma.genus.update({
         where: { id: genus.id },
-        data: { categoryId: targetCategoryId }
+        data: { boardId: targetCategoryId }
       })
     }
   }
@@ -233,7 +233,7 @@ async function mergeDuplicateCategory(group: DuplicateGroup) {
   const sources = group.categories.filter(c => c.id !== target.id)
 
   console.log(`\n📦 合并科: "${group.name}"`)
-  console.log(`  ✅ 保留: ${target.slug} (ID: ${target.id}, Icon: ${target.icon || '无'})`)
+  console.log(`  ✅ 保留: ${target.slug} (ID: ${target.id}, Icon: ${target.icons || '无'})`)
   console.log(`  ❌ 删除: ${sources.map(s => `${s.slug} (${s.id})`).join(', ')}`)
 
   for (const source of sources) {
@@ -242,19 +242,19 @@ async function mergeDuplicateCategory(group: DuplicateGroup) {
 
     // 2. 合并直接挂在科下的帖子
     const posts = await prisma.post.findMany({
-      where: { categoryId: source.id },
+      where: { boardId: source.id },
       select: { id: true }
     })
     if (posts.length > 0) {
       console.log(`📝 合并 ${posts.length} 个帖子从科 ${source.id} 到 ${target.id}`)
       await prisma.post.updateMany({
-        where: { categoryId: source.id },
-        data: { categoryId: target.id }
+        where: { boardId: source.id },
+        data: { boardId: target.id }
       })
     }
 
     // 3. 删除源科
-    await prisma.category.delete({ where: { id: source.id } })
+    await prisma.board.delete({ where: { id: source.id } })
     console.log(`✅ 已删除重复科 "${source.slug}"`)
   }
 }
@@ -274,7 +274,7 @@ async function main() {
     for (const group of duplicates) {
       console.log(`- "${group.name}": ${group.categories.length} 个重复`)
       for (const cat of group.categories) {
-        console.log(`  - ${cat.slug} (ID: ${cat.id}, Icon: ${cat.icon || '无'})`)
+        console.log(`  - ${cat.slug} (ID: ${cat.id}, Icon: ${cat.icons || '无'})`)
       }
     }
 
@@ -291,8 +291,8 @@ async function main() {
     console.log('\n✅ 所有重复科已成功合并!')
 
     // 显示最终结果
-    const finalCategories = await prisma.category.findMany({
-      select: { name: true, slug: true, icon: true },
+    const finalCategories = await prisma.board.findMany({
+      select: { name: true, slug: true, icons: true },
       orderBy: { orderIdx: 'asc' }
     })
     console.log(`\n📊 当前科总数: ${finalCategories.length}`)

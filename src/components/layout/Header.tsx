@@ -288,7 +288,7 @@ function HeaderLink({
   href: string;
   children: React.ReactNode;
   icon: Parameters<typeof Icon>[0]['name'];
-  image:string;
+  image?: string;
 }) {
   const pathname = usePathname();
   const active =

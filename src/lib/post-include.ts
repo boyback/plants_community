@@ -39,8 +39,6 @@ export function postInclude(opts?: { withJournalEntries?: boolean }) {
         _count: { select: { posts: true } },
       },
     },
-    // 旧 board 字段继续 include 作为兜底
-    board: { include: { _count: { select: { posts: true } } } },
     vote: { include: { options: true } },
     event: { include: { _count: { select: { attendees: true } } } },
     journal: { include: journalEntriesInclude },

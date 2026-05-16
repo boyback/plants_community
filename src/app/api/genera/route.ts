@@ -27,7 +27,7 @@ export async function GET(req: Request) {
       latinName: true,
       _count: { select: { posts: true } },
       board: {
-        select: { slug: true, name: true, icon: true },
+        select: { slug: true, name: true, icons: true },
       },
     },
   });
@@ -42,7 +42,7 @@ export async function GET(req: Request) {
       posts: g._count.posts,
       categorySlug: g.board.slug,
       categoryName: g.board.name,
-      categoryIcon: g.board.icon,
+      categoryIcon: g.board.icons,
     })),
   });
 }

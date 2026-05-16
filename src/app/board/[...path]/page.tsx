@@ -213,9 +213,9 @@ async function CategoryView({ categorySlug }: { categorySlug: string }) {
 
   return (
     <Shell>
-      <BoardBreadcrumb path={category.path} />
+      <BoardBreadcrumb path={board.path} />
 
-      <CategoryHeader board={category} latinName={c.latinName} kind={c.kind} />
+      <CategoryHeader board={board} latinName={c.latinName} kind={c.kind} />
 
       {c.genera.length > 0 && (
         <section className="mb-6">
@@ -254,7 +254,7 @@ async function CategoryView({ categorySlug }: { categorySlug: string }) {
 
       <section>
         <h2 className="mb-3 text-base font-semibold text-ink-800">
-          🔥 <I18nText k="board.hotInCategory" vars={{ name: category.name }} fallback={`${category.name}最新讨论`} />
+          🔥 <I18nText k="board.hotInCategory" vars={{ name: board.name }} fallback={`${board.name}最新讨论`} />
         </h2>
         <PostMasonry
           initial={posts}
@@ -692,7 +692,7 @@ async function SpeciesView({
 /* ---------------- 通用组件 ---------------- */
 
 function CategoryHeader({
-  category,
+  board: category,
   latinName,
   kind,
 }: {
@@ -722,7 +722,7 @@ function CategoryHeader({
               <Icon name="plus" size={12} />
               <I18nText k="board.postInCategory" fallback="在本板块发帖" />
             </Link>
-            <FollowBoardButton type="category" slug={category.slug} />
+            <FollowBoardButton type="board" slug={category.slug} />
             {kind === 'family' && (
               <span className="inline-flex items-center rounded-full border border-white/40 bg-white/10 px-3 py-1.5 text-xs text-white/90 backdrop-blur">
                 <I18nText k="board.generaListHint" fallback="点击下方属名进入二级板块" />

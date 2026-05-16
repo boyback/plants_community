@@ -39,7 +39,7 @@ export const GET = handler(async (req) => {
         OR: [
           { title: { contains: q } },
           { descriptionText: { contains: q } },
-          { board: { contains: q } },
+          { category: { contains: q } },
           { tags: { contains: q } },
           { shipFrom: { contains: q } },
         ],
@@ -75,7 +75,7 @@ export const GET = handler(async (req) => {
   const where = {
     status: { in: ['on_sale', 'sold_out'] as ProductStatus[] },
     ...(source ? { source } : {}),
-    ...(category ? { board } : {}),
+    ...(board ? { category: board } : {}),
     ...(Object.keys(priceFilter).length > 0 ? { price: priceFilter } : {}),
     ...(andFilters.length > 0 ? { AND: andFilters } : {}),
   };
@@ -145,7 +145,7 @@ export const POST = handler(async (req) => {
       description: stored.html,
       descriptionJson: stored.json || null,
       descriptionText: stored.text,
-      category: body.board,
+      category: body.category,
       cover: body.cover,
       images: stringifyJson(body.images ?? [body.cover]),
       tags: stringifyJson(body.tags ?? []),

@@ -125,7 +125,7 @@ model User {
   auctionParticipants AuctionParticipant[] @relation("AuctionParticipantUser")
 
   // 关注板块(可跨三级:科/属/品种)
-  boardFollows BoardFollow[]
+  boardFollows        BoardFollow[]
   // 管理员对单个用户的功能权限覆盖(额外授予 / 显式收回)
   permissionOverrides UserPermissionOverride[]
 
@@ -295,7 +295,7 @@ model SystemMenu {
   slug      String   @unique
   name      String
   icon      String   @default("") // 单个图标，可以是 emoji 或图片 URL
-  path      String   // 菜单链接路径
+  path      String // 菜单链接路径
   orderIdx  Int      @default(0)
   enabled   Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -1376,9 +1376,9 @@ model Species {
   /// 同一 genus 下同辈 Species 排序
   orderIdx Int @default(0)
 
-  posts    Post[]
-  ratings  SpeciesRating[]
-  journals Journal[]
+  posts          Post[]
+  ratings        SpeciesRating[]
+  journals       Journal[]
   contestEntries ContestEntry[]
 
   createdAt DateTime @default(now())
@@ -1632,10 +1632,10 @@ model Album {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  images        AlbumImage[]
-  likes         AlbumLike[]
-  comments      AlbumComment[]
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  images         AlbumImage[]
+  likes          AlbumLike[]
+  comments       AlbumComment[]
   contestEntries ContestEntry[]
 
   @@index([userId])
@@ -1691,41 +1691,41 @@ model AlbumComment {
 // ============================================================
 
 enum ContestStatus {
-  draft      // 草稿
-  upcoming   // 即将开始
-  active     // 进行中
-  voting     // 投票中
-  ended      // 已结束
-  cancelled  // 已取消
+  draft // 草稿
+  upcoming // 即将开始
+  active // 进行中
+  voting // 投票中
+  ended // 已结束
+  cancelled // 已取消
 }
 
 model PhotoContest {
-  id               String        @id @default(cuid())
-  title            String // 大赛标题
-  description      String        @db.Text // 大赛描述
-  cover            String? // 封面图
-  theme            String? // 主题标签
-  rules            String        @db.Text // 参赛规则（JSON）
-  prizes           String        @db.Text // 奖品设置（JSON）
-  status           ContestStatus @default(draft)
+  id                String        @id @default(cuid())
+  title             String // 大赛标题
+  description       String        @db.Text // 大赛描述
+  cover             String? // 封面图
+  theme             String? // 主题标签
+  rules             String        @db.Text // 参赛规则（JSON）
+  prizes            String        @db.Text // 奖品设置（JSON）
+  status            ContestStatus @default(draft)
   // 时间节点
-  startAt          DateTime // 开始时间
-  endAt            DateTime // 结束时间
-  votingStartAt    DateTime? // 投票开始时间
-  votingEndAt      DateTime? // 投票结束时间
+  startAt           DateTime // 开始时间
+  endAt             DateTime // 结束时间
+  votingStartAt     DateTime? // 投票开始时间
+  votingEndAt       DateTime? // 投票结束时间
   // 统计
-  entryCount       Int           @default(0) // 参赛作品数
-  participantCount Int           @default(0) // 参赛人数
-  voteCount        Int           @default(0) // 总投票数
-  viewCount        Int           @default(0) // 浏览数
+  entryCount        Int           @default(0) // 参赛作品数
+  participantCount  Int           @default(0) // 参赛人数
+  voteCount         Int           @default(0) // 总投票数
+  viewCount         Int           @default(0) // 浏览数
   // 设置
-  maxEntriesPerUser Int          @default(3) // 每人最多提交作品数
-  allowVoting       Boolean      @default(true) // 是否允许投票
-  allowComments     Boolean      @default(true) // 是否允许评论
-  featured          Boolean      @default(false) // 是否精选展示
+  maxEntriesPerUser Int           @default(3) // 每人最多提交作品数
+  allowVoting       Boolean       @default(true) // 是否允许投票
+  allowComments     Boolean       @default(true) // 是否允许评论
+  featured          Boolean       @default(false) // 是否精选展示
   createdBy         String // 创建者ID
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   creator User            @relation(fields: [createdBy], references: [id])
   entries ContestEntry[]
@@ -1737,30 +1737,30 @@ model PhotoContest {
 }
 
 model ContestEntry {
-  id          String   @id @default(cuid())
-  contestId   String
-  userId      String
-  albumId     String? // 关联相册（可选）
-  title       String // 作品标题
-  description String?  @db.Text // 作品描述
-  imageUrl    String   @db.Text // 主图URL
-  images      String   @db.Text // 所有图片（JSON array）
-  speciesId   String? // 关联品种
+  id           String   @id @default(cuid())
+  contestId    String
+  userId       String
+  albumId      String? // 关联相册（可选）
+  title        String // 作品标题
+  description  String?  @db.Text // 作品描述
+  imageUrl     String   @db.Text // 主图URL
+  images       String   @db.Text // 所有图片（JSON array）
+  speciesId    String? // 关联品种
   // 统计
-  voteCount   Int      @default(0) // 得票数
-  viewCount   Int      @default(0) // 浏览数
-  commentCount Int     @default(0) // 评论数
+  voteCount    Int      @default(0) // 得票数
+  viewCount    Int      @default(0) // 浏览数
+  commentCount Int      @default(0) // 评论数
   // 状态
-  approved    Boolean  @default(false) // 是否审核通过
-  featured    Boolean  @default(false) // 是否精选
-  disqualified Boolean @default(false) // 是否取消资格
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  approved     Boolean  @default(false) // 是否审核通过
+  featured     Boolean  @default(false) // 是否精选
+  disqualified Boolean  @default(false) // 是否取消资格
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  contest  PhotoContest    @relation(fields: [contestId], references: [id], onDelete: Cascade)
-  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  album    Album?          @relation(fields: [albumId], references: [id])
-  species  Species?        @relation(fields: [speciesId], references: [id])
+  contest  PhotoContest     @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album    Album?           @relation(fields: [albumId], references: [id])
+  species  Species?         @relation(fields: [speciesId], references: [id])
   votes    ContestVote[]
   comments ContestComment[]
   winner   ContestWinner?
@@ -1808,8 +1808,8 @@ model ContestWinner {
   prize     String   @db.Text // 奖品描述
   createdAt DateTime @default(now())
 
-  contest PhotoContest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
-  entry   ContestEntry  @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  contest PhotoContest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  entry   ContestEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
 
   @@unique([contestId, rank])
   @@index([contestId])

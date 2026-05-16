@@ -337,6 +337,7 @@ export function BoardsManager({ initial }: { initial: BoardNode[] }) {
           removeBoard={removeBoard}
           removeGenus={removeGenus}
           removeSpecies={removeSpecies}
+          onToggleEnabled={toggleEnabled}
           busy={busy}
         />
       )}
@@ -652,6 +653,7 @@ function TreeDndView({
   removeBoard,
   removeGenus,
   removeSpecies,
+  onToggleEnabled,
   busy,
 }: {
   tree: BoardNode[];
@@ -666,6 +668,7 @@ function TreeDndView({
   removeBoard: (c: BoardNode) => void;
   removeGenus: (g: GenusNode) => void;
   removeSpecies: (s: SpeciesNode) => void;
+  onToggleEnabled: (c: BoardNode) => void;
   busy: string | null;
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 3 } }));
@@ -894,7 +897,7 @@ function TreeDndView({
                         {/* 启用/停用开关 */}
                         <button
                           type="button"
-                          onClick={() => toggleEnabled(cat)}
+                          onClick={() => onToggleEnabled(cat)}
                           disabled={busy === cat.id}
                           className={cn(
                             'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',

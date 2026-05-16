@@ -48,7 +48,7 @@ export async function GET() {
     slug: c.slug,
     name: c.name,
     latinName: c.latinName,
-    icon: c.icon,
+    icons: c.icons,
     cover: c.cover,
     kind: c.kind,
     enabled: c.enabled,

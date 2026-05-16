@@ -6,6 +6,7 @@ import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { prisma } from '@/lib/db';
 import { serializeCategory } from '@/lib/serializers';
 import { formatNumber } from '@/lib/utils';
+import { parseJsonArray } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,6 +50,7 @@ export default async function BoardIndexPage() {
                 key={c.id}
                 board={{
                   ...c,
+                  icon: parseJsonArray(c.icons)?.[0] ?? '🌿',
                   generaPreview: c.genera.map((g) => g.name),
                   generaTotal: c._count?.genera ?? 0,
                   postsCount: c._count?.posts ?? 0,
@@ -70,6 +72,7 @@ export default async function BoardIndexPage() {
                 key={c.id}
                 board={{
                   ...c,
+                  icon: parseJsonArray(c.icons)?.[0] ?? '🌿',
                   generaPreview: [],
                   generaTotal: 0,
                   postsCount: c._count?.posts ?? 0,
@@ -92,6 +95,7 @@ export default async function BoardIndexPage() {
                 key={c.id}
                 board={{
                   ...c,
+                  icon: parseJsonArray(c.icons)?.[0] ?? '🌿',
                   generaPreview: [],
                   generaTotal: 0,
                   postsCount: c._count?.posts ?? 0,
@@ -127,7 +131,7 @@ function Section({
 }
 
 function CategoryCard({
-  category,
+  board: category,
   simple,
 }: {
   board: {

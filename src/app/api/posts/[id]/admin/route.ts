@@ -21,13 +21,12 @@ async function checkPermission(userId: string, postId: string) {
 
   const post = await prisma.post.findUnique({
     where: { id: postId },
-    select: { 
-      id: true, 
-      authorId: true, 
-      boardId: true, 
+    select: {
+      id: true,
+      authorId: true,
+      boardId: true,
       genusId: true,
       speciesId: true,
-      boardId: true,
     },
   });
   if (!post) return null;

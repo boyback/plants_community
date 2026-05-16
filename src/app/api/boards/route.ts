@@ -19,7 +19,7 @@ export const GET = handler(async (req) => {
   const list = await prisma.board.findMany({
     where: {
       enabled: true,
-      ...(kind && { kind }),
+      ...(kind && { kind: kind as import('@prisma/client').BoardKind }),
     },
     orderBy: [{ orderIdx: 'asc' }, { name: 'asc' }],
     include: {

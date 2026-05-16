@@ -20,13 +20,13 @@ async function main() {
   console.log('🔧 开始修复科的 slug...\n')
 
   for (const [chineseName, englishSlug] of Object.entries(slugMapping)) {
-    const category = await prisma.category.findFirst({
+    const category = await prisma.board.findFirst({
       where: { name: chineseName }
     })
 
     if (category) {
       console.log(`修复: ${chineseName} (${category.slug}) -> ${englishSlug}`)
-      await prisma.category.update({
+      await prisma.board.update({
         where: { id: category.id },
         data: { slug: englishSlug }
       })
@@ -39,7 +39,7 @@ async function main() {
   console.log('✅ 所有 slug 已修复!')
 
   // 显示最终结果
-  const categories = await prisma.category.findMany({
+  const categories = await prisma.board.findMany({
     select: { name: true, slug: true },
     orderBy: { orderIdx: 'asc' }
   })

@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 
 type Category = 'bug' | 'feature' | 'content' | 'other';
 
-const CATEGORIES: { key: Board; label: string; icon: string }[] = [
+const CATEGORIES: { key: Category; label: string; icon: string }[] = [
   { key: 'bug', label: '缺陷', icon: '🐛' },
   { key: 'feature', label: '建议', icon: '✨' },
   { key: 'content', label: '内容', icon: '📝' },

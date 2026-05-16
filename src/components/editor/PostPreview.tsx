@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 
 interface JournalDraftEntry {
   entryDate: string;
-  stage: JournalStage;
+  stage: JournalStage | '';
   note: string;
   images: string[];
 }
@@ -163,7 +163,7 @@ export function PostPreview({
             </div>
             <ol className="space-y-1.5">
               {journal.entries.slice(0, 3).map((e, i) => {
-                const meta = STAGE_META[e.stage] || STAGE_META.other;
+                const meta = STAGE_META[e.stage as JournalStage] || STAGE_META.other;
                 return (
                   <li key={i} className="flex items-start gap-1.5">
                     <span

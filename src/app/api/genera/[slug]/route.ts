@@ -30,7 +30,7 @@ export const GET = handler(async (req) => {
     latinName: g.latinName ?? null,
     category: serializeCategory(g.board),
     species: g.species.map((s) =>
-      serializeSpecies({ ...s, genus: { ...g, category: g.board } })
+      serializeSpecies({ ...s, genus: { ...g, board: g.board } })
     ),
   };
 });

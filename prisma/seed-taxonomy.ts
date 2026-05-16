@@ -13,7 +13,7 @@
  * 独立可运行:`npx tsx prisma/seed-taxonomy.ts`
  * 会被 prisma/seed.ts 在末尾自动联跑。
  */
-import { PrismaClient, CategoryKind } from '@prisma/client';
+import { PrismaClient, BoardKind } from '@prisma/client';
 import { taxonomy } from './taxonomy-data';
 
 const prisma = new PrismaClient();
@@ -30,7 +30,7 @@ const discussionCategories = [
     icons: JSON.stringify(['🌱']),
     members: 32145,
     orderIdx: 101,
-    kind: 'discussion' as CategoryKind,
+    kind: 'discussion' as BoardKind,
   },
   {
     slug: 'yangzhi',
@@ -41,7 +41,7 @@ const discussionCategories = [
     icons: JSON.stringify(['💧']),
     members: 21034,
     orderIdx: 102,
-    kind: 'discussion' as CategoryKind,
+    kind: 'discussion' as BoardKind,
   },
   {
     slug: 'shaitu',
@@ -52,7 +52,7 @@ const discussionCategories = [
     icons: JSON.stringify(['📷']),
     members: 18520,
     orderIdx: 103,
-    kind: 'discussion' as CategoryKind,
+    kind: 'discussion' as BoardKind,
   },
   {
     slug: 'jiaoyi',
@@ -63,7 +63,7 @@ const discussionCategories = [
     icons: JSON.stringify(['💰']),
     members: 15623,
     orderIdx: 104,
-    kind: 'market' as CategoryKind,
+    kind: 'market' as BoardKind,
   },
 ];
 
@@ -73,7 +73,7 @@ export async function seedTaxonomy() {
   // 1. 讨论区(非分类型 Category)
   console.log('• 讨论区(非分类型 Category)');
   for (const d of discussionCategories) {
-    await prisma.category.upsert({
+    await prisma.board.upsert({
       where: { slug: d.slug },
       update: {
         name: d.name,
@@ -94,7 +94,7 @@ export async function seedTaxonomy() {
   let speciesCount = 0;
 
   for (const cat of taxonomy) {
-    const dbCat = await prisma.category.upsert({
+    const dbCat = await prisma.board.upsert({
       where: { slug: cat.slug },
       update: {
         name: cat.name,
@@ -103,7 +103,7 @@ export async function seedTaxonomy() {
         cover: cat.cover,
         icons: JSON.stringify([cat.icon]),
         orderIdx: cat.orderIdx,
-        kind: CategoryKind.family,
+        kind: BoardKind.family,
       },
       create: {
         slug: cat.slug,
@@ -113,7 +113,7 @@ export async function seedTaxonomy() {
         cover: cat.cover,
         icons: JSON.stringify([cat.icon]),
         orderIdx: cat.orderIdx,
-        kind: CategoryKind.family,
+        kind: BoardKind.family,
       },
     });
     catCount++;
@@ -121,7 +121,7 @@ export async function seedTaxonomy() {
     for (let gi = 0; gi < cat.genera.length; gi++) {
       const g = cat.genera[gi];
       const dbGenus = await prisma.genus.upsert({
-        where: { categoryId_slug: { categoryId: dbCat.id, slug: g.slug } },
+        where: { boardId_slug: { boardId: dbCat.id, slug: g.slug } },
         update: {
           name: g.name,
           latinName: g.latinName,
@@ -130,7 +130,7 @@ export async function seedTaxonomy() {
           orderIdx: gi,
         },
         create: {
-          categoryId: dbCat.id,
+          boardId: dbCat.id,
           slug: g.slug,
           name: g.name,
           latinName: g.latinName,
@@ -189,16 +189,7 @@ export async function seedTaxonomy() {
     `   ✓ Category: ${catCount + discussionCategories.length},Genus: ${genusCount},Species: ${speciesCount}`
   );
 
-  // 把旧帖子 (boardId) 自动挂到同名 Category
-  console.log('• 兼容:回填旧帖子的 categoryId');
-  const migrated = await prisma.$executeRaw`
-    UPDATE posts p
-    INNER JOIN boards b ON p.boardId = b.id
-    INNER JOIN categories c ON c.name = b.name
-    SET p.categoryId = c.id
-    WHERE p.categoryId IS NULL
-  `;
-  console.log(`   ✓ ${migrated} 条旧帖子挂到对应 Category`);
+  console.log('• 兼容:旧帖子已通过 boardId 关联,无需迁移');
 }
 
 if (require.main === module) {

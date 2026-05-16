@@ -208,7 +208,7 @@ export function CategoryEditDialog({
           id: board.id,
           icons,
           name: body.name,
-          latinName: isSpecialBoard ? board.latinName : body.latinName,
+          latinName: isSpecialBoard ? board.latinName : body.latinName ?? null,
         });
       } else {
         const body = {

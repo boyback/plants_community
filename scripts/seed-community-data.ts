@@ -225,15 +225,15 @@ async function main() {
 
   for (const [categoryName, categoryData] of Object.entries(succulentData)) {
     // 创建科
-    let category = await prisma.category.findUnique({ where: { slug: categoryName } });
+    let category = await prisma.board.findUnique({ where: { slug: categoryName } });
     if (!category) {
-      category = await prisma.category.create({
+      category = await prisma.board.create({
         data: {
           name: categoryName,
           slug: categoryName,
           latinName: categoryData.latinName,
           description: `${categoryName}相关的多肉植物`,
-          icon: '🌿',
+          icons: JSON.stringify(['🌿']),
           cover: '',
           kind: 'family',
         },
@@ -244,7 +244,7 @@ async function main() {
     // 创建属
     for (const [genusName, genusData] of Object.entries(categoryData.genera)) {
       let genus = await prisma.genus.findFirst({
-        where: { slug: genusName, categoryId: category.id },
+        where: { slug: genusName, boardId: category.id },
       });
       if (!genus) {
         genus = await prisma.genus.create({
@@ -253,7 +253,7 @@ async function main() {
             slug: genusName,
             latinName: genusData.latinName,
             description: `${genusName}相关品种`,
-            categoryId: category.id,
+            boardId: category.id,
           },
         });
         console.log(`    ✓ 创建属: ${genusName}`);
