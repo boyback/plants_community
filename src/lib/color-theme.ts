@@ -23,7 +23,11 @@ export type ColorThemeKey =
   | 'lavender'
   | 'cream'
   | 'neon'
-  | 'minimal';
+  | 'minimal'
+  | 'forest-green'
+  | 'terracotta'
+  | 'mint'
+  | 'amethyst';
 
 export type ColorThemeMode = 'light' | 'dark';
 
@@ -160,6 +164,38 @@ export const COLOR_THEMES: ColorThemeMeta[] = [
     logoEmoji: '⬜',
     swatch: { primary: '#737373', bg: '#fafafa' },
     vibe: '极简',
+  },
+  {
+    key: 'forest-green',
+    name: '森系自然',
+    desc: '墨绿 · 沉稳自然',
+    logoEmoji: '🌲',
+    swatch: { primary: '#2d7a4f', bg: '#f2f6f0' },
+    vibe: '自然系',
+  },
+  {
+    key: 'terracotta',
+    name: '暖阳多肉',
+    desc: '赤陶 · 温暖活力',
+    logoEmoji: '🏺',
+    swatch: { primary: '#c27a5c', bg: '#f8f4ef' },
+    vibe: '温暖系',
+  },
+  {
+    key: 'mint',
+    name: '极简清冷',
+    desc: '薄荷 · 清爽现代',
+    logoEmoji: '🌿',
+    swatch: { primary: '#2d9b85', bg: '#f2f8f6' },
+    vibe: '清新系',
+  },
+  {
+    key: 'amethyst',
+    name: '暮光紫韵',
+    desc: '紫晶 · 独特优雅',
+    logoEmoji: '💎',
+    swatch: { primary: '#8b6fa8', bg: '#f7f5fa' },
+    vibe: '优雅系',
   },
 ];
 
