@@ -56,6 +56,7 @@ export function serializeUser(u: UserWithRelations): User {
     avatar: u.avatar,
     bio: u.bio ?? undefined,
     level: u.level,
+    pointsBalance: u.pointsBalance,
     posts: u._count?.posts ?? 0,
     followers: u._count?.followers ?? 0,
     following: u._count?.following ?? 0,
@@ -323,6 +324,7 @@ export function serializePost(p: PostWithRelations): Post {
           id: p.species.id,
           slug: p.species.slug,
           name: p.species.name,
+          cover: p.species.cover,
           avgDifficulty:
             p.species.ratingCount > 0
               ? p.species.ratingSum / p.species.ratingCount

@@ -257,6 +257,15 @@ export default async function PostDetailPage({ params }: { params: { id: string 
                 <Link href={boardUrl(post.board)} className="chip hover:bg-leaf-100">
                   {post.board.icon} {post.board.name}
                 </Link>
+                {post.species && (
+                  <Link
+                    href={`/species/${post.species.slug}`}
+                    className="inline-flex items-center gap-1 rounded-full bg-leaf-50 px-2.5 py-0.5 text-xs text-leaf-700 hover:bg-leaf-100 transition-colors"
+                  >
+                    <img src={post.species.cover} alt="" className="h-4 w-4 rounded-full object-cover" />
+                    {post.species.name}
+                  </Link>
+                )}
                 {post.tags.map((t) => (
                   <Link
                     key={t}
@@ -356,10 +365,14 @@ export default async function PostDetailPage({ params }: { params: { id: string 
                 </div>
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-3 border-t border-leaf-100 pt-3 text-center text-xs">
+            <div className="mt-3 grid grid-cols-4 border-t border-leaf-100 pt-3 text-center text-xs">
               <div>
                 <div className="font-semibold text-ink-800">{post.author.posts}</div>
                 <div className="text-leaf-700/70"><I18nText k="detail.post.postsLabel" fallback="帖子" /></div>
+              </div>
+              <div>
+                <div className="font-semibold text-ink-800">{formatNumber(post.author.pointsBalance)}</div>
+                <div className="text-leaf-700/70">积分</div>
               </div>
               <div>
                 <div className="font-semibold text-ink-800">{formatNumber(post.author.followers)}</div>
@@ -382,7 +395,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
 
           {/* 相关帖子 */}
           <div className="card p-4">
-            <div className="mb-3 text-sm font-semibold text-ink-800">📖 <I18nText k="detail.post.related" fallback="本版相关" /></div>
+            <div className="mb-3 text-sm font-semibold text-ink-800">📖 <I18nText k="detail.post.related" fallback="推荐帖子" /></div>
             <div className="space-y-3">
               {related.map((p) => (
                 <PostCard key={p.id} post={p} layout="compact" />

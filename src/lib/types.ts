@@ -58,6 +58,7 @@ export interface User {
   followers: number;
   following: number;
   posts: number;
+  pointsBalance: number;
   badges: Badge[];
   joinedAt: string;
   /** 管理员/版主等角色;未授权用户为 undefined */
@@ -209,6 +210,7 @@ export interface Post {
     id: string;
     slug: string;
     name: string;
+    cover: string;
     /** 用户打分平均(无人打分时回退到 difficulty) */
     avgDifficulty: number;
     /** 总打分人数 */
@@ -458,7 +460,6 @@ export interface UserVipState {
 
 export interface UserExtended extends User {
   exp?: number;
-  pointsBalance?: number;
   vip?: UserVipState;
   equip?: EquipState;
 }
