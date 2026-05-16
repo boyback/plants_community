@@ -258,9 +258,13 @@ export default async function PostDetailPage({ params }: { params: { id: string 
                   {post.board.icon} {post.board.name}
                 </Link>
                 {post.tags.map((t) => (
-                  <span key={t} className="text-xs text-leaf-700/70">
+                  <Link
+                    key={t}
+                    href={`/topic/${encodeURIComponent(t)}`}
+                    className="rounded-full bg-leaf-50 px-2.5 py-0.5 text-xs text-leaf-700 hover:bg-leaf-100 transition-colors"
+                  >
                     #{t}
-                  </span>
+                  </Link>
                 ))}
               </div>
 
