@@ -8,6 +8,7 @@ import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
 import { RichTextEditor } from '@/components/richtext/RichTextEditor';
 import { UploadField } from '@/components/upload/UploadField';
 import { PostPreview } from '@/components/editor/PostPreview';
+import { UserAccountCard } from '@/components/layout/UserAccountCard';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from '@/lib/client-api';
 import type { Board } from '@/lib/types';
@@ -358,7 +359,9 @@ export function PostEditor({ post }: { post: InitialPost }) {
 
       {/* 右侧实时预览 */}
       <div className="space-y-4">
-        <PostPreview
+        <div className="xl:sticky xl:top-[60px] xl:self-start space-y-4">
+          <UserAccountCard />
+          <PostPreview
           type={post.type}
           title={title}
           content={content}
@@ -378,6 +381,7 @@ export function PostEditor({ post }: { post: InitialPost }) {
             entries: [],
           }}
         />
+        </div>
       </div>
 
       {toast && (

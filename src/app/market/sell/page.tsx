@@ -8,6 +8,7 @@ import { Icon } from '@/components/ui/Icon';
 import { UploadField } from '@/components/upload/UploadField';
 import { PermissionGate } from '@/components/ui/PermissionGate';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { UserAccountCard } from '@/components/layout/UserAccountCard';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from '@/lib/client-api';
@@ -178,11 +179,12 @@ export default function SellPage() {
 
   return (
     <Shell>
-      <div className="mx-auto max-w-3xl">
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold">{t('market.sell.title')}</h1>
-          <p className="text-sm text-leaf-700/70">{t('market.sell.subtitle')}</p>
-        </div>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_280px]">
+        <div className="min-w-0">
+          <div className="mb-4">
+            <h1 className="text-2xl font-bold">{t('market.sell.title')}</h1>
+            <p className="text-sm text-leaf-700/70">{t('market.sell.subtitle')}</p>
+          </div>
 
         <PermissionGate perm="market:sell">
           <div className="space-y-4">
@@ -410,6 +412,14 @@ export default function SellPage() {
             </div>
           </div>
         </PermissionGate>
+        </div>
+
+        {/* 右侧边栏 */}
+        <aside className="hidden xl:block space-y-4">
+          <div className="xl:sticky xl:top-[60px] xl:self-start">
+            <UserAccountCard />
+          </div>
+        </aside>
       </div>
 
       {toast && (
