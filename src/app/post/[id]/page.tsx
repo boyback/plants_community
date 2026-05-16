@@ -302,8 +302,8 @@ export default async function PostDetailPage({ params }: { params: { id: string 
                       编辑
                     </Link>
                   )}
-                {/* 超级管理员按钮 */}
-                {me?.isSuperAdmin && <PostAdminMenu post={post} user={me} />}
+                {/* 管理员操作按钮（超管/管理员/版主可见） */}
+                {(me?.isSuperAdmin || me?.role === 'admin' || me?.role === 'moderator') && <PostAdminMenu post={post} user={me} />}
               </div>
 
               {/* 审核状态提示(仅作者本人 · 启用审核功能时才显示) */}
