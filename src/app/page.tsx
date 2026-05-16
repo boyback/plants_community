@@ -64,7 +64,7 @@ export default async function HomePage() {
           <FeedTabs initial={posts} />
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-5 xl:sticky xl:top-4 xl:self-start">
           {/* 1. 签到 + 月历(整合) */}
           <SignInCard />
           {/* 2. 话题 */}
