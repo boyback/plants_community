@@ -255,23 +255,35 @@ export default async function PostDetailPage({ params }: { params: { id: string 
                     已锁定
                   </span>
                 )}
-                <Link href={boardUrl(post.board)} className="chip hover:bg-leaf-100">
-                  {post.board.icon} {post.board.name}
-                </Link>
-                {post.species && (
-                  <Link
-                    href={`/species/${post.species.slug}`}
-                    className="inline-flex items-center gap-1 rounded-full bg-leaf-50 px-2.5 py-0.5 text-xs text-leaf-700 hover:bg-leaf-100 transition-colors"
-                  >
-                    <img src={post.species.cover} alt="" className="h-4 w-4 rounded-full object-cover" />
-                    {post.species.name}
-                  </Link>
-                )}
+                {post.board.path.map((segment, i) => {
+                  if (segment.level === 'species') {
+                    return (
+                      <span key={segment.slug} className="rounded-full bg-leaf-100/60 px-2.5 py-0.5 text-xs text-leaf-800">
+                        {segment.name}
+                      </span>
+                    );
+                  }
+                  const url =
+                    '/board/' +
+                    post.board.path
+                      .slice(0, i + 1)
+                      .map((p) => encodeURIComponent(p.slug))
+                      .join('/');
+                  return (
+                    <Link
+                      key={segment.slug}
+                      href={url}
+                      className="inline-flex items-center gap-1 rounded-full bg-leaf-50 px-2.5 py-0.5 text-xs text-leaf-700 hover:bg-leaf-100 transition-colors"
+                    >
+                      {post.board.icon} {segment.name}
+                    </Link>
+                  );
+                })}
                 {post.tags.map((t) => (
                   <Link
                     key={t}
                     href={`/topic/${encodeURIComponent(t)}`}
-                    className="rounded-full bg-leaf-50 px-2.5 py-0.5 text-xs text-leaf-700 hover:bg-leaf-100 transition-colors"
+                    className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs text-amber-700 hover:bg-amber-100 transition-colors"
                   >
                     #{t}
                   </Link>
@@ -294,7 +306,10 @@ export default async function PostDetailPage({ params }: { params: { id: string 
                     {post.author.name}
                   </Link>
                   <div className="text-[11px] text-leaf-700/70">
-                    Lv.{post.author.level} · {formatDateTime(post.createdAt)} ·
+                    Lv.{post.author.level} · {formatDateTime(post.createdAt)}
+                    {post.updatedAt && post.updatedAt !== post.createdAt && (
+                      <> · 编辑于 {formatDateTime(post.updatedAt)}</>
+                    )} ·
                     <Icon name="eye" size={11} className="mx-1" />
                     {formatNumber(post.views)} <I18nText k="detail.post.views" fallback="阅读" />
                   </div>

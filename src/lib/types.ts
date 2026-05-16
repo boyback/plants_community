@@ -184,6 +184,7 @@ export interface Post {
   board: Board;
   tags: string[];
   createdAt: string;
+  updatedAt?: string;
   likes: number;
   comments: number;
   shares: number;

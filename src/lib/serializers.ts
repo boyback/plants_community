@@ -295,6 +295,7 @@ export function serializePost(p: PostWithRelations): Post {
     }),
     tags: parseJsonArray(p.tags),
     createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt?.toISOString(),
     likes: p._count?.likes ?? 0,
     comments: p._count?.comments ?? 0,
     shares: p.shares,
