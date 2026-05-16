@@ -15,6 +15,7 @@
       "vote": "Start a poll, gather opinions (PC only)",
       "video": "Record with video (PC & app)",
       "event": "Organize offline meetups (PC only)",
+      "help": "Ask for help, with optional bounty points",
       "journal": "Track plant growth on a timeline"
     },
     "typeBadge": {
@@ -23,6 +24,7 @@
       "vote": "Poll",
       "video": "Video",
       "event": "Event",
+      "help": "Help",
       "journal": "Journal Post"
     },
     "typeShort": {

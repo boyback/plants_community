@@ -15,6 +15,7 @@
       "vote": "發起投票,集思廣益(僅 PC 發佈)",
       "video": "上傳影片紀錄(PC & APP 均可發佈)",
       "event": "組織線下活動(僅 PC 可發佈)",
+      "help": "遇到問題求助,可設置懸賞積分",
       "journal": "時間線記錄植物成長各階段"
     },
     "typeBadge": {
@@ -23,6 +24,7 @@
       "vote": "投票貼",
       "video": "影片貼",
       "event": "EVENT 貼",
+      "help": "求助貼",
       "journal": "成長日記貼"
     },
     "typeShort": {
