@@ -415,11 +415,10 @@ export default function SellPage() {
         </div>
 
         {/* 右侧边栏 */}
-        <aside className="hidden xl:block space-y-4">
-          <div className="xl:sticky xl:top-[60px] xl:self-start">
-            {/* 占位栏，将来可放置其他内容 */}
+        <aside className="hidden xl:block">
+          <div className="sticky top-[60px] max-h-[calc(100vh-72px)] overflow-y-auto flex flex-col justify-end">
+            <UserAccountCard />
           </div>
-          <UserAccountCard />
         </aside>
       </div>
 

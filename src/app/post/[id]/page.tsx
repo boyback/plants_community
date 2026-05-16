@@ -256,30 +256,6 @@ export default async function PostDetailPage({ params }: { params: { id: string 
                     已锁定
                   </span>
                 )}
-                {post.board.path.map((segment, i) => {
-                  if (segment.level === 'species') {
-                    return (
-                      <span key={segment.slug} className="rounded-full bg-leaf-100/60 px-2.5 py-0.5 text-xs text-leaf-800">
-                        {segment.name}
-                      </span>
-                    );
-                  }
-                  const url =
-                    '/board/' +
-                    post.board.path
-                      .slice(0, i + 1)
-                      .map((p) => encodeURIComponent(p.slug))
-                      .join('/');
-                  return (
-                    <Link
-                      key={segment.slug}
-                      href={url}
-                      className="inline-flex items-center gap-1 rounded-full bg-leaf-50 px-2.5 py-0.5 text-xs text-leaf-700 hover:bg-leaf-100 transition-colors"
-                    >
-                      {post.board.icon} {segment.name}
-                    </Link>
-                  );
-                })}
                 {post.tags.map((t) => (
                   <Link
                     key={t}
@@ -370,7 +346,8 @@ export default async function PostDetailPage({ params }: { params: { id: string 
         </div>
 
         {/* 右侧侧边栏 */}
-        <aside className="hidden lg:block space-y-4">
+        <aside className="hidden lg:block">
+          <div className="sticky top-[60px] max-h-[calc(100vh-72px)] space-y-4 overflow-y-auto">
           {/* 作者信息卡片 */}
           <div className="card p-5">
             <div className="flex items-center gap-3">
@@ -422,6 +399,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
 
           {/* 账号信息 */}
           <UserAccountCard />
+          </div>
         </aside>
       </div>
     </Shell>

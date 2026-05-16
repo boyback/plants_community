@@ -359,7 +359,7 @@ export function PostEditor({ post }: { post: InitialPost }) {
 
       {/* 右侧实时预览 */}
       <div className="space-y-4">
-        <div className="space-y-4 xl:sticky xl:top-[60px] xl:self-start">
+        <div className="space-y-4 xl:sticky xl:top-[60px] xl:max-h-[calc(100vh-72px)] xl:overflow-y-auto xl:self-start">
           <PostPreview
           type={post.type}
           title={title}
