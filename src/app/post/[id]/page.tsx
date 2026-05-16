@@ -220,26 +220,27 @@ export default async function PostDetailPage({ params }: { params: { id: string 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
         {/* 左侧主内容区 */}
         <div>
-          <div className="mb-4 flex items-center gap-1.5 text-xs text-leaf-700/70">
-            <Link href="/" className="hover:text-leaf-700">
-              <I18nText k="nav.home" fallback="首页" />
-            </Link>
-            <Icon name="arrow-right" size={12} />
-            {post.board.path.map((p, i) => (
-              <span key={i} className="contents">
-                <Link
-                  href={'/board/' + post.board.path.slice(0, i + 1).map((x) => encodeURIComponent(x.slug)).join('/')}
-                  className="hover:text-leaf-700"
-                >
-                  {p.name}
-                </Link>
-                <Icon name="arrow-right" size={12} />
-              </span>
-            ))}
-            <span className="truncate text-ink-700">{post.title}</span>
-          </div>
-
           <article className="card p-6 md:p-8">
+            {/* 面包屑 */}
+            <div className="mb-4 flex items-center gap-1.5 text-xs text-leaf-700/70">
+              <Link href="/" className="hover:text-leaf-700">
+                <I18nText k="nav.home" fallback="首页" />
+              </Link>
+              <Icon name="arrow-right" size={12} />
+              {post.board.path.map((p, i) => (
+                <span key={i} className="contents">
+                  <Link
+                    href={'/board/' + post.board.path.slice(0, i + 1).map((x) => encodeURIComponent(x.slug)).join('/')}
+                    className="hover:text-leaf-700"
+                  >
+                    {p.name}
+                  </Link>
+                  <Icon name="arrow-right" size={12} />
+                </span>
+              ))}
+              <span className="truncate text-ink-700">{post.title}</span>
+            </div>
+
             <div className="mb-3 flex flex-wrap items-center gap-2">
                 <PostTypeBadge type={post.type} />
                 {post.pinned && (

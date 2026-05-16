@@ -118,7 +118,7 @@ function ShortBody({
 }) {
   return (
     <div className="space-y-4">
-      <p className="whitespace-pre-wrap text-[15px] leading-7 text-ink-800">{post.content}</p>
+      <RichTextView html={post.content} />
       {post.images && post.images.length > 0 && (
         <ImageGallery images={post.images} livePhotoMap={livePhotoMap} />
       )}
@@ -141,7 +141,7 @@ function VideoBody({ post }: { post: Post }) {
           </video>
         </div>
       )}
-      <p className="whitespace-pre-wrap text-[15px] leading-7 text-ink-800">{post.content}</p>
+      <RichTextView html={post.content} />
     </div>
   );
 }
@@ -193,7 +193,7 @@ function VoteBody({ post, initialVoted }: { post: Post; initialVoted: string[] }
 
   return (
     <div className="space-y-4">
-      <p className="whitespace-pre-wrap text-[15px] leading-7 text-ink-800">{post.content}</p>
+      <RichTextView html={post.content} />
       <div className="rounded-none border border-amber-100 bg-amber-50/30 p-5">
         <div className="mb-1 text-xs text-amber-700">
           {t('detail.vote.title', {
