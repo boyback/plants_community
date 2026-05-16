@@ -8,6 +8,7 @@ import { CommentSection } from '@/components/post/CommentSection';
 import { JournalTimeline } from '@/components/post/JournalTimeline';
 import { PostCard } from '@/components/post/PostCard';
 import { PostAdminMenu } from '@/components/post/PostAdminMenu';
+import { UserAccountCard } from '@/components/layout/UserAccountCard';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -220,7 +221,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
         {/* 左侧主内容区 */}
         <div>
-          <article className="card p-6 md:p-8">
+          <article className="card px-6 pb-6 pt-4 md:px-8 md:pb-8 md:pt-5">
             {/* 面包屑 */}
             <div className="mb-4 flex items-center gap-1.5 text-xs text-leaf-700/70">
               <Link href="/" className="hover:text-leaf-700">
@@ -418,6 +419,9 @@ export default async function PostDetailPage({ params }: { params: { id: string 
               ))}
             </div>
           </div>
+
+          {/* 账号信息 */}
+          <UserAccountCard />
         </aside>
       </div>
     </Shell>

@@ -359,8 +359,7 @@ export function PostEditor({ post }: { post: InitialPost }) {
 
       {/* 右侧实时预览 */}
       <div className="space-y-4">
-        <div className="xl:sticky xl:top-[60px] xl:self-start space-y-4">
-          <UserAccountCard />
+        <div className="space-y-4 xl:sticky xl:top-[60px] xl:self-start">
           <PostPreview
           type={post.type}
           title={title}
@@ -381,6 +380,7 @@ export function PostEditor({ post }: { post: InitialPost }) {
             entries: [],
           }}
         />
+          <UserAccountCard />
         </div>
       </div>
 
