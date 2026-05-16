@@ -278,7 +278,7 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
       )}
 
       {tab === 'following' && !user ? (
-        <div className="mt-6 rounded-xl border border-dashed border-leaf-200 bg-white/60 py-12 text-center text-sm text-leaf-700/70">
+        <div className="mt-6 rounded-none border border-dashed border-leaf-200 bg-white/60 py-12 text-center text-sm text-leaf-700/70">
           登录后查看你关注的肉友的最新动态
         </div>
       ) : tab === 'following' && followingSubTab === 'users' ? (
@@ -286,7 +286,7 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
       ) : tab === 'following' && followingSubTab === 'species' ? (
         <FollowedSpeciesList />
       ) : cur.err ? (
-        <div className="mt-6 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div className="mt-6 rounded-none bg-rose-50 px-4 py-3 text-sm text-rose-700">
           {cur.err}
         </div>
       ) : !cur.loaded ? (
@@ -296,14 +296,14 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
           <FeedSkeleton mobileCols={mobileCols} desktopCols={desktopCols} />
         )
       ) : cur.items.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-dashed border-leaf-200 bg-white/60 py-12 text-center text-sm text-leaf-700/70">
+        <div className="mt-6 rounded-none border border-dashed border-leaf-200 bg-white/60 py-12 text-center text-sm text-leaf-700/70">
           暂时没有内容
         </div>
       ) : (
         <>
           {layoutMode === 'list' ? (
             /* 列表模式：所有卡片在一个大卡片中，用线隔开 */
-            <div className="mt-4 rounded-xl border border-leaf-100 bg-white">
+            <div className="mt-4 rounded-none border border-leaf-100 bg-white">
               {cur.items.map((p, i) => (
                 <div key={p.id}>
                   <FeedListCard post={p} source={tabToSource(tab)} />
@@ -457,7 +457,7 @@ function VotePreview({ post }: { post: Post }) {
   const total = post.vote.options.reduce((s, o) => s + o.votes, 0);
   const top = [...post.vote.options].sort((a, b) => b.votes - a.votes).slice(0, 3);
   return (
-    <div className="space-y-1.5 rounded-lg bg-amber-50/60 p-2.5 text-amber-900 mb-2">
+    <div className="space-y-1.5 rounded-none bg-amber-50/60 p-2.5 text-amber-900 mb-2">
       <div className="line-clamp-1 text-sm font-medium">🗳️ {post.vote.question}</div>
       {top.map((o) => {
         const pct = total ? Math.round((o.votes / total) * 100) : 0;
@@ -491,7 +491,7 @@ function VotePreview({ post }: { post: Post }) {
 function EventPreview({ post }: { post: Post }) {
   if (!post.event) return null;
   return (
-    <div className="rounded-lg bg-violet-50/80 p-2 text-[11px] text-violet-900 mb-2">
+    <div className="rounded-none bg-violet-50/80 p-2 text-[11px] text-violet-900 mb-2">
       <div className="flex items-center gap-1">
         <span>📍</span>
         <span className="truncate">{post.event.location}</span>
@@ -513,7 +513,7 @@ function JournalPreview({ post }: { post: Post }) {
   const shown = j.entries ?? [];
 
   return (
-    <div className="rounded-lg bg-emerald-50/60 p-2.5 mb-2">
+    <div className="rounded-none bg-emerald-50/60 p-2.5 mb-2">
       <div className="mb-1.5 flex items-center justify-between text-xs text-emerald-700/80">
         <span className="truncate font-medium">📖 {j.subjectName}</span>
         <span>第 {j.daysSinceStart} 天 · 共 {j.entriesCount} 条</span>
@@ -524,21 +524,47 @@ function JournalPreview({ post }: { post: Post }) {
           {shown.slice(0, 3).map((e) => {
             const meta = STAGE_META[e.stage];
             return (
-              <li key={e.id} className="flex items-start gap-2">
-                <span className="mt-1 block h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="font-medium text-ink-800">
-                      {new Date(e.entryDate).toLocaleDateString()}
-                    </span>
-                    <span className={cn('rounded px-1.5 py-0.5 text-[11px] border', meta.color)}>
-                      {meta.emoji} {meta.zh}
-                    </span>
+              <li key={e.id} className="space-y-1">
+                <div className="flex items-start gap-2">
+                  <span className="mt-1 block h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="font-medium text-ink-800">
+                        {new Date(e.entryDate).toLocaleDateString()}
+                      </span>
+                      <span className={cn('rounded px-1.5 py-0.5 text-[11px] border', meta.color)}>
+                        {meta.emoji} {meta.zh}
+                      </span>
+                    </div>
+                    {e.note && (
+                      <p className="line-clamp-1 text-xs text-ink-600/80 mt-0.5">{e.note}</p>
+                    )}
                   </div>
-                  {e.note && (
-                    <p className="line-clamp-1 text-xs text-ink-600/80 mt-0.5">{e.note}</p>
-                  )}
                 </div>
+                {/* 配图展示 - 在心得下面另起一行 */}
+                {e.images && e.images.length > 0 && (
+                  <div className="ml-3 grid grid-cols-9 gap-1">
+                    {e.images.slice(0, 9).map((img, idx) => (
+                      <div
+                        key={idx}
+                        className="relative aspect-square overflow-hidden rounded bg-white/50"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={img}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                        {/* 第 9 张且有剩余 */}
+                        {idx === 8 && e.images.length > 9 && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                            <span className="text-xs font-bold text-white">+{e.images.length - 9}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </li>
             );
           })}
@@ -711,7 +737,7 @@ function FeedListCard({
               type="button"
               onMouseEnter={() => setAdminMenuOpen(true)}
               onMouseLeave={() => setAdminMenuOpen(false)}
-              className="grid h-7 w-7 place-items-center rounded-lg text-ink-400 hover:bg-ink-100 hover:text-ink-600 transition-colors"
+              className="grid h-7 w-7 place-items-center rounded-none text-ink-400 hover:bg-ink-100 hover:text-ink-600 transition-colors"
               title="管理"
             >
               <Icon name="settings" size={16} />
@@ -722,7 +748,7 @@ function FeedListCard({
                 onMouseEnter={() => setAdminMenuOpen(true)}
                 onMouseLeave={() => setAdminMenuOpen(false)}
               >
-                <div className="relative w-16 rounded-lg border border-leaf-100 bg-white shadow-xl py-1">
+                <div className="relative w-16 rounded-none border border-leaf-100 bg-white shadow-xl py-1">
                   <div className="absolute left-1/2 -translate-x-1/2 -top-[6px] w-3 h-3 bg-white border-l border-t border-leaf-100 transform rotate-45" />
 
                   {/* 作者：编辑 */}
@@ -839,22 +865,14 @@ function FeedListCard({
           </Link>
         )}
 
+      {/* 记录贴：成长线 + 封面 */}
+      {post.type === 'journal' && post.journal && <JournalPreview post={post} />}
+
       {/* 投票预览 */}
       {post.type === 'vote' && post.vote && <VotePreview post={post} />}
 
       {/* 活动预览 */}
       {post.type === 'event' && post.event && <EventPreview post={post} />}
-
-      {/* 时间线预览 */}
-      {post.type === 'journal' && post.journal && <JournalPreview post={post} />}
-
-      {/* 视频标识 */}
-      {post.type === 'video' && (
-        <Link href={`/post/${post.id}`} className="flex items-center gap-2 mb-2 text-sm text-ink-600">
-          <Icon name="video" size={16} />
-          <span>视频内容</span>
-        </Link>
-      )}
 
       {/* 第四行：话题标签 */}
       {post.tags.length > 0 && (
@@ -878,9 +896,17 @@ function FeedListCard({
             {displayImages.slice(0, 5).map((img, i) => (
               <div
                 key={i}
-                className="relative aspect-square overflow-hidden rounded-lg bg-leaf-50"
+                className="relative aspect-square overflow-hidden rounded-none bg-leaf-50"
               >
                 <Image src={img} alt="" fill className="object-cover" unoptimized />
+                {/* 视频播放图标 - 只在第一张图上显示 */}
+                {post.type === 'video' && i === 0 && (
+                  <div className="pointer-events-none absolute inset-0 grid place-items-center">
+                    <div className="grid h-10 w-10 place-items-center rounded-full bg-black/50 text-white">
+                      <Icon name="video" size={20} fill="currentColor" />
+                    </div>
+                  </div>
+                )}
                 {/* 第5张且有剩余 */}
                 {i === 4 && images.length > 5 && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40">
@@ -941,7 +967,7 @@ function FeedListCard({
       {/* 封禁用户对话框 */}
       {showBanPrompt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+          <div className="bg-white rounded-none p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-semibold text-ink-800 mb-4">封禁用户</h3>
             <div className="space-y-4">
               <div>
@@ -952,7 +978,7 @@ function FeedListCard({
                   type="text"
                   value={banReason}
                   onChange={(e) => setBanReason(e.target.value)}
-                  className="w-full px-3 py-2 border border-leaf-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-leaf-500"
+                  className="w-full px-3 py-2 border border-leaf-200 rounded-none focus:outline-none focus:ring-2 focus:ring-leaf-500"
                   placeholder="请输入封禁原因"
                   autoFocus
                 />
@@ -965,7 +991,7 @@ function FeedListCard({
                   type="number"
                   value={banDays}
                   onChange={(e) => setBanDays(e.target.value)}
-                  className="w-full px-3 py-2 border border-leaf-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-leaf-500"
+                  className="w-full px-3 py-2 border border-leaf-200 rounded-none focus:outline-none focus:ring-2 focus:ring-leaf-500"
                   placeholder="7"
                   min="1"
                 />
@@ -974,14 +1000,14 @@ function FeedListCard({
             <div className="flex justify-end gap-2 mt-6">
               <button
                 onClick={() => setShowBanPrompt(false)}
-                className="px-4 py-2 text-sm text-ink-600 hover:bg-ink-50 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm text-ink-600 hover:bg-ink-50 rounded-none transition-colors"
               >
                 取消
               </button>
               <button
                 onClick={confirmBan}
                 disabled={!banReason.trim()}
-                className="px-4 py-2 text-sm bg-rose-500 text-white hover:bg-rose-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm bg-rose-500 text-white hover:bg-rose-600 rounded-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 确认封禁
               </button>
@@ -1016,7 +1042,7 @@ function FeedSkeleton({
 /** 列表模式骨架屏 */
 function ListFeedSkeleton() {
   return (
-    <div className="mt-4 rounded-xl border border-leaf-100 bg-white overflow-hidden">
+    <div className="mt-4 rounded-none border border-leaf-100 bg-white overflow-hidden">
       {Array.from({ length: 5 }).map((_, i) => (
         <div key={i}>
           <div className="p-4 animate-pulse">
@@ -1034,9 +1060,9 @@ function ListFeedSkeleton() {
               <div className="h-4 w-2/3 rounded bg-leaf-100" />
             </div>
             {/* 图片 - 5张 */}
-            <div className="flex gap-1.5 mb-3">
+            <div className="grid grid-cols-5 gap-1.5 mb-3">
               {Array.from({ length: 5 }).map((_, j) => (
-                <div key={j} className="h-28 w-28 rounded-lg bg-leaf-100" />
+                <div key={j} className="aspect-square rounded-none bg-leaf-100" />
               ))}
             </div>
             {/* 底部 */}
@@ -1107,7 +1133,7 @@ function TabHeader({
       </div>
 
       {/* 右侧：布局模式切换 */}
-      <div className="ml-auto flex items-center gap-0.5 rounded-lg bg-leaf-50/60 p-0.5">
+      <div className="ml-auto flex items-center gap-0.5 rounded-none bg-leaf-50/60 p-0.5">
         <button
           type="button"
           onClick={() => onLayoutModeChange('list')}
@@ -1202,7 +1228,7 @@ function FollowedUsersList() {
 
   if (users.length === 0) {
     return (
-      <div className="mt-6 rounded-xl border border-dashed border-leaf-200 bg-white/60 py-12 text-center text-sm text-leaf-700/70">
+      <div className="mt-6 rounded-none border border-dashed border-leaf-200 bg-white/60 py-12 text-center text-sm text-leaf-700/70">
         还没有关注任何人
       </div>
     );
@@ -1274,7 +1300,7 @@ function FollowedSpeciesList() {
 
   if (species.length === 0) {
     return (
-      <div className="mt-6 rounded-xl border border-dashed border-leaf-200 bg-white/60 py-12 text-center text-sm text-leaf-700/70">
+      <div className="mt-6 rounded-none border border-dashed border-leaf-200 bg-white/60 py-12 text-center text-sm text-leaf-700/70">
         还没有关注任何品种
       </div>
     );

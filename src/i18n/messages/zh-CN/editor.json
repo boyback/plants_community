@@ -1,11 +1,11 @@
 {
   "editor": {
     "title": "发布新帖",
-    "pickType": "选择帖子类型",
-    "chooseBoard": "选择板块",
+    "pickType": "帖子类型",
+    "chooseBoard": "帖子板块",
     "placeholderTitle": "起一个让人想点进来的标题",
     "placeholderShort": "分享此刻的多肉心情…",
-    "placeholderRich": "开始写你的长文…",
+    "placeholderRich": "开始写你的帖子内容…",
     "cover": "封面图",
     "coverHint": "建议 1200×800,未选时会取第一张图",
     "images": "帖子图片",

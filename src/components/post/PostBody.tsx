@@ -56,7 +56,7 @@ function JournalBody({ post }: { post: Post }) {
       ? { emoji: '✅', label: '已结束', color: 'text-leaf-600' }
       : { emoji: '📌', label: '其他', color: 'text-leaf-700' };
   return (
-    <div className="rounded-xl border border-leaf-100 bg-leaf-50/40 p-4">
+    <div className="rounded-none border border-leaf-100 bg-leaf-50/40 p-4">
       <div className="grid gap-3 md:grid-cols-3">
         <Stat label="对象">
           <div className="text-base font-semibold text-ink-800">{j.subjectName}</div>
@@ -130,7 +130,7 @@ function VideoBody({ post }: { post: Post }) {
   return (
     <div className="space-y-4">
       {post.videoUrl && (
-        <div className="overflow-hidden rounded-2xl bg-black">
+        <div className="overflow-hidden rounded-none bg-black">
           <video
             controls
             poster={post.cover}
@@ -194,7 +194,7 @@ function VoteBody({ post, initialVoted }: { post: Post; initialVoted: string[] }
   return (
     <div className="space-y-4">
       <p className="whitespace-pre-wrap text-[15px] leading-7 text-ink-800">{post.content}</p>
-      <div className="rounded-2xl border border-amber-100 bg-amber-50/30 p-5">
+      <div className="rounded-none border border-amber-100 bg-amber-50/30 p-5">
         <div className="mb-1 text-xs text-amber-700">
           {t('detail.vote.title', {
             mode: post.vote.multi ? t('detail.vote.multi') : t('detail.vote.single'),
@@ -215,7 +215,7 @@ function VoteBody({ post, initialVoted }: { post: Post; initialVoted: string[] }
                 onClick={() => toggle(o.id)}
                 disabled={voted || deadlinePassed}
                 className={cn(
-                  'relative block w-full overflow-hidden rounded-lg border px-4 py-2.5 text-left text-sm transition-colors',
+                  'relative block w-full overflow-hidden rounded-none border px-4 py-2.5 text-left text-sm transition-colors',
                   chosen
                     ? 'border-amber-500 bg-amber-100/60'
                     : 'border-amber-100 bg-white hover:bg-amber-50'
@@ -353,7 +353,7 @@ function EventBody({ post, initialAttending }: { post: Post; initialAttending: b
 
 function InfoBlock({ icon, title, value }: { icon: string; title: string; value: string }) {
   return (
-    <div className="rounded-xl bg-leaf-50/60 p-3">
+    <div className="rounded-none bg-leaf-50/60 p-3">
       <div className="text-[11px] text-leaf-700/70">
         <span className="mr-1">{icon}</span>
         {title}
@@ -407,7 +407,7 @@ function ImageGallery({
 
   return (
     <>
-      <div className={cn('grid gap-2 overflow-hidden rounded-lg', layoutClass)}>
+      <div className={cn('grid gap-2 overflow-hidden rounded-none', layoutClass)}>
         {display.map((src, i) => {
           const showRemain = i === display.length - 1 && remain > 0;
           const isLive = !!livePhotoMap?.[src];

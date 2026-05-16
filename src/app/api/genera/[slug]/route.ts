@@ -12,10 +12,10 @@ export const GET = handler(async (req) => {
   const g = await prisma.genus.findFirst({
     where: {
       slug,
-      ...(categorySlug ? { category: { slug: categorySlug } } : {}),
+      ...(categorySlug ? { board: { slug: categorySlug } } : {}),
     },
     include: {
-      category: { include: { _count: { select: { posts: true, genera: true } } } },
+      board: { include: { _count: { select: { posts: true, genera: true } } } },
       _count: { select: { posts: true, species: true } },
       species: {
         orderBy: [{ name: 'asc' }],
@@ -28,9 +28,9 @@ export const GET = handler(async (req) => {
   return {
     genus: serializeGenus(g),
     latinName: g.latinName ?? null,
-    category: serializeCategory(g.category),
+    category: serializeCategory(g.board),
     species: g.species.map((s) =>
-      serializeSpecies({ ...s, genus: { ...g, category: g.category } })
+      serializeSpecies({ ...s, genus: { ...g, category: g.board } })
     ),
   };
 });

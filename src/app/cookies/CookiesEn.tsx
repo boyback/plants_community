@@ -7,14 +7,14 @@ export function CookiesEn() {
       <p>
         This policy explains how RouYou (the &quot;Service&quot;) uses cookies and
         similar technologies (localStorage, sessionStorage, pixel tags). We group
-        cookies into four categories. You choose which ones to enable in the
+        cookies into four boards. You choose which ones to enable in the
         first-visit banner or in Settings — except the
         <strong> Strictly Necessary </strong>
         category, which is required for basic functionality (sign-in, security)
         and cannot be turned off.
       </p>
 
-      <h2>1. Cookie categories</h2>
+      <h2>1. Cookie boards</h2>
 
       <h3>1.1 Strictly Necessary</h3>
       <p>
@@ -56,7 +56,7 @@ export function CookiesEn() {
         On your first visit, a banner at the bottom offers three options:
       </p>
       <ul>
-        <li><strong>Accept all</strong> — enable all four categories;</li>
+        <li><strong>Accept all</strong> — enable all four boards;</li>
         <li><strong>Only necessary</strong> — enable only the required category;</li>
         <li><strong>Customise</strong> — opt in/out of each category individually.</li>
       </ul>

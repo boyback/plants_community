@@ -122,7 +122,7 @@ export function CommentSection({ post }: { post: Post }) {
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-between rounded-xl bg-leaf-50 px-4 py-3 text-sm">
+          <div className="flex items-center justify-between rounded-none bg-leaf-50 px-4 py-3 text-sm">
             <span className="text-leaf-700">{t('detail.post.commentLoginCta')}</span>
             <Link href="/login" className="btn-primary h-8 !px-3 !text-xs">
               {t('nav.login')}
@@ -194,7 +194,7 @@ function CommentItem({
           <div
             className={cn(
               'mt-1.5',
-              myBubble && myBubble.slug !== 'bubble-default' && 'inline-block max-w-full rounded-2xl px-3 py-2 shadow-sm'
+              myBubble && myBubble.slug !== 'bubble-default' && 'inline-block max-w-full rounded-none px-3 py-2 shadow-sm'
             )}
             style={myBubble && myBubble.slug !== 'bubble-default' ? bubbleStyle : undefined}
           >
@@ -247,7 +247,7 @@ function CommentItem({
           )}
 
           {comment.replies && comment.replies.length > 0 && (
-            <div className="mt-3 space-y-2 rounded-lg bg-leaf-50/60 p-3">
+            <div className="mt-3 space-y-2 rounded-none bg-leaf-50/60 p-3">
               {comment.replies.map((r) => (
                 <div key={r.id} className="text-xs">
                   <Link href={`/user/${r.author.id}`} className="font-medium text-leaf-700">

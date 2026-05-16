@@ -30,8 +30,8 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
       id: { not: product.id },
       status: 'on_sale',
       OR: product.seller
-        ? [{ sellerId: product.seller.id }, { category: product.category }]
-        : [{ category: product.category }],
+        ? [{ sellerId: product.seller.id }, { category: product.board }]
+        : [{ category: product.board }],
     },
     take: 6,
     include: productInclude(),
@@ -49,10 +49,10 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         </Link>
         <Icon name="arrow-right" size={12} />
         <Link
-          href={`/market?category=${encodeURIComponent(product.category)}`}
+          href={`/market?board=${encodeURIComponent(product.board)}`}
           className="hover:text-leaf-700"
         >
-          {product.category}
+          {product.board}
         </Link>
         <Icon name="arrow-right" size={12} />
         <span className="truncate text-ink-700">{product.title}</span>

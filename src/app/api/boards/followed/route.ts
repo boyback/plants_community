@@ -17,14 +17,14 @@ export const GET = handler(async () => {
     orderBy: { createdAt: 'desc' },
   });
 
-  const categoryIds = follows.filter((f) => f.type === 'category').map((f) => f.targetId);
+  const boardIds = follows.filter((f) => f.type === 'board').map((f) => f.targetId);
   const genusIds = follows.filter((f) => f.type === 'genus').map((f) => f.targetId);
   const speciesIds = follows.filter((f) => f.type === 'species').map((f) => f.targetId);
 
-  const [categories, genera, species] = await Promise.all([
-    categoryIds.length
-      ? prisma.category.findMany({
-          where: { id: { in: categoryIds } },
+  const [boards, genera, species] = await Promise.all([
+    boardIds.length
+      ? prisma.board.findMany({
+          where: { id: { in: boardIds } },
           include: { _count: { select: { posts: true, genera: true } } },
         })
       : Promise.resolve([]),
@@ -32,7 +32,7 @@ export const GET = handler(async () => {
       ? prisma.genus.findMany({
           where: { id: { in: genusIds } },
           include: {
-            category: true,
+            board: true,
             _count: { select: { posts: true, species: true } },
           },
         })
@@ -41,21 +41,21 @@ export const GET = handler(async () => {
       ? prisma.species.findMany({
           where: { id: { in: speciesIds } },
           include: {
-            genus: { include: { category: true } },
+            genus: { include: { board: true } },
             _count: { select: { posts: true } },
           },
         })
       : Promise.resolve([]),
   ]);
 
-  const catMap = new Map(categories.map((c) => [c.id, c]));
+  const catMap = new Map(boards.map((c) => [c.id, c]));
   const genusMap = new Map(genera.map((g) => [g.id, g]));
   const speciesMap = new Map(species.map((s) => [s.id, s]));
 
   // 保留 follows 的时间顺序
   const items = follows
     .map((f) => {
-      if (f.type === 'category') {
+      if (f.type === 'board') {
         const c = catMap.get(f.targetId);
         return c ? serializeCategory(c) : null;
       }

@@ -88,7 +88,7 @@ export function BannerCarousel({
     // 单张直接渲染,不做轮播
     const it = items[0];
     return (
-      <div className="overflow-hidden rounded-2xl border border-leaf-100 bg-white">
+      <div className="overflow-hidden rounded-none border border-leaf-100 bg-white">
         <BannerSlide item={it} />
       </div>
     );
@@ -96,7 +96,7 @@ export function BannerCarousel({
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-leaf-100 bg-white group"
+      className="relative overflow-hidden rounded-none border border-leaf-100 bg-white group"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={() => setPaused(true)}

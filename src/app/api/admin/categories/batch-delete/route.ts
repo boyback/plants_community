@@ -1,5 +1,5 @@
 /**
- * POST /api/admin/categories/batch-delete
+ * POST /api/admin/boards/batch-delete
  *
  * 批量删除 Category。逐个检查是否有子项(genus/posts)，有则跳过。
  */
@@ -23,16 +23,16 @@ export const POST = handler(async (req) => {
   const skipped: string[] = [];
 
   for (const id of ids) {
-    const category = await prisma.category.findUnique({
+    const board = await prisma.board.findUnique({
       where: { id },
       include: { _count: { select: { genera: true, posts: true } } },
     });
-    if (!category) continue;
-    if (category._count.genera > 0 || category._count.posts > 0) {
-      skipped.push(category.name);
+    if (!board) continue;
+    if (board._count.genera > 0 || board._count.posts > 0) {
+      skipped.push(board.name);
       continue;
     }
-    await prisma.category.delete({ where: { id } });
+    await prisma.board.delete({ where: { id } });
     deleted++;
   }
 

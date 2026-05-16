@@ -19,6 +19,7 @@ import {
   emptyJournalDraft,
   type JournalDraft,
 } from '@/components/post/JournalEditor';
+import { TagSelector } from '@/components/editor/TagSelector';
 
 interface Draft {
   id: string;
@@ -42,7 +43,7 @@ function EditorInner() {
   const { user, loading: authLoading } = useAuth();
   const { t } = useI18n();
 
-  const [categories, setCategories] = useState<Board[]>([]);
+  const [boards, setCategories] = useState<Board[]>([]);
   const [generaList, setGeneraList] = useState<Board[]>([]);
   const [speciesList, setSpeciesList] = useState<Board[]>([]);
   const [type, setType] = useState<PostType>('rich');
@@ -56,7 +57,6 @@ function EditorInner() {
   const [genusSlug, setGenusSlug] = useState(searchParams.get('genus') ?? '');
   const [speciesSlug, setSpeciesSlug] = useState(searchParams.get('species') ?? '');
   const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [imageInput, setImageInput] = useState('');
@@ -76,7 +76,7 @@ function EditorInner() {
   // 拉一级(科)
   useEffect(() => {
     api
-      .get<Board[]>('/api/categories')
+      .get<Board[]>('/api/boards')
       .then((list) => {
         setCategories(list);
         if (!categorySlug && list[0]) setCategorySlug(list[0].slug);
@@ -93,7 +93,7 @@ function EditorInner() {
       return;
     }
     api
-      .get<{ genera: Board[] }>(`/api/categories/${encodeURIComponent(categorySlug)}`)
+      .get<{ genera: Board[] }>(`/api/boards/${encodeURIComponent(categorySlug)}`)
       .then((r) => setGeneraList(r.genera ?? []))
       .catch(() => setGeneraList([]));
   }, [categorySlug]);
@@ -107,7 +107,7 @@ function EditorInner() {
     }
     api
       .get<{ species: Board[] }>(
-        `/api/genera/${encodeURIComponent(genusSlug)}?category=${encodeURIComponent(categorySlug)}`
+        `/api/genera/${encodeURIComponent(genusSlug)}?board=${encodeURIComponent(categorySlug)}`
       )
       .then((r) => setSpeciesList(r.species ?? []))
       .catch(() => setSpeciesList([]));
@@ -356,77 +356,80 @@ function EditorInner() {
           <div className="card p-6">
             <h1 className="mb-4 text-xl font-semibold">{t('editor.title')}</h1>
             <div className="mb-5">
-              <div className="mb-2 text-xs font-medium text-leaf-700/80">
+              <div className="mb-1.5 block text-sm font-semibold text-ink-800">
                 <span className="text-rose-500">*</span> {t('editor.pickType')}
               </div>
               <TypePicker value={type} onChange={setType} />
             </div>
 
-            <div className="space-y-3">
-              <Row label={<><span className="text-rose-500">*</span> {t('editor.chooseBoard')}</>}>
-                <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-                  <select
-                    value={categorySlug}
-                    onChange={(e) => {
-                      setCategorySlug(e.target.value);
-                      setGenusSlug('');
-                      setSpeciesSlug('');
-                      setValidationErrors((prev) => { const n = new Set(prev); n.delete('board'); return n; });
-                    }}
-                    className={cn('input', validationErrors.has('board') && !categorySlug && 'border-rose-300 bg-rose-50/30')}
-                  >
-                    <option value="">-- 选择科 --</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.slug}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={genusSlug}
-                    onChange={(e) => {
-                      setGenusSlug(e.target.value);
-                      setSpeciesSlug('');
-                    }}
-                    className="input"
-                    disabled={!categorySlug || generaList.length === 0}
-                  >
-                    <option value="">
-                      {!categorySlug
-                        ? '请先选择科'
-                        : generaList.length === 0
-                        ? '暂无属'
-                        : '-- 选择属 --'}
+            <div className="mb-5">
+              <div className="mb-1.5 block text-sm font-semibold text-ink-800">
+                <span className="text-rose-500">*</span> {t('editor.chooseBoard')}
+              </div>
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                <select
+                  value={categorySlug}
+                  onChange={(e) => {
+                    setCategorySlug(e.target.value);
+                    setGenusSlug('');
+                    setSpeciesSlug('');
+                    setValidationErrors((prev) => { const n = new Set(prev); n.delete('board'); return n; });
+                  }}
+                  className={cn('input', validationErrors.has('board') && !categorySlug && 'border-rose-300 bg-rose-50/30')}
+                >
+                  <option value="">-- 选择科 --</option>
+                  {boards.map((c) => (
+                    <option key={c.id} value={c.slug}>
+                      {c.name}
                     </option>
-                    {generaList.map((g) => (
-                      <option key={g.id} value={g.slug}>
-                        {g.name}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={speciesSlug}
-                    onChange={(e) => setSpeciesSlug(e.target.value)}
-                    className="input"
-                    disabled={!genusSlug || speciesList.length === 0}
-                  >
-                    <option value="">
-                      {!genusSlug
-                        ? '请先选择属'
-                        : speciesList.length === 0
-                        ? '暂无品种'
-                        : '-- 选择品种（可选）--'}
+                  ))}
+                </select>
+                <select
+                  value={genusSlug}
+                  onChange={(e) => {
+                    setGenusSlug(e.target.value);
+                    setSpeciesSlug('');
+                  }}
+                  className="input"
+                  disabled={!categorySlug || generaList.length === 0}
+                >
+                  <option value="">
+                    {!categorySlug
+                      ? '请先选择科'
+                      : generaList.length === 0
+                      ? '暂无属'
+                      : '-- 选择属 --'}
+                  </option>
+                  {generaList.map((g) => (
+                    <option key={g.id} value={g.slug}>
+                      {g.name}
                     </option>
-                    {speciesList.map((s) => (
-                      <option key={s.id} value={s.slug}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </Row>
+                  ))}
+                </select>
+                <select
+                  value={speciesSlug}
+                  onChange={(e) => setSpeciesSlug(e.target.value)}
+                  className="input"
+                  disabled={!genusSlug || speciesList.length === 0}
+                >
+                  <option value="">
+                    {!genusSlug
+                      ? '请先选择属'
+                      : speciesList.length === 0
+                      ? '暂无品种'
+                      : '-- 选择品种（可选）--'}
+                  </option>
+                  {speciesList.map((s) => (
+                    <option key={s.id} value={s.slug}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-              <Row label={<><span className="text-rose-500">*</span> {t('editor.placeholderTitle')}</>}>
+            <div className="space-y-3">
+              <Row label={<><span className="text-rose-500">*</span> 帖子标题</>}>
                 <input
                   className="input"
                   value={title}
@@ -434,13 +437,13 @@ function EditorInner() {
                   placeholder={t('editor.placeholderTitle')}
                   maxLength={60}
                 />
-                <div className="mt-1 text-right text-[11px] text-leaf-700/60">
+                <div className="mt-1 text-xs text-leaf-700/60">
                   {title.length} / 60
                 </div>
               </Row>
 
               {type === 'rich' && (
-                <Row label={t('editor.placeholderRich')}>
+                <Row label='帖子内容'>
                   <RichTextEditor
                     value={contentJson}
                     onChange={setContentJson}
@@ -460,7 +463,7 @@ function EditorInner() {
                     onChange={(e) => setContent(e.target.value)}
                     maxLength={500}
                   />
-                  <div className="mt-1 text-right text-[11px] text-leaf-700/60">
+                  <div className="mt-1 text-xs text-leaf-700/60">
                     {content.length} / 500
                   </div>
                 </Row>
@@ -603,45 +606,15 @@ function EditorInner() {
                   kind="image"
                   value={images}
                   onChange={setImages}
-                  max={999}
+                  max={20}
                 />
+                <div className="mt-1 text-xs text-leaf-700/60">
+                  最多上传 20 张图片
+                </div>
               </Row>
 
               <Row label={t('editor.tags')}>
-                <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-leaf-200 bg-white p-2">
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 rounded-full bg-leaf-100 px-2 py-0.5 text-xs text-leaf-700"
-                    >
-                      #{tag}
-                      <button
-                        type="button"
-                        onClick={() => setTags(tags.filter((x) => x !== tag))}
-                        className="text-leaf-600 hover:text-leaf-800"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                  <input
-                    className="flex-1 bg-transparent px-1 text-sm outline-none min-w-[120px]"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ',') {
-                        e.preventDefault();
-                        const v = tagInput.trim().replace(/^#/, '');
-                        if (v && !tags.includes(v) && tags.length < 6) {
-                          setTags([...tags, v]);
-                        }
-                        setTagInput('');
-                      }
-                    }}
-                    placeholder={tags.length >= 6 ? t('editor.tagsHint') : t('editor.tags')}
-                    disabled={tags.length >= 6}
-                  />
-                </div>
+                <TagSelector value={tags} onChange={setTags} max={6} />
               </Row>
             </div>
 
@@ -758,7 +731,7 @@ function EditorInner() {
 function Row({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1.5 block text-xs font-medium text-leaf-700/80">{label}</label>
+      <label className="mb-1.5 block text-sm font-semibold text-ink-800">{label}</label>
       {children}
     </div>
   );

@@ -163,16 +163,16 @@ export function PostPreview({
             </div>
             <ol className="space-y-1.5">
               {journal.entries.slice(0, 3).map((e, i) => {
-                const meta = STAGE_META[e.stage];
+                const meta = STAGE_META[e.stage] || STAGE_META.other;
                 return (
                   <li key={i} className="flex items-start gap-1.5">
                     <span
                       className={cn(
                         'mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px]',
-                        meta.color.replace('border-', '')
+                        meta?.color?.replace('border-', '') || 'bg-leaf-50 text-leaf-700'
                       )}
                     >
-                      {meta.emoji}
+                      {meta?.emoji || '📌'}
                     </span>
                     <div className="min-w-0 flex-1 text-[11px] leading-4 text-emerald-900/90">
                       <span className="text-emerald-800/80">
@@ -183,7 +183,7 @@ export function PostPreview({
                             })
                           : '?'}
                       </span>{' '}
-                      {e.note ? truncate(e.note, 30) : meta.zh}
+                      {e.note ? truncate(e.note, 30) : meta?.zh || '其他'}
                     </div>
                   </li>
                 );

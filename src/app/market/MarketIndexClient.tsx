@@ -90,7 +90,7 @@ export function MarketIndexClient() {
 
   useEffect(() => {
     api
-      .get<CategoryFamily[]>('/api/categories?kind=family')
+      .get<CategoryFamily[]>('/api/boards?kind=family')
       .then((list) => setFamilies(list || []))
       .catch(() => null);
   }, []);
@@ -102,7 +102,7 @@ export function MarketIndexClient() {
     if (generaByFamily[topPick]) return;
     api
       .get<{ slug: string; genera: { slug: string; name: string; latinName: string | null }[] }[]>(
-        '/api/categories?kind=family&withGenera=1',
+        '/api/boards?kind=family&withGenera=1',
       )
       .then((list) => {
         const map: Record<string, GenusOption[]> = {};

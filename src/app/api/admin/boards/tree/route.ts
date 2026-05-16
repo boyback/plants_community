@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   await requireAdmin();
 
-  const categories = await prisma.category.findMany({
+  const boards = await prisma.board.findMany({
     orderBy: [{ orderIdx: 'asc' }, { name: 'asc' }],
     include: {
       _count: { select: { posts: true } },
@@ -43,7 +43,7 @@ export async function GET() {
     },
   });
 
-  const tree = categories.map((c) => ({
+  const tree = boards.map((c) => ({
     id: c.id,
     slug: c.slug,
     name: c.name,

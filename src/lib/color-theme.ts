@@ -50,7 +50,7 @@ export const COLOR_THEMES: ColorThemeMeta[] = [
     key: 'ocean',
     name: '海洋蓝',
     desc: '冷静通透',
-    logoEmoji: '🐋',
+    logoEmoji: '🌊',
     swatch: { primary: '#3186c6', bg: '#f3f9fd' },
     vibe: '专业',
   },
@@ -96,5 +96,5 @@ export function getThemeMeta(key: ColorThemeKey): ColorThemeMeta {
 
 export const COLOR_THEME_STORAGE_KEY = 'rouyou.colorTheme';
 export const COLOR_THEME_MODE_STORAGE_KEY = 'rouyou.colorMode';
-export const DEFAULT_COLOR_THEME: ColorThemeKey = 'forest';
+export const DEFAULT_COLOR_THEME: ColorThemeKey = 'ocean';
 export const DEFAULT_COLOR_MODE: ColorThemeMode = 'light';

@@ -175,7 +175,7 @@ export default function AuctionDetailPage() {
             <div className="p-5">
               <h1 className="text-xl font-bold md:text-2xl">{data.title}</h1>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                <span className="chip">{data.category}</span>
+                <span className="chip">{data.board}</span>
                 {data.tags.map((tag) => (
                   <span key={tag} className="chip">#{tag}</span>
                 ))}

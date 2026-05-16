@@ -51,11 +51,11 @@ export async function generateMetadata({
           slug: speciesSlug,
           genus: {
             slug: genusSlug,
-            category: { slug: categorySlug },
+            board: { slug: categorySlug },
           },
         },
         include: {
-          genus: { include: { category: true } },
+          genus: { include: { board: true } },
         },
       })
       .catch(() => null);
@@ -79,7 +79,7 @@ export async function generateMetadata({
       `${s.name} 度夏`,
       `${s.name} 图片`,
       s.genus?.name,
-      s.genus?.category?.name,
+      s.genus?.board?.name,
       '多肉',
       '多肉植物',
     ].filter(Boolean) as string[];
@@ -100,16 +100,16 @@ export async function generateMetadata({
   if (genusSlug) {
     const g = await prisma.genus
       .findFirst({
-        where: { slug: genusSlug, category: { slug: categorySlug } },
+        where: { slug: genusSlug, board: { slug: categorySlug } },
         include: {
-          category: true,
+          board: true,
           _count: { select: { species: true, posts: true } },
         },
       })
       .catch(() => null);
     if (!g) return {};
     const title = `${g.name}${g.latinName ? `属 ${g.latinName}` : '属'} · 旗下品种`;
-    const description = `${g.category?.name}下的${g.name}属,共 ${g._count?.species ?? 0} 个品种,${g._count?.posts ?? 0} 篇相关讨论。${g.description?.slice(0, 60) ?? ''}`;
+    const description = `${g.board?.name}下的${g.name}属,共 ${g._count?.species ?? 0} 个品种,${g._count?.posts ?? 0} 篇相关讨论。${g.description?.slice(0, 60) ?? ''}`;
     return {
       title,
       description,
@@ -118,14 +118,14 @@ export async function generateMetadata({
         g.latinName,
         `${g.name}属`,
         `${g.name} 品种`,
-        g.category?.name,
+        g.board?.name,
         '多肉植物',
       ].filter(Boolean) as string[],
     };
   }
 
   // 一级:科
-  const c = await prisma.category
+  const c = await prisma.board
     .findUnique({
       where: { slug: categorySlug },
       include: {
@@ -179,7 +179,7 @@ export default async function BoardPage({
 /* ============== 一级:科 ============== */
 
 async function CategoryView({ categorySlug }: { categorySlug: string }) {
-  const c = await prisma.category.findUnique({
+  const c = await prisma.board.findUnique({
     where: { slug: categorySlug },
     include: {
       _count: { select: { posts: true, genera: true } },
@@ -196,7 +196,7 @@ async function CategoryView({ categorySlug }: { categorySlug: string }) {
   const PAGE = 24;
   const postsRaw = await prisma.post.findMany({
     where: {
-      categoryId: c.id,
+      boardId: c.id,
       deleted: false,
       ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' } : {}),
     },
@@ -209,13 +209,13 @@ async function CategoryView({ categorySlug }: { categorySlug: string }) {
     nextCursor = postsRaw.pop()!.id;
   }
   const posts = postsRaw.map(serializePost);
-  const category = serializeCategory(c);
+  const board = serializeCategory(c);
 
   return (
     <Shell>
       <BoardBreadcrumb path={category.path} />
 
-      <CategoryHeader category={category} latinName={c.latinName} kind={c.kind} />
+      <CategoryHeader board={category} latinName={c.latinName} kind={c.kind} />
 
       {c.genera.length > 0 && (
         <section className="mb-6">
@@ -259,7 +259,7 @@ async function CategoryView({ categorySlug }: { categorySlug: string }) {
         <PostMasonry
           initial={posts}
           initialCursor={nextCursor}
-          loadMoreUrl={`/api/posts?category=${encodeURIComponent(categorySlug)}&sort=latest&limit=24`}
+          loadMoreUrl={`/api/posts?board=${encodeURIComponent(categorySlug)}&sort=latest&limit=24`}
           source="board_category"
           empty={
             <Empty
@@ -284,9 +284,9 @@ async function GenusView({
   genusSlug: string;
 }) {
   const g = await prisma.genus.findFirst({
-    where: { slug: genusSlug, category: { slug: categorySlug } },
+    where: { slug: genusSlug, board: { slug: categorySlug } },
     include: {
-      category: { include: { _count: { select: { posts: true, genera: true } } } },
+      board: { include: { _count: { select: { posts: true, genera: true } } } },
       _count: { select: { posts: true, species: true } },
       species: {
         orderBy: { name: 'asc' },
@@ -323,7 +323,7 @@ async function GenusView({
       <div className="card mb-6 overflow-hidden">
         <div className="relative aspect-[21/8] bg-gradient-to-br from-leaf-300 to-leaf-600 md:aspect-[21/6]">
           <Image
-            src={g.cover || g.category.cover}
+            src={g.cover || g.board.cover}
             alt={g.name}
             fill
             className="object-cover"
@@ -333,7 +333,7 @@ async function GenusView({
           <div className="absolute inset-0 bg-gradient-to-t from-ink-900/85 via-ink-900/40 to-ink-900/20" />
 
           <div className="absolute inset-0 flex flex-col justify-end p-5 text-white md:p-6">
-            <div className="mb-1 text-xs opacity-80">{g.category.name}</div>
+            <div className="mb-1 text-xs opacity-80">{g.board.name}</div>
             <h1 className="text-2xl font-bold md:text-3xl">
               {g.name}
               {g.latinName && (
@@ -365,7 +365,7 @@ async function GenusView({
                 <FollowBoardButton
                   type="genus"
                   slug={g.slug}
-                  categorySlug={g.category.slug}
+                  categorySlug={g.board.slug}
                 />
               </div>
             </div>
@@ -445,11 +445,11 @@ async function SpeciesView({
       slug: speciesSlug,
       genus: {
         slug: genusSlug,
-        category: { slug: categorySlug },
+        board: { slug: categorySlug },
       },
     },
     include: {
-      genus: { include: { category: true } },
+      genus: { include: { board: true } },
       _count: { select: { posts: true } },
     },
   });
@@ -479,7 +479,7 @@ async function SpeciesView({
   const speciesLd = speciesJsonLd({
     name: full.name,
     latinName: full.latinName,
-    family: `${s.genus.category.name} · ${s.genus.name}`,
+    family: `${s.genus.board.name} · ${s.genus.name}`,
     description: full.description,
     cover: full.cover.startsWith('http') ? full.cover : `${SITE_URL}${full.cover}`,
     url: speciesUrl,
@@ -487,7 +487,7 @@ async function SpeciesView({
   });
   const breadcrumbLd = breadcrumbJsonLd([
     { name: '首页', url: SITE_URL },
-    { name: s.genus.category.name, url: `${SITE_URL}/board/${categorySlug}` },
+    { name: s.genus.board.name, url: `${SITE_URL}/board/${categorySlug}` },
     { name: s.genus.name, url: `${SITE_URL}/board/${categorySlug}/${genusSlug}` },
     { name: full.name, url: speciesUrl },
   ]);
@@ -520,7 +520,7 @@ async function SpeciesView({
             </div>
             <div className="p-5">
               <div className="text-[11px] text-leaf-700/70">
-                {s.genus.category.name} · {s.genus.name}
+                {s.genus.board.name} · {s.genus.name}
               </div>
               <h1 className="mt-1 flex flex-wrap items-baseline gap-3">
                 <span className="text-2xl font-bold text-ink-800 md:text-3xl">{full.name}</span>
@@ -696,7 +696,7 @@ function CategoryHeader({
   latinName,
   kind,
 }: {
-  category: { cover: string; name: string; description: string; icon: string; slug: string };
+  board: { cover: string; name: string; description: string; icon: string; slug: string };
   latinName: string | null;
   kind: string;
 }) {
@@ -716,7 +716,7 @@ function CategoryHeader({
           <p className="mt-2 max-w-xl text-xs opacity-90 md:text-sm">{category.description}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Link
-              href={`/editor?category=${encodeURIComponent(category.slug)}`}
+              href={`/editor?board=${encodeURIComponent(category.slug)}`}
               className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs text-leaf-700 hover:bg-leaf-50"
             >
               <Icon name="plus" size={12} />

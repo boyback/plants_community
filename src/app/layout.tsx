@@ -13,6 +13,7 @@ import { I18nProvider } from '@/i18n/I18nContext';
 import { ThemeProvider } from '@/theme/ThemeContext';
 import { CookieConsentProvider } from '@/theme/CookieConsent';
 import { RealtimeProvider } from '@/context/RealtimeContext';
+import { FeatureFlagsProvider } from '@/context/FeatureFlagsContext';
 import {
   ColorThemeProvider,
   COLOR_THEME_SSR_SCRIPT,
@@ -206,18 +207,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <I18nProvider initialLocale={initialLocale} initialMessages={initialMessages}>
             <ThemeProvider>
               <CookieConsentProvider>
-                <AuthProvider
-                  initialUser={initialUser}
-                  initialSignInStreak={signInStreak}
-                  initialSignedInToday={signedInToday}
-                  initialExp={initialExp}
-                  initialExpProgress={initialExpProgress}
-                  initialPointsBalance={initialPointsBalance}
-                  initialVip={initialVip}
-                  initialEquip={initialEquip}
-                >
-                  <RealtimeProvider>{children}</RealtimeProvider>
-                </AuthProvider>
+                <FeatureFlagsProvider>
+                  <AuthProvider
+                    initialUser={initialUser}
+                    initialSignInStreak={signInStreak}
+                    initialSignedInToday={signedInToday}
+                    initialExp={initialExp}
+                    initialExpProgress={initialExpProgress}
+                    initialPointsBalance={initialPointsBalance}
+                    initialVip={initialVip}
+                    initialEquip={initialEquip}
+                  >
+                    <RealtimeProvider>{children}</RealtimeProvider>
+                  </AuthProvider>
+                </FeatureFlagsProvider>
               </CookieConsentProvider>
             </ThemeProvider>
           </I18nProvider>

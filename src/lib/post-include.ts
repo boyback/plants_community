@@ -26,16 +26,16 @@ export function postInclude(opts?: { withJournalEntries?: boolean }) {
       },
     },
     // 三级板块全部 include,serializePost 会按优先级选用
-    category: { include: { _count: { select: { posts: true, genera: true } } } },
+    board: { include: { _count: { select: { posts: true, genera: true } } } },
     genus: {
       include: {
-        category: true,
+        board: true,
         _count: { select: { posts: true, species: true } },
       },
     },
     species: {
       include: {
-        genus: { include: { category: true } },
+        genus: { include: { board: true } },
         _count: { select: { posts: true } },
       },
     },

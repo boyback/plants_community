@@ -89,13 +89,13 @@ export default async function SearchPage({
           where: {
             OR: [{ name: { contains: q } }, { latinName: { contains: q } }],
           },
-          include: { genus: { include: { category: true } } },
+          include: { genus: { include: { board: true } } },
           orderBy: [{ posts: { _count: 'desc' } }, { name: 'asc' }],
           take: PER,
         })
       : Promise.resolve([]),
     want('boards')
-      ? prisma.category.findMany({
+      ? prisma.board.findMany({
           where: {
             OR: [{ name: { contains: q } }, { description: { contains: q } }],
           },
@@ -136,7 +136,7 @@ export default async function SearchPage({
       prisma.species.count({
         where: { OR: [{ name: { contains: q } }, { latinName: { contains: q } }] },
       }),
-      prisma.category.count({
+      prisma.board.count({
         where: { OR: [{ name: { contains: q } }, { description: { contains: q } }] },
       }),
       prisma.user.count({
@@ -255,7 +255,7 @@ export default async function SearchPage({
                 {species.map((s) => (
                   <Link
                     key={s.id}
-                    href={`/board/${s.genus.category.slug}/${s.genus.slug}/${s.slug}`}
+                    href={`/board/${s.genus.board.slug}/${s.genus.slug}/${s.slug}`}
                     className="card-hoverable group overflow-hidden"
                   >
                     <div className="relative aspect-[4/3] bg-leaf-50">

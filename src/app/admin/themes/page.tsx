@@ -54,7 +54,7 @@ export default async function AdminThemesPage() {
                 )}
               </div>
               <div className="text-[10px] text-ink-500 uppercase tracking-wider">
-                {t.category}
+                {t.board}
               </div>
               <div className="mt-2 space-y-1">
                 {t.windows.map((w, i) => (

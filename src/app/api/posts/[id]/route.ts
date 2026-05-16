@@ -154,19 +154,19 @@ async function resolveBoardIds(body: {
   genusSlug?: string;
   speciesSlug?: string;
 }): Promise<
-  | { ok: true; ids: { categoryId: string; genusId: string | null; speciesId: string | null } | null }
+  | { ok: true; ids: { boardId: string; genusId: string | null; speciesId: string | null } | null }
   | { ok: false; error: string }
 > {
   if (body.speciesSlug) {
     const sp = await prisma.species.findFirst({
       where: { slug: body.speciesSlug },
-      include: { genus: { include: { category: true } } },
+      include: { genus: { include: { board: true } } },
     });
     if (!sp) return { ok: false, error: '指定的品种不存在' };
     return {
       ok: true,
       ids: {
-        categoryId: sp.genus.categoryId,
+        boardId: sp.genus.boardId,
         genusId: sp.genusId,
         speciesId: sp.id,
       },
@@ -176,27 +176,27 @@ async function resolveBoardIds(body: {
     const g = await prisma.genus.findFirst({
       where: {
         slug: body.genusSlug,
-        ...(body.categorySlug ? { category: { slug: body.categorySlug } } : {}),
+        ...(body.categorySlug ? { board: { slug: body.categorySlug } } : {}),
       },
-      include: { category: true },
+      include: { board: true },
     });
     if (!g) return { ok: false, error: '指定的属不存在' };
     return {
       ok: true,
       ids: {
-        categoryId: g.categoryId,
+        boardId: g.boardId,
         genusId: g.id,
         speciesId: null,
       },
     };
   }
   if (body.categorySlug) {
-    const c = await prisma.category.findUnique({ where: { slug: body.categorySlug } });
+    const c = await prisma.board.findUnique({ where: { slug: body.categorySlug } });
     if (!c) return { ok: false, error: '指定的板块不存在' };
     return {
       ok: true,
       ids: {
-        categoryId: c.id,
+        boardId: c.id,
         genusId: null,
         speciesId: null,
       },

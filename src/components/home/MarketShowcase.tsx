@@ -68,7 +68,7 @@ function ProductItem({ p }: { p: ProductCard }) {
   const yuan = (p.price / 100).toFixed(p.price % 100 === 0 ? 0 : 2);
   const orig = p.originalPrice ? (p.originalPrice / 100).toFixed(p.originalPrice % 100 === 0 ? 0 : 2) : null;
   return (
-    <Link href={`/market/${p.id}`} className="group overflow-hidden rounded-lg border border-leaf-100 transition-all hover:border-leaf-300 hover:shadow-card">
+    <Link href={`/market/${p.id}`} className="group overflow-hidden rounded-none border border-leaf-100 transition-all hover:border-leaf-300 hover:shadow-card">
       <div className="relative aspect-square bg-leaf-50">
         <Image src={p.cover} alt={p.title} fill className="object-cover" unoptimized />
       </div>
@@ -90,7 +90,7 @@ function ProductItem({ p }: { p: ProductCard }) {
 function AuctionItem({ a }: { a: AuctionCard }) {
   const yuan = (a.startPrice / 100).toFixed(a.startPrice % 100 === 0 ? 0 : 2);
   return (
-    <Link href={`/auction/${a.id}`} className="group relative overflow-hidden rounded-lg border-2 border-rose-300 bg-rose-50/40 transition-all hover:border-rose-400 hover:shadow-card">
+    <Link href={`/auction/${a.id}`} className="group relative overflow-hidden rounded-none border-2 border-rose-300 bg-rose-50/40 transition-all hover:border-rose-400 hover:shadow-card">
       <span className="absolute left-1.5 top-1.5 z-10 rounded bg-rose-500 px-1.5 py-0.5 text-[10px] font-medium text-white shadow">
         🔨 拍卖中
       </span>

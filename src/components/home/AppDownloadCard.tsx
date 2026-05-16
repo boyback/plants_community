@@ -78,7 +78,7 @@ export function AppDownloadCard() {
     <div className="card p-4">
       <div className="flex gap-3">
         {/* 左:二维码 */}
-        <div className="grid h-[120px] w-[120px] shrink-0 place-items-center rounded-lg bg-white p-1 ring-1 ring-leaf-100/60">
+        <div className="grid h-[120px] w-[120px] shrink-0 place-items-center rounded-none bg-white p-1 ring-1 ring-leaf-100/60">
           <svg
             viewBox={`0 0 ${QR_SIZE} ${QR_SIZE}`}
             className="h-full w-full"

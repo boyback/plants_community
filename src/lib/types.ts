@@ -107,13 +107,13 @@ export interface BoardPathSegment {
 /**
  * 下列三个接口只在需要细节时用;通用 Board 就已足够用于多数场景。
  */
-export interface CategoryKind {
+export interface BoardKind {
   family: 'family';
   discussion: 'discussion';
   market: 'market';
 }
 
-export interface CategoryFull extends Board {
+export interface BoardFull extends Board {
   level: 'category';
   latinName?: string;
   kind: 'family' | 'discussion' | 'market';

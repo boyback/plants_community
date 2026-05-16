@@ -7,7 +7,7 @@ import { api, ApiError } from '@/lib/client-api';
 
 interface Genus {
   id: string;
-  categoryId: string;
+  boardId: string;
   slug: string;
   name: string;
   latinName: string | null;
@@ -19,10 +19,10 @@ interface Genus {
 }
 
 export function GenusClient({
-  categoryId,
+  boardId,
   initial,
 }: {
-  categoryId: string;
+  boardId: string;
   initial: Genus[];
 }) {
   const router = useRouter();
@@ -142,7 +142,7 @@ export function GenusClient({
 
       {editing && (
         <GenusEditDialog
-          categoryId={categoryId}
+          boardId={boardId}
           genus={editing === 'new' ? null : editing}
           onClose={() => setEditing(null)}
           onSaved={() => {
@@ -156,12 +156,12 @@ export function GenusClient({
 }
 
 function GenusEditDialog({
-  categoryId,
+  boardId,
   genus,
   onClose,
   onSaved,
 }: {
-  categoryId: string;
+  boardId: string;
   genus: Genus | null;
   onClose: () => void;
   onSaved: () => void;
@@ -181,7 +181,7 @@ function GenusEditDialog({
     setBusy(true);
     try {
       const body = {
-        categoryId,
+        boardId,
         slug: slug.trim(),
         name: name.trim(),
         latinName: latinName.trim() || null,

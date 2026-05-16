@@ -20,6 +20,7 @@ export function JournalTimeline({ post }: Props) {
   const isAuthor = user?.id === post.author.id;
   const [entries, setEntries] = useState<JournalEntry[]>(post.journal?.entries ?? []);
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<JournalEntry | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   if (!post.journal) return null;
@@ -27,6 +28,18 @@ export function JournalTimeline({ post }: Props) {
   const showToast = (m: string) => {
     setToast(m);
     setTimeout(() => setToast(null), 2200);
+  };
+
+  const handleDelete = async (entry: JournalEntry) => {
+    if (!confirm('确定要删除这条记录吗？')) return;
+
+    try {
+      await api.delete(`/api/posts/${post.id}/journal/${entry.id}`);
+      setEntries(entries.filter(e => e.id !== entry.id));
+      showToast('已删除 ✅');
+    } catch (e) {
+      showToast(e instanceof ApiError ? e.message : '删除失败');
+    }
   };
 
   const sorted = [...entries].sort((a, b) => {
@@ -70,6 +83,9 @@ export function JournalTimeline({ post }: Props) {
               startDate={post.journal!.startDate}
               isFirst={i === 0}
               isLast={i === sorted.length - 1}
+              isAuthor={isAuthor}
+              onEdit={() => setEditing(e)}
+              onDelete={() => handleDelete(e)}
             />
           ))}
         </ol>
@@ -83,6 +99,19 @@ export function JournalTimeline({ post }: Props) {
             setEntries([...entries, entry]);
             setAdding(false);
             showToast('已添加 ✅');
+          }}
+        />
+      )}
+
+      {editing && (
+        <EditEntryDialog
+          postId={post.id}
+          entry={editing}
+          onClose={() => setEditing(null)}
+          onUpdated={(updated) => {
+            setEntries(entries.map(e => e.id === updated.id ? updated : e));
+            setEditing(null);
+            showToast('已更新 ✅');
           }}
         />
       )}
@@ -101,11 +130,17 @@ function EntryNode({
   startDate,
   isFirst,
   isLast,
+  isAuthor,
+  onEdit,
+  onDelete,
 }: {
   entry: JournalEntry;
   startDate: string;
   isFirst: boolean;
   isLast: boolean;
+  isAuthor: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
   const meta = STAGE_META[entry.stage];
   const date = new Date(entry.entryDate);
@@ -116,7 +151,7 @@ function EntryNode({
   const [lbIdx, setLbIdx] = useState<number | null>(null);
 
   return (
-    <li className="relative">
+    <li className="relative group">
       <span
         aria-hidden
         className={cn(
@@ -144,6 +179,24 @@ function EntryNode({
           >
             {meta.emoji} {meta.zh}
           </span>
+          {isAuthor && (
+            <div className="ml-auto flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                type="button"
+                className="text-xs text-leaf-700 hover:text-leaf-900 hover:underline"
+                onClick={onEdit}
+              >
+                编辑
+              </button>
+              <button
+                type="button"
+                className="text-xs text-rose-600 hover:text-rose-700 hover:underline"
+                onClick={onDelete}
+              >
+                删除
+              </button>
+            </div>
+          )}
         </div>
         {entry.note && (
           <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-ink-800/90">
@@ -151,7 +204,7 @@ function EntryNode({
           </p>
         )}
         {entry.images.length > 0 && (
-          <div className="mt-2 grid grid-cols-3 gap-2 md:grid-cols-4">
+          <div className="mt-2 grid grid-cols-4 gap-1.5 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7">
             {entry.images.map((u, i) => (
               <button
                 key={i}
@@ -163,7 +216,7 @@ function EntryNode({
                 <img
                   src={u}
                   alt=""
-                  className="h-24 w-full object-cover transition-transform hover:scale-105"
+                  className="aspect-square w-full object-cover transition-transform hover:scale-105"
                   loading="lazy"
                 />
               </button>
@@ -326,6 +379,165 @@ function AddEntryDialog({
           </button>
           <button className="btn-primary" onClick={submit} disabled={busy}>
             {busy ? '提交中…' : '保存'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditEntryDialog({
+  postId,
+  entry,
+  onClose,
+  onUpdated,
+}: {
+  postId: string;
+  entry: JournalEntry;
+  onClose: () => void;
+  onUpdated: (e: JournalEntry) => void;
+}) {
+  const [entryDate, setEntryDate] = useState(entry.entryDate.slice(0, 10));
+  const [stage, setStage] = useState<JournalStage>(entry.stage);
+  const [note, setNote] = useState(entry.note);
+  const [images, setImages] = useState<string[]>(entry.images);
+  const [imgInput, setImgInput] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  const submit = async () => {
+    if (!entryDate) return setErr('请选择日期');
+    setBusy(true);
+    setErr('');
+    try {
+      await api.patch(
+        `/api/posts/${postId}/journal/${entry.id}`,
+        {
+          entryDate: new Date(entryDate).toISOString(),
+          stage,
+          note,
+          images,
+        }
+      );
+      onUpdated({
+        ...entry,
+        entryDate: new Date(entryDate).toISOString(),
+        stage,
+        note,
+        images,
+      });
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : '更新失败');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={onClose}>
+      <div
+        className="card w-full max-w-md p-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-base font-semibold">编辑记录</h3>
+          <button onClick={onClose} className="text-leaf-700/70 hover:text-leaf-700">
+            ×
+          </button>
+        </div>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block">
+              <div className="mb-1 text-xs text-leaf-700/80">日期</div>
+              <input
+                type="date"
+                className="input"
+                value={entryDate}
+                onChange={(e) => setEntryDate(e.target.value)}
+              />
+            </label>
+            <label className="block">
+              <div className="mb-1 text-xs text-leaf-700/80">阶段</div>
+              <select
+                className="input"
+                value={stage}
+                onChange={(e) => setStage(e.target.value as JournalStage)}
+              >
+                {ALL_STAGES.map((s) => (
+                  <option key={s} value={s}>
+                    {STAGE_META[s].emoji} {STAGE_META[s].zh}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label className="block">
+            <div className="mb-1 text-xs text-leaf-700/80">心得</div>
+            <textarea
+              className="input min-h-[80px]"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={2000}
+              placeholder="今天的状态…"
+            />
+          </label>
+          <div>
+            <div className="mb-1 text-xs text-leaf-700/80">图片(选填)</div>
+            <div className="flex gap-2">
+              <input
+                className="input flex-1"
+                placeholder="粘贴图片 URL…"
+                value={imgInput}
+                onChange={(e) => setImgInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const u = imgInput.trim();
+                    if (u && !images.includes(u))
+                      setImages([...images, u].slice(0, 9));
+                    setImgInput('');
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="btn-outline !px-3"
+                onClick={() => {
+                  const u = imgInput.trim();
+                  if (u && !images.includes(u))
+                    setImages([...images, u].slice(0, 9));
+                  setImgInput('');
+                }}
+              >
+                <Icon name="plus" size={14} />
+              </button>
+            </div>
+            {images.length > 0 && (
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {images.map((u, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <div key={i} className="relative">
+                    <img src={u} alt="" className="h-16 w-full rounded object-cover" />
+                    <button
+                      type="button"
+                      className="absolute right-0.5 top-0.5 grid h-4 w-4 place-items-center rounded-full bg-black/60 text-[10px] text-white"
+                      onClick={() => setImages(images.filter((_, k) => k !== i))}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        {err && <div className="mt-2 text-xs text-rose-600">{err}</div>}
+        <div className="mt-4 flex justify-end gap-2">
+          <button className="btn-outline" onClick={onClose} disabled={busy}>
+            取消
+          </button>
+          <button className="btn-primary" onClick={submit} disabled={busy}>
+            {busy ? '更新中…' : '保存'}
           </button>
         </div>
       </div>

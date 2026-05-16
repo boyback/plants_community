@@ -26,7 +26,7 @@ export async function GET(req: Request) {
       name: true,
       latinName: true,
       _count: { select: { posts: true } },
-      category: {
+      board: {
         select: { slug: true, name: true, icon: true },
       },
     },
@@ -40,9 +40,9 @@ export async function GET(req: Request) {
       name: g.name,
       latinName: g.latinName,
       posts: g._count.posts,
-      categorySlug: g.category.slug,
-      categoryName: g.category.name,
-      categoryIcon: g.category.icon,
+      categorySlug: g.board.slug,
+      categoryName: g.board.name,
+      categoryIcon: g.board.icon,
     })),
   });
 }

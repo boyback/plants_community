@@ -30,15 +30,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 三级板块(科 / 属 / 品种)
   try {
-    const [categories, genera, species] = await Promise.all([
-      prisma.category.findMany({
+    const [boards, genera, species] = await Promise.all([
+      prisma.board.findMany({
         select: { slug: true, updatedAt: true },
       }),
       prisma.genus.findMany({
         select: {
           slug: true,
           updatedAt: true,
-          category: { select: { slug: true } },
+          board: { select: { slug: true } },
         },
       }),
       prisma.species.findMany({
@@ -46,13 +46,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           slug: true,
           updatedAt: true,
           genus: {
-            select: { slug: true, category: { select: { slug: true } } },
+            select: { slug: true, board: { select: { slug: true } } },
           },
         },
       }),
     ]);
 
-    for (const c of categories) {
+    for (const c of boards) {
       out.push({
         url: `${SITE_URL}/board/${c.slug}`,
         lastModified: c.updatedAt,
@@ -62,7 +62,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
     for (const g of genera) {
       out.push({
-        url: `${SITE_URL}/board/${g.category.slug}/${g.slug}`,
+        url: `${SITE_URL}/board/${g.board.slug}/${g.slug}`,
         lastModified: g.updatedAt,
         changeFrequency: 'weekly',
         priority: 0.7,
@@ -70,7 +70,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
     for (const s of species) {
       out.push({
-        url: `${SITE_URL}/board/${s.genus.category.slug}/${s.genus.slug}/${s.slug}`,
+        url: `${SITE_URL}/board/${s.genus.board.slug}/${s.genus.slug}/${s.slug}`,
         lastModified: s.updatedAt,
         changeFrequency: 'weekly',
         priority: 0.8, // 品种页 SEO 价值高(用户搜「银冠玉」会落到这里)

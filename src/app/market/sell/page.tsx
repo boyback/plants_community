@@ -42,7 +42,7 @@ export default function SellPage() {
   const [tagInput, setTagInput] = useState('');
 
   // 板块数据
-  const [categories, setCategories] = useState<Board[]>([]);
+  const [boards, setCategories] = useState<Board[]>([]);
   const [generaList, setGeneraList] = useState<Board[]>([]);
   const [speciesList, setSpeciesList] = useState<Board[]>([]);
 
@@ -53,7 +53,7 @@ export default function SellPage() {
   // 拉一级(科)
   useEffect(() => {
     api
-      .get<Board[]>('/api/categories')
+      .get<Board[]>('/api/boards')
       .then((list) => {
         setCategories(list);
         if (!categorySlug && list[0]) setCategorySlug(list[0].slug);
@@ -70,7 +70,7 @@ export default function SellPage() {
       return;
     }
     api
-      .get<{ genera: Board[] }>(`/api/categories/${encodeURIComponent(categorySlug)}`)
+      .get<{ genera: Board[] }>(`/api/boards/${encodeURIComponent(categorySlug)}`)
       .then((r) => setGeneraList(r.genera ?? []))
       .catch(() => setGeneraList([]));
   }, [categorySlug]);
@@ -84,7 +84,7 @@ export default function SellPage() {
     }
     api
       .get<{ species: Board[] }>(
-        `/api/genera/${encodeURIComponent(genusSlug)}?category=${encodeURIComponent(categorySlug)}`
+        `/api/genera/${encodeURIComponent(genusSlug)}?board=${encodeURIComponent(categorySlug)}`
       )
       .then((r) => setSpeciesList(r.species ?? []))
       .catch(() => setSpeciesList([]));
@@ -203,7 +203,7 @@ export default function SellPage() {
                     className="input"
                   >
                     <option value="">-- 选择科 --</option>
-                    {categories.map((c) => (
+                    {boards.map((c) => (
                       <option key={c.id} value={c.slug}>
                         {c.name}
                       </option>

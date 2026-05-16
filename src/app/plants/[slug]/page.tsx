@@ -11,9 +11,9 @@ export const dynamic = 'force-dynamic';
 export default async function LegacyPlantRedirect({ params }: { params: { slug: string } }) {
   const s = await prisma.species.findFirst({
     where: { slug: params.slug },
-    include: { genus: { include: { category: true } } },
+    include: { genus: { include: { board: true } } },
   });
   if (!s) notFound();
-  const path = `/board/${s.genus.category.slug}/${s.genus.slug}/${s.slug}`;
+  const path = `/board/${s.genus.board.slug}/${s.genus.slug}/${s.slug}`;
   redirect(path);
 }

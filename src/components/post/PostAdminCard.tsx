@@ -117,9 +117,9 @@ export function PostAdminCard({ post, user }: PostAdminCardProps) {
     setShowMoveDialog(true);
   };
 
-  const handleMoveConfirm = async (categoryId?: string, genusId?: string, speciesId?: string) => {
+  const handleMoveConfirm = async (boardId?: string, genusId?: string, speciesId?: string) => {
     setShowMoveDialog(false);
-    await handleAdminAction('move', { categoryId, genusId, speciesId });
+    await handleAdminAction('move', { boardId, genusId, speciesId });
   };
 
   return (

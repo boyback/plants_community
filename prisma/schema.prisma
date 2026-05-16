@@ -134,6 +134,12 @@ model User {
   albumLikes    AlbumLike[]
   albumComments AlbumComment[]
 
+  // 摄影大赛
+  contestsCreated PhotoContest[]
+  contestEntries  ContestEntry[]
+  contestVotes    ContestVote[]
+  contestComments ContestComment[]
+
   @@map("users")
 }
 
@@ -260,18 +266,43 @@ model UserBadge {
 // ============== 板块 ==============
 
 model Board {
-  id          String @id @default(cuid())
-  slug        String @unique
+  id          String    @id @default(cuid())
+  slug        String    @unique
   name        String
-  description String @db.Text
+  latinName   String?
+  kind        BoardKind @default(family)
+  description String    @db.Text
   cover       String
-  icon        String
-  members     Int    @default(0)
-  orderIdx    Int    @default(0)
+  icons       String    @default("[]")
+  members     Int       @default(0)
+  orderIdx    Int       @default(0)
+  enabled     Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  posts Post[]
+  genera Genus[]
+  posts  Post[]
 
+  @@index([kind, orderIdx])
   @@map("boards")
+}
+
+// ============== 系统菜单 ==============
+
+/// 系统菜单项（晒图广场、交易市场等）
+model SystemMenu {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  icon      String   @default("") // 单个图标，可以是 emoji 或图片 URL
+  path      String   // 菜单链接路径
+  orderIdx  Int      @default(0)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderIdx])
+  @@map("system_menus")
 }
 
 // ============== 帖子 ==============
@@ -363,18 +394,15 @@ model Post {
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 
-  authorId   String
-  // 三级分类(Category 必填,Genus/Species 可选)
-  categoryId String?
-  genusId    String?
-  speciesId  String?
-  // 旧 Board(保留字段,但关系已断,新业务不再依赖)
-  boardId    String?
-  author     User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  category   Category? @relation(fields: [categoryId], references: [id])
-  genus      Genus?    @relation(fields: [genusId], references: [id])
-  species    Species?  @relation(fields: [speciesId], references: [id])
-  board      Board?    @relation(fields: [boardId], references: [id])
+  authorId  String
+  // 三级分类(Board 必填,Genus/Species 可选)
+  boardId   String?
+  genusId   String?
+  speciesId String?
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  board     Board?   @relation(fields: [boardId], references: [id])
+  genus     Genus?   @relation(fields: [genusId], references: [id])
+  species   Species? @relation(fields: [speciesId], references: [id])
 
   // 帖子类型扩展
   vote    Vote?
@@ -387,10 +415,9 @@ model Post {
   collects PostCollect[]
   views_   PostView[]
 
-  @@index([categoryId, createdAt])
+  @@index([boardId, createdAt])
   @@index([genusId, createdAt])
   @@index([speciesId, createdAt])
-  @@index([boardId, createdAt])
   @@index([authorId])
   // 推荐流按 hotScore 排序的高频查询索引
   @@index([deleted, hotScore])
@@ -1255,18 +1282,22 @@ model AuctionParticipant {
 
 // ============================================================
 // 三级板块分类
-//   Category (科 / 分类顶级)
+//   Board (科 / 分类顶级)
 //     └── Genus (属)
 //           └── Species (品种 / 子板块,同时承载「多肉图鉴」信息)
 //
-// 另外 Category 引入 kind 字段,把旧的非分类板块(新手村/交易市场)
-// 保留为 family='other' 类的特殊科。
+// Board 的 kind 字段区分不同类型的板块:
+//   - family: 科(植物学分类)
+//   - discussion: 非分类讨论型板块(新手村、养殖交流等)
+//   - market: 交易/活动型板块
+//   - system: 系统功能板块(晒图广场、交易市场等,不可删除)
 // ============================================================
 
-enum CategoryKind {
+enum BoardKind {
   family // 科(植物学分类)
   discussion // 非分类讨论型板块(新手村、养殖交流等)
   market // 交易/活动型板块(若需要)
+  system // 系统功能板块(晒图广场、交易市场等,不可删除)
 }
 
 enum PermissionEffect {
@@ -1291,48 +1322,26 @@ model UserPermissionOverride {
   @@map("user_permission_overrides")
 }
 
-model Category {
-  id          String       @id @default(cuid())
-  slug        String       @unique
-  name        String // 如 "仙人掌科"
-  latinName   String? // 如 "Cactaceae"
-  kind        CategoryKind @default(family)
-  description String       @db.Text
-  cover       String
-  icon        String
-  members     Int          @default(0) // 冗余展示,允许不精确
-  orderIdx    Int          @default(0)
-  enabled     Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  genera Genus[]
-  posts  Post[]
-
-  @@index([kind, orderIdx])
-  @@map("categories")
-}
-
 model Genus {
   id          String   @id @default(cuid())
-  categoryId  String
-  slug        String // 在所属 category 内唯一
+  boardId     String
+  slug        String // 在所属 board 内唯一
   name        String // 如 "星球属"
   latinName   String? // 如 "Astrophytum"
   description String   @db.Text
   cover       String?
-  /// 同一 category 下同辈 Genus 排序;数字小的在前
+  /// 同一 board 下同辈 Genus 排序;数字小的在前
   orderIdx    Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  category Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  board    Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
   species  Species[]
   posts    Post[]
   products Product[] @relation("ProductGenus")
   auctions Auction[] @relation("AuctionGenus")
 
-  @@unique([categoryId, slug])
+  @@unique([boardId, slug])
   @@index([slug])
   @@map("genera")
 }
@@ -1370,6 +1379,7 @@ model Species {
   posts    Post[]
   ratings  SpeciesRating[]
   journals Journal[]
+  contestEntries ContestEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1455,11 +1465,11 @@ model SiteConfig {
 }
 
 // ============================================================
-// 板块关注(多态:可关注 Category / Genus / Species 任一层级)
+// 板块关注(多态:可关注 Board / Genus / Species 任一层级)
 // ============================================================
 
 enum BoardFollowType {
-  category
+  board
   genus
   species
 }
@@ -1468,7 +1478,7 @@ model BoardFollow {
   id        String          @id @default(cuid())
   userId    String
   type      BoardFollowType
-  targetId  String // 对应 Category.id / Genus.id / Species.id
+  targetId  String // 对应 Board.id / Genus.id / Species.id
   createdAt DateTime        @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1622,10 +1632,11 @@ model Album {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  images   AlbumImage[]
-  likes    AlbumLike[]
-  comments AlbumComment[]
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  images        AlbumImage[]
+  likes         AlbumLike[]
+  comments      AlbumComment[]
+  contestEntries ContestEntry[]
 
   @@index([userId])
   @@index([isPublic, createdAt])
@@ -1673,6 +1684,136 @@ model AlbumComment {
   @@index([albumId])
   @@index([userId])
   @@map("album_comments")
+}
+
+// ============================================================
+// 摄影大赛系统
+// ============================================================
+
+enum ContestStatus {
+  draft      // 草稿
+  upcoming   // 即将开始
+  active     // 进行中
+  voting     // 投票中
+  ended      // 已结束
+  cancelled  // 已取消
+}
+
+model PhotoContest {
+  id               String        @id @default(cuid())
+  title            String // 大赛标题
+  description      String        @db.Text // 大赛描述
+  cover            String? // 封面图
+  theme            String? // 主题标签
+  rules            String        @db.Text // 参赛规则（JSON）
+  prizes           String        @db.Text // 奖品设置（JSON）
+  status           ContestStatus @default(draft)
+  // 时间节点
+  startAt          DateTime // 开始时间
+  endAt            DateTime // 结束时间
+  votingStartAt    DateTime? // 投票开始时间
+  votingEndAt      DateTime? // 投票结束时间
+  // 统计
+  entryCount       Int           @default(0) // 参赛作品数
+  participantCount Int           @default(0) // 参赛人数
+  voteCount        Int           @default(0) // 总投票数
+  viewCount        Int           @default(0) // 浏览数
+  // 设置
+  maxEntriesPerUser Int          @default(3) // 每人最多提交作品数
+  allowVoting       Boolean      @default(true) // 是否允许投票
+  allowComments     Boolean      @default(true) // 是否允许评论
+  featured          Boolean      @default(false) // 是否精选展示
+  createdBy         String // 创建者ID
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  creator User            @relation(fields: [createdBy], references: [id])
+  entries ContestEntry[]
+  winners ContestWinner[]
+
+  @@index([status, startAt])
+  @@index([featured, createdAt])
+  @@map("photo_contests")
+}
+
+model ContestEntry {
+  id          String   @id @default(cuid())
+  contestId   String
+  userId      String
+  albumId     String? // 关联相册（可选）
+  title       String // 作品标题
+  description String?  @db.Text // 作品描述
+  imageUrl    String   @db.Text // 主图URL
+  images      String   @db.Text // 所有图片（JSON array）
+  speciesId   String? // 关联品种
+  // 统计
+  voteCount   Int      @default(0) // 得票数
+  viewCount   Int      @default(0) // 浏览数
+  commentCount Int     @default(0) // 评论数
+  // 状态
+  approved    Boolean  @default(false) // 是否审核通过
+  featured    Boolean  @default(false) // 是否精选
+  disqualified Boolean @default(false) // 是否取消资格
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contest  PhotoContest    @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album    Album?          @relation(fields: [albumId], references: [id])
+  species  Species?        @relation(fields: [speciesId], references: [id])
+  votes    ContestVote[]
+  comments ContestComment[]
+  winner   ContestWinner?
+
+  @@unique([contestId, userId, title])
+  @@index([contestId, voteCount])
+  @@index([userId])
+  @@map("contest_entries")
+}
+
+model ContestVote {
+  id        String   @id @default(cuid())
+  entryId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  entry ContestEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, userId])
+  @@index([userId])
+  @@map("contest_votes")
+}
+
+model ContestComment {
+  id        String   @id @default(cuid())
+  entryId   String
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  entry ContestEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([entryId])
+  @@index([userId])
+  @@map("contest_comments")
+}
+
+model ContestWinner {
+  id        String   @id @default(cuid())
+  contestId String
+  entryId   String   @unique
+  rank      Int // 名次：1=一等奖，2=二等奖，3=三等奖
+  prize     String   @db.Text // 奖品描述
+  createdAt DateTime @default(now())
+
+  contest PhotoContest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  entry   ContestEntry  @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@unique([contestId, rank])
+  @@index([contestId])
+  @@map("contest_winners")
 }
 
 // ============================================================

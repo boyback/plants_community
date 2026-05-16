@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 export const GET = handler(async (req) => {
   const url = new URL(req.url);
   const source = url.searchParams.get('source') as ProductSource | null;
-  const category = url.searchParams.get('category') ?? undefined; // 商品分类(工具/盆器...)
+  const board = url.searchParams.get('category') ?? undefined; // 商品分类(工具/盆器...)
   const q = url.searchParams.get('q')?.trim() || undefined;
   const sort = url.searchParams.get('sort') ?? 'latest'; // latest | oldest | price_asc | price_desc | hot
   const limit = Math.min(Number(url.searchParams.get('limit') ?? '24'), 100);
@@ -22,7 +22,7 @@ export const GET = handler(async (req) => {
   // 价格区间(单位:分;前端用元 -> 转分)
   const priceMin = url.searchParams.get('priceMin');
   const priceMax = url.searchParams.get('priceMax');
-  // 关联植物科 / 品种(将来 product 加 categoryId/speciesId 后启用,目前通过 tags/title 匹配)
+  // 关联植物科 / 品种(将来 product 加 boardId/speciesId 后启用,目前通过 tags/title 匹配)
   const familySlug = url.searchParams.get('family')?.trim() || undefined;
   const speciesSlug = url.searchParams.get('species')?.trim() || undefined;
 
@@ -39,7 +39,7 @@ export const GET = handler(async (req) => {
         OR: [
           { title: { contains: q } },
           { descriptionText: { contains: q } },
-          { category: { contains: q } },
+          { board: { contains: q } },
           { tags: { contains: q } },
           { shipFrom: { contains: q } },
         ],
@@ -75,7 +75,7 @@ export const GET = handler(async (req) => {
   const where = {
     status: { in: ['on_sale', 'sold_out'] as ProductStatus[] },
     ...(source ? { source } : {}),
-    ...(category ? { category } : {}),
+    ...(category ? { board } : {}),
     ...(Object.keys(priceFilter).length > 0 ? { price: priceFilter } : {}),
     ...(andFilters.length > 0 ? { AND: andFilters } : {}),
   };
@@ -145,7 +145,7 @@ export const POST = handler(async (req) => {
       description: stored.html,
       descriptionJson: stored.json || null,
       descriptionText: stored.text,
-      category: body.category,
+      category: body.board,
       cover: body.cover,
       images: stringifyJson(body.images ?? [body.cover]),
       tags: stringifyJson(body.tags ?? []),

@@ -88,7 +88,7 @@ export async function GET(req: Request) {
   let taxonNames: string[] = [];
   if (family || genus || species) {
     const [fams, gens, sps] = await Promise.all([
-      family ? prisma.category.findMany({ where: { slug: family }, select: { name: true } }) : [],
+      family ? prisma.board.findMany({ where: { slug: family }, select: { name: true } }) : [],
       genus ? prisma.genus.findMany({ where: { slug: genus }, select: { name: true } }) : [],
       species ? prisma.species.findMany({ where: { slug: species }, select: { name: true, latinName: true } }) : [],
     ]);
@@ -113,7 +113,7 @@ export async function GET(req: Request) {
     ? {
         OR: OTHER_KEYWORDS[other].flatMap((s) => [
           { title: { contains: s } },
-          { category: { contains: s } },
+          { board: { contains: s } },
         ]),
       }
     : null;

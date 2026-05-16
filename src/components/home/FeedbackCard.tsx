@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 
 type Category = 'bug' | 'feature' | 'content' | 'other';
 
-const CATEGORIES: { key: Category; label: string; icon: string }[] = [
+const CATEGORIES: { key: Board; label: string; icon: string }[] = [
   { key: 'bug', label: '缺陷', icon: '🐛' },
   { key: 'feature', label: '建议', icon: '✨' },
   { key: 'content', label: '内容', icon: '📝' },
@@ -81,13 +81,13 @@ function FeedbackDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-ink-900/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-xl bg-white shadow-2xl">
+      <div className="w-full max-w-md rounded-none bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-leaf-100 px-5 py-3">
           <h3 className="text-base font-semibold text-ink-800">📮 写反馈</h3>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-leaf-700/60 hover:bg-leaf-50"
+            className="rounded-none p-1.5 text-leaf-700/60 hover:bg-leaf-50"
           >
             ✕
           </button>
@@ -115,7 +115,7 @@ function FeedbackDialog({ onClose }: { onClose: () => void }) {
                     type="button"
                     onClick={() => setCategory(c.key)}
                     className={cn(
-                      'flex-1 rounded-lg border px-2 py-2 text-xs transition-colors',
+                      'flex-1 rounded-none border px-2 py-2 text-xs transition-colors',
                       category === c.key
                         ? 'border-leaf-500 bg-leaf-50 text-leaf-700 font-medium'
                         : 'border-leaf-100 bg-white text-ink-700/80 hover:bg-leaf-50',
@@ -143,7 +143,7 @@ function FeedbackDialog({ onClose }: { onClose: () => void }) {
             </div>
 
             {err && (
-              <div className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{err}</div>
+              <div className="rounded-none bg-rose-50 px-3 py-2 text-xs text-rose-700">{err}</div>
             )}
 
             <div className="flex gap-2">

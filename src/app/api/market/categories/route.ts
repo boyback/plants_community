@@ -10,6 +10,6 @@ export const GET = handler(async () => {
     _count: true,
   });
   return groups
-    .map((g) => ({ name: g.category, count: g._count }))
+    .map((g) => ({ name: g.board, count: g._count }))
     .sort((a, b) => b.count - a.count);
 });

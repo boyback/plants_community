@@ -16,6 +16,14 @@ export function PostCardSkeleton({ variant }: { variant?: number }) {
         {/* 标题占位 */}
         <div className="h-3 w-4/5 rounded bg-leaf-100/70" />
         <div className="h-3 w-3/5 rounded bg-leaf-100/60" />
+        {/* journal 类型的小图片骨架占位 - 使用与实际相同的 flex + journal-entry-image */}
+        <div className="flex flex-wrap gap-1 pt-1">
+          <div className="journal-entry-image rounded bg-leaf-100/60" />
+          <div className="journal-entry-image rounded bg-leaf-100/60" />
+          <div className="journal-entry-image rounded bg-leaf-100/60" />
+          <div className="journal-entry-image rounded bg-leaf-100/60" />
+          <div className="journal-entry-image rounded bg-leaf-100/60" />
+        </div>
         {/* meta 占位 */}
         <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-1.5">

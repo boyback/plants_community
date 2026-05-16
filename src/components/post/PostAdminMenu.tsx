@@ -92,7 +92,7 @@ export function PostAdminMenu({ post, user }: PostAdminMenuProps) {
         type="button"
         onMouseEnter={() => setAdminMenuOpen(true)}
         onMouseLeave={() => setAdminMenuOpen(false)}
-        className="grid h-8 w-8 place-items-center rounded-lg text-ink-400 hover:bg-ink-100 hover:text-ink-600 transition-colors"
+        className="grid h-8 w-8 place-items-center rounded-none text-ink-400 hover:bg-ink-100 hover:text-ink-600 transition-colors"
         title="管理"
       >
         <Icon name="settings" size={18} />
@@ -103,7 +103,7 @@ export function PostAdminMenu({ post, user }: PostAdminMenuProps) {
           onMouseEnter={() => setAdminMenuOpen(true)}
           onMouseLeave={() => setAdminMenuOpen(false)}
         >
-          <div className="relative min-w-[80px] rounded-lg border border-leaf-100 bg-white shadow-xl py-1">
+          <div className="relative min-w-[80px] rounded-none border border-leaf-100 bg-white shadow-xl py-1">
             <div className="absolute right-4 -top-[6px] w-3 h-3 bg-white border-l border-t border-leaf-100 transform rotate-45" />
 
             {/* 管理员：移贴 */}

@@ -90,7 +90,7 @@ export default async function TopicPage({
     // 顺便看是否匹配到一个同名品种,匹配上就在顶部加跳转
     prisma.species.findFirst({
       where: { name },
-      include: { genus: { include: { category: true } } },
+      include: { genus: { include: { board: true } } },
     }),
   ]);
 
@@ -117,7 +117,7 @@ export default async function TopicPage({
       {/* 如果该话题恰好是一个品种 → 给一个跳到图鉴的入口卡 */}
       {matchedSpecies && (
         <Link
-          href={`/board/${matchedSpecies.genus.category.slug}/${matchedSpecies.genus.slug}/${matchedSpecies.slug}`}
+          href={`/board/${matchedSpecies.genus.board.slug}/${matchedSpecies.genus.slug}/${matchedSpecies.slug}`}
           className="card-hoverable mb-5 flex items-center gap-3 p-3"
         >
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-leaf-50">

@@ -25,7 +25,7 @@ const ACTION_COLOR: Record<string, string> = {
   'announcement.delete': 'bg-rose-100 text-rose-700',
   'badge.grant': 'bg-violet-100 text-violet-700',
   'theme.toggle': 'bg-amber-100 text-amber-700',
-  'board.category.update': 'bg-blue-100 text-blue-700',
+  'board.board.update': 'bg-blue-100 text-blue-700',
 };
 
 export default async function AdminLogsPage({

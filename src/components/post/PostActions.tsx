@@ -101,7 +101,7 @@ export function PostActions({
               <button
                 key={k}
                 onClick={() => share(k)}
-                className="grid h-9 w-9 place-items-center rounded-lg text-base hover:bg-leaf-50"
+                className="grid h-9 w-9 place-items-center rounded-none text-base hover:bg-leaf-50"
                 title={t('detail.post.shareToX', { name })}
               >
                 {emoji}

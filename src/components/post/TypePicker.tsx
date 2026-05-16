@@ -14,9 +14,10 @@ const items: Item[] = [
   { type: 'rich', emoji: '📝' },
   { type: 'journal', emoji: '📖' },
   { type: 'short', emoji: '💬' },
-  { type: 'vote', emoji: '🗳️', pcOnly: true },
-  { type: 'video', emoji: '🎬' },
-  { type: 'event', emoji: '🎉', pcOnly: true },
+  { type: 'vote', emoji: '🗳️' },
+  // { type: 'video', emoji: '🎬' },
+  // { type: 'event', emoji: '🎉' }, // 暂时隐藏，未来再完善
+  { type: 'help', emoji: '❓' },
 ];
 
 export function TypePicker({
@@ -28,27 +29,20 @@ export function TypePicker({
 }) {
   const { t } = useI18n();
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
       {items.map((it) => (
         <button
           key={it.type}
           type="button"
           onClick={() => onChange(it.type)}
           className={cn(
-            'relative rounded-xl border-2 p-3 text-left transition-all',
+            'relative rounded-none border-2 p-3 text-left transition-all',
             value === it.type
               ? 'border-leaf-500 bg-leaf-50/60'
               : 'border-leaf-100 bg-white hover:border-leaf-300'
           )}
         >
-          <div className="mb-1 flex items-center justify-between">
-            <span className="text-xl">{it.emoji}</span>
-            {it.pcOnly && (
-              <span className="rounded bg-leaf-50 px-1 text-[10px] text-leaf-700">
-                PC
-              </span>
-            )}
-          </div>
+          <div className="mb-1 text-xl">{it.emoji}</div>
           <div className="text-sm font-medium text-ink-800">
             {t(`post.typeBadge.${it.type}`)}
           </div>

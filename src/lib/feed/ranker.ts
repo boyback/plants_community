@@ -65,7 +65,7 @@ export interface UserProfile {
 export interface PostForRank {
   id: string;
   authorId: string;
-  categoryId: string | null;
+  boardId: string | null;
   genusId: string | null;
   speciesId: string | null;
   hotScore: number;
@@ -90,7 +90,7 @@ export function personalize(
 
   let bonus = 0;
   if (user.followingSet.has(post.authorId)) bonus += 0.8;
-  for (const boardId of [post.categoryId, post.genusId, post.speciesId]) {
+  for (const boardId of [post.boardId, post.genusId, post.speciesId]) {
     if (boardId && user.followedBoardIds.has(boardId)) {
       bonus += 0.4;
       break; // 只加一次,避免重复
@@ -99,8 +99,8 @@ export function personalize(
 
   // category affinity 缩放(0.5 ~ 1.5):用户最近喜欢的类目,对应 post 得分放大
   let scale = 1;
-  if (post.categoryId) {
-    const aff = user.categoryAffinity.get(post.categoryId);
+  if (post.boardId) {
+    const aff = user.categoryAffinity.get(post.boardId);
     if (typeof aff === 'number') {
       scale = 0.5 + aff; // aff 取值范围 0~1,Softmax 保证
     }

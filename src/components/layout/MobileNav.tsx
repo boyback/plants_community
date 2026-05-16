@@ -67,7 +67,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
           <button
             type="button"
             onClick={onClose}
-            className="grid h-9 w-9 place-items-center rounded-lg text-leaf-700 hover:bg-leaf-50"
+            className="grid h-9 w-9 place-items-center rounded-none text-leaf-700 hover:bg-leaf-50"
             aria-label={t('nav.closeMenu')}
           >
             <Icon name="close" size={20} />
@@ -89,7 +89,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
               key={n.href}
               href={n.href}
               onClick={onClose}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm hover:bg-leaf-50"
+              className="flex items-center gap-3 rounded-none px-3 py-2.5 text-sm hover:bg-leaf-50"
             >
               <Icon name={n.icon} size={18} />
               {t(n.labelKey)}
@@ -105,7 +105,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
               key={n.href}
               href={n.href}
               onClick={onClose}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm hover:bg-leaf-50"
+              className="flex items-center gap-3 rounded-none px-3 py-2.5 text-sm hover:bg-leaf-50"
             >
               <Icon name={n.icon} size={18} />
               {t(n.labelKey)}
@@ -114,7 +114,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
           <Link
             href="/editor"
             onClick={onClose}
-            className="mt-3 flex items-center gap-2 rounded-lg bg-leaf-500 px-3 py-2.5 text-sm text-white"
+            className="mt-3 flex items-center gap-2 rounded-none bg-leaf-500 px-3 py-2.5 text-sm text-white"
           >
             <Icon name="plus" size={18} />
             {t('nav.sidebar.newPost')}
@@ -130,7 +130,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
                 key={b.id}
                 href={`/board/${b.slug}`}
                 onClick={onClose}
-                className="flex items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-leaf-50"
+                className="flex items-center justify-between rounded-none px-3 py-2 text-sm hover:bg-leaf-50"
               >
                 <span className="flex items-center gap-2">
                   <span>{b.icon}</span>

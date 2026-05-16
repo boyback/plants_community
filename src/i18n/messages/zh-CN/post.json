@@ -10,11 +10,12 @@
       "journal": "记录贴"
     },
     "typeDesc": {
-      "rich": "适合教程、长篇心得(PC & APP 发布)",
-      "short": "随手一发,即兴分享(PC & APP 发布)",
-      "vote": "发起投票,集思广益(仅 PC 发布)",
-      "video": "上传视频记录(PC & APP 均可发布)",
-      "event": "组织线下活动(仅 PC 可发布)",
+      "rich": "适合教程、长篇心得分享",
+      "short": "随手一发,即兴分享",
+      "vote": "发起投票,集思广益",
+      "video": "上传视频记录",
+      "event": "组织线下活动",
+      "help": "遇到问题求助,可设置悬赏积分",
       "journal": "时间线记录植物成长各阶段"
     },
     "typeBadge": {
@@ -23,6 +24,7 @@
       "vote": "投票贴",
       "video": "视频贴",
       "event": "EVENT 贴",
+      "help": "求助贴",
       "journal": "记录贴"
     },
     "typeShort": {

@@ -32,7 +32,7 @@ export default async function AdminSpeciesPage({
       take: pageSize,
       include: {
         genus: {
-          select: { id: true, name: true, slug: true, category: { select: { slug: true, name: true } } },
+          select: { id: true, name: true, slug: true, board: { select: { slug: true, name: true } } },
         },
         _count: { select: { posts: true } },
       },
@@ -104,7 +104,7 @@ export default async function AdminSpeciesPage({
                 </td>
                 <td className="px-3 py-2">
                   <Link
-                    href={`/board/${s.genus.category.slug}/${s.genus.slug}/${s.slug}`}
+                    href={`/board/${s.genus.board.slug}/${s.genus.slug}/${s.slug}`}
                     target="_blank"
                     className="font-medium text-ink-800 hover:underline"
                   >
@@ -114,7 +114,7 @@ export default async function AdminSpeciesPage({
                 <td className="px-3 py-2 italic text-ink-600">{s.latinName}</td>
                 <td className="px-3 py-2 text-[11px]">
                   <div>{s.genus.name}</div>
-                  <div className="text-ink-500">{s.genus.category.name}</div>
+                  <div className="text-ink-500">{s.genus.board.name}</div>
                 </td>
                 <td className="px-3 py-2 text-right text-amber-600">
                   {'★'.repeat(s.difficulty)}

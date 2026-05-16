@@ -20,7 +20,7 @@ export function FollowBoardButton({
   size = 'md',
   className,
 }: {
-  type: 'category' | 'genus' | 'species';
+  type: 'board' | 'genus' | 'species';
   slug: string;
   categorySlug?: string;
   genusSlug?: string;

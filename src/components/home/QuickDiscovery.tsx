@@ -33,7 +33,7 @@ export function QuickDiscovery({
   initialCategories: DiscoveryCategory[];
 }) {
   const [species, setSpecies] = useState(initialSpecies);
-  const [categories, setCategories] = useState(initialCategories);
+  const [boards, setCategories] = useState(initialCategories);
 
   const [speciesBusy, setSpeciesBusy] = useState(false);
   const [boardsBusy, setBoardsBusy] = useState(false);
@@ -56,7 +56,7 @@ export function QuickDiscovery({
   };
 
   const hasSpecies = species.length > 0;
-  const hasCategories = categories.length > 0;
+  const hasCategories = boards.length > 0;
 
   if (!hasSpecies && !hasCategories) return null;
 
@@ -82,7 +82,7 @@ export function QuickDiscovery({
         {hasCategories && (
           <Section title="🏷️ 板块" onRefresh={refreshBoards} busy={boardsBusy}>
             <div className="flex flex-wrap gap-1.5">
-              {categories.map((c) => (
+              {boards.map((c) => (
                 <Link
                   key={c.id}
                   href={`/board/${c.slug}`}

@@ -18,12 +18,12 @@ export function Sidebar() {
   return (
     <aside className="sticky top-[60px] hidden h-[calc(100vh-72px)] w-56 shrink-0 space-y-3 overflow-y-auto pr-2 lg:block">
       {/* 板块 */}
-      <div className="rounded-xl border border-leaf-100 bg-white overflow-hidden">
-        <div className="flex items-center gap-2 px-3 py-2.5 border-b border-leaf-100/60">
-          <span className="text-base shrink-0">🌿</span>
+      <div className="rounded-none border border-leaf-100 bg-white overflow-hidden">
+        <div className="flex items-center gap-1 px-2 py-2.5 border-b border-leaf-100/60">
+          <span className="text-base shrink-0"><img src="https://cdn.plantcommunity.cn/cmoz85oi8000ay601io2nm9iv/202605/mp84gs706aeu9k.png" width={32} alt="" /></span>
           <span className="text-sm font-medium text-ink-800">板块</span>
         </div>
-        <div className="max-h-[40vh] overflow-y-auto">
+        <div className="max-h-[45vh] overflow-y-auto">
           <BoardsTreeMenu />
         </div>
       </div>
@@ -32,7 +32,7 @@ export function Sidebar() {
       <SidebarQuickDiscovery />
 
       {user && (
-        <div className="mt-6 rounded-2xl border border-leaf-100 bg-gradient-to-br from-leaf-50 to-white p-4">
+        <div className="mt-6 rounded-none border border-leaf-100 bg-gradient-to-br from-leaf-50 to-white p-4">
           <div className="mb-1 flex items-center gap-1.5 text-xs text-leaf-700/80">
             {t('nav.sidebar.currentAccount')}
             {vip.isVip && <VipBadge size="xs" lifetime={vip.lifetime} />}

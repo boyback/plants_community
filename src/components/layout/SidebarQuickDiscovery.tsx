@@ -18,7 +18,7 @@ interface DiscoveryCategory {
 
 export function SidebarQuickDiscovery() {
   const [species, setSpecies] = useState<DiscoverySpecies[]>([]);
-  const [categories, setCategories] = useState<DiscoveryCategory[]>([]);
+  const [boards, setCategories] = useState<DiscoveryCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [speciesBusy, setSpeciesBusy] = useState(false);
   const [boardsBusy, setBoardsBusy] = useState(false);
@@ -28,7 +28,7 @@ export function SidebarQuickDiscovery() {
       .then((r) => r.json())
       .then((data) => {
         if (data?.data?.species) setSpecies(data.data.species);
-        if (data?.data?.categories) setCategories(data.data.categories);
+        if (data?.data?.boards) setCategories(data.data.boards);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -51,33 +51,33 @@ export function SidebarQuickDiscovery() {
     setTimeout(() => setBoardsBusy(false), 200);
   };
 
-  if (loading || (species.length === 0 && categories.length === 0)) return null;
+  if (loading || (species.length === 0 && boards.length === 0)) return null;
 
   return (
-    <div className="rounded-xl border border-leaf-100 bg-white overflow-hidden">
+    <div className="rounded-none border border-leaf-100 bg-white overflow-hidden">
       {/* 热门品种 */}
       {species.length > 0 && (
         <div className="px-3 py-2.5 border-b border-leaf-100/60">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-ink-800">🌱 热门品种</span>
+            <span className="text-sm font-medium text-ink-800">🌱 热门品种</span>
             <button
               type="button"
               onClick={refreshSpecies}
               disabled={speciesBusy}
               className={cn(
-                'text-[10px] text-leaf-700/70 hover:text-leaf-700',
+                'text-xs text-leaf-700/70 hover:text-leaf-700',
                 speciesBusy && 'opacity-50',
               )}
             >
               换一换 ↻
             </button>
           </div>
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1.5">
             {species.map((s) => (
               <Link
                 key={s.id}
                 href={s.url}
-                className="inline-flex items-center rounded-full bg-leaf-50 px-2 py-0.5 text-[10px] text-leaf-700 hover:bg-leaf-100"
+                className="inline-flex items-center rounded-full bg-leaf-50 px-2.5 py-1 text-[9px] text-leaf-700 hover:bg-leaf-100 transition-colors"
               >
                 {s.name}
               </Link>
@@ -87,28 +87,28 @@ export function SidebarQuickDiscovery() {
       )}
 
       {/* 板块 */}
-      {categories.length > 0 && (
+      {boards.length > 0 && (
         <div className="px-3 py-2.5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-ink-800">🏷️ 热门板块</span>
+            <span className="text-sm font-medium text-ink-800">🏷️ 热门板块</span>
             <button
               type="button"
               onClick={refreshBoards}
               disabled={boardsBusy}
               className={cn(
-                'text-[10px] text-leaf-700/70 hover:text-leaf-700',
+                'text-xs text-leaf-700/70 hover:text-leaf-700',
                 boardsBusy && 'opacity-50',
               )}
             >
               换一换 ↻
             </button>
           </div>
-          <div className="flex flex-wrap gap-1">
-            {categories.map((c) => (
+          <div className="flex flex-wrap gap-1.5">
+            {boards.map((c) => (
               <Link
                 key={c.id}
                 href={`/board/${c.slug}`}
-                className="inline-flex items-center rounded-full border border-leaf-200 px-2 py-0.5 text-[10px] text-ink-700/80 hover:border-leaf-400 hover:text-leaf-700"
+                className="inline-flex items-center rounded-full border border-leaf-200 px-2.5 py-1 text-[9px] text-ink-700/80 hover:border-leaf-400 hover:text-leaf-700 transition-colors"
               >
                 {c.name}
               </Link>

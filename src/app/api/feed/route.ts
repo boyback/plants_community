@@ -147,7 +147,7 @@ export const GET = handler(async (req) => {
 function toRankInput(p: {
   id: string;
   authorId: string;
-  categoryId: string | null;
+  boardId: string | null;
   genusId: string | null;
   speciesId: string | null;
   hotScore: number;
@@ -156,7 +156,7 @@ function toRankInput(p: {
   return {
     id: p.id,
     authorId: p.authorId,
-    categoryId: p.categoryId,
+    boardId: p.boardId,
     genusId: p.genusId,
     speciesId: p.speciesId,
     hotScore: p.hotScore,

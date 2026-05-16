@@ -1,5 +1,5 @@
 /**
- * GET  /api/admin/genera?categoryId=...    列出某 Category 下的所有 Genus
+ * GET  /api/admin/genera?boardId=...    列出某 Category 下的所有 Genus
  * POST /api/admin/genera                   新建 Genus
  */
 import { z } from 'zod';
@@ -11,7 +11,7 @@ import { logAdmin } from '@/lib/admin-log';
 export const dynamic = 'force-dynamic';
 
 const Body = z.object({
-  categoryId: z.string().min(1),
+  boardId: z.string().min(1),
   slug: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/),
   name: z.string().min(1).max(80),
   latinName: z.string().max(120).nullable().optional(),
@@ -22,13 +22,13 @@ const Body = z.object({
 
 export const GET = handler(async (req) => {
   await requireAdmin();
-  const categoryId = new URL(req.url).searchParams.get('categoryId');
-  const where = categoryId ? { categoryId } : {};
+  const boardId = new URL(req.url).searchParams.get('boardId');
+  const where = boardId ? { boardId } : {};
   const items = await prisma.genus.findMany({
     where,
     orderBy: [{ orderIdx: 'asc' }, { name: 'asc' }],
     include: {
-      category: { select: { id: true, name: true, slug: true } },
+      board: { select: { id: true, name: true, slug: true } },
       _count: { select: { species: true, posts: true } },
     },
   });
@@ -39,13 +39,13 @@ export const POST = handler(async (req) => {
   const me = await requireAdmin();
   const body = Body.parse(await req.json());
 
-  // 检查 categoryId 存在
-  const cat = await prisma.category.findUnique({ where: { id: body.categoryId } });
+  // 检查 boardId 存在
+  const cat = await prisma.board.findUnique({ where: { id: body.boardId } });
   if (!cat) return fail(404, 'Category 不存在');
 
   // 同 category 内 slug 唯一(Genus 没建 unique,但业务要)
   const dup = await prisma.genus.findFirst({
-    where: { categoryId: body.categoryId, slug: body.slug },
+    where: { boardId: body.boardId, slug: body.slug },
   });
   if (dup) return fail(400, `slug "${body.slug}" 在该科下已存在`);
 
@@ -55,7 +55,7 @@ export const POST = handler(async (req) => {
     action: 'genus.create',
     targetType: 'genus',
     targetId: row.id,
-    meta: { slug: row.slug, name: row.name, categoryId: row.categoryId },
+    meta: { slug: row.slug, name: row.name, boardId: row.boardId },
   });
   return row;
 });

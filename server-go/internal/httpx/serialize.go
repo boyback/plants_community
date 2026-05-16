@@ -92,7 +92,7 @@ func SerializeCategory(c *models.Category, postsCount, generaCount int) BoardDTO
 		Name:          c.Name,
 		Description:   c.Description,
 		Cover:         c.Cover,
-		Icon:          c.Icon,
+		Icon:          getFirstIcon(c.Icons),
 		Members:       c.Members,
 		Posts:         postsCount,
 		Path:          []PathSeg{{Level: "category", Slug: c.Slug, Name: c.Name}},
@@ -115,7 +115,7 @@ func SerializeGenus(g *models.Genus, postsCount, speciesCount int) BoardDTO {
 		Name:        g.Name,
 		Description: g.Description,
 		Cover:       cover,
-		Icon:        g.Category.Icon,
+		Icon:        getFirstIcon(g.Category.Icons),
 		Members:     0,
 		Posts:       postsCount,
 		Path: []PathSeg{
@@ -134,7 +134,7 @@ func SerializeSpecies(s *models.Species, postsCount int) BoardDTO {
 		Name:        s.Name,
 		Description: s.Description,
 		Cover:       s.Cover,
-		Icon:        s.Genus.Category.Icon,
+		Icon:        getFirstIcon(s.Genus.Category.Icons),
 		Members:     0,
 		Posts:       postsCount,
 		Path: []PathSeg{
@@ -271,4 +271,16 @@ func parseJSONArray(s *string) []string {
 		return []string{}
 	}
 	return arr
+}
+
+// getFirstIcon 从 icons JSON 数组中获取第一个图标，如果为空返回空字符串
+func getFirstIcon(icons string) string {
+	if icons == "" {
+		return ""
+	}
+	var arr []string
+	if err := json.Unmarshal([]byte(icons), &arr); err != nil || len(arr) == 0 {
+		return ""
+	}
+	return arr[0]
 }

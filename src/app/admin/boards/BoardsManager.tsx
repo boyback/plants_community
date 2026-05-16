@@ -26,6 +26,8 @@ import { CategoryEditDialog } from './CategoryEditDialog';
 import { GenusEditDialog } from './GenusEditDialog';
 import { SpeciesEditDialog } from './SpeciesEditDialog';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { Toast, useToast, showToast } from '@/components/ui/Toast';
+import { ConfirmDialog } from '@/components/ui/Dialog';
 
 interface SpeciesNode {
   id: string;
@@ -46,12 +48,12 @@ interface GenusNode {
   postsCount: number;
   species: SpeciesNode[];
 }
-interface CategoryNode {
+interface BoardNode {
   id: string;
   slug: string;
   name: string;
   latinName: string | null;
-  icon: string;
+  icons: string[];
   cover: string;
   kind: string;
   enabled: boolean;
@@ -62,23 +64,25 @@ interface CategoryNode {
 
 type ViewMode = 'list' | 'tree';
 
-export function BoardsManager({ initial }: { initial: CategoryNode[] }) {
+export function BoardsManager({ initial }: { initial: BoardNode[] }) {
   const router = useRouter();
+  const { toasts, removeToast } = useToast();
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('admin.boards.view') as ViewMode) || 'list';
     }
     return 'list';
   });
-  const [tree, setTree] = useState<CategoryNode[]>(initial);
+  const [tree, setTree] = useState<BoardNode[]>(initial);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [collapsedGenera, setCollapsedGenera] = useState<Set<string>>(new Set());
-  const [editingCategory, setEditingCategory] = useState<CategoryNode | 'new' | null>(null);
-  const [editingGenus, setEditingGenus] = useState<{ genus: GenusNode | 'new'; categoryId: string } | null>(null);
+  const [editingBoard, setEditingBoard] = useState<BoardNode | 'new' | null>(null);
+  const [editingGenus, setEditingGenus] = useState<{ genus: GenusNode | 'new'; boardId: string } | null>(null);
   const [editingSpecies, setEditingSpecies] = useState<{ species: SpeciesNode | 'new'; genusId: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+  const [deleteConfirm, setDeleteConfirm] = useState<{ board: BoardNode; message: string } | null>(null);
 
   const refresh = () => startTransition(() => router.refresh());
 
@@ -102,18 +106,40 @@ export function BoardsManager({ initial }: { initial: CategoryNode[] }) {
     });
   };
 
-  const removeCategory = async (c: CategoryNode) => {
-    if (c.genera.length > 0 || c.postsCount > 0) {
-      alert('该板块下还有属或帖子，无法删除');
+  const removeBoard = async (c: BoardNode) => {
+    // 特殊板块（晒图广场、交易市场）无法删除
+    if (c.kind === 'system' || c.slug === 'shaitu' || c.slug === 'jiaoyi') {
+      alert('该板块为系统功能板块，无法删除，只能启用或关闭');
       return;
     }
-    if (!confirm(`删除 ${c.name}(${c.slug})?`)) return;
+    // 检查所有属下是否有帖子
+    const totalPosts = c.genera.reduce((sum, g) => sum + g.postsCount, 0);
+    if (totalPosts > 0) {
+      alert('该板块下的属中还有帖子，无法删除');
+      return;
+    }
+
+    // 显示确认对话框
+    const generaCount = c.genera.length;
+    const message = generaCount > 0
+      ? `该板块下有 ${generaCount} 个属（无帖子），删除后这些属也会一并删除。\n\n此操作不可恢复！`
+      : `此操作不可恢复！`;
+
+    setDeleteConfirm({ board: c, message });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    const c = deleteConfirm.board;
+    setDeleteConfirm(null);
+
     setBusy(c.id);
     try {
-      await api.delete(`/api/admin/categories/${c.id}`);
+      await api.delete(`/api/admin/boards/board/${c.id}`);
+      showToast(`板块「${c.name}」已删除`, 'success');
       refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '删除失败');
+      showToast(`删除失败: ${e instanceof ApiError ? e.message : '未知错误'}`, 'error');
     } finally {
       setBusy(null);
     }
@@ -121,16 +147,17 @@ export function BoardsManager({ initial }: { initial: CategoryNode[] }) {
 
   const removeGenus = async (g: GenusNode) => {
     if (g.species.length > 0 || g.postsCount > 0) {
-      alert('该属下还有品种或帖子，无法删除');
+      showToast('该属下还有品种或帖子，无法删除', 'error');
       return;
     }
     if (!confirm(`删除「${g.name}」属?`)) return;
     setBusy(g.id);
     try {
       await api.delete(`/api/admin/genera/${g.id}`);
+      showToast(`属「${g.name}」已删除`, 'success');
       refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '删除失败');
+      showToast(`删除失败: ${e instanceof ApiError ? e.message : '未知错误'}`, 'error');
     } finally {
       setBusy(null);
     }
@@ -138,16 +165,17 @@ export function BoardsManager({ initial }: { initial: CategoryNode[] }) {
 
   const removeSpecies = async (s: SpeciesNode) => {
     if (s.postsCount > 0) {
-      alert('该品种下还有帖子，无法删除');
+      showToast('该品种下还有帖子，无法删除', 'error');
       return;
     }
     if (!confirm(`删除品种「${s.name}」?`)) return;
     setBusy(s.id);
     try {
       await api.delete(`/api/admin/species/${s.id}`);
+      showToast(`品种「${s.name}」已删除`, 'success');
       refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '删除失败');
+      showToast(`删除失败: ${e instanceof ApiError ? e.message : '未知错误'}`, 'error');
     } finally {
       setBusy(null);
     }
@@ -159,41 +187,53 @@ export function BoardsManager({ initial }: { initial: CategoryNode[] }) {
     setBusy('batch');
     try {
       const result = await api.post<{ deleted: number; skipped: string[] }>(
-        '/api/admin/categories/batch-delete',
+        '/api/admin/boards/batch-delete',
         { ids: Array.from(selectedIds) }
       );
       setSelectedIds(new Set());
       if (result.skipped.length > 0) {
-        alert(`已删除 ${result.deleted} 个，跳过 ${result.skipped.length} 个（有子项）：${result.skipped.join('、')}`);
+        showToast(`已删除 ${result.deleted} 个，跳过 ${result.skipped.length} 个（有子项）`, 'success');
+      } else {
+        showToast(`已删除 ${result.deleted} 个板块`, 'success');
       }
       refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '批量删除失败');
+      showToast(`批量删除失败: ${e instanceof ApiError ? e.message : '未知错误'}`, 'error');
     } finally {
       setBusy(null);
     }
   };
 
-  const toggleEnabled = async (c: CategoryNode) => {
+  const toggleEnabled = async (c: BoardNode) => {
     setBusy(c.id);
     try {
-      await api.patch(`/api/admin/categories/${c.id}`, { enabled: !c.enabled });
+      const newEnabled = !c.enabled;
+      await api.patch(`/api/admin/boards/board/${c.id}`, { enabled: newEnabled });
+
+      // 立即更新本地状态
+      setTree((prev) => prev.map((cat) =>
+        cat.id === c.id ? { ...cat, enabled: newEnabled } : cat
+      ));
+
+      const newStatus = newEnabled ? '已启用' : '已停用';
+      showToast(`${c.name} ${newStatus}`, 'success');
       refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '操作失败');
+      showToast(`操作失败: ${e instanceof ApiError ? e.message : '未知错误'}`, 'error');
     } finally {
       setBusy(null);
     }
   };
 
-  const updateOrder = async (c: CategoryNode, n: number) => {
+  const updateOrder = async (c: BoardNode, n: number) => {
     if (n === c.orderIdx) return;
     setBusy(c.id);
     try {
-      await api.patch(`/api/admin/categories/${c.id}`, { orderIdx: n });
+      await api.patch(`/api/admin/boards/board/${c.id}`, { orderIdx: n });
+      showToast(`排序已更新`, 'success');
       refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '操作失败');
+      showToast(`操作失败: ${e instanceof ApiError ? e.message : '未知错误'}`, 'error');
     } finally {
       setBusy(null);
     }
@@ -253,7 +293,7 @@ export function BoardsManager({ initial }: { initial: CategoryNode[] }) {
           )}
           <button
             type="button"
-            onClick={() => setEditingCategory('new')}
+            onClick={() => setEditingBoard('new')}
             className="rounded-lg bg-ink-800 px-3 py-2 text-xs text-white hover:bg-ink-700"
           >
             + 新建
@@ -264,22 +304,22 @@ export function BoardsManager({ initial }: { initial: CategoryNode[] }) {
       {/* 视图 */}
       {viewMode === 'list' ? (
         <DndList
-          categories={tree}
+          boards={tree}
           selectedIds={selectedIds}
           allSelected={allSelected}
           busy={busy}
           onToggleAll={toggleAll}
           onToggleOne={toggleOne}
-          onEdit={(c) => setEditingCategory(c)}
-          onRemove={removeCategory}
+          onEdit={(c) => setEditingBoard(c)}
+          onRemove={removeBoard}
           onToggleEnabled={toggleEnabled}
-          onEditGenus={(g, catId) => setEditingGenus({ genus: g, categoryId: catId })}
+          onEditGenus={(g, catId) => setEditingGenus({ genus: g, boardId: catId })}
           onReorder={(ids) => {
             setTree((prev) => {
               const map = new Map(prev.map((c) => [c.id, c]));
               return ids.map((id) => map.get(id)!).filter(Boolean);
             });
-            startTransition(() => void api.post('/api/admin/boards/reorder', { kind: 'category', orderedIds: ids }));
+            startTransition(() => void api.post('/api/admin/boards/reorder', { kind: 'board', orderedIds: ids }));
           }}
         />
       ) : (
@@ -291,36 +331,43 @@ export function BoardsManager({ initial }: { initial: CategoryNode[] }) {
           setCollapsed={setCollapsed}
           collapsedGenera={collapsedGenera}
           setCollapsedGenera={setCollapsedGenera}
-          setEditingCategory={setEditingCategory}
+          setEditingBoard={setEditingBoard}
           setEditingGenus={setEditingGenus}
           setEditingSpecies={setEditingSpecies}
-          removeCategory={removeCategory}
+          removeBoard={removeBoard}
           removeGenus={removeGenus}
           removeSpecies={removeSpecies}
           busy={busy}
         />
       )}
 
-      {editingCategory && (
+      {editingBoard && (
         <CategoryEditDialog
-          category={editingCategory === 'new' ? null : editingCategory}
-          onClose={() => setEditingCategory(null)}
+          board={editingBoard === 'new' ? null : editingBoard}
+          onClose={() => setEditingBoard(null)}
           onSaved={(updated) => {
             // 更新本地状态
-            if (updated && editingCategory !== 'new') {
+            if (updated && editingBoard !== 'new') {
               setTree((prev) => prev.map((c) => c.id === updated.id ? { ...c, ...updated } : c));
+              showToast(`板块「${updated.name}」已更新`, 'success');
+            } else {
+              showToast('板块创建成功', 'success');
             }
-            setEditingCategory(null);
+            setEditingBoard(null);
             refresh();
           }}
         />
       )}
       {editingGenus && (
         <GenusEditDialog
-          categoryId={editingGenus.categoryId}
+          boardId={editingGenus.boardId}
           genus={editingGenus.genus === 'new' ? null : editingGenus.genus}
           onClose={() => setEditingGenus(null)}
-          onSaved={() => { setEditingGenus(null); refresh(); }}
+          onSaved={() => {
+            showToast(editingGenus.genus === 'new' ? '属创建成功' : '属更新成功', 'success');
+            setEditingGenus(null);
+            refresh();
+          }}
         />
       )}
       {editingSpecies && (
@@ -328,9 +375,37 @@ export function BoardsManager({ initial }: { initial: CategoryNode[] }) {
           genusId={editingSpecies.genusId}
           species={editingSpecies.species === 'new' ? null : editingSpecies.species}
           onClose={() => setEditingSpecies(null)}
-          onSaved={() => { setEditingSpecies(null); refresh(); }}
+          onSaved={() => {
+            showToast(editingSpecies.species === 'new' ? '品种创建成功' : '品种更新成功', 'success');
+            setEditingSpecies(null);
+            refresh();
+          }}
         />
       )}
+
+      {/* 删除确认对话框 */}
+      {deleteConfirm && (
+        <ConfirmDialog
+          open={true}
+          onClose={() => setDeleteConfirm(null)}
+          onConfirm={confirmDelete}
+          title={`删除板块「${deleteConfirm.board.name}」`}
+          message={deleteConfirm.message}
+          confirmText="删除"
+          cancelText="取消"
+          danger={true}
+        />
+      )}
+
+      {/* Toast 提示 */}
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => removeToast(toast.id)}
+        />
+      ))}
     </div>
   );
 }
@@ -404,7 +479,7 @@ function DndItem({
  * 列表视图 - 支持拖拽排序
  * ============================================================ */
 function DndList({
-  categories,
+  boards,
   selectedIds,
   allSelected,
   busy,
@@ -416,20 +491,20 @@ function DndList({
   onEditGenus,
   onReorder,
 }: {
-  categories: CategoryNode[];
+  boards: BoardNode[];
   selectedIds: Set<string>;
   allSelected: boolean;
   busy: string | null;
   onToggleAll: () => void;
   onToggleOne: (id: string) => void;
-  onEdit: (c: CategoryNode) => void;
-  onRemove: (c: CategoryNode) => void;
-  onToggleEnabled: (c: CategoryNode) => void;
-  onEditGenus: (g: GenusNode, categoryId: string) => void;
+  onEdit: (c: BoardNode) => void;
+  onRemove: (c: BoardNode) => void;
+  onToggleEnabled: (c: BoardNode) => void;
+  onEditGenus: (g: GenusNode, boardId: string) => void;
   onReorder: (ids: string[]) => void;
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
-  const ids = categories.map((c) => c.id);
+  const ids = boards.map((c) => c.id);
 
   const onDragEnd = (e: DragEndEvent) => {
     const { active, over } = e;
@@ -458,10 +533,10 @@ function DndList({
               </tr>
             </thead>
             <tbody>
-              {categories.map((c) => (
+              {boards.map((c) => (
                 <SortableRow
                   key={c.id}
-                  category={c}
+                  board={c}
                   selected={selectedIds.has(c.id)}
                   busy={busy === c.id}
                   onToggle={() => onToggleOne(c.id)}
@@ -471,7 +546,7 @@ function DndList({
                   onEditGenus={onEditGenus}
                 />
               ))}
-              {categories.length === 0 && <tr><td colSpan={8} className="px-3 py-10 text-center text-ink-500">没有数据</td></tr>}
+              {boards.length === 0 && <tr><td colSpan={8} className="px-3 py-10 text-center text-ink-500">没有数据</td></tr>}
             </tbody>
           </table>
         </div>
@@ -481,7 +556,7 @@ function DndList({
 }
 
 function SortableRow({
-  category,
+  board,
   selected,
   busy,
   onToggle,
@@ -490,17 +565,17 @@ function SortableRow({
   onToggleEnabled,
   onEditGenus,
 }: {
-  category: CategoryNode;
+  board: BoardNode;
   selected: boolean;
   busy: boolean;
   onToggle: () => void;
   onEdit: () => void;
   onRemove: () => void;
   onToggleEnabled: () => void;
-  onEditGenus: (g: GenusNode, categoryId: string) => void;
+  onEditGenus: (g: GenusNode, boardId: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: category.id,
+    id: board.id,
   });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -517,22 +592,44 @@ function SortableRow({
         </button>
       </td>
       <td className="px-2 py-2">
-        <CategoryIcon icon={category.icon} name={category.name} size="lg" />
+        <CategoryIcon icon={board.icons[0] || ''} name={board.name} size="lg" />
       </td>
-      <td className="px-2 py-2"><div className="font-medium">{category.name}</div><div className="text-[10px] text-ink-500 font-mono">{category.slug}</div></td>
-      <td className="px-2 py-2"><span className="rounded bg-ink-100 px-1.5 py-0.5 text-[10px]">{category.kind}</span></td>
-      <td className="px-2 py-2 text-right tabular-nums text-ink-600">{category.genera.length} / {category.postsCount}</td>
+      <td className="px-2 py-2"><div className="font-medium">{board.name}</div><div className="text-[10px] text-ink-500 font-mono">{board.slug}</div></td>
+      <td className="px-2 py-2"><span className="rounded bg-ink-100 px-1.5 py-0.5 text-[10px]">{board.kind}</span></td>
+      <td className="px-2 py-2 text-right tabular-nums text-ink-600">{board.genera.length} / {board.postsCount}</td>
       <td className="px-2 py-2 text-center">
-        <button type="button" onClick={onToggleEnabled} disabled={busy}
-          className={category.enabled ? 'rounded bg-leaf-500 px-2 py-0.5 text-[10px] text-white' : 'rounded bg-ink-200 px-2 py-0.5 text-[10px] text-ink-700'}>
-          {category.enabled ? '启用' : '停用'}
+        <button
+          type="button"
+          onClick={onToggleEnabled}
+          disabled={busy}
+          className={cn(
+            'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+            board.enabled ? 'bg-leaf-500' : 'bg-rose-400',
+            busy && 'opacity-50 cursor-not-allowed'
+          )}
+          title={board.enabled ? '点击停用' : '点击启用'}
+        >
+          <span
+            className={cn(
+              'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
+              board.enabled ? 'translate-x-6' : 'translate-x-1'
+            )}
+          />
         </button>
       </td>
       <td className="px-2 py-2 text-right">
         <div className="flex items-center justify-end gap-1">
-          <Link href={`/admin/boards/${category.id}`} className="rounded border border-ink-200 px-2 py-1 text-[10px] hover:bg-ink-50">属</Link>
+          {/* 特殊板块（晒图广场、交易市场）不显示"属"按钮 */}
+          {board.kind !== 'system' && board.slug !== 'shaitu' && board.slug !== 'jiaoyi' && (
+            <Link href={`/admin/boards/${board.id}`} className="rounded border border-ink-200 px-2 py-1 text-[10px] hover:bg-ink-50">属</Link>
+          )}
           <button onClick={onEdit} className="rounded border border-ink-200 px-2 py-1 text-[10px] hover:bg-ink-50">编辑</button>
-          <button onClick={onRemove} disabled={busy} className="rounded bg-rose-100 px-2 py-1 text-[10px] text-rose-700 hover:bg-rose-200">删除</button>
+          {/* 特殊板块不显示删除按钮 */}
+          {board.kind !== 'system' && board.slug !== 'shaitu' && board.slug !== 'jiaoyi' ? (
+            <button onClick={onRemove} disabled={busy} className="rounded bg-rose-100 px-2 py-1 text-[10px] text-rose-700 hover:bg-rose-200">删除</button>
+          ) : (
+            <span className="rounded bg-ink-100 px-2 py-1 text-[10px] text-ink-500">系统板块</span>
+          )}
         </div>
       </td>
     </tr>
@@ -549,24 +646,24 @@ function TreeDndView({
   setCollapsed,
   collapsedGenera,
   setCollapsedGenera,
-  setEditingCategory,
+  setEditingBoard,
   setEditingGenus,
   setEditingSpecies,
-  removeCategory,
+  removeBoard,
   removeGenus,
   removeSpecies,
   busy,
 }: {
-  tree: CategoryNode[];
-  setTree: React.Dispatch<React.SetStateAction<CategoryNode[]>>;
+  tree: BoardNode[];
+  setTree: React.Dispatch<React.SetStateAction<BoardNode[]>>;
   collapsed: Set<string>;
   setCollapsed: React.Dispatch<React.SetStateAction<Set<string>>>;
   collapsedGenera: Set<string>;
   setCollapsedGenera: React.Dispatch<React.SetStateAction<Set<string>>>;
-  setEditingCategory: (c: CategoryNode | 'new' | null) => void;
-  setEditingGenus: (g: { genus: GenusNode | 'new'; categoryId: string } | null) => void;
+  setEditingBoard: (c: BoardNode | 'new' | null) => void;
+  setEditingGenus: (g: { genus: GenusNode | 'new'; boardId: string } | null) => void;
   setEditingSpecies: (s: { species: SpeciesNode | 'new'; genusId: string } | null) => void;
-  removeCategory: (c: CategoryNode) => void;
+  removeBoard: (c: BoardNode) => void;
   removeGenus: (g: GenusNode) => void;
   removeSpecies: (s: SpeciesNode) => void;
   busy: string | null;
@@ -575,9 +672,9 @@ function TreeDndView({
   const [, startTransition] = useTransition();
 
   // 查找元素所属的科和属
-  const findLocation = (id: string): { type: 'category' | 'genus' | 'species'; catId?: string; genusId?: string } | null => {
+  const findLocation = (id: string): { type: 'board' | 'genus' | 'species'; catId?: string; genusId?: string } | null => {
     for (const cat of tree) {
-      if (cat.id === id) return { type: 'category', catId: cat.id };
+      if (cat.id === id) return { type: 'board', catId: cat.id };
       for (const genus of cat.genera) {
         if (genus.id === id) return { type: 'genus', catId: cat.id, genusId: genus.id };
         for (const sp of genus.species) {
@@ -589,7 +686,7 @@ function TreeDndView({
   };
 
   // 移动科（同级排序）
-  const moveCategory = (fromIdx: number, toIdx: number) => {
+  const moveBoard = (fromIdx: number, toIdx: number) => {
     const ids = tree.map((x) => x.id);
     const [removed] = ids.splice(fromIdx, 1);
     ids.splice(toIdx, 0, removed);
@@ -597,7 +694,7 @@ function TreeDndView({
       const m = new Map(p.map((x) => [x.id, x]));
       return ids.map((id) => m.get(id)!).filter(Boolean);
     });
-    startTransition(() => void api.post('/api/admin/boards/reorder', { kind: 'category', orderedIds: ids }));
+    startTransition(() => void api.post('/api/admin/boards/reorder', { kind: 'board', orderedIds: ids }));
   };
 
   // 移动属（仅同科内排序）
@@ -717,11 +814,11 @@ function TreeDndView({
     if (activeLoc.type !== overLoc.type) return;
 
     switch (activeLoc.type) {
-      case 'category': {
+      case 'board': {
         const fromIdx = tree.findIndex((c) => c.id === active.id);
         const toIdx = tree.findIndex((c) => c.id === over.id);
         if (fromIdx !== -1 && toIdx !== -1) {
-          moveCategory(fromIdx, toIdx);
+          moveBoard(fromIdx, toIdx);
         }
         break;
       }
@@ -767,29 +864,65 @@ function TreeDndView({
                       onReorder={() => {}}
                       className={cn("rounded-lg border bg-white", cat.enabled ? "border-leaf-200" : "border-ink-200 opacity-60")}
                     >
-                      <button onClick={() => setCollapsed((s) => { const n = new Set(s); n.has(cat.id) ? n.delete(cat.id) : n.add(cat.id); return n; })}
-                        className="shrink-0 w-5 h-5 flex items-center justify-center rounded text-leaf-600/60 hover:text-leaf-700 text-xs">
-                        {isCatCollapsed ? '▸' : '▾'}
-                      </button>
-                      <CategoryIcon icon={cat.icon} name={cat.name} size="md" />
+                      {/* 特殊板块不显示展开/收起按钮 */}
+                      {cat.kind !== 'market' && cat.slug !== 'shaitu' && cat.slug !== 'market' ? (
+                        <button onClick={() => setCollapsed((s) => { const n = new Set(s); n.has(cat.id) ? n.delete(cat.id) : n.add(cat.id); return n; })}
+                          className="shrink-0 w-5 h-5 flex items-center justify-center rounded text-leaf-600/60 hover:text-leaf-700 text-xs">
+                          {isCatCollapsed ? '▸' : '▾'}
+                        </button>
+                      ) : (
+                        <div className="shrink-0 w-5 h-5" />
+                      )}
+                      <CategoryIcon icon={cat.icons[0] || ''} name={cat.name} size="md" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-sm text-ink-800">{cat.name}</span>
                           {cat.latinName && <span className="text-[11px] italic text-ink-400">{cat.latinName}</span>}
+                          {(cat.kind === 'system' || cat.slug === 'shaitu' || cat.slug === 'jiaoyi') && (
+                            <span className="rounded-full bg-leaf-100 px-2 py-0.5 text-[9px] text-leaf-700">系统板块</span>
+                          )}
                         </div>
-                        <div className="text-[10px] text-ink-400">{cat.genera.length} 属 · {cat.postsCount} 帖</div>
+                        <div className="text-[10px] text-ink-400">
+                          {cat.kind !== 'system' && cat.slug !== 'shaitu' && cat.slug !== 'jiaoyi' ? (
+                            <>{cat.genera.length} 属 · {cat.postsCount} 帖</>
+                          ) : (
+                            <>{cat.postsCount} 帖</>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
+                        {/* 启用/停用开关 */}
+                        <button
+                          type="button"
+                          onClick={() => toggleEnabled(cat)}
+                          disabled={busy === cat.id}
+                          className={cn(
+                            'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
+                            cat.enabled ? 'bg-leaf-500' : 'bg-rose-400',
+                            busy === cat.id && 'opacity-50 cursor-not-allowed'
+                          )}
+                          title={cat.enabled ? '点击停用' : '点击启用'}
+                        >
+                          <span
+                            className={cn(
+                              'inline-block h-3 w-3 transform rounded-full bg-white transition-transform',
+                              cat.enabled ? 'translate-x-5' : 'translate-x-1'
+                            )}
+                          />
+                        </button>
                         <Link href={`/board/${cat.slug}`} target="_blank" className="rounded-md border border-ink-200 px-2 py-1 text-[10px] text-ink-600 hover:bg-ink-50">查看</Link>
-                        <button onClick={() => setEditingCategory(cat)} className="rounded-md border border-ink-200 px-2 py-1 text-[10px] text-ink-600 hover:bg-ink-50">编辑</button>
-                        <button onClick={() => removeCategory(cat)} className="rounded-md bg-rose-50 border border-rose-200 px-2 py-1 text-[10px] text-rose-600 hover:bg-rose-100">删除</button>
+                        <button onClick={() => setEditingBoard(cat)} className="rounded-md border border-ink-200 px-2 py-1 text-[10px] text-ink-600 hover:bg-ink-50">编辑</button>
+                        {/* 特殊板块不显示删除按钮 */}
+                        {cat.kind !== 'system' && cat.slug !== 'shaitu' && cat.slug !== 'jiaoyi' && (
+                          <button onClick={() => removeBoard(cat)} className="rounded-md bg-rose-50 border border-rose-200 px-2 py-1 text-[10px] text-rose-600 hover:bg-rose-100">删除</button>
+                        )}
                       </div>
                     </DndItem>
                   </div>
                 </div>
 
-                {/* 属列表 */}
-                {!isCatCollapsed && (
+                {/* 属列表 - 特殊板块不显示 */}
+                {!isCatCollapsed && cat.kind !== 'market' && cat.slug !== 'shaitu' && cat.slug !== 'market' && (
                   <div className="ml-6">
                     {cat.genera.length === 0 ? (
                       <div className="ml-6 py-2 text-[11px] text-ink-400">暂无属</div>
@@ -831,7 +964,7 @@ function TreeDndView({
                                       <div className="text-[10px] text-ink-400">{genus.species.length} 品种</div>
                                     </div>
                                     <div className="flex items-center gap-1 shrink-0">
-                                      <button onClick={() => setEditingGenus({ genus, categoryId: cat.id })} className="rounded-md border border-ink-200 px-2 py-1 text-[10px] text-ink-600 hover:bg-ink-50">编辑</button>
+                                      <button onClick={() => setEditingGenus({ genus, boardId: cat.id })} className="rounded-md border border-ink-200 px-2 py-1 text-[10px] text-ink-600 hover:bg-ink-50">编辑</button>
                                       <button onClick={() => removeGenus(genus)} className="rounded-md bg-rose-50 border border-rose-200 px-2 py-1 text-[10px] text-rose-600 hover:bg-rose-100">删除</button>
                                     </div>
                                   </DndItem>

@@ -275,7 +275,7 @@ function VotePreview({ post }: { post: Post }) {
   const total = post.vote.options.reduce((s, o) => s + o.votes, 0);
   const top = [...post.vote.options].sort((a, b) => b.votes - a.votes).slice(0, 3);
   return (
-    <div className="space-y-1 rounded-lg bg-amber-50/60 p-2 text-amber-900">
+    <div className="space-y-1 rounded-none bg-amber-50/60 p-2 text-amber-900">
       <div className="line-clamp-1 text-[11px] font-medium">🗳️ {post.vote.question}</div>
       {top.map((o) => {
         const pct = total ? Math.round((o.votes / total) * 100) : 0;
@@ -307,7 +307,7 @@ function VotePreview({ post }: { post: Post }) {
 function EventPreview({ post }: { post: Post }) {
   if (!post.event) return null;
   return (
-    <div className="rounded-lg bg-violet-50/80 p-2 text-[11px] text-violet-900">
+    <div className="rounded-none bg-violet-50/80 p-2 text-[11px] text-violet-900">
       <div className="flex items-center gap-1">
         <span>📍</span>
         <span className="truncate">{post.event.location}</span>
@@ -325,6 +325,7 @@ function EventPreview({ post }: { post: Post }) {
 /**
  * 时间线预览(只读):
  *  - 显示前 3 条事件(后端 take:3)
+ *  - 如果有配图，在心得下面另起一行展示
  *  - 总数 > 3 时底部叠 fade 蒙层 +「+ N 条」提示「点进去看完整时间线」
  */
 function JournalPreview({ post }: { post: Post }) {
@@ -335,7 +336,7 @@ function JournalPreview({ post }: { post: Post }) {
   const hasMore = restCount > 0;
 
   return (
-    <div className="rounded-lg bg-emerald-50/60 p-2">
+    <div className="rounded-none bg-emerald-50/60 p-2">
       <div className="mb-1 flex items-center justify-between text-[10px] text-emerald-700/80">
         <span className="truncate">📖 {j.subjectName}</span>
         <span>第 {j.daysSinceStart} 天 · 共 {j.entriesCount} 条</span>
@@ -344,28 +345,48 @@ function JournalPreview({ post }: { post: Post }) {
       <div className="relative">
         <ol className="space-y-1.5">
           {shown.map((e) => {
-            const meta = STAGE_META[e.stage];
+            const meta = STAGE_META[e.stage] || STAGE_META.other;
             return (
-              <li key={e.id} className="flex items-start gap-1.5">
-                <span
-                  className={cn(
-                    'mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px]',
-                    meta.color.replace('border-', '')
-                  )}
-                >
-                  {meta.emoji}
-                </span>
-                <div className="min-w-0 flex-1 text-[10px] leading-4">
-                  <span className="text-emerald-800/80">
-                    {new Date(e.entryDate).toLocaleDateString('zh-CN', {
-                      month: 'numeric',
-                      day: 'numeric',
-                    })}
-                  </span>{' '}
-                  <span className="text-emerald-900/90">
-                    {e.note ? truncate(e.note, 30) : meta.zh}
+              <li key={e.id} className="space-y-1">
+                <div className="flex items-start gap-1.5">
+                  <span
+                    className={cn(
+                      'mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px]',
+                      meta.color.replace('border-', '')
+                    )}
+                  >
+                    {meta.emoji}
                   </span>
+                  <div className="min-w-0 flex-1 text-[10px] leading-4">
+                    <span className="text-emerald-800/80">
+                      {new Date(e.entryDate).toLocaleDateString('zh-CN', {
+                        month: 'numeric',
+                        day: 'numeric',
+                      })}
+                    </span>{' '}
+                    <span className="text-emerald-900/90">
+                      {e.note ? truncate(e.note, 30) : meta.zh}
+                    </span>
+                  </div>
                 </div>
+                {/* 配图展示 - 在心得下面另起一行 */}
+                {e.images && e.images.length > 0 && (
+                  <div className="ml-5 flex flex-wrap gap-1">
+                    {e.images.map((img, idx) => (
+                      <div
+                        key={idx}
+                        className="journal-entry-image relative overflow-hidden rounded bg-white/50"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={img}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </li>
             );
           })}
@@ -404,7 +425,7 @@ function CompactCard({ post, className }: { post: Post; className?: string }) {
       )}
     >
       {cover && (
-        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-leaf-50">
+        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-none bg-leaf-50">
           <Image src={cover} alt="" fill className="object-cover" unoptimized />
         </div>
       )}

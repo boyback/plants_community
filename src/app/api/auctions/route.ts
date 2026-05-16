@@ -103,7 +103,7 @@ export const POST = handler(async (req) => {
       description: stored.html,
       descriptionJson: stored.json || null,
       descriptionText: stored.text,
-      category: body.category,
+      category: body.board,
       tags: stringifyJson(body.tags ?? []),
       startPrice: body.startPrice,
       minIncrement: body.minIncrement ?? 100,

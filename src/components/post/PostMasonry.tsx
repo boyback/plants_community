@@ -104,7 +104,7 @@ export function PostMasonry({
 
       {err && (
         <div className="mt-4 flex flex-col items-center gap-2 text-xs">
-          <div className="rounded-lg bg-rose-50 px-3 py-2 text-rose-700">{err}</div>
+          <div className="rounded-none bg-rose-50 px-3 py-2 text-rose-700">{err}</div>
           <button type="button" onClick={loadMore} className="btn-outline !text-xs">
             重试
           </button>

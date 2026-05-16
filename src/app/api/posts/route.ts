@@ -17,7 +17,7 @@ import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 export const dynamic = 'force-dynamic';
 
 /**
- * 列表查询:支持在任一层级上过滤(?category=xxx / ?genus=xxx / ?species=xxx)。
+ * 列表查询:支持在任一层级上过滤(?board=xxx / ?genus=xxx / ?species=xxx)。
  * 也保留旧的 ?board=xxx 参数(向后兼容)——同时匹配 Category/Genus/Species/Board 的 slug。
  */
 export const GET = handler(async (req) => {
@@ -37,13 +37,13 @@ export const GET = handler(async (req) => {
     ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' } : {}),
     ...(authorId ? { authorId } : {}),
   };
-  if (categorySlug) where.category = { slug: categorySlug };
+  if (categorySlug) where.board = { slug: categorySlug };
   if (genusSlug) where.genus = { slug: genusSlug };
   if (speciesSlug) where.species = { slug: speciesSlug };
   // 旧 board slug 兼容:同时尝试 category/genus/species
   if (legacyBoard && !categorySlug && !genusSlug && !speciesSlug) {
     where.OR = [
-      { category: { slug: legacyBoard } },
+      { board: { slug: legacyBoard } },
       { genus: { slug: legacyBoard } },
       { species: { slug: legacyBoard } },
       { board: { slug: legacyBoard } },
@@ -83,7 +83,7 @@ export const GET = handler(async (req) => {
  *   - genusSlug:挂到属(二级)
  *   - categorySlug:挂到科(一级)
  *   - boardSlug(向后兼容):按 legacy board / category 查找
- * 其中至少需提供一个。自动推导上级并写入 categoryId/genusId/speciesId。
+ * 其中至少需提供一个。自动推导上级并写入 boardId/genusId/speciesId。
  */
 const JournalEntryInput = z.object({
   entryDate: z.string(), // ISO
@@ -159,58 +159,58 @@ const CreateBody = z
   });
 
 type ResolvedIds = {
-  categoryId: string | null;
+  boardId: string | null;
   genusId: string | null;
   speciesId: string | null;
   boardId: string | null;
 };
 type ResolveResult = { ok: true; ids: ResolvedIds } | { ok: false; error: string };
 
-/** 根据入参解析出 categoryId / genusId / speciesId / boardId */
+/** 根据入参解析出 boardId / genusId / speciesId / boardId */
 async function resolveBoardIds(body: z.infer<typeof CreateBody>): Promise<ResolveResult> {
-  const ids: ResolvedIds = { categoryId: null, genusId: null, speciesId: null, boardId: null };
+  const ids: ResolvedIds = { boardId: null, genusId: null, speciesId: null, boardId: null };
 
   if (body.speciesSlug) {
     const sp = await prisma.species.findFirst({
       where: { slug: body.speciesSlug },
-      include: { genus: { include: { category: true } } },
+      include: { genus: { include: { board: true } } },
     });
     if (!sp) return { ok: false, error: '指定的品种不存在' };
     ids.speciesId = sp.id;
     ids.genusId = sp.genusId;
-    ids.categoryId = sp.genus.categoryId;
+    ids.boardId = sp.genus.boardId;
     return { ok: true, ids };
   }
 
   if (body.genusSlug) {
     const g = await prisma.genus.findFirst({
       where: { slug: body.genusSlug },
-      include: { category: true },
+      include: { board: true },
     });
     if (!g) return { ok: false, error: '指定的属不存在' };
     ids.genusId = g.id;
-    ids.categoryId = g.categoryId;
+    ids.boardId = g.boardId;
     return { ok: true, ids };
   }
 
   if (body.categorySlug) {
-    const c = await prisma.category.findUnique({ where: { slug: body.categorySlug } });
+    const c = await prisma.board.findUnique({ where: { slug: body.categorySlug } });
     if (!c) return { ok: false, error: '指定的板块不存在' };
-    ids.categoryId = c.id;
+    ids.boardId = c.id;
     return { ok: true, ids };
   }
 
   if (body.boardSlug) {
-    const c = await prisma.category.findUnique({ where: { slug: body.boardSlug } });
+    const c = await prisma.board.findUnique({ where: { slug: body.boardSlug } });
     if (c) {
-      ids.categoryId = c.id;
+      ids.boardId = c.id;
       return { ok: true, ids };
     }
     const legacy = await prisma.board.findUnique({ where: { slug: body.boardSlug } });
     if (legacy) {
       ids.boardId = legacy.id;
-      const sameName = await prisma.category.findFirst({ where: { name: legacy.name } });
-      if (sameName) ids.categoryId = sameName.id;
+      const sameName = await prisma.board.findFirst({ where: { name: legacy.name } });
+      if (sameName) ids.boardId = sameName.id;
       return { ok: true, ids };
     }
     return { ok: false, error: '指定的板块不存在' };
@@ -275,7 +275,7 @@ export const POST = handler(async (req) => {
       images: stringifyJson(body.images ?? []),
       videoUrl: body.videoUrl ?? null,
       tags: stringifyJson(body.tags ?? []),
-      categoryId: resolvedIds.categoryId,
+      boardId: resolvedIds.boardId,
       genusId: resolvedIds.genusId,
       speciesId: resolvedIds.speciesId,
       boardId: resolvedIds.boardId,

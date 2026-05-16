@@ -8,29 +8,29 @@ export const dynamic = 'force-dynamic';
 /**
  * 关注 / 取消关注 某个三级板块节点。
  * 三种定位方式(任一):
- *   - { type: 'category', slug: 'jingtian' }
+ *   - { type: 'board', slug: 'jingtian' }
  *   - { type: 'genus',    slug: 'echeveria', categorySlug?: 'jingtian' }  // 可选 category 消歧
  *   - { type: 'species',  slug: 'longyue',   genusSlug?: 'graptopetalum' }
  *
  * POST → 关注(幂等);DELETE → 取消关注。
  */
 const Body = z.object({
-  type: z.enum(['category', 'genus', 'species']),
+  type: z.enum(['board', 'genus', 'species']),
   slug: z.string(),
   categorySlug: z.string().optional(),
   genusSlug: z.string().optional(),
 });
 
 async function resolveTargetId(body: z.infer<typeof Body>) {
-  if (body.type === 'category') {
-    const c = await prisma.category.findUnique({ where: { slug: body.slug } });
+  if (body.type === 'board') {
+    const c = await prisma.board.findUnique({ where: { slug: body.slug } });
     return c?.id ?? null;
   }
   if (body.type === 'genus') {
     const g = await prisma.genus.findFirst({
       where: {
         slug: body.slug,
-        ...(body.categorySlug ? { category: { slug: body.categorySlug } } : {}),
+        ...(body.categorySlug ? { board: { slug: body.categorySlug } } : {}),
       },
     });
     return g?.id ?? null;

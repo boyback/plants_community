@@ -12,6 +12,7 @@ import { ColorThemeSwitcher } from '@/components/ui/ColorThemeSwitcher';
 
 import { useAuth } from '@/context/AuthContext';
 import { useRealtime } from '@/context/RealtimeContext';
+import { useFeatureFlags } from '@/context/FeatureFlagsContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/client-api';
@@ -21,6 +22,7 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
   const { user, logout, vip, equip, pointsBalance } = useAuth();
   const { t } = useI18n();
   const { subscribe } = useRealtime();
+  const featureFlags = useFeatureFlags();
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadMsgs, setUnreadMsgs] = useState(0);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
@@ -66,197 +68,210 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
   }, [user, subscribe]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-leaf-100/70 bg-white shadow-sm">
-      <div className="mx-auto flex h-14 max-w-[1280px] items-center px-4 lg:px-6">
-        {/* 左侧 - Logo + 主题 */}
-        <div className="flex items-center gap-3 shrink-0">
-          <button
-            type="button"
-            className="-ml-1 grid h-9 w-9 place-items-center rounded-lg text-leaf-700 hover:bg-leaf-50 lg:hidden"
-            aria-label={t('nav.openMenu')}
-            onClick={onToggleMobileNav}
-          >
-            <Icon name="menu" size={20} />
-          </button>
-          <Logo />
-          <ColorThemeSwitcher />
-        </div>
+    <header className="sticky top-0 z-40 border-b border-leaf-100/50 bg-white/95 backdrop-blur-sm">
+      <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
+        <div className="flex h-14 items-center gap-6">
+          {/* 左侧 - Logo + 导航 */}
+          <div className="flex items-center gap-8 shrink-0">
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                className="-ml-2 grid h-8 w-8 place-items-center rounded-none text-leaf-700 hover:bg-leaf-50/80 hover:scale-105 active:scale-95 transition-all duration-200 lg:hidden"
+                aria-label={t('nav.openMenu')}
+                onClick={onToggleMobileNav}
+              >
+                <Icon name="menu" size={16} />
+              </button>
+              <Logo />
+            </div>
 
-        {/* 社区导航 - 桌面端显示 */}
-        <nav className="hidden lg:flex items-center gap-1 ml-6">
-          <HeaderLink href="/" icon="home">花友家园</HeaderLink>
-          <HeaderLink href="/market" icon="shop">交易广场</HeaderLink>
-          <HeaderLink href="/shaitu" icon="image">摄影大赛</HeaderLink>
-        </nav>
-
-        {/* 中间弹性 - 搜索框 */}
-        <div className="hidden lg:flex flex-1 justify-end">
-          <div className="w-full max-w-[984px]">
-            <HeaderSearch />
+            {/* 社区导航 - 桌面端显示 */}
+            <nav className="hidden lg:flex items-center gap-1">
+              <HeaderLink href="/" icon="home" image="https://cdn.plantcommunity.cn/cmoz85oi8000ay601io2nm9iv/202605/mp847ljxfg8euq.png">首页</HeaderLink>
+              {featureFlags['feature.market.enabled'] && (
+                <HeaderLink href="/market" icon="shop" image="https://cdn.plantcommunity.cn/cmoz85oi8000ay601io2nm9iv/202605/mp83lwfvv697m6.png">交易中心</HeaderLink>
+              )}
+              {featureFlags['feature.shaitu.enabled'] && (
+                <HeaderLink href="/shaitu" icon="image" image="https://cdn.plantcommunity.cn/cmoz85oi8000ay601io2nm9iv/202605/mp83ned8nzzm7w.png">晒图广场</HeaderLink>
+              )}
+              {featureFlags['feature.contests.enabled'] && (
+                <HeaderLink href="/contests" icon="trophy">摄影大赛</HeaderLink>
+              )}
+            </nav>
           </div>
-        </div>
 
-        {/* 右侧固定 - 操作按钮 */}
-        <div className="flex items-center gap-2 shrink-0 ml-4">
-          {/* 发帖按钮 */}
-          {user && (
-            <>
-              <Link
-                href="/editor"
-                className="hidden sm:inline-flex btn-primary h-9 px-4 text-xs"
-              >
-                <Icon name="plus" size={14} />
-                发帖
-              </Link>
-              <Link
-                href="/market/sell"
-                className="hidden sm:inline-flex btn-outline h-9 px-4 text-xs"
-              >
-                <Icon name="shop" size={14} />
-                发布商品
-              </Link>
-            </>
-          )}
+          {/* 中间 - 搜索框 */}
+          <div className="hidden lg:flex flex-1 justify-center">
+            <div className="w-full max-w-[480px]">
+              <HeaderSearch />
+            </div>
+          </div>
 
-          {/* 移动端搜索图标 */}
-          <Link href="/search" className="lg:hidden grid h-9 w-9 place-items-center rounded-lg text-leaf-700 hover:bg-leaf-50">
-            <Icon name="search" size={18} />
-          </Link>
+          {/* 右侧 - 操作按钮 */}
+          <div className="flex items-center gap-2 shrink-0 ml-auto">
+            {/* 主题切换 */}
+            <div className="hidden lg:block">
+              <ColorThemeSwitcher />
+            </div>
 
-          {/* 右侧其他按钮 */}
-          <div className="flex items-center gap-1 ml-auto">
-          {user ? (
-            <>
-              <NotificationBell unreadCount={unreadNotifs + unreadMsgs} onReadAll={() => setUnreadNotifs(0)} />
-              <div
-                className="relative"
-                onMouseEnter={() => {
-                  if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
-                  setMenuOpen(true);
-                }}
-                onMouseLeave={() => {
-                  if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
-                  closeTimerRef.current = setTimeout(() => setMenuOpen(false), 150);
-                }}
-              >
-                <button
-                  type="button"
-                  className="ml-1 flex items-center gap-2 rounded-full p-0.5 hover:bg-leaf-50"
-                  onClick={() => setMenuOpen((o) => !o)}
-                  aria-haspopup="menu"
-                  aria-expanded={menuOpen}
+            {/* 移动端搜索图标 */}
+            <Link href="/search" className="lg:hidden grid h-8 w-8 place-items-center rounded-none text-leaf-700 hover:bg-leaf-50/80 hover:scale-105 active:scale-95 transition-all duration-200">
+              <Icon name="search" size={16} />
+            </Link>
+
+            {user ? (
+              <>
+                {/* 发帖按钮 */}
+                <Link
+                  href="/editor"
+                  className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-none bg-leaf-600 text-white text-xs font-medium hover:bg-leaf-700 active:scale-95 transition-all duration-200"
                 >
-                  <UserAvatar
-                    src={user.avatar}
-                    alt={user.name}
-                    size={32}
-                    pendant={equip.pendant ?? null}
-                    isVip={vip.isVip}
-                  />
-                </button>
-                {menuOpen && (
-                  <div className="absolute right-0 z-20 mt-2 w-48 overflow-visible rounded-xl border border-leaf-100 bg-white shadow-xl">
-                    {/* 用户信息 */}
-                    <Link
-                      href={`/user/${user.id}`}
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 hover:bg-leaf-50 transition-colors"
-                    >
-                      <UserAvatar
-                        src={user.avatar}
-                        alt={user.name}
-                        size={40}
-                        pendant={equip.pendant ?? null}
-                        isVip={vip.isVip}
-                      />
-                      <div className="min-w-0">
-                        <div className="font-medium text-ink-800 truncate">{user.name}</div>
-                        <div className="text-[11px] text-ink-500 truncate">@{user.id.slice(0, 8)}</div>
-                      </div>
-                    </Link>
+                  <Icon name="plus" size={13} />
+                  发帖
+                </Link>
 
-                    <div className="border-t border-leaf-50" />
+                {/* 出售按钮 */}
+                <Link
+                  href="/market/sell"
+                  className="hidden md:inline-flex items-center gap-1.5 h-8 px-3 rounded-none border border-leaf-200 text-leaf-700 text-xs font-medium hover:bg-leaf-50 hover:border-leaf-300 active:scale-95 transition-all duration-200"
+                >
+                  <Icon name="shop" size={13} />
+                  出售
+                </Link>
 
-                    {/* 后台管理 - moderator/admin/superAdmin 可见 */}
-                    {(user.role === 'moderator' || user.role === 'admin' || user.isSuperAdmin) && (
+                {/* 通知铃铛 */}
+                <NotificationBell unreadCount={unreadNotifs + unreadMsgs} onReadAll={() => setUnreadNotifs(0)} />
+
+                {/* 用户菜单 */}
+                <div
+                  className="relative"
+                  onMouseEnter={() => {
+                    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+                    setMenuOpen(true);
+                  }}
+                  onMouseLeave={() => {
+                    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+                    closeTimerRef.current = setTimeout(() => setMenuOpen(false), 150);
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 rounded-full p-0.5 hover:bg-leaf-50/80 active:scale-95 transition-all duration-200"
+                    onClick={() => setMenuOpen((o) => !o)}
+                    aria-haspopup="menu"
+                    aria-expanded={menuOpen}
+                  >
+                    <UserAvatar
+                      src={user.avatar}
+                      alt={user.name}
+                      size={30}
+                      pendant={equip.pendant ?? null}
+                      isVip={vip.isVip}
+                    />
+                  </button>
+                  {menuOpen && (
+                    <div className="absolute right-0 z-20 mt-2 w-52 overflow-visible rounded-none border border-leaf-100/80 bg-white shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+                      {/* 用户信息 */}
                       <Link
-                        href="/admin"
+                        href={`/user/${user.id}`}
                         onClick={() => setMenuOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-ink-800 hover:bg-leaf-50"
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-leaf-50/50 transition-colors rounded-t-xl"
                       >
-                        <Icon name="settings" size={14} />
-                        <span>管理</span>
+                        <UserAvatar
+                          src={user.avatar}
+                          alt={user.name}
+                          size={38}
+                          pendant={equip.pendant ?? null}
+                          isVip={vip.isVip}
+                        />
+                        <div className="min-w-0">
+                          <div className="font-semibold text-sm text-ink-800 truncate">{user.name}</div>
+                          <div className="text-xs text-ink-500 truncate">@{user.id.slice(0, 8)}</div>
+                        </div>
                       </Link>
-                    )}
 
-                    {/* 我的订单 */}
-                    <Link
-                      href="/orders"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-ink-800 hover:bg-leaf-50"
-                    >
-                      <Icon name="package" size={14} />
-                      <span>我的订单</span>
-                    </Link>
+                      <div className="border-t border-leaf-50" />
 
-                    {/* 大会员 */}
-                    <Link
-                      href="/vip"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-ink-800 hover:bg-leaf-50"
-                    >
-                      <Icon name="crown" size={14} />
-                      <span>大会员</span>
-                    </Link>
+                      {/* 后台管理 */}
+                      {(user.role === 'moderator' || user.role === 'admin' || user.isSuperAdmin) && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-800 hover:bg-leaf-50/50 transition-colors"
+                        >
+                          <Icon name="settings" size={15} />
+                          <span>管理</span>
+                        </Link>
+                      )}
 
-                    {/* 积分兑换 */}
-                    <Link
-                      href="/points"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-ink-800 hover:bg-leaf-50"
-                    >
-                      <Icon name="diamond" size={14} />
-                      <span>积分兑换</span>
-                    </Link>
+                      {/* 我的订单 */}
+                      <Link
+                        href="/orders"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-800 hover:bg-leaf-50/50 transition-colors"
+                      >
+                        <Icon name="package" size={15} />
+                        <span>我的订单</span>
+                      </Link>
 
-                    <div className="border-t border-leaf-50" />
+                      {/* 大会员 */}
+                      <Link
+                        href="/vip"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-800 hover:bg-leaf-50/50 transition-colors"
+                      >
+                        <Icon name="crown" size={15} />
+                        <span>大会员</span>
+                      </Link>
 
-                    {/* 设置 */}
-                    <Link
-                      href="/settings"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-ink-800 hover:bg-leaf-50"
-                    >
-                      <Icon name="settings" size={14} />
-                      <span>设置</span>
-                    </Link>
+                      {/* 积分兑换 */}
+                      <Link
+                        href="/points"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-800 hover:bg-leaf-50/50 transition-colors"
+                      >
+                        <Icon name="diamond" size={15} />
+                        <span>积分兑换</span>
+                      </Link>
 
-                    {/* 退出 */}
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        setMenuOpen(false);
-                        await logout();
-                      }}
-                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-rose-600 hover:bg-rose-50"
-                    >
-                      <Icon name="logout" size={14} />
-                      <span>退出</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <>
-              <Link href="/login" className="btn-ghost h-9 text-xs">
-                {t('nav.login')}
-              </Link>
-              <Link href="/register" className="btn-primary h-9 text-xs">
-                {t('nav.register')}
-              </Link>
-            </>
-          )}
+                      <div className="border-t border-leaf-50" />
+
+                      {/* 设置 */}
+                      <Link
+                        href="/settings"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-800 hover:bg-leaf-50/50 transition-colors"
+                      >
+                        <Icon name="settings" size={15} />
+                        <span>设置</span>
+                      </Link>
+
+                      {/* 退出 */}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setMenuOpen(false);
+                          await logout();
+                        }}
+                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50/50 transition-colors rounded-b-xl"
+                      >
+                        <Icon name="logout" size={15} />
+                        <span>退出</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="h-8 px-3 rounded-none text-xs font-medium text-leaf-700 hover:bg-leaf-50/80 active:scale-95 transition-all duration-200 inline-flex items-center">
+                  {t('nav.login')}
+                </Link>
+                <Link href="/register" className="h-8 px-3 rounded-none bg-leaf-600 text-white text-xs font-medium hover:bg-leaf-700 active:scale-95 transition-all duration-200 inline-flex items-center">
+                  {t('nav.register')}
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -268,10 +283,12 @@ function HeaderLink({
   href,
   children,
   icon,
+  image
 }: {
   href: string;
   children: React.ReactNode;
   icon: Parameters<typeof Icon>[0]['name'];
+  image:string;
 }) {
   const pathname = usePathname();
   const active =
@@ -285,7 +302,7 @@ function HeaderLink({
           : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700'
       }`}
     >
-      <Icon name={icon} size={16} />
+      {image?<img src={image} width={28} />:<Icon name="plus" size={16} />}
       {children}
     </Link>
   );
@@ -306,7 +323,7 @@ function IconButton({
     <Link
       href={href}
       aria-label={label}
-      className="relative grid h-9 w-9 place-items-center rounded-lg text-leaf-700 hover:bg-leaf-50"
+      className="relative grid h-9 w-9 place-items-center rounded-none text-leaf-700 hover:bg-leaf-50"
     >
       <Icon name={icon} size={18} />
       {badge ? (
@@ -340,7 +357,7 @@ function QuickItem({
     <Link
       href={href}
       onClick={onClose}
-      className="relative flex flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[10px] text-ink-700 transition-colors hover:bg-white"
+      className="relative flex flex-col items-center gap-0.5 rounded-none px-2 py-2 text-[10px] text-ink-700 transition-colors hover:bg-white"
     >
       <span className="text-lg leading-none">{emoji}</span>
       <span className="leading-tight">{label}</span>
@@ -445,28 +462,28 @@ function NotificationBell({
       <button
         type="button"
         onClick={toggle}
-        className="relative grid h-9 w-9 place-items-center rounded-lg text-leaf-700 hover:bg-leaf-50"
+        className="relative grid h-8 w-8 place-items-center rounded-none text-leaf-700 hover:bg-leaf-50/80 hover:scale-105 active:scale-95 transition-all duration-200"
       >
-        <Icon name="bell" size={18} />
+        <Icon name="bell" size={16} />
         {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-medium text-white">
+          <span className="absolute right-0 top-0 flex min-w-[16px] h-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white animate-in zoom-in duration-300">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-[300px] overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-xl">
-          <div className="flex items-center justify-between border-b border-leaf-100 px-3 py-2">
-            <span className="text-sm font-semibold text-ink-800">消息</span>
-            <Link href="/settings/notifications" onClick={() => setOpen(false)} className="text-[11px] text-leaf-700 hover:underline">
+        <div className="absolute right-0 top-full z-50 mt-2 w-[300px] overflow-hidden rounded-none border border-leaf-100/80 bg-white shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center justify-between border-b border-leaf-100/50 px-4 py-2.5">
+            <span className="text-sm font-semibold text-ink-800">消息通知</span>
+            <Link href="/settings/notifications" onClick={() => setOpen(false)} className="text-xs text-leaf-700 hover:text-leaf-800 transition-colors">
               设置
             </Link>
           </div>
 
-          <div className="max-h-[420px] overflow-y-auto">
+          <div className="max-h-[400px] overflow-y-auto">
             {loading ? (
-              <div className="py-8 text-center text-xs text-leaf-700/70">加载中…</div>
+              <div className="py-8 text-center text-sm text-leaf-700/70">加载中…</div>
             ) : (
               <>
                 {/* 私信 */}
@@ -475,13 +492,13 @@ function NotificationBell({
                     key={c.id}
                     href={`/messages?to=${c.user.id}`}
                     onClick={() => setOpen(false)}
-                    className="flex items-start gap-2 border-b border-leaf-50 px-3 py-2 hover:bg-leaf-50/60"
+                    className="flex items-start gap-2.5 border-b border-leaf-50 px-3 py-2.5 hover:bg-leaf-50/60 transition-colors"
                   >
                     <UserAvatar src={c.user.avatar} alt={c.user.name} size={32} />
                     <div className="min-w-0 flex-1 overflow-hidden">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mb-0.5">
                         <span className="truncate text-xs font-medium text-ink-800">💬 {c.user.name}</span>
-                        {c.unread > 0 && <span className="ml-1 h-2 w-2 shrink-0 rounded-full bg-rose-500" />}
+                        {c.unread > 0 && <span className="ml-2 h-2 w-2 shrink-0 rounded-full bg-rose-500" />}
                       </div>
                       <p className="truncate text-[11px] text-leaf-700/80">{c.lastMessage}</p>
                       <span className="text-[10px] text-leaf-700/60">{timeShort(c.lastAt)}</span>
@@ -496,8 +513,8 @@ function NotificationBell({
                     href={n.link ?? '#'}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      'flex items-start gap-2 border-b border-leaf-50 px-3 py-2 hover:bg-leaf-50/60',
-                      !n.read && 'bg-leaf-50/30',
+                      'flex items-start gap-2.5 border-b border-leaf-50 px-3 py-2.5 hover:bg-leaf-50/60 transition-colors',
+                      !n.read && 'bg-leaf-50/40',
                     )}
                   >
                     {n.fromUser ? (
@@ -507,25 +524,25 @@ function NotificationBell({
                         className="h-8 w-8 shrink-0 rounded-full object-cover"
                       />
                     ) : (
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-leaf-50 text-base">
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-leaf-100 text-sm">
                         {iconForType(n.type)}
                       </span>
                     )}
                     <div className="min-w-0 flex-1 overflow-hidden">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5 mb-0.5">
                         {n.fromUser && (
                           <span className="text-xs font-medium text-ink-800 truncate">{n.fromUser.name}</span>
                         )}
-                        {!n.read && <span className="ml-1 h-2 w-2 shrink-0 rounded-full bg-rose-500" />}
+                        {!n.read && <span className="h-2 w-2 shrink-0 rounded-full bg-rose-500" />}
                       </div>
-                      <p className="line-clamp-2 text-[11px] leading-5 text-ink-700">{n.text}</p>
+                      <p className="line-clamp-2 text-[11px] leading-[1.4] text-ink-700">{n.text}</p>
                       <span className="text-[10px] text-leaf-700/60">{timeShort(n.createdAt)}</span>
                     </div>
                   </Link>
                 ))}
 
                 {items.length === 0 && convs.length === 0 && (
-                  <div className="py-8 text-center text-xs text-leaf-700/60">暂无消息</div>
+                  <div className="py-8 text-center text-sm text-leaf-700/60">暂无消息</div>
                 )}
               </>
             )}
@@ -664,8 +681,8 @@ function HeaderSearch() {
       <form onSubmit={submit} className="relative">
         <Icon
           name="search"
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-leaf-400"
-          size={16}
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-leaf-500 transition-colors"
+          size={14}
         />
         <input
           type="search"
@@ -676,7 +693,7 @@ function HeaderSearch() {
             setOpen(true);
             void ensureHot();
           }}
-          className="input pl-9 pr-3"
+          className="w-full h-8 pl-8 pr-3 rounded-none border border-leaf-200/80 bg-leaf-50/30 text-xs text-ink-800 placeholder:text-leaf-600/60 focus:border-leaf-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf-200/50 transition-all duration-200"
           placeholder="搜索帖子、品种、用户、板块"
           aria-label="搜索"
           autoComplete="off"
@@ -685,16 +702,16 @@ function HeaderSearch() {
 
       {/* 下拉:输入空时显示历史+热词;有输入时显示「搜索 xxx」 */}
       {open && (
-        <div className="absolute left-0 right-0 top-full z-40 mt-1 overflow-hidden rounded-xl border border-leaf-100 bg-white shadow-card">
+        <div className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-none border border-leaf-100/80 bg-white shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
           {q.trim().length > 0 ? (
             <button
               type="button"
               onClick={() => go(q)}
-              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-ink-800 hover:bg-leaf-50"
+              className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-ink-800 hover:bg-leaf-50/60 transition-colors"
             >
-              <Icon name="search" size={14} className="text-leaf-500" />
+              <Icon name="search" size={14} className="text-leaf-600" />
               <span>
-                搜索 <b>「{q}」</b>
+                搜索 <b className="font-semibold">「{q}」</b>
               </span>
             </button>
           ) : (
@@ -702,25 +719,25 @@ function HeaderSearch() {
               {/* 搜索历史 */}
               {history.length > 0 && (
                 <>
-                  <div className="flex items-center justify-between border-b border-leaf-50 px-3 py-2 text-[11px]">
-                    <span className="text-leaf-700/60">🕒 搜索历史</span>
+                  <div className="flex items-center justify-between border-b border-leaf-50 px-3 py-2 text-xs">
+                    <span className="font-medium text-leaf-700/70">🕒 搜索历史</span>
                     <button
                       type="button"
                       onClick={clearHistory}
-                      className="text-leaf-700/70 hover:text-leaf-700"
+                      className="text-leaf-700/70 hover:text-leaf-800 transition-colors"
                     >
                       清空
                     </button>
                   </div>
-                  <div className="border-b border-leaf-50 px-3 py-2">
+                  <div className="border-b border-leaf-50 px-2 py-1.5">
                     {history.map((h, i) => (
                       <button
                         key={i}
                         type="button"
                         onClick={() => go(h)}
-                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-ink-800 hover:bg-leaf-50"
+                        className="flex w-full items-center gap-2 rounded-none px-2.5 py-1.5 text-left text-xs text-ink-800 hover:bg-leaf-50/60 transition-colors"
                       >
-                        <Icon name="search" size={12} className="text-leaf-400" />
+                        <Icon name="search" size={12} className="text-leaf-500" />
                         <span className="flex-1 truncate">{h}</span>
                       </button>
                     ))}
@@ -729,8 +746,8 @@ function HeaderSearch() {
               )}
 
               {/* 热门搜索 */}
-              <div className="flex items-center justify-between border-b border-leaf-50 px-3 py-2 text-[11px]">
-                <span className="text-leaf-700/60">🔥 热门搜索</span>
+              <div className="flex items-center justify-between border-b border-leaf-50 px-3 py-2 text-xs">
+                <span className="font-medium text-leaf-700/70">🔥 热门搜索</span>
                 <button
                   type="button"
                   onClick={(e) => {
@@ -739,7 +756,7 @@ function HeaderSearch() {
                     void fetchHot(true);
                   }}
                   disabled={hotRefreshing}
-                  className="text-leaf-700/70 hover:text-leaf-700 disabled:opacity-50"
+                  className="text-leaf-700/70 hover:text-leaf-800 disabled:opacity-50 transition-colors"
                 >
                   {hotRefreshing ? '换一换…' : '换一换 ↻'}
                 </button>
@@ -753,15 +770,16 @@ function HeaderSearch() {
                     key={`${h.kind}-${h.q}`}
                     type="button"
                     onClick={() => go(h.q)}
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] transition-colors ${
+                    className={cn(
+                      'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium hover:scale-105 active:scale-95 transition-all duration-200',
                       h.kind === 'species'
-                        ? 'bg-leaf-50 text-leaf-700 hover:bg-leaf-100'
-                        : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
-                    }`}
+                        ? 'bg-leaf-100 text-leaf-700 hover:bg-leaf-200'
+                        : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                    )}
                   >
                     {h.kind === 'species' ? h.q : `#${h.q}`}
                     {h.count !== undefined && h.count > 0 && (
-                      <span className="ml-1 text-[10px] text-leaf-700/50">{h.count}</span>
+                      <span className="ml-1 text-[10px] text-leaf-700/60">{h.count}</span>
                     )}
                   </button>
                 ))}

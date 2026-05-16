@@ -4,7 +4,7 @@ import { BoardsManager } from './BoardsManager';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminBoardsPage() {
-  const categories = await prisma.category.findMany({
+  const boards = await prisma.board.findMany({
     orderBy: [{ orderIdx: 'asc' }, { name: 'asc' }],
     include: {
       genera: {
@@ -31,12 +31,12 @@ export default async function AdminBoardsPage() {
 
   return (
     <BoardsManager
-      initial={categories.map((c) => ({
+      initial={boards.map((c) => ({
         id: c.id,
         slug: c.slug,
         name: c.name,
         latinName: c.latinName,
-        icon: c.icon,
+        icons: JSON.parse(c.icons || '[]'),
         cover: c.cover,
         kind: c.kind,
         enabled: c.enabled,

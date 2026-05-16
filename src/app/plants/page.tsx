@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export default async function PlantsIndexPage() {
   const raw = await prisma.species.findMany({
     orderBy: { name: 'asc' },
-    include: { genus: { include: { category: true } } },
+    include: { genus: { include: { board: true } } },
     take: 500,
   });
   // 兼容旧 PlantsIndexClient:用 Species 的字段拼出图鉴格式

@@ -40,7 +40,7 @@ export function MobileTabBar() {
                   href={it.href}
                   className="relative flex w-16 shrink-0 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px]"
                 >
-                  <span className="grid h-12 w-12 -translate-y-3.5 place-items-center rounded-2xl bg-gradient-to-br from-leaf-400 to-leaf-600 text-white shadow-lg shadow-leaf-500/30 transition-transform duration-200 active:scale-90">
+                  <span className="grid h-12 w-12 -translate-y-3.5 place-items-center rounded-none bg-gradient-to-br from-leaf-400 to-leaf-600 text-white shadow-lg shadow-leaf-500/30 transition-transform duration-200 active:scale-90">
                     <Icon name="plus" size={22} />
                   </span>
                   <span className="-mt-2.5 text-leaf-700">{label}</span>

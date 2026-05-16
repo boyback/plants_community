@@ -40,15 +40,19 @@ const users = [
 
 /* ---------------- 板块 ---------------- */
 const boards = [
-  { slug: 'jingtian', name: '景天科', description: '拟石莲、长生草、景天、风车等景天科大家族', cover: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=800', icon: '🌿', members: 12843 },
-  { slug: 'fanxing', name: '番杏科', description: '生石花、肉锥、碧光环,番杏圈集结地', cover: 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=800', icon: '🪨', members: 6421 },
-  { slug: 'baihe', name: '百合科', description: '十二卷、玉露、寿、软叶鲨鱼', cover: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800', icon: '💎', members: 8932 },
-  { slug: 'xianrenzhang', name: '仙人掌科', description: '球、柱、瑞凤玉、牡丹、乌羽玉', cover: 'https://images.unsplash.com/photo-1509587584298-0f3b3a3a1797?w=800', icon: '🌵', members: 7812 },
-  { slug: 'dajike', name: '大戟科', description: '麒麟、铁甲丸、布纹球', cover: 'https://images.unsplash.com/photo-1466692476868-9ee5a3a3e93b?w=800', icon: '🗿', members: 3421 },
-  { slug: 'yangzhi', name: '养殖交流', description: '浇水、配土、光照,经验分享和求助', cover: 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=800', icon: '💧', members: 21034 },
-  { slug: 'jiaoyi', name: '交易市场', description: '出肉、收肉、拼团,请文明交易', cover: 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=800', icon: '💰', members: 15623 },
-  { slug: 'xinshou', name: '新手村', description: '萌新报道、小白问答,老手带带新人', cover: 'https://images.unsplash.com/photo-1466692476868-9ee5a3a3e93b?w=800', icon: '🌱', members: 32145 },
-  { slug: 'paishe', name: '摄影大赛', description: '2026 多肉摄影大赛 · 投稿、评选、作品鉴赏', cover: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=800', icon: '📷', members: 0 },
+  // 系统板块 (kind: 'system')
+  { slug: 'shaitu', name: '晒图广场', kind: 'system', description: '分享你的植物美照', cover: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=800', icons: JSON.stringify(['📷']), members: 0 },
+  { slug: 'jiaoyi', name: '交易市场', kind: 'system', description: '出肉、收肉、拼团,请文明交易', cover: 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=800', icons: JSON.stringify(['🛒']), members: 15623 },
+
+  // 普通板块 (kind: 'family' 或其他)
+  { slug: 'jingtian', name: '景天科', kind: 'family', description: '拟石莲、长生草、景天、风车等景天科大家族', cover: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=800', icons: JSON.stringify(['🌿']), members: 12843 },
+  { slug: 'fanxing', name: '番杏科', kind: 'family', description: '生石花、肉锥、碧光环,番杏圈集结地', cover: 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=800', icons: JSON.stringify(['🪨']), members: 6421 },
+  { slug: 'baihe', name: '百合科', kind: 'family', description: '十二卷、玉露、寿、软叶鲨鱼', cover: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800', icons: JSON.stringify(['💎']), members: 8932 },
+  { slug: 'xianrenzhang', name: '仙人掌科', kind: 'family', description: '球、柱、瑞凤玉、牡丹、乌羽玉', cover: 'https://images.unsplash.com/photo-1509587584298-0f3b3a3a1797?w=800', icons: JSON.stringify(['🌵']), members: 7812 },
+  { slug: 'dajike', name: '大戟科', kind: 'family', description: '麒麟、铁甲丸、布纹球', cover: 'https://images.unsplash.com/photo-1466692476868-9ee5a3a3e93b?w=800', icons: JSON.stringify(['🗿']), members: 3421 },
+  { slug: 'yangzhi', name: '养殖交流', kind: 'discussion', description: '浇水、配土、光照,经验分享和求助', cover: 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=800', icons: JSON.stringify(['💧']), members: 21034 },
+  { slug: 'xinshou', name: '新手村', kind: 'discussion', description: '萌新报道、小白问答,老手带带新人', cover: 'https://images.unsplash.com/photo-1466692476868-9ee5a3a3e93b?w=800', icons: JSON.stringify(['🌱']), members: 32145 },
+  { slug: 'paishe', name: '摄影大赛', kind: 'discussion', description: '2026 多肉摄影大赛 · 投稿、评选、作品鉴赏', cover: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=800', icons: JSON.stringify(['📷']), members: 0 },
 ];
 
 /* ---------------- 多肉图鉴 ---------------- */
@@ -151,9 +155,10 @@ async function main() {
       where: { slug: b.slug },
       update: {
         name: b.name,
+        kind: b.kind,
         description: b.description,
         cover: b.cover,
-        icon: b.icon,
+        icons: b.icons,
         members: b.members,
         orderIdx: i,
       },

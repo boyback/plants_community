@@ -6,41 +6,41 @@
  * 主题系统:
  *   - leaf-* / sand-* / ink-* 全部走 CSS 变量(rgb 数值,不带 rgb()包装)
  *   - 通过 <html data-theme="forest|sakura|..." data-mode="light|dark"> 切换
- *   - 默认 forest light
+ *   - 默认 ocean light
  *   - --page-bg / --surface(卡片底色) / --border 等语义变量随明暗模式变化
  *   - 12 套明色 + 12 套暗色变体
  */
 
-/* ========== 默认 / forest light ========== */
+/* ========== 默认 / ocean light ========== */
 :root,
-:root[data-theme='forest'] {
-  --leaf-50: 242 250 244;
-  --leaf-100: 225 244 230;
-  --leaf-200: 195 232 205;
-  --leaf-300: 152 212 172;
-  --leaf-400: 102 185 133;
-  --leaf-500: 69 156 103;
-  --leaf-600: 51 125 81;
-  --leaf-700: 42 100 66;
-  --leaf-800: 37 79 55;
-  --leaf-900: 31 65 48;
+:root[data-theme='ocean'] {
+  --leaf-50: 240 248 254;
+  --leaf-100: 220 240 252;
+  --leaf-200: 184 222 246;
+  --leaf-300: 134 195 234;
+  --leaf-400: 86 165 217;
+  --leaf-500: 49 134 198;
+  --leaf-600: 35 109 169;
+  --leaf-700: 28 86 138;
+  --leaf-800: 24 67 105;
+  --leaf-900: 19 51 79;
 
-  --sand-50: 251 248 242;
-  --sand-100: 244 236 219;
-  --sand-200: 233 215 181;
-  --sand-300: 218 188 135;
+  --sand-50: 247 250 252;
+  --sand-100: 232 240 245;
+  --sand-200: 196 215 228;
+  --sand-300: 154 187 207;
 
-  --ink-700: 44 58 51;
-  --ink-800: 31 42 36;
-  --ink-900: 18 25 21;
+  --ink-700: 28 50 64;
+  --ink-800: 18 35 46;
+  --ink-900: 10 21 29;
 
-  --page-bg: #f7faf5;
-  --scroll-thumb: #d8e6dc;
-  --scroll-thumb-hover: #bdd3c3;
+  --page-bg: #f3f9fd;
+  --scroll-thumb: #c5dce9;
+  --scroll-thumb-hover: #a8c9dc;
 }
 
-/* 樱花粉 */
-:root[data-theme='sakura'] {
+/* 森林绿 */
+:root[data-theme='forest'] {
   --leaf-50: 254 244 248;
   --leaf-100: 253 232 240;
   --leaf-200: 251 207 226;
@@ -644,7 +644,7 @@ img, video, svg {
 @layer components {
   .card {
     background-color: rgb(var(--surface));
-    @apply rounded-2xl shadow-card border border-leaf-100/60;
+    @apply shadow-card border border-leaf-100/60;
   }
   .btn {
     @apply inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed;
@@ -664,7 +664,7 @@ img, video, svg {
   }
   .input {
     background-color: rgb(var(--surface));
-    @apply w-full rounded-xl border border-leaf-200 px-3 py-2 text-sm text-ink-800 outline-none focus:border-leaf-400 focus:ring-2 focus:ring-leaf-100;
+    @apply w-full border border-leaf-200 px-3 py-2 text-sm text-ink-800 outline-none focus:border-leaf-400 focus:ring-2 focus:ring-leaf-100;
   }
   .link {
     @apply text-leaf-700 hover:text-leaf-800 hover:underline underline-offset-2;
@@ -716,7 +716,7 @@ img, video, svg {
   @apply rounded bg-leaf-50 px-1 py-0.5 text-[0.9em] text-leaf-700;
 }
 .prose-article img {
-  @apply my-3 rounded-lg;
+  @apply my-3 rounded-lg max-w-full h-auto;
 }
 
 /* line-clamp utilities backup (Tailwind 3.4 原生已支持) */
@@ -895,5 +895,33 @@ img, video, svg {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* ============================================================
+ * 记录贴配图尺寸控制
+ * - 列表模式(compact): 图片大小缩小以便一排展示更多
+ * - 瀑布流两列: 图片大小适中
+ * - 瀑布流三列/四列: 图片更小，一排可展示 6-7 个
+ * ============================================================ */
+
+/* 默认 - 列表模式 (compact layout) */
+.journal-entry-image {
+  width: 32px;
+  height: 32px;
+}
+
+/* 瀑布流模式 - 两列 (columns-2) */
+.columns-2 .journal-entry-image {
+  width: 28px;
+  height: 28px;
+}
+
+/* 瀑布流模式 - 三列及以上 (md:columns-3, md:columns-4) */
+@media (min-width: 768px) {
+  .columns-3 .journal-entry-image,
+  .columns-4 .journal-entry-image {
+    width: 24px;
+    height: 24px;
   }
 }

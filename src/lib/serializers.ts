@@ -93,39 +93,53 @@ export function serializeLegacyBoard(b: BoardWithCount): Board {
 // ------------ Category / Genus / Species ------------
 
 import type {
-  Category as DBCategory,
   Genus as DBGenus,
   Species as DBSpecies,
 } from '@prisma/client';
 
-type CategoryWithCount = DBCategory & { _count?: { posts?: number; genera?: number } };
+type BoardWithCount = DBBoard & {
+  _count?: { posts?: number; genera?: number };
+  genera?: (DBGenus & { _count?: { posts?: number; species?: number } })[];
+};
 type GenusWithRelations = DBGenus & {
-  category?: DBCategory;
+  board?: DBBoard;
   _count?: { posts?: number; species?: number };
 };
 type SpeciesWithRelations = DBSpecies & {
-  genus?: DBGenus & { category?: DBCategory };
+  genus?: DBGenus & { board?: DBBoard };
   _count?: { posts?: number };
 };
 
-export function serializeCategory(c: CategoryWithCount): Board {
+export function serializeCategory(c: BoardWithCount): Board & { genera?: any[] } {
   return {
     id: c.id,
     level: 'category',
     slug: c.slug,
     name: c.name,
+    latinName: c.latinName ?? undefined,
     description: c.description,
     cover: c.cover,
-    icon: c.icon,
+    icon: parseJsonArray(c.icons)?.[0] ?? c.icon ?? '🌿',
+    icons: parseJsonArray(c.icons),
     members: c.members,
     posts: c._count?.posts ?? 0,
     path: [{ level: 'category', slug: c.slug, name: c.name }],
     childrenCount: c._count?.genera ?? 0,
+    genera: c.genera?.map((g) => ({
+      id: g.id,
+      slug: g.slug,
+      name: g.name,
+      latinName: g.latinName ?? null,
+      _count: {
+        posts: g._count?.posts ?? 0,
+        species: g._count?.species ?? 0,
+      },
+    })),
   };
 }
 
 export function serializeGenus(g: GenusWithRelations): Board {
-  const cat = g.category;
+  const cat = g.board;
   const path = cat
     ? [
         { level: 'category' as const, slug: cat.slug, name: cat.name },
@@ -139,7 +153,7 @@ export function serializeGenus(g: GenusWithRelations): Board {
     name: g.name,
     description: g.description,
     cover: g.cover ?? cat?.cover ?? '',
-    icon: cat?.icon ?? '🌿',
+    icon: (cat ? parseJsonArray(cat.icons)?.[0] : null) ?? '🌿',
     members: 0,
     posts: g._count?.posts ?? 0,
     path,
@@ -149,7 +163,7 @@ export function serializeGenus(g: GenusWithRelations): Board {
 
 export function serializeSpecies(s: SpeciesWithRelations): Board {
   const g = s.genus;
-  const cat = g?.category;
+  const cat = g?.board;
   const path = [] as { level: 'category' | 'genus' | 'species'; slug: string; name: string }[];
   if (cat) path.push({ level: 'category', slug: cat.slug, name: cat.name });
   if (g) path.push({ level: 'genus', slug: g.slug, name: g.name });
@@ -161,7 +175,7 @@ export function serializeSpecies(s: SpeciesWithRelations): Board {
     name: s.name,
     description: s.description,
     cover: s.cover,
-    icon: cat?.icon ?? '🌱',
+    icon: (cat ? parseJsonArray(cat.icons)?.[0] : null) ?? '🌱',
     members: 0,
     posts: s._count?.posts ?? 0,
     path,
@@ -172,7 +186,7 @@ export function serializeSpecies(s: SpeciesWithRelations): Board {
 export function serializeSpeciesFull(s: SpeciesWithRelations) {
   const base = serializeSpecies(s);
   const g = s.genus;
-  const cat = g?.category;
+  const cat = g?.board;
   return {
     ...base,
     level: 'species' as const,
@@ -200,13 +214,11 @@ export function serializeSpeciesFull(s: SpeciesWithRelations) {
 export function serializePostBoard(p: {
   species?: SpeciesWithRelations | null;
   genus?: GenusWithRelations | null;
-  category?: CategoryWithCount | null;
   board?: BoardWithCount | null;
 }): Board {
   if (p.species) return serializeSpecies(p.species);
   if (p.genus) return serializeGenus(p.genus);
-  if (p.category) return serializeCategory(p.category);
-  if (p.board) return serializeLegacyBoard(p.board);
+  if (p.board) return serializeCategory(p.board);
   // 兜底:一个空板块,不应该发生
   return {
     id: '',
@@ -242,11 +254,9 @@ export function serializeBadge(b: DBBadge, obtained = false): Badge {
 type PostWithRelations = DBPost & {
   author: UserWithRelations;
   // 三级板块关系(新)
-  category?: CategoryWithCount | null;
+  board?: BoardWithCount | null;
   genus?: GenusWithRelations | null;
   species?: SpeciesWithRelations | null;
-  // 旧 board 字段(兜底)
-  board?: BoardWithCount | null;
   vote?:
     | (DBVote & { options: DBVoteOption[] })
     | null;
@@ -280,7 +290,6 @@ export function serializePost(p: PostWithRelations): Post {
     board: serializePostBoard({
       species: p.species,
       genus: p.genus,
-      category: p.category,
       board: p.board,
     }),
     tags: parseJsonArray(p.tags),
@@ -483,7 +492,7 @@ export function serializeProduct(p: ProductWithRelations): Product {
     description: p.description,
     descriptionJson: parseRichJson(p.descriptionJson),
     descriptionText: p.descriptionText ?? undefined,
-    category: p.category,
+    category: p.board,
     price: p.price,
     originalPrice: p.originalPrice ?? undefined,
     stock: p.stock,
@@ -693,7 +702,7 @@ export function serializeAuction(a: AuctionWithRelations): Auction {
     description: a.description,
     descriptionJson: parseRichJson(a.descriptionJson),
     descriptionText: a.descriptionText ?? undefined,
-    category: a.category,
+    category: a.board,
     tags: parseJsonArray(a.tags),
     startPrice: a.startPrice,
     minIncrement: a.minIncrement,

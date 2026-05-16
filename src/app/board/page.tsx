@@ -10,7 +10,7 @@ import { formatNumber } from '@/lib/utils';
 export const dynamic = 'force-dynamic';
 
 export default async function BoardIndexPage() {
-  const raw = await prisma.category.findMany({
+  const raw = await prisma.board.findMany({
     where: { enabled: true },
     orderBy: [{ orderIdx: 'asc' }, { name: 'asc' }],
     include: {
@@ -47,7 +47,7 @@ export default async function BoardIndexPage() {
             {families.map((c) => (
               <CategoryCard
                 key={c.id}
-                category={{
+                board={{
                   ...c,
                   generaPreview: c.genera.map((g) => g.name),
                   generaTotal: c._count?.genera ?? 0,
@@ -68,7 +68,7 @@ export default async function BoardIndexPage() {
             {discussions.map((c) => (
               <CategoryCard
                 key={c.id}
-                category={{
+                board={{
                   ...c,
                   generaPreview: [],
                   generaTotal: 0,
@@ -90,7 +90,7 @@ export default async function BoardIndexPage() {
             {markets.map((c) => (
               <CategoryCard
                 key={c.id}
-                category={{
+                board={{
                   ...c,
                   generaPreview: [],
                   generaTotal: 0,
@@ -130,7 +130,7 @@ function CategoryCard({
   category,
   simple,
 }: {
-  category: {
+  board: {
     id: string;
     slug: string;
     name: string;

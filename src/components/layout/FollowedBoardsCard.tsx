@@ -30,7 +30,7 @@ export function FollowedBoardsCard() {
   if (!user || items.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-leaf-100 bg-white overflow-hidden">
+    <div className="rounded-none border border-leaf-100 bg-white overflow-hidden">
       <button
         onClick={() => setCollapsed(!collapsed)}
         className="flex items-center gap-2 w-full px-3 py-2.5 text-left hover:bg-leaf-50/50 transition-colors"
@@ -54,7 +54,7 @@ export function FollowedBoardsCard() {
               <Link
                 key={f.id}
                 href={href}
-                className="block rounded-lg px-2.5 py-1.5 text-xs text-ink-700 hover:bg-leaf-50 hover:text-leaf-700 transition-colors"
+                className="block rounded-none px-2.5 py-1.5 text-xs text-ink-700 hover:bg-leaf-50 hover:text-leaf-700 transition-colors"
               >
                 <span className="font-medium">{f.name}</span>
               </Link>

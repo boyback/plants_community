@@ -38,7 +38,7 @@ export async function loadUserProfile(userId: string): Promise<UserProfile> {
         createdAt: { gte: new Date(Date.now() - 30 * 86400_000) },
       },
       take: 500,
-      select: { post: { select: { categoryId: true } } },
+      select: { post: { select: { boardId: true } } },
     }),
   ]);
 
@@ -47,7 +47,7 @@ export async function loadUserProfile(userId: string): Promise<UserProfile> {
 
   const counts = new Map<string, number>();
   for (const v of recentInteractions) {
-    const cid = v.post?.categoryId;
+    const cid = v.post?.boardId;
     if (!cid) continue;
     counts.set(cid, (counts.get(cid) ?? 0) + 1);
   }

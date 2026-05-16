@@ -7,7 +7,7 @@ import { logAdmin } from '@/lib/admin-log';
 export const dynamic = 'force-dynamic';
 
 const Body = z.object({
-  categoryId: z.string().optional(),
+  boardId: z.string().optional(),
   slug: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/).optional(),
   name: z.string().min(1).max(80).optional(),
   latinName: z.string().max(120).nullable().optional(),
@@ -29,9 +29,9 @@ export const PATCH = handler(async (req) => {
 
   // slug 同 category 内唯一
   if (body.slug && body.slug !== exists.slug) {
-    const targetCatId = body.categoryId ?? exists.categoryId;
+    const targetCatId = body.boardId ?? exists.boardId;
     const dup = await prisma.genus.findFirst({
-      where: { categoryId: targetCatId, slug: body.slug, id: { not: id } },
+      where: { boardId: targetCatId, slug: body.slug, id: { not: id } },
     });
     if (dup) return fail(400, `slug "${body.slug}" 在该科下已存在`);
   }

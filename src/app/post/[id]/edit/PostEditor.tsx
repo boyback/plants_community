@@ -51,7 +51,7 @@ export function PostEditor({ post }: { post: InitialPost }) {
   const [videoUrl, setVideoUrl] = useState(post.videoUrl);
   const [tags, setTags] = useState<string[]>(post.tags);
   const [tagInput, setTagInput] = useState('');
-  const [categories, setCategories] = useState<Board[]>([]);
+  const [boards, setCategories] = useState<Board[]>([]);
   const [generaList, setGeneraList] = useState<Board[]>([]);
   const [speciesList, setSpeciesList] = useState<Board[]>([]);
   const [categorySlug, setCategorySlug] = useState(post.categorySlug);
@@ -67,7 +67,7 @@ export function PostEditor({ post }: { post: InitialPost }) {
   };
 
   useEffect(() => {
-    api.get<Board[]>('/api/categories').then(setCategories).catch(() => null);
+    api.get<Board[]>('/api/boards').then(setCategories).catch(() => null);
   }, []);
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export function PostEditor({ post }: { post: InitialPost }) {
       return;
     }
     api
-      .get<{ genera: Board[] }>(`/api/categories/${encodeURIComponent(categorySlug)}`)
+      .get<{ genera: Board[] }>(`/api/boards/${encodeURIComponent(categorySlug)}`)
       .then((r) => setGeneraList(r.genera ?? []))
       .catch(() => setGeneraList([]));
   }, [categorySlug]);
@@ -90,7 +90,7 @@ export function PostEditor({ post }: { post: InitialPost }) {
     }
     api
       .get<{ species: Board[] }>(
-        `/api/genera/${encodeURIComponent(genusSlug)}?category=${encodeURIComponent(categorySlug)}`
+        `/api/genera/${encodeURIComponent(genusSlug)}?board=${encodeURIComponent(categorySlug)}`
       )
       .then((r) => setSpeciesList(r.species ?? []))
       .catch(() => setSpeciesList([]));
@@ -120,8 +120,8 @@ export function PostEditor({ post }: { post: InitialPost }) {
     }
     if (post.type === 'video' && !videoUrl.trim())
       return showToast('请上传视频或填写视频 URL');
-    if (!categorySlug && !genusSlug && !speciesSlug)
-      return showToast('请选择板块');
+    if (!speciesSlug)
+      return showToast('请选择完整的板块（科 → 属 → 品种）');
 
     setSubmitting(true);
     try {
@@ -185,8 +185,8 @@ export function PostEditor({ post }: { post: InitialPost }) {
                   }}
                   className="input"
                 >
-                  <option value="">选择一级板块</option>
-                  {categories.map((c) => (
+                  <option value="">-- 选择科 --</option>
+                  {boards.map((c) => (
                     <option key={c.id} value={c.slug}>
                       {c.name}
                     </option>
@@ -202,7 +202,7 @@ export function PostEditor({ post }: { post: InitialPost }) {
                   disabled={!categorySlug || generaList.length === 0}
                 >
                   <option value="">
-                    {!categorySlug ? '先选一级板块' : generaList.length === 0 ? '无二级板块' : '选择二级板块'}
+                    {!categorySlug ? '请先选择科' : generaList.length === 0 ? '暂无属' : '-- 选择属 --'}
                   </option>
                   {generaList.map((g) => (
                     <option key={g.id} value={g.slug}>
@@ -217,7 +217,7 @@ export function PostEditor({ post }: { post: InitialPost }) {
                   disabled={!genusSlug || speciesList.length === 0}
                 >
                   <option value="">
-                    {!genusSlug ? '先选二级板块' : speciesList.length === 0 ? '无三级板块' : '选择三级板块'}
+                    {!genusSlug ? '请先选择属' : speciesList.length === 0 ? '暂无品种' : '-- 选择品种 --'}
                   </option>
                   {speciesList.map((s) => (
                     <option key={s.id} value={s.slug}>
@@ -247,7 +247,7 @@ export function PostEditor({ post }: { post: InitialPost }) {
                   onChange={setContentJson}
                   placeholder="编辑你的内容..."
                   minHeight={300}
-                  charLimit={20000}
+                  charLimit={1000}
                 />
               </Row>
             )}
@@ -292,7 +292,7 @@ export function PostEditor({ post }: { post: InitialPost }) {
                 kind="image"
                 value={images}
                 onChange={setImages}
-                max={999}
+                max={9}
               />
             </Row>
 

@@ -73,7 +73,7 @@ export function RichTextEditor({
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-xl border border-leaf-200 bg-white focus-within:border-leaf-400 focus-within:ring-2 focus-within:ring-leaf-100',
+        'overflow-hidden border border-leaf-200 bg-white focus-within:border-leaf-400 focus-within:ring-2 focus-within:ring-leaf-100',
         className
       )}
     >

@@ -136,7 +136,7 @@ export function MobileActionBar({
                 key={k}
                 type="button"
                 onClick={() => share(k)}
-                className="flex flex-col items-center gap-2 rounded-xl bg-leaf-50/60 p-4 hover:bg-leaf-100"
+                className="flex flex-col items-center gap-2 rounded-none bg-leaf-50/60 p-4 hover:bg-leaf-100"
               >
                 <span className="text-3xl">{emoji}</span>
                 <span className="text-xs">{t(`detail.post.shareChannels.${k}`)}</span>
@@ -167,7 +167,7 @@ function BottomBtn({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex flex-col items-center gap-0.5 rounded-lg px-3 py-1 text-[11px] transition-colors',
+        'flex flex-col items-center gap-0.5 rounded-none px-3 py-1 text-[11px] transition-colors',
         active ? activeCls : 'text-ink-700/80'
       )}
     >

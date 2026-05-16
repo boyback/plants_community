@@ -234,7 +234,7 @@ function Row({
   return (
     <Link
       href={href}
-      className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-leaf-50"
+      className="flex items-center gap-2 rounded-none p-1.5 transition-colors hover:bg-leaf-50"
     >
       <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-leaf-50">
         <Image src={cover} alt={title} fill className="object-cover" unoptimized />

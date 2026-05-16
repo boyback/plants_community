@@ -39,7 +39,7 @@ interface GenusLite {
   _count: { posts: number; species: number };
 }
 
-interface CategoryFull {
+interface BoardFull {
   id: string;
   slug: string;
   name: string;
@@ -53,7 +53,7 @@ interface CategoryFull {
 export function BoardMegaMenu() {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const [data, setData] = useState<CategoryFull[] | null>(null);
+  const [data, setData] = useState<BoardFull[] | null>(null);
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -61,7 +61,7 @@ export function BoardMegaMenu() {
   const ensureData = async () => {
     if (data !== null) return;
     try {
-      const list = await api.get<CategoryFull[]>('/api/categories?kind=family&withGenera=1');
+      const list = await api.get<BoardFull[]>('/api/boards?kind=family&withGenera=1');
       setData(list || []);
       if (list && list.length > 0) setActiveCatId(list[0].id);
     } catch {
@@ -96,7 +96,7 @@ export function BoardMegaMenu() {
       <Link
         href="/board"
         className={cn(
-          'flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition-colors',
+          'flex items-center gap-1.5 rounded-none px-3 py-2 text-sm transition-colors',
           'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700',
         )}
       >
@@ -106,7 +106,7 @@ export function BoardMegaMenu() {
       </Link>
 
       {open && (
-        <div className="absolute left-0 top-full z-40 mt-1 flex overflow-hidden rounded-xl border border-leaf-100 bg-white shadow-card">
+        <div className="absolute left-0 top-full z-40 mt-1 flex overflow-hidden rounded-none border border-leaf-100 bg-white shadow-card">
           {/* 一级:科列表 */}
           <ul className="w-44 border-r border-leaf-100/60 py-1.5">
             {data === null && (

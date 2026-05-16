@@ -19,6 +19,8 @@ interface Props {
   className?: string;
   /** 是否显示裁剪开关（默认 false） */
   showCropToggle?: boolean;
+  /** 简化模式：只显示文件上传，隐藏模式切换（默认 false） */
+  simpleMode?: boolean;
 }
 
 type Mode = 'file' | 'url' | 'live';
@@ -54,6 +56,7 @@ export function UploadField({
   allowExternal = true,
   className,
   showCropToggle = false,
+  simpleMode = false,
 }: Props) {
   const [mode, setMode] = useState<Mode>('file');
   const [urlInput, setUrlInput] = useState('');
@@ -95,7 +98,7 @@ export function UploadField({
 
   // 单文件上传（独立进度追踪）
   const uploadSingle = useCallback(
-    async (file: File): Promise<string | null> => {
+    async (file: File): Promise<{ url: string; id: string } | null> => {
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const localUrl = URL.createObjectURL(file);
 
@@ -127,7 +130,7 @@ export function UploadField({
           )
         );
 
-        return url;
+        return { url, id };
       } catch (e) {
         setUploading((prev) =>
           prev.map((u) =>
@@ -150,14 +153,14 @@ export function UploadField({
           u.id === item.id ? { ...u, status: 'hashing', progress: 0, error: undefined } : u
         )
       );
-      const url = await uploadSingle(item.file);
-      if (url) {
+      const result = await uploadSingle(item.file);
+      if (result) {
         if (cropEnabled) {
-          setCropQueue((prev) => [...prev, url]);
+          setCropQueue((prev) => [...prev, result.url]);
         } else {
-          onChange([...value, url]);
-          removeUploading(item.id);
+          onChange([...value, result.url]);
         }
+        removeUploading(result.id);
       }
     },
     [uploadSingle, cropEnabled, value, onChange]
@@ -179,16 +182,17 @@ export function UploadField({
       if (kind === 'image' && !f.type.startsWith('image/')) continue;
       if (kind === 'video' && !f.type.startsWith('video/')) continue;
 
-      const url = await uploadSingle(f);
-      if (url) {
+      const result = await uploadSingle(f);
+      if (result) {
         if (cropEnabled) {
           // 上传成功后弹出裁剪
-          setCropQueue((prev) => [...prev, url]);
+          setCropQueue((prev) => [...prev, result.url]);
         } else {
           // 直接添加到列表
-          onChange([...value, url]);
-          removeUploading(uploading[uploading.length - 1]?.id || '');
+          onChange([...value, result.url]);
         }
+        // 从上传队列中移除已完成的项
+        removeUploading(result.id);
       }
     }
   };
@@ -280,59 +284,63 @@ export function UploadField({
 
   return (
     <div className={cn('space-y-2', className)}>
-      {/* mode tab */}
-      <div className="flex items-center gap-2 text-xs">
-        <button
-          type="button"
-          onClick={() => setMode('file')}
-          className={cn(
-            'rounded-full px-3 py-1 transition-colors',
-            mode === 'file'
-              ? 'bg-leaf-500 text-white'
-              : 'bg-leaf-50 text-leaf-700 hover:bg-leaf-100'
-          )}
-        >
-          📁 上传文件
-        </button>
-        {allowExternal && (
+      {/* mode tab - 简化模式下隐藏 */}
+      {/* 暂时注释掉模式切换功能
+      {!simpleMode && (
+        <div className="flex items-center gap-2 text-xs">
           <button
             type="button"
-            onClick={() => setMode('url')}
+            onClick={() => setMode('file')}
             className={cn(
               'rounded-full px-3 py-1 transition-colors',
-              mode === 'url'
+              mode === 'file'
                 ? 'bg-leaf-500 text-white'
                 : 'bg-leaf-50 text-leaf-700 hover:bg-leaf-100'
             )}
           >
-            🔗 添加外链
+            📁 上传文件
           </button>
-        )}
-        {canUseLive && (
-          <button
-            type="button"
-            onClick={() => setMode('live')}
-            className={cn(
-              'rounded-full px-3 py-1 transition-colors',
-              mode === 'live'
-                ? 'bg-leaf-500 text-white'
-                : 'bg-leaf-50 text-leaf-700 hover:bg-leaf-100'
-            )}
-            title="管理员专用 · 上传 iOS Live Photo"
-          >
-            📸 实况图
-          </button>
-        )}
-        <span className="ml-auto text-leaf-700/60">
-          {value.length}/{max}
-          {kind === 'video' && (
-            <span className="ml-1 text-amber-600">· 视频限大会员</span>
+          {allowExternal && (
+            <button
+              type="button"
+              onClick={() => setMode('url')}
+              className={cn(
+                'rounded-full px-3 py-1 transition-colors',
+                mode === 'url'
+                  ? 'bg-leaf-500 text-white'
+                  : 'bg-leaf-50 text-leaf-700 hover:bg-leaf-100'
+              )}
+            >
+              🔗 添加外链
+            </button>
           )}
-        </span>
-      </div>
+          {canUseLive && (
+            <button
+              type="button"
+              onClick={() => setMode('live')}
+              className={cn(
+                'rounded-full px-3 py-1 transition-colors',
+                mode === 'live'
+                  ? 'bg-leaf-500 text-white'
+                  : 'bg-leaf-50 text-leaf-700 hover:bg-leaf-100'
+              )}
+              title="管理员专用 · 上传 iOS Live Photo"
+            >
+              📸 实况图
+            </button>
+          )}
+          <span className="ml-auto text-leaf-700/60">
+            {value.length}/{max}
+            {kind === 'video' && (
+              <span className="ml-1 text-amber-600">· 视频限大会员</span>
+            )}
+          </span>
+        </div>
+      )}
+      */}
 
       {/* 文件上传区 - 所有图片在同一个网格 */}
-      {mode === 'file' && (
+      {(simpleMode || mode === 'file') && (
         <>
           <input
             ref={fileRef}
@@ -351,13 +359,13 @@ export function UploadField({
             onDragLeave={() => setDragOver(false)}
             onDrop={onDrop}
             className={cn(
-              'grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 rounded-xl p-2 transition-colors',
+              'grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 p-2 transition-colors',
               dragOver && 'ring-2 ring-leaf-400 bg-leaf-50/40'
             )}
           >
             {/* 已确认的图片 */}
             {value.map((u, i) => (
-              <div key={`done-${i}`} className="group relative aspect-square overflow-hidden rounded-lg">
+              <div key={`done-${i}`} className="group relative aspect-square overflow-hidden">
                 {kind === 'image' ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -389,7 +397,7 @@ export function UploadField({
             {uploading.map((item) => (
               <div
                 key={item.id}
-                className="group relative aspect-square overflow-hidden rounded-lg bg-leaf-50"
+                className="group relative aspect-square overflow-hidden bg-leaf-50"
               >
                 <img
                   src={item.localUrl}
@@ -471,7 +479,7 @@ export function UploadField({
                   if (e.dataTransfer.files.length > 0) void handleFiles(e.dataTransfer.files);
                 }}
                 className={cn(
-                  'flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed text-xs transition-colors',
+                  'flex aspect-square flex-col items-center justify-center gap-1 border-2 border-dashed text-xs transition-colors',
                   dragOver
                     ? 'border-leaf-500 bg-leaf-50/60'
                     : 'border-leaf-200 bg-leaf-50/30 hover:border-leaf-400 hover:bg-leaf-50/50',
@@ -501,7 +509,7 @@ export function UploadField({
       )}
 
       {/* 裁剪对话框 */}
-      {mode === 'url' && (
+      {!simpleMode && mode === 'url' && (
         <div className="space-y-2">
           <div className="flex gap-2">
             <input
@@ -539,7 +547,7 @@ export function UploadField({
       )}
 
       {/* 实况图上传 - 正方形网格 */}
-      {mode === 'live' && (
+      {!simpleMode && mode === 'live' && (
         <>
           <input
             ref={liveRef}
@@ -560,7 +568,7 @@ export function UploadField({
                 type="button"
                 disabled={busy}
                 onClick={() => liveRef.current?.click()}
-                className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-leaf-200 bg-leaf-50/30 text-xs transition-colors hover:border-leaf-400 hover:bg-leaf-50/50"
+                className="flex aspect-square flex-col items-center justify-center gap-1 border-2 border-dashed border-leaf-200 bg-leaf-50/30 text-xs transition-colors hover:border-leaf-400 hover:bg-leaf-50/50"
               >
                 <Icon name="plus" size={16} className="text-leaf-600" />
                 <span className="text-[10px] text-leaf-700/70">实况图</span>

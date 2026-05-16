@@ -96,7 +96,7 @@ type Category struct {
 	Kind        string    `gorm:"column:kind"`
 	Description string    `gorm:"column:description"`
 	Cover       string    `gorm:"column:cover"`
-	Icon        string    `gorm:"column:icon"`
+	Icons       string    `gorm:"column:icons"` // JSON 数组字符串
 	Members     int       `gorm:"column:members"`
 	OrderIdx    int       `gorm:"column:orderIdx"`
 	Enabled     bool      `gorm:"column:enabled"`

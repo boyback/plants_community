@@ -54,10 +54,10 @@ export default function NewAuctionPage() {
   const [err, setErr] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
-  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+  const [boards, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   useEffect(() => {
     api
-      .get<{ name: string; count: number }[]>('/api/market/categories')
+      .get<{ name: string; count: number }[]>('/api/market/boards')
       .then((list) => {
         const names = list.map((x) => x.name);
         const merged = Array.from(new Set([...names, ...DEFAULT_CATEGORIES]));
@@ -177,7 +177,7 @@ export default function NewAuctionPage() {
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
                   >
-                    {categories.map((c) => (
+                    {boards.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
                   </select>

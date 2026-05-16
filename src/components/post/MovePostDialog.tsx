@@ -17,7 +17,7 @@ interface MovePostDialogProps {
     name: string;
     icon: string;
   };
-  onConfirm: (categoryId?: string, genusId?: string, speciesId?: string) => void;
+  onConfirm: (boardId?: string, genusId?: string, speciesId?: string) => void;
   onCancel: () => void;
 }
 
@@ -25,7 +25,7 @@ interface MovePostDialogProps {
  * 移贴对话框 - 三级板块选择
  */
 export function MovePostDialog({ currentBoard, onConfirm, onCancel }: MovePostDialogProps) {
-  const [categories, setCategories] = useState<Board[]>([]);
+  const [boards, setCategories] = useState<Board[]>([]);
   const [genera, setGenera] = useState<Board[]>([]);
   const [species, setSpecies] = useState<Board[]>([]);
   
@@ -37,7 +37,7 @@ export function MovePostDialog({ currentBoard, onConfirm, onCancel }: MovePostDi
 
   // 加载科列表
   useEffect(() => {
-    fetch('/api/categories')
+    fetch('/api/boards')
       .then(r => r.json())
       .then(data => setCategories(data))
       .catch(() => null);
@@ -52,7 +52,7 @@ export function MovePostDialog({ currentBoard, onConfirm, onCancel }: MovePostDi
       setSpeciesSlug('');
       return;
     }
-    fetch(`/api/categories/${encodeURIComponent(categorySlug)}`)
+    fetch(`/api/boards/${encodeURIComponent(categorySlug)}`)
       .then(r => r.json())
       .then(data => setGenera(data.genera || []))
       .catch(() => setGenera([]));
@@ -65,7 +65,7 @@ export function MovePostDialog({ currentBoard, onConfirm, onCancel }: MovePostDi
       setSpeciesSlug('');
       return;
     }
-    fetch(`/api/genera/${encodeURIComponent(genusSlug)}?category=${encodeURIComponent(categorySlug)}`)
+    fetch(`/api/genera/${encodeURIComponent(genusSlug)}?board=${encodeURIComponent(categorySlug)}`)
       .then(r => r.json())
       .then(data => setSpecies(data.species || []))
       .catch(() => setSpecies([]));
@@ -77,7 +77,7 @@ export function MovePostDialog({ currentBoard, onConfirm, onCancel }: MovePostDi
       return;
     }
     
-    const selectedCategory = categories.find(c => c.slug === categorySlug);
+    const selectedCategory = boards.find(c => c.slug === categorySlug);
     const selectedGenus = genera.find(g => g.slug === genusSlug);
     const selectedSpecies = species.find(s => s.slug === speciesSlug);
     
@@ -96,13 +96,13 @@ export function MovePostDialog({ currentBoard, onConfirm, onCancel }: MovePostDi
           <button
             type="button"
             onClick={onCancel}
-            className="grid h-8 w-8 place-items-center rounded-lg text-ink-400 hover:bg-ink-100 hover:text-ink-600"
+            className="grid h-8 w-8 place-items-center rounded-none text-ink-400 hover:bg-ink-100 hover:text-ink-600"
           >
             <Icon name="close" size={16} />
           </button>
         </div>
 
-        <div className="mb-4 rounded-lg border border-leaf-100 bg-leaf-50/30 p-3">
+        <div className="mb-4 rounded-none border border-leaf-100 bg-leaf-50/30 p-3">
           <div className="text-xs text-leaf-700/70 mb-1">当前板块</div>
           <div className="flex items-center gap-2">
             <CategoryIcon icon={currentBoard.icon} name={currentBoard.name} />
@@ -125,7 +125,7 @@ export function MovePostDialog({ currentBoard, onConfirm, onCancel }: MovePostDi
               className="input"
             >
               <option value="">-- 请选择 --</option>
-              {categories.map((c) => (
+              {boards.map((c) => (
                 <option key={c.id} value={c.slug}>
                   {c.name}
                 </option>

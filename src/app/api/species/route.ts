@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   const limit = Math.min(500, Math.max(1, Number(url.searchParams.get('limit') || 200)));
 
   const where: Record<string, unknown> = {};
-  if (family) where.genus = { category: { slug: family } };
+  if (family) where.genus = { board: { slug: family } };
   if (genus) where.genus = { ...(where.genus as object), slug: genus };
 
   const list = await prisma.species.findMany({
@@ -26,7 +26,7 @@ export async function GET(req: Request) {
       slug: true,
       name: true,
       latinName: true,
-      genus: { select: { slug: true, category: { select: { slug: true } } } },
+      genus: { select: { slug: true, board: { select: { slug: true } } } },
     },
   });
 
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
       slug: s.slug,
       name: s.name,
       latinName: s.latinName,
-      familySlug: s.genus.category.slug,
+      familySlug: s.genus.board.slug,
       genusSlug: s.genus.slug,
     })),
   );

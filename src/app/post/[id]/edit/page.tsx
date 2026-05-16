@@ -26,7 +26,7 @@ export default async function PostEditPage({ params }: { params: { id: string } 
       tags: true,
       authorId: true,
       deleted: true,
-      category: { select: { slug: true } },
+      board: { select: { slug: true } },
       genus: { select: { slug: true } },
       species: { select: { slug: true } },
     },
@@ -72,7 +72,7 @@ export default async function PostEditPage({ params }: { params: { id: string } 
           images: parseJsonArray(post.images),
           videoUrl: post.videoUrl ?? '',
           tags: parseJsonArray(post.tags),
-          categorySlug: post.category?.slug ?? '',
+          categorySlug: post.board?.slug ?? '',
           genusSlug: post.genus?.slug ?? '',
           speciesSlug: post.species?.slug ?? '',
         }}

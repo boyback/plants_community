@@ -67,13 +67,13 @@ export async function GET(req: Request) {
               { latinName: { contains: q } },
             ],
           },
-          include: { genus: { include: { category: true } } },
+          include: { genus: { include: { board: true } } },
           orderBy: [{ posts: { _count: 'desc' } }, { name: 'asc' }],
           take: kind === 'species' ? 30 : PER,
         })
       : Promise.resolve([]),
     wantBoards
-      ? prisma.category.findMany({
+      ? prisma.board.findMany({
           where: {
             OR: [
               { name: { contains: q } },
@@ -128,7 +128,7 @@ export async function GET(req: Request) {
         name: s.name,
         latinName: s.latinName,
         cover: s.cover,
-        url: `/board/${s.genus.category.slug}/${s.genus.slug}/${s.slug}`,
+        url: `/board/${s.genus.board.slug}/${s.genus.slug}/${s.slug}`,
       })),
       boards: boards.map((b) => ({
         id: b.id,

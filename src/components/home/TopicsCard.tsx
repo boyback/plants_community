@@ -29,7 +29,7 @@ export function TopicsCard() {
           <li key={item.tag}>
             <Link
               href={`/topic/${encodeURIComponent(item.tag)}`}
-              className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-leaf-50"
+              className="flex items-center justify-between rounded-none px-2 py-1.5 text-sm hover:bg-leaf-50"
             >
               <span className="flex items-center gap-2">
                 <span

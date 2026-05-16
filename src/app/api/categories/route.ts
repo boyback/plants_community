@@ -11,7 +11,7 @@ export const GET = handler(async (req) => {
 
   if (withGenera) {
     // mega 菜单用:同时返回每科下的 Genus 简表
-    const list = await prisma.category.findMany({
+    const list = await prisma.board.findMany({
       where: {
         enabled: true,
         ...(kind ? { kind: kind as 'family' | 'discussion' | 'market' } : {}),
@@ -22,7 +22,7 @@ export const GET = handler(async (req) => {
         slug: true,
         name: true,
         latinName: true,
-        icon: true,
+        icons: true,
         kind: true,
         _count: { select: { posts: true, genera: true } },
         genera: {
@@ -37,10 +37,13 @@ export const GET = handler(async (req) => {
         },
       },
     });
-    return list;
+    return list.map((c) => ({
+      ...c,
+      icon: JSON.parse(c.icons || '[]')[0] || '',
+    }));
   }
 
-  const list = await prisma.category.findMany({
+  const list = await prisma.board.findMany({
     where: {
       enabled: true,
       ...(kind ? { kind: kind as 'family' | 'discussion' | 'market' } : {}),

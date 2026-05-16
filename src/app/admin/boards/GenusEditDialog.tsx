@@ -5,7 +5,7 @@ import { api, ApiError } from '@/lib/client-api';
 
 interface Genus {
   id: string;
-  categoryId?: string;
+  boardId?: string;
   slug: string;
   name: string;
   latinName: string | null;
@@ -15,12 +15,12 @@ interface Genus {
 }
 
 export function GenusEditDialog({
-  categoryId,
+  boardId,
   genus,
   onClose,
   onSaved,
 }: {
-  categoryId: string;
+  boardId: string;
   genus: Genus | null;
   onClose: () => void;
   onSaved: () => void;
@@ -40,7 +40,7 @@ export function GenusEditDialog({
     setBusy(true);
     try {
       const body = {
-        categoryId,
+        boardId,
         slug: slug.trim(),
         name: name.trim(),
         latinName: latinName.trim() || null,

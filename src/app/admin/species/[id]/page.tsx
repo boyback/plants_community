@@ -27,7 +27,7 @@ export default async function EditSpeciesPage({
       id: true,
       name: true,
       slug: true,
-      category: { select: { name: true } },
+      board: { select: { name: true } },
     },
   });
 
@@ -68,7 +68,7 @@ export default async function EditSpeciesPage({
         }
         genera={allGenera.map((g) => ({
           id: g.id,
-          label: `${g.category.name} / ${g.name}(${g.slug})`,
+          label: `${g.board.name} / ${g.name}(${g.slug})`,
         }))}
       />
     </div>

@@ -17,17 +17,17 @@ export function Logo({ className, compact = false }: { className?: string; compa
     : `linear-gradient(135deg, rgb(var(--leaf-400)), rgb(var(--leaf-700)))`;
 
   return (
-    <Link href="/" className={cn('inline-flex items-center gap-2 select-none', className)}>
+    <Link href="/" className={cn('inline-flex items-center gap-2 select-none group', className)}>
       <span
-        className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm transition-colors"
+        className="relative inline-flex h-8 w-8 items-center justify-center rounded-lg text-white shadow-sm transition-all duration-300 group-hover:scale-105"
         style={{ background: gradient }}
       >
-        <span className="text-lg" aria-hidden>
+        <span className="text-base" aria-hidden>
           {meta.logoEmoji}
         </span>
         {primary && (
           <span
-            className="absolute -right-1 -top-1 text-sm drop-shadow"
+            className="absolute -right-0.5 -top-0.5 text-xs drop-shadow"
             aria-hidden
             title={primary.name}
           >
@@ -37,8 +37,8 @@ export function Logo({ className, compact = false }: { className?: string; compa
       </span>
       {!compact && (
         <span className="flex flex-col leading-tight">
-          <span className="text-base font-bold text-leaf-800">肉友社</span>
-          <span className="text-[10px] tracking-wider text-leaf-600/80">RouYou Community</span>
+          <span className="text-sm font-bold text-leaf-800 transition-colors group-hover:text-leaf-900">肉友社</span>
+          <span className="text-[9px] tracking-wider text-leaf-600/80">RouYou Community</span>
         </span>
       )}
     </Link>

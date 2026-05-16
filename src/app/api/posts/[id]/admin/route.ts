@@ -24,7 +24,7 @@ async function checkPermission(userId: string, postId: string) {
     select: { 
       id: true, 
       authorId: true, 
-      categoryId: true, 
+      boardId: true, 
       genusId: true,
       speciesId: true,
       boardId: true,
@@ -40,7 +40,7 @@ async function checkPermission(userId: string, postId: string) {
   // TODO: 板块管理员需要验证板块归属
   // 当前版本：moderator/admin 对所有板块有权限
   // 未来版本：需要在 User 表添加 managedBoards 关系，验证用户是否管理该板块
-  // const isBoardModerator = isModerator && await checkUserManagesBoard(userId, post.categoryId || post.genusId || post.speciesId);
+  // const isBoardModerator = isModerator && await checkUserManagesBoard(userId, post.boardId || post.genusId || post.speciesId);
 
   return { user, post, isAuthor, isSuperAdmin, isModerator, isAdmin };
 }
@@ -139,7 +139,7 @@ export const POST = handler(async (req) => {
       return { ok: true, action: 'unlocked' };
     }
     case 'move': {
-      const targetCategoryId = body.categoryId as string | undefined;
+      const targetCategoryId = body.boardId as string | undefined;
       const targetGenusId = body.genusId as string | undefined;
       const targetSpeciesId = body.speciesId as string | undefined;
       
@@ -153,15 +153,15 @@ export const POST = handler(async (req) => {
       if (targetSpeciesId) {
         updateData.speciesId = targetSpeciesId;
         updateData.genusId = null;
-        updateData.categoryId = null;
+        updateData.boardId = null;
         updateData.boardId = null;
       } else if (targetGenusId) {
         updateData.genusId = targetGenusId;
         updateData.speciesId = null;
-        updateData.categoryId = null;
+        updateData.boardId = null;
         updateData.boardId = null;
       } else if (targetCategoryId) {
-        updateData.categoryId = targetCategoryId;
+        updateData.boardId = targetCategoryId;
         updateData.genusId = null;
         updateData.speciesId = null;
         updateData.boardId = null;

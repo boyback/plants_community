@@ -91,29 +91,29 @@ export function ConfirmDialog({
         <>
           <button
             type="button"
-            onClick={onClose}
-            className="flex-1 rounded-md px-3 py-1.5 text-sm text-ink-600 hover:bg-ink-50 transition-colors"
-          >
-            {cancelText}
-          </button>
-          <button
-            type="button"
             onClick={() => {
               onConfirm();
               onClose();
             }}
             className={
               danger
-                ? 'flex-1 rounded-md px-3 py-1.5 text-sm text-rose-600 hover:bg-rose-50 transition-colors'
-                : 'flex-1 rounded-md bg-leaf-600 px-3 py-1.5 text-sm text-white hover:bg-leaf-700 transition-colors'
+                ? 'flex-1 rounded-md bg-rose-500 px-4 py-2 text-sm font-medium text-white hover:bg-rose-600 transition-colors'
+                : 'flex-1 rounded-md bg-leaf-600 px-4 py-2 text-sm font-medium text-white hover:bg-leaf-700 transition-colors'
             }
           >
             {confirmText}
           </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-md border border-ink-200 bg-white px-4 py-2 text-sm font-medium text-ink-700 hover:bg-ink-50 transition-colors"
+          >
+            {cancelText}
+          </button>
         </>
       }
     >
-      <p>{message}</p>
+      <p className="whitespace-pre-line">{message}</p>
     </Dialog>
   );
 }

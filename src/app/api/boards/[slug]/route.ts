@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export const GET = handler(async (req) => {
   const slug = new URL(req.url).pathname.split('/').filter(Boolean).pop()!;
-  const c = await prisma.category.findUnique({
+  const c = await prisma.board.findUnique({
     where: { slug },
     include: { _count: { select: { posts: true, genera: true } } },
   });

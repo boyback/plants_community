@@ -27,7 +27,7 @@ interface GenusLite {
   _count: { posts: number; species: number };
 }
 
-interface CategoryFull {
+interface BoardFull {
   id: string;
   slug: string;
   name: string;
@@ -51,7 +51,7 @@ export function BoardsDrawer({
   onClose: () => void;
   mode?: 'anchor' | 'fullscreen';
 }) {
-  const [data, setData] = useState<CategoryFull[] | null>(null);
+  const [data, setData] = useState<BoardFull[] | null>(null);
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -59,7 +59,7 @@ export function BoardsDrawer({
   useEffect(() => {
     if (!open || data !== null) return;
     api
-      .get<CategoryFull[]>('/api/categories?kind=family&withGenera=1')
+      .get<BoardFull[]>('/api/boards?kind=family&withGenera=1')
       .then((list) => {
         setData(list || []);
         if (list && list.length > 0) setActiveCatId(list[0].id);
@@ -164,8 +164,8 @@ function DrawerInner({
   onClose,
   showHeader,
 }: {
-  data: CategoryFull[] | null;
-  activeCat: CategoryFull | null;
+  data: BoardFull[] | null;
+  activeCat: BoardFull | null;
   activeCatId: string | null;
   setActiveCatId: (id: string) => void;
   onClose: () => void;
@@ -179,7 +179,7 @@ function DrawerInner({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-leaf-700/60 hover:bg-leaf-50 hover:text-leaf-700"
+            className="rounded-none p-1.5 text-leaf-700/60 hover:bg-leaf-50 hover:text-leaf-700"
             aria-label="关闭"
           >
             ✕
@@ -249,7 +249,7 @@ function DrawerInner({
                         key={g.id}
                         href={`/board/${activeCat.slug}/${g.slug}`}
                         onClick={onClose}
-                        className="group rounded-lg border border-leaf-100 px-3 py-2.5 transition-colors hover:border-leaf-300 hover:bg-leaf-50"
+                        className="group rounded-none border border-leaf-100 px-3 py-2.5 transition-colors hover:border-leaf-300 hover:bg-leaf-50"
                       >
                         <div className="truncate text-sm font-medium text-ink-800 group-hover:text-leaf-700">
                           {g.name}
