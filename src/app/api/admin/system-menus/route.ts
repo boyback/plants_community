@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '无权限' }, { status: 403 });
     }
 
-    const { slug, name, description, icon, path, orderIdx } = await request.json();
+    const { slug, name, description, icon, path, location, orderIdx } = await request.json();
 
     if (!slug || !name || !path) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
@@ -54,6 +54,7 @@ export async function POST(request: Request) {
         description: description || null,
         icon: icon || '',
         path,
+        location: location || 'header',
         orderIdx: orderIdx ?? 0,
         enabled: true,
       },

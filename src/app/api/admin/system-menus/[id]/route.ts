@@ -51,6 +51,7 @@ export async function PUT(request: Request, { params }: Params) {
         description: body.description,
         icon: body.icon,
         path: body.path,
+        location: body.location,
         orderIdx: body.orderIdx,
         enabled: body.enabled,
       },
