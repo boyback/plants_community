@@ -289,17 +289,18 @@ model Board {
 
 // ============== 系统菜单 ==============
 
-/// 系统菜单项（晒图广场、交易市场等）
+/// 系统菜单项（晒图广场、交易中心、摄影大赛等）
 model SystemMenu {
-  id        String   @id @default(cuid())
-  slug      String   @unique
-  name      String
-  icon      String   @default("") // 单个图标，可以是 emoji 或图片 URL
-  path      String // 菜单链接路径
-  orderIdx  Int      @default(0)
-  enabled   Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?  @db.Text // 描述
+  icon        String   @default("") // 图标，可以是 emoji 或图片 URL
+  path        String // 菜单链接路径
+  orderIdx    Int      @default(0)
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([orderIdx])
   @@map("system_menus")

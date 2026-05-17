@@ -88,15 +88,16 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
             {/* 社区导航 - 桌面端显示 */}
             <nav className="hidden lg:flex items-center gap-1">
               <HeaderLink href="/" icon="home" image="https://cdn.plantcommunity.cn/cmoz85oi8000ay601io2nm9iv/202605/mp847ljxfg8euq.png">首页</HeaderLink>
-              {featureFlags['feature.market.enabled'] && (
-                <HeaderLink href="/market" icon="shop" image="https://cdn.plantcommunity.cn/cmoz85oi8000ay601io2nm9iv/202605/mp83lwfvv697m6.png">交易中心</HeaderLink>
-              )}
-              {featureFlags['feature.shaitu.enabled'] && (
-                <HeaderLink href="/shaitu" icon="image" image="https://cdn.plantcommunity.cn/cmoz85oi8000ay601io2nm9iv/202605/mp83ned8nzzm7w.png">晒图广场</HeaderLink>
-              )}
-              {featureFlags['feature.contests.enabled'] && (
-                <HeaderLink href="/contests" icon="trophy">摄影大赛</HeaderLink>
-              )}
+              {featureFlags.systemMenus.map((menu) => (
+                <HeaderLink
+                  key={menu.id}
+                  href={menu.path}
+                  icon="star"
+                  image={menu.icon.startsWith('http') ? menu.icon : undefined}
+                >
+                  {menu.name}
+                </HeaderLink>
+              ))}
             </nav>
           </div>
 

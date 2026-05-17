@@ -50,6 +50,7 @@ const NAV: { section: string; items: { href: string; label: string; minRole: Rol
     items: [
       { href: '/admin/announcements', label: '📣 站内公告', minRole: 'admin' },
       { href: '/admin/banners', label: '🖼️ 首页 Banner', minRole: 'admin' },
+      { href: '/admin/system-menus', label: '🔗 系统菜单', minRole: 'admin' },
       { href: '/admin/email-broadcast', label: '📧 邮件群发', minRole: 'admin' },
       { href: '/admin/themes', label: '🎨 主题调度', minRole: 'admin' },
       { href: '/admin/tasks', label: '🎯 任务配置', minRole: 'admin' },
