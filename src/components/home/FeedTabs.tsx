@@ -1105,7 +1105,7 @@ function TabHeader({
   setTab: (t: TabKey) => void;
   mobileCols: 1 | 2;
   onMobileColsChange: (n: 1 | 2) => void;
-  desktopCols: 3 | 4;
+  desktopCols: 3;
   onDesktopColsChange: (n: 3 | 4) => void;
   layoutMode: 'grid' | 'list';
   onLayoutModeChange: (mode: 'grid' | 'list') => void;
@@ -1153,29 +1153,16 @@ function TabHeader({
         </button>
         <button
           type="button"
-          onClick={() => { onLayoutModeChange('grid'); onDesktopColsChange(3); }}
+          onClick={() => onLayoutModeChange('grid')}
           title="3列瀑布流"
           className={cn(
             'grid h-7 w-8 place-items-center rounded transition-colors',
-            layoutMode === 'grid' && desktopCols === 3
+            layoutMode === 'grid'
               ? 'bg-white text-leaf-700 shadow-sm'
               : 'text-ink-500 hover:text-leaf-700'
           )}
         >
           <ColsIcon n={3} />
-        </button>
-        <button
-          type="button"
-          onClick={() => { onLayoutModeChange('grid'); onDesktopColsChange(4); }}
-          title="4列瀑布流"
-          className={cn(
-            'grid h-7 w-8 place-items-center rounded transition-colors',
-            layoutMode === 'grid' && desktopCols === 4
-              ? 'bg-white text-leaf-700 shadow-sm'
-              : 'text-ink-500 hover:text-leaf-700'
-          )}
-        >
-          <ColsIcon n={4} />
         </button>
       </div>
     </div>

@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
-    const menus = await prisma.systemMenu.findMany({
+    const rawMenus = await prisma.systemMenu.findMany({
       where: { enabled: true },
       orderBy: { orderIdx: 'asc' },
       select: {
@@ -18,7 +18,22 @@ export async function GET() {
         description: true,
         icon: true,
         path: true,
+        location: true,
       },
+    });
+
+    const menus = rawMenus.map((m) => {
+      let icons: string[] = [];
+      try {
+        const parsed = JSON.parse(m.icon);
+        icons = Array.isArray(parsed) ? parsed : m.icon ? [m.icon] : [];
+      } catch {
+        icons = m.icon ? [m.icon] : [];
+      }
+      return {
+        ...m,
+        icon: icons[0] || '',
+      };
     });
 
     return Response.json(menus);

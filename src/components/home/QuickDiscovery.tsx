@@ -66,15 +66,17 @@ export function QuickDiscovery({
         {hasSpecies && (
           <Section title="🌱 热门品种" onRefresh={refreshSpecies} busy={speciesBusy}>
             <div className="flex flex-wrap gap-1.5">
-              {species.map((s) => (
-                <Link
-                  key={s.id}
-                  href={s.url}
-                  className="inline-flex items-center rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-700 transition-colors hover:bg-leaf-100"
-                >
-                  {s.name}
-                </Link>
-              ))}
+              {species
+                .filter((s) => s.url)
+                .map((s) => (
+                  <Link
+                    key={s.id}
+                    href={s.url}
+                    className="inline-flex items-center rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-700 transition-colors hover:bg-leaf-100"
+                  >
+                    {s.name}
+                  </Link>
+                ))}
             </div>
           </Section>
         )}

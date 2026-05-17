@@ -103,18 +103,22 @@ export default async function AdminSpeciesPage({
                   </div>
                 </td>
                 <td className="px-3 py-2">
-                  <Link
-                    href={`/board/${s.genus.board.slug}/${s.genus.slug}/${s.slug}`}
-                    target="_blank"
-                    className="font-medium text-ink-800 hover:underline"
-                  >
-                    {s.name}
-                  </Link>
+                  {s.genus.board ? (
+                    <Link
+                      href={`/board/${s.genus.board.slug}/${s.genus.slug}/${s.slug}`}
+                      target="_blank"
+                      className="font-medium text-ink-800 hover:underline"
+                    >
+                      {s.name}
+                    </Link>
+                  ) : (
+                    <span className="font-medium text-ink-800">{s.name}</span>
+                  )}
                 </td>
                 <td className="px-3 py-2 italic text-ink-600">{s.latinName}</td>
                 <td className="px-3 py-2 text-[11px]">
                   <div>{s.genus.name}</div>
-                  <div className="text-ink-500">{s.genus.board.name}</div>
+                  <div className="text-ink-500">{s.genus.board?.name ?? '未关联板块'}</div>
                 </td>
                 <td className="px-3 py-2 text-right text-amber-600">
                   {'★'.repeat(s.difficulty)}

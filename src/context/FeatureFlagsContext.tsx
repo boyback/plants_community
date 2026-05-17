@@ -10,6 +10,7 @@ interface SystemMenu {
   description: string | null;
   icon: string;
   path: string;
+  location: 'header' | 'sidebar';
 }
 
 interface FeatureFlags {

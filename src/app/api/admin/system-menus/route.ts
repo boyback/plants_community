@@ -35,7 +35,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '无权限' }, { status: 403 });
     }
 
-    const { slug, name, description, icon, path, location, orderIdx } = await request.json();
+    const body = await request.json();
+    const { slug, name, description, path, location, orderIdx } = body;
+
+    let icons: string[] = [];
+    if (Array.isArray(body.icons)) {
+      icons = body.icons;
+    } else if (body.icon) {
+      icons = [body.icon];
+    }
 
     if (!slug || !name || !path) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
@@ -52,7 +60,7 @@ export async function POST(request: Request) {
         slug,
         name,
         description: description || null,
-        icon: icon || '',
+        icon: JSON.stringify(icons),
         path,
         location: location || 'header',
         orderIdx: orderIdx ?? 0,

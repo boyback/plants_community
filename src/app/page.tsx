@@ -4,8 +4,7 @@ import { SignInCard } from '@/components/home/SignInCard';
 import { FeedTabs } from '@/components/home/FeedTabs';
 import { TopicsCard } from '@/components/home/TopicsCard';
 import { RecommendUsers } from '@/components/home/RecommendUsers';
-import { AppDownloadCard } from '@/components/home/AppDownloadCard';
-import { QuickDiscovery } from '@/components/home/QuickDiscovery';
+import { SystemMenuShortcuts } from '@/components/home/SystemMenuShortcuts';
 import { loadQuickDiscoveryData } from '@/lib/quick-discovery';
 import { prisma } from '@/lib/db';
 import { postInclude } from '@/lib/post-include';
@@ -17,7 +16,7 @@ import { jsonLdScript, websiteJsonLd, organizationJsonLd } from '@/lib/jsonld';
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const [postsRaw, bannersRaw, recommendUsersRaw, discovery] = await Promise.all([
+  const [postsRaw, bannersRaw, recommendUsersRaw] = await Promise.all([
     prisma.post.findMany({
       where: {
         deleted: false,
@@ -65,14 +64,14 @@ export default async function HomePage() {
         </div>
 
         <div className="space-y-5 xl:sticky xl:top-[60px] xl:self-start xl:h-[calc(100vh-72px)] xl:overflow-y-auto">
-          {/* 1. 签到 + 月历(整合) */}
+          {/* 1. 快捷入口 */}
+          <SystemMenuShortcuts />
+          {/* 2. 签到 + 月历(整合) */}
           <SignInCard />
-          {/* 2. 话题 */}
+          {/* 3. 话题 */}
           <TopicsCard />
-          {/* 3. 推荐肉友 */}
+          {/* 4. 推荐肉友 */}
           <RecommendUsers users={recommendUsers} />
-          {/* 4. APP 下载 */}
-          <AppDownloadCard />
           {/* 法律入口已挪到全站 Footer,这里不再重复 */}
         </div>
       </div>

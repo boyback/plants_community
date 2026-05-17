@@ -43,13 +43,20 @@ export async function PUT(request: Request, { params }: Params) {
     const { id } = await params;
     const body = await request.json();
 
+    let iconValue: string | undefined;
+    if (Array.isArray(body.icons)) {
+      iconValue = JSON.stringify(body.icons);
+    } else if (typeof body.icon === 'string') {
+      iconValue = body.icon;
+    }
+
     const menu = await prisma.systemMenu.update({
       where: { id },
       data: {
         slug: body.slug,
         name: body.name,
         description: body.description,
-        icon: body.icon,
+        ...(iconValue !== undefined && { icon: iconValue }),
         path: body.path,
         location: body.location,
         orderIdx: body.orderIdx,

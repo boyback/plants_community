@@ -88,16 +88,18 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
             {/* 社区导航 - 桌面端显示 */}
             <nav className="hidden lg:flex items-center gap-1">
               <HeaderLink href="/" icon="home" image="https://cdn.plantcommunity.cn/cmoz85oi8000ay601io2nm9iv/202605/mp847ljxfg8euq.png">首页</HeaderLink>
-              {featureFlags.systemMenus.map((menu) => (
-                <HeaderLink
-                  key={menu.id}
-                  href={menu.path}
-                  icon="star"
-                  image={menu.icon.startsWith('http') ? menu.icon : undefined}
-                >
-                  {menu.name}
-                </HeaderLink>
-              ))}
+              {featureFlags.systemMenus
+                .filter((menu) => menu.path)
+                .map((menu) => (
+                  <HeaderLink
+                    key={menu.id}
+                    href={menu.path!}
+                    icon="star"
+                    image={menu.icon.startsWith('http') ? menu.icon : undefined}
+                  >
+                    {menu.name}
+                  </HeaderLink>
+                ))}
             </nav>
           </div>
 

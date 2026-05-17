@@ -5,6 +5,23 @@ import { api, ApiError } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
 import { Toast, useToast, showToast } from '@/components/ui/Toast';
 import { CropImageDialog } from '@/components/upload/CropImageDialog';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  horizontalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface SystemMenu {
   id: string;
@@ -17,6 +34,15 @@ interface SystemMenu {
   orderIdx: number;
   enabled: boolean;
   createdAt: string;
+}
+
+function parseIcons(iconField: string): string[] {
+  try {
+    const parsed = JSON.parse(iconField);
+    return Array.isArray(parsed) ? parsed : iconField ? [iconField] : [];
+  } catch {
+    return iconField ? [iconField] : [];
+  }
 }
 
 export function SystemMenusManager() {
@@ -52,7 +78,7 @@ export function SystemMenusManager() {
     }
   };
 
-  const handleSave = async (menu: Omit<SystemMenu, 'id' | 'createdAt'> & { id?: string }) => {
+  const handleSave = async (menu: Omit<SystemMenu, 'id' | 'createdAt'> & { id?: string; icons?: string[] }) => {
     setSaving(true);
     try {
       if (menu.id) {
@@ -131,12 +157,15 @@ export function SystemMenusManager() {
               {menus.map((menu) => (
                 <tr key={menu.id} className="border-t border-ink-100 hover:bg-ink-50/50">
                   <td className="px-4 py-3">
-                    {menu.icon ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={menu.icon} alt="" className="w-10 h-10 rounded-none object-cover border border-ink-100" />
-                    ) : (
-                      <span className="text-ink-300 text-sm">未设置</span>
-                    )}
+                    {(() => {
+                      const firstIcon = parseIcons(menu.icon)[0];
+                      return firstIcon ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={firstIcon} alt="" className="w-10 h-10 rounded-none object-cover border border-ink-100" />
+                      ) : (
+                        <span className="text-ink-300 text-sm">未设置</span>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-3">
                     <div className="font-medium text-ink-800">{menu.name}</div>
@@ -219,21 +248,62 @@ export function SystemMenusManager() {
   );
 }
 
+/* 可拖拽图标组件 */
+function SortableIcon({ id, url, onRemove }: { id: string; url: string; onRemove: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <div ref={setNodeRef} style={style} className="relative group">
+      <div
+        {...attributes}
+        {...listeners}
+        className="relative flex h-20 w-20 rounded-none border-2 border-ink-200 bg-ink-50 cursor-move hover:border-leaf-500 transition-colors"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={url} alt="" className="h-full w-full rounded-none object-cover" />
+        <div className="absolute inset-0 bg-ink-900/0 group-hover:bg-ink-900/10 rounded-none transition-colors" />
+      </div>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-rose-500 text-[10px] text-white hover:bg-rose-600 opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
 interface MenuEditDialogProps {
   menu: SystemMenu | null;
   onClose: () => void;
-  onSave: (menu: Omit<SystemMenu, 'id' | 'createdAt'> & { id?: string }) => void;
+  onSave: (menu: Omit<SystemMenu, 'id' | 'createdAt'> & { id?: string; icons?: string[] }) => void;
   saving: boolean;
 }
 
 function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) {
-  const [slug, setSlug] = useState(menu?.slug || '');
-  const [name, setName] = useState(menu?.name || '');
-  const [description, setDescription] = useState(menu?.description || '');
-  const [icon, setIcon] = useState(menu?.icon || '');
-  const [path, setPath] = useState(menu?.path || '');
-  const [location, setLocation] = useState<'header' | 'sidebar'>(menu?.location || 'header');
-  const [orderIdx, setOrderIdx] = useState(menu?.orderIdx ?? 99);
+  const [slug, setSlug] = useState('');
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [icons, setIcons] = useState<string[]>([]);
+  const [path, setPath] = useState('');
+  const [location, setLocation] = useState<'header' | 'sidebar'>('header');
+  const [orderIdx, setOrderIdx] = useState(99);
+
+  // 字段级校验错误
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // props 变化时同步状态（打开/切换菜单时）
+  useEffect(() => {
+    setSlug(menu?.slug || '');
+    setName(menu?.name || '');
+    setDescription(menu?.description || '');
+    setIcons(menu ? parseIcons(menu.icon) : []);
+    setPath(menu?.path || '');
+    setLocation((menu?.location as 'header' | 'sidebar') || 'header');
+    setOrderIdx(menu?.orderIdx ?? 99);
+    setErrors({});
+  }, [menu]);
 
   // 上传相关状态
   const [uploading, setUploading] = useState(false);
@@ -241,6 +311,11 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
   const [cropEnabled, setCropEnabled] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const uploadIcon = async (file: File) => {
     setUploading(true);
@@ -255,7 +330,8 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
         if (cropEnabled) {
           setCropSrc(url);
         } else {
-          setIcon(url);
+          setIcons((prev) => [...prev, url]);
+          setErrors((prev) => { const n = { ...prev }; delete n.icons; return n; });
         }
       }
     } catch {
@@ -270,41 +346,55 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
     e.stopPropagation();
     setDragOver(false);
     const files = Array.from(e.dataTransfer.files);
-    const imageFile = files.find(f => f.type.startsWith('image/'));
-    if (imageFile) {
-      void uploadIcon(imageFile);
-    }
+    files.forEach((file) => {
+      if (file.type.startsWith('image/')) void uploadIcon(file);
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const imageFile = files.find(f => f.type.startsWith('image/'));
-    if (imageFile) {
-      void uploadIcon(imageFile);
-    }
+    files.forEach((file) => {
+      if (file.type.startsWith('image/')) void uploadIcon(file);
+    });
     e.target.value = '';
   };
 
-  const handleRemoveIcon = () => {
-    setIcon('');
+  const handleRemoveIcon = (index: number) => {
+    setIcons((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setIcons((items) => {
+        const oldIndex = items.indexOf(active.id as string);
+        const newIndex = items.indexOf(over.id as string);
+        if (oldIndex === -1 || newIndex === -1) return items;
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
+  const validate = (): boolean => {
+    const next: Record<string, string> = {};
+    if (!slug.trim()) next.slug = 'Slug 必填';
+    if (!name.trim()) next.name = '名称必填';
+    if (!path.trim()) next.path = '路径必填';
+    if (icons.length === 0 && !menu) next.icons = '请上传图标';
+    setErrors(next);
+    return Object.keys(next).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!slug || !name || !path) {
-      alert('请填写必填项');
-      return;
-    }
-    if (!icon && !menu) {
-      alert('请上传图标');
-      return;
-    }
+    if (!validate()) return;
     onSave({
       id: menu?.id,
       slug,
       name,
       description: description || null,
-      icon,
+      icon: icons[0] || '',
+      icons,
       path,
       location,
       orderIdx,
@@ -316,6 +406,7 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
   const presets = [
     { name: '晒图广场', slug: 'shaitu', path: '/shaitu', description: '用户晒图分享', location: 'header' as const },
     { name: '交易中心', slug: 'market', path: '/market', description: '二手交易市场', location: 'header' as const },
+    { name: '品种图鉴', slug: 'plants', path: '/plants', description: '多肉品种图鉴', location: 'header' as const },
     { name: '摄影大赛', slug: 'contests', path: '/contests', description: '摄影比赛活动', location: 'header' as const },
     { name: '养殖交流', slug: 'forum', path: '/forum', description: '养殖经验交流', location: 'header' as const },
     { name: '新手村', slug: 'beginner', path: '/beginner', description: '新手入门指导', location: 'sidebar' as const },
@@ -327,7 +418,7 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
     setDescription(preset.description);
     setPath(preset.path);
     setLocation(preset.location);
-    setIcon('');
+    setIcons([]);
   };
 
   return (
@@ -368,13 +459,23 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
             <input
               type="text"
               value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              className="w-full rounded-none border border-ink-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-leaf-500"
+              onChange={(e) => {
+                setSlug(e.target.value);
+                if (errors.slug) setErrors((prev) => { const n = { ...prev }; delete n.slug; return n; });
+              }}
+              className={cn(
+                'w-full rounded-none border px-3 py-2 text-sm focus:outline-none focus:ring-2',
+                errors.slug
+                  ? 'border-rose-400 focus:ring-rose-200'
+                  : 'border-ink-200 focus:ring-leaf-500'
+              )}
               placeholder="shaitu"
-              disabled={!!menu}
-              required
             />
-            <p className="mt-1 text-xs text-ink-500">唯一标识，用于内部区分，英文/数字/连字符</p>
+            {errors.slug ? (
+              <p className="mt-1 text-xs text-rose-500">{errors.slug}</p>
+            ) : (
+              <p className="mt-1 text-xs text-ink-500">唯一标识，用于内部区分，英文/数字/连字符</p>
+            )}
           </div>
 
           {/* 名称 */}
@@ -385,11 +486,19 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-none border border-ink-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-leaf-500"
+              onChange={(e) => {
+                setName(e.target.value);
+                if (errors.name) setErrors((prev) => { const n = { ...prev }; delete n.name; return n; });
+              }}
+              className={cn(
+                'w-full rounded-none border px-3 py-2 text-sm focus:outline-none focus:ring-2',
+                errors.name
+                  ? 'border-rose-400 focus:ring-rose-200'
+                  : 'border-ink-200 focus:ring-leaf-500'
+              )}
               placeholder="晒图广场"
-              required
             />
+            {errors.name && <p className="mt-1 text-xs text-rose-500">{errors.name}</p>}
           </div>
 
           {/* 描述 */}
@@ -404,68 +513,59 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
             />
           </div>
 
-          {/* 图标上传 */}
+          {/* 图标上传 — 多图标 + 拖拽排序 */}
           <div>
             <label className="block text-sm font-medium text-ink-700 mb-1">
               图标 <span className="text-rose-500">*</span>
+              <span className="text-ink-400 font-normal ml-1">（可上传多个，拖拽排序，前台显示第一个）</span>
             </label>
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
+              multiple
               className="hidden"
               onChange={handleFileChange}
             />
             <div className="space-y-2">
-              {/* 图标预览/上传区域 */}
-              <div
-                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver(true); }}
-                onDragLeave={(e) => { e.stopPropagation(); setDragOver(false); }}
-                onDrop={handleDrop}
-                className={cn(
-                  'relative flex items-center justify-center rounded-none border-2 border-dashed transition-colors overflow-hidden',
-                  dragOver ? 'border-leaf-500 bg-leaf-50' : 'border-ink-200 bg-ink-50',
-                  icon ? 'w-full h-20' : 'w-full h-24'
+              <div className="flex flex-wrap gap-2">
+                {icons.length > 0 && (
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={icons} strategy={horizontalListSortingStrategy}>
+                      {icons.map((url, index) => (
+                        <SortableIcon
+                          key={url}
+                          id={url}
+                          url={url}
+                          onRemove={() => handleRemoveIcon(index)}
+                        />
+                      ))}
+                    </SortableContext>
+                  </DndContext>
                 )}
-              >
-                {uploading ? (
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="h-5 w-5 border-2 border-leaf-500 border-t-transparent rounded-full animate-spin" />
-                    <span className="mt-2 text-xs text-leaf-600">上传中...</span>
-                  </div>
-                ) : icon ? (
-                  <div className="relative group w-full h-full">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={icon} alt="" className="w-full h-full object-contain" />
-                    <div className="absolute inset-0 bg-ink-900/0 group-hover:bg-ink-900/40 transition-colors flex items-center justify-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="opacity-0 group-hover:opacity-100 rounded bg-white px-2 py-1 text-xs hover:bg-ink-50 transition-opacity"
-                      >
-                        更换
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleRemoveIcon}
-                        className="opacity-0 group-hover:opacity-100 rounded bg-rose-500 text-white px-2 py-1 text-xs hover:bg-rose-600 transition-opacity"
-                      >
-                        删除
-                      </button>
+                <div
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver(true); }}
+                  onDragLeave={(e) => { e.stopPropagation(); setDragOver(false); }}
+                  onDrop={handleDrop}
+                  className={cn(
+                    'relative flex h-20 w-20 rounded-none border-2 border-dashed transition-colors',
+                    dragOver ? 'border-leaf-500 bg-leaf-50' : errors.icons ? 'border-rose-300 bg-rose-50/30' : 'border-ink-200 bg-ink-50'
+                  )}
+                >
+                  {uploading ? (
+                    <div className="flex items-center justify-center w-full h-full text-[10px] text-leaf-600">上传中…</div>
+                  ) : (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-leaf-50/50"
+                    >
+                      <div className="text-lg">📤</div>
+                      <div className="text-[9px] text-ink-400 mt-0.5">添加</div>
                     </div>
-                  </div>
-                ) : (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-leaf-50/50"
-                  >
-                    <div className="text-2xl text-leaf-400">📤</div>
-                    <div className="mt-1 text-xs text-ink-400">点击或拖拽上传图标</div>
-                    <div className="mt-0.5 text-[10px] text-ink-300">支持 JPG/PNG/SVG，建议尺寸 48x48</div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-              {/* 裁剪选项 */}
+              {errors.icons && <p className="text-xs text-rose-500">{errors.icons}</p>}
               <label className="flex items-center gap-1.5 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -486,11 +586,19 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
             <input
               type="text"
               value={path}
-              onChange={(e) => setPath(e.target.value)}
-              className="w-full rounded-none border border-ink-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-leaf-500"
+              onChange={(e) => {
+                setPath(e.target.value);
+                if (errors.path) setErrors((prev) => { const n = { ...prev }; delete n.path; return n; });
+              }}
+              className={cn(
+                'w-full rounded-none border px-3 py-2 text-sm focus:outline-none focus:ring-2',
+                errors.path
+                  ? 'border-rose-400 focus:ring-rose-200'
+                  : 'border-ink-200 focus:ring-leaf-500'
+              )}
               placeholder="/shaitu"
-              required
             />
+            {errors.path && <p className="mt-1 text-xs text-rose-500">{errors.path}</p>}
           </div>
 
           {/* 位置 */}
@@ -561,7 +669,7 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
             outputSize={75}
             onCancel={() => setCropSrc(null)}
             onConfirm={(croppedUrl) => {
-              setIcon(croppedUrl);
+              setIcons((prev) => [...prev, croppedUrl]);
               setCropSrc(null);
             }}
           />

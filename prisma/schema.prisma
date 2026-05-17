@@ -278,7 +278,7 @@ model Board {
   orderIdx    Int       @default(0)
   enabled     Boolean   @default(true)
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  updatedAt   DateTime? @updatedAt
 
   genera Genus[]
   posts  Post[]
@@ -292,11 +292,12 @@ model Board {
 /// 系统菜单项（晒图广场、交易中心、摄影大赛等）
 model SystemMenu {
   id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String
+  slug        String?  @unique
+  name        String?
   description String?  @db.Text // 描述
   icon        String   @default("") // 图标，可以是 emoji 或图片 URL
-  path        String // 菜单链接路径
+  path        String? // 菜单链接路径
+  location    String   @default("sidebar_left") // sidebar_left | sidebar_right | header
   orderIdx    Int      @default(0)
   enabled     Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -1325,7 +1326,7 @@ model UserPermissionOverride {
 
 model Genus {
   id          String   @id @default(cuid())
-  boardId     String
+  boardId     String?
   slug        String // 在所属 board 内唯一
   name        String // 如 "星球属"
   latinName   String? // 如 "Astrophytum"
@@ -1336,7 +1337,7 @@ model Genus {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  board    Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  board    Board?    @relation(fields: [boardId], references: [id], onDelete: Cascade)
   species  Species[]
   posts    Post[]
   products Product[] @relation("ProductGenus")
