@@ -7,6 +7,8 @@ import type { Post } from '@/lib/types';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
+import { TopicTag } from '@/components/ui/TopicTag';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { STAGE_META } from '@/lib/journal';
 import { formatNumber, formatDateTime, timeAgo, cn, boardUrl } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
@@ -110,8 +112,7 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
     <Link
       href={`/post/${post.id}`}
       className={cn(
-        // 瀑布流模式:卡片高度由内容决定,不强制等高
-        'card group block overflow-hidden transition-shadow hover:shadow-lg',
+        'card group block transition-shadow hover:shadow-lg',
         className
       )}
     >
@@ -144,11 +145,16 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
                   >
                     <div className="relative w-20 rounded-none border border-leaf-100 bg-white shadow-xl py-1">
                       <div className="absolute right-2 -top-[5px] w-2.5 h-2.5 bg-white border-l border-t border-leaf-100 transform rotate-45" />
+                      {/* 作者：编辑 */}
                       {canEdit && (
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
+                            if (['vote', 'event', 'journal', 'help'].includes(post.type)) {
+                              alert('🔒 该类型帖子不支持编辑\n投票/活动/成长日记/求助类型涉及报名、投票、记录、悬赏等数据,不允许后续修改。');
+                              return;
+                            }
                             globalThis.location.href = `/post/${post.id}/edit`;
                             setAdminMenuOpen(false);
                           }}
@@ -343,12 +349,12 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
 
       <div className="space-y-2 p-3">
         {/* 作者 + 时间（最上面一行） */}
-        <div className="flex items-center justify-between gap-2 text-[9px] text-leaf-700/80">
+        <div className="flex items-center justify-between gap-2 text-[11px] text-ink-500">
           <div className="flex items-center gap-1.5 min-w-0">
-            <Avatar src={post.author.avatar} alt={post.author.name} size={16} />
-            <span className="truncate font-medium">{post.author.name}</span>
+            <Avatar src={post.author.avatar} alt={post.author.name} size={18} />
+            <span className="truncate font-medium text-ink-800">{post.author.name}</span>
           </div>
-          <span className="shrink-0">{formatDateTime(post.createdAt)}</span>
+          <span className="shrink-0 text-ink-400">{formatDateTime(post.createdAt)}</span>
         </div>
 
         {/* 标题 */}
@@ -377,16 +383,15 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
         {post.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 overflow-hidden">
             {post.tags.slice(0, 5).map((tag) => (
-              <NestedLink
+              <TopicTag
                 key={tag}
+                tag={tag}
                 href={`/topic/${encodeURIComponent(tag)}`}
-                className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] text-amber-700 hover:bg-amber-100"
-              >
-                #{tag}
-              </NestedLink>
+                size="sm"
+              />
             ))}
             {post.tags.length > 5 && (
-              <span className="inline-flex items-center text-[10px] text-leaf-600/60">+{post.tags.length - 5}</span>
+              <span className="inline-flex items-center text-[10px] text-ink-500/60">+{post.tags.length - 5}</span>
             )}
           </div>
         )}
@@ -401,7 +406,7 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
               <span className="font-medium">{post.board.name}</span>
             </NestedLink>
           )}
-          <div className="flex items-center gap-2 shrink-0 text-[9px] text-leaf-700/70">
+          <div className="flex items-center gap-2 shrink-0 text-[11px] text-ink-500">
             <span className="inline-flex items-center gap-1"><Icon name="eye" size={12} />{formatNumber(post.views)}</span>
             <span className="inline-flex items-center gap-1"><Icon name="comment" size={12} />{formatNumber(post.comments)}</span>
             <span className="inline-flex items-center gap-1"><Icon name="heart" size={12} />{formatNumber(post.likes)}</span>
@@ -519,35 +524,120 @@ function NestedLink({
   );
 }
 
-/** 投票预览(只读):展示问题 + top 3 选项进度条 */
+/** 投票预览(只读):展示问题 + 所有选项进度条 + 精确百分比 */
 function VotePreview({ post }: { post: Post }) {
   if (!post.vote) return null;
   const total = post.vote.options.reduce((s, o) => s + o.votes, 0);
-  const top = [...post.vote.options].sort((a, b) => b.votes - a.votes).slice(0, 3);
+  const deadlinePassed = new Date(post.vote.deadline).getTime() < Date.now();
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const showResult = true;
+
+  const handleSelect = (optionId: string) => {
+    if (deadlinePassed) return;
+    setSelectedOptions(prev => {
+      if (post.vote?.multi) {
+        return prev.includes(optionId)
+          ? prev.filter(id => id !== optionId)
+          : [...prev, optionId];
+      } else {
+        return prev.includes(optionId) ? [] : [optionId];
+      }
+    });
+  };
+
   return (
-    <div className="space-y-1 rounded-none bg-amber-50/60 p-2 text-amber-900">
-      <div className="line-clamp-1 text-[11px] font-medium">🗳️ {post.vote.question}</div>
-      {top.map((o) => {
-        const pct = total ? Math.round((o.votes / total) * 100) : 0;
-        return (
-          <div
-            key={o.id}
-            className="relative overflow-hidden rounded bg-white/70 px-1.5 py-0.5 text-[10px]"
-          >
-            <div
-              className="absolute inset-y-0 left-0 bg-amber-200/70"
-              style={{ width: `${pct}%` }}
-            />
-            <div className="relative flex justify-between">
-              <span className="truncate">{o.label}</span>
-              <span className="ml-2 tabular-nums">{pct}%</span>
-            </div>
+    <div className="space-y-2 rounded-none bg-leaf-50/60 p-2">
+      {/* 问题 */}
+      <div className="flex items-center gap-2">
+        <Tooltip content={post.vote.question} className="max-w-[200px]">
+          <div className="line-clamp-1 text-[12px] font-medium text-leaf-800 flex-1 min-w-0">
+            🗳️ {post.vote.question}
           </div>
-        );
-      })}
-      <div className="text-[10px] text-amber-700/80">
-        {total} 票 ·{' '}
-        {new Date(post.vote.deadline).getTime() < Date.now() ? '已截止' : '进行中'}
+        </Tooltip>
+        <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] ${deadlinePassed ? 'bg-leaf-100 text-leaf-600' : 'bg-leaf-200 text-leaf-800'}`}>
+          {deadlinePassed ? '已截止' : '进行中'}
+        </span>
+        <span className="shrink-0 text-[10px] text-leaf-600">{post.vote.multi ? '多选' : '单选'}</span>
+      </div>
+
+      {/* 选项列表 */}
+      <div className="space-y-1.5">
+        {post.vote.options.map((o, idx) => {
+          // 计算精确百分比：最后一项 = 100 - 其他项之和，保留一位小数
+          let pct: number;
+          if (total === 0) {
+            pct = 0;
+          } else if (idx === post.vote!.options.length - 1) {
+            const sumBefore = post.vote!.options.slice(0, idx).reduce((s, opt) => s + opt.votes, 0);
+            pct = Number(((total - sumBefore) / total * 100).toFixed(1));
+          } else {
+            pct = Number((o.votes / total * 100).toFixed(1));
+          }
+
+          const isSelectable = !deadlinePassed;
+          const isSelected = selectedOptions.includes(o.id);
+          return (
+            <div
+              key={o.id}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!isSelectable) return;
+                handleSelect(o.id);
+              }}
+              onMouseDown={(e) => e.preventDefault()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                if (!isSelectable) return;
+                handleSelect(o.id);
+              }}
+              onTouchMove={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+              onPointerMove={(e) => e.stopPropagation()}
+              onPointerCancel={(e) => e.stopPropagation()}
+              className={cn(
+                'relative overflow-hidden rounded px-1 py-1 cursor-pointer transition-all',
+                isSelectable && 'bg-white/70 hover:bg-leaf-100 hover:shadow-sm active:bg-leaf-200',
+                !isSelectable && 'bg-white/70',
+                isSelected && 'bg-leaf-200/60'
+              )}
+            >
+              {/* 进度条 */}
+              <div
+                className="absolute inset-y-0 left-0 bg-leaf-200"
+                style={{ width: `${pct}%` }}
+              />
+              {/* 内容 */}
+              <div className="relative flex items-center justify-between gap-1 text-[11px]">
+                <div className="flex items-center gap-1 min-w-0 flex-1">
+                  <span className="w-[10px] text-center text-leaf-600 font-bold shrink-0">
+                    {isSelected ? '✓' : ''}
+                  </span>
+                  <span className="truncate text-leaf-900">{o.label}</span>
+                </div>
+                <span className="shrink-0 tabular-nums text-leaf-700">
+                  {pct}% <span className="text-leaf-600">({o.votes}票)</span>
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 底部统计 */}
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] text-leaf-700/80">{total} 票</span>
+        {!deadlinePassed && (
+          <button
+            type="button"
+            className="px-3 py-1 rounded bg-leaf-500 text-white text-[10px] font-medium hover:bg-leaf-600 transition-colors disabled:opacity-50"
+            disabled={selectedOptions.length === 0}
+          >
+            提交投票
+          </button>
+        )}
       </div>
     </div>
   );
@@ -574,86 +664,97 @@ function EventPreview({ post }: { post: Post }) {
 
 /**
  * 时间线预览(只读):
- *  - 显示前 3 条事件(后端 take:3)
- *  - 如果有配图，在心得下面另起一行展示
- *  - 总数 > 3 时底部叠 fade 蒙层 +「+ N 条」提示「点进去看完整时间线」
+ *  - 记录 > 4 条：显示前 3 条 + 倒数第二条 + 中间提示 + 最后 1 条
+ *  - 记录 ≤ 4 条：全部显示
  */
 function JournalPreview({ post }: { post: Post }) {
   if (!post.journal) return null;
   const j = post.journal;
   const shown = j.entries ?? [];
-  const restCount = Math.max(0, j.entriesCount - shown.length);
-  const hasMore = restCount > 0;
+  const totalCount = j.entriesCount ?? shown.length;
+
+  // 超过 4 条时：前 3 条 + 中间提示 + 最后 1 条
+  const showCompact = totalCount > 4;
+  const first3 = shown.slice(0, 3);
+  const lastEntry = shown[shown.length - 1];
+  const middleCount = totalCount - 4;
 
   return (
-    <div className="rounded-none bg-emerald-50/60 p-2">
-      <div className="mb-1 flex items-center justify-between text-[10px] text-emerald-700/80">
-        <span className="truncate">📖 {j.subjectName}</span>
-        <span>第 {j.daysSinceStart} 天 · 共 {j.entriesCount} 条</span>
+    <div className="rounded-none bg-leaf-50/60 p-2">
+      <div className="mb-1 flex items-center justify-between text-xs text-leaf-700/80">
+        <span className="truncate font-semibold">📖 {j.subjectName}</span>
+        <span className="text-[11px]">第 {j.daysSinceStart} 天 · 共 {j.entriesCount} 条</span>
       </div>
 
       <div className="relative">
         <ol className="space-y-1.5">
-          {shown.map((e) => {
+          {first3.map((e) => {
             const meta = STAGE_META[e.stage] || STAGE_META.other;
             return (
               <li key={e.id} className="space-y-1">
-                <div className="flex items-start gap-1.5">
-                  <span
-                    className={cn(
-                      'mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px]',
-                      meta.color.replace('border-', '')
-                    )}
-                  >
-                    {meta.emoji}
-                  </span>
-                  <div className="min-w-0 flex-1 text-[10px] leading-4">
-                    <span className="text-emerald-800/80">
-                      {new Date(e.entryDate).toLocaleDateString('zh-CN', {
-                        month: 'numeric',
-                        day: 'numeric',
-                      })}
-                    </span>{' '}
-                    <span className="text-emerald-900/90">
-                      {e.note ? truncate(e.note, 30) : meta.zh}
-                    </span>
-                  </div>
-                </div>
-                {/* 配图展示 - 在心得下面另起一行 */}
-                {e.images && e.images.length > 0 && (
-                  <div className="ml-5 flex flex-wrap gap-1">
-                    {e.images.map((img, idx) => (
-                      <div
-                        key={idx}
-                        className="journal-entry-image relative overflow-hidden rounded bg-white/50"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={img}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <EntryItem entry={e} meta={meta} />
               </li>
             );
           })}
-        </ol>
 
-        {/* 底部蒙层 + 提示 */}
-        {hasMore && (
-          <>
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-emerald-50/80 to-transparent"
-            />
-            <div className="mt-1 text-center text-[10px] text-emerald-700/80">
-              ⋯ 点击查看完整记录
+          {/* 中间省略提示 */}
+          {showCompact && (
+            <li className="pl-4 text-[10px] text-leaf-700/60">
+              + {middleCount} 条更多...
+            </li>
+          )}
+
+          {/* 最后 1 条 */}
+          {showCompact && lastEntry && (
+            <li key={lastEntry.id} className="space-y-1">
+              <EntryItem entry={lastEntry} meta={STAGE_META[lastEntry.stage] || STAGE_META.other} />
+            </li>
+          )}
+        </ol>
+      </div>
+    </div>
+  );
+}
+
+/** 单条时间线记录项 */
+function EntryItem({ entry, meta }: { entry: any; meta: any }) {
+  const d = new Date(entry.entryDate);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return (
+    <div className="space-y-1">
+      <div className="flex items-start gap-2">
+        <span className="mt-1 block h-2 w-2 shrink-0 rounded-full bg-leaf-400" />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 text-[11px]">
+            <span className="font-medium text-ink-800">{yyyy}/{mm}/{dd}</span>
+            <span className={cn('rounded px-1.5 py-0.5 text-[10px] border', meta.color)}>
+              {meta.emoji} {meta.zh}
+            </span>
+          </div>
+          {entry.note && (
+            <Tooltip content={entry.note}>
+              <p className="line-clamp-2 text-xs text-ink-600/80 mt-0.5">{entry.note}</p>
+            </Tooltip>
+          )}
+          {/* 配图展示 - 在描述下面 */}
+          {entry.images && entry.images.length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {entry.images.slice(0, 3).map((img, idx) => (
+                <div key={idx} className="relative w-8 h-8 overflow-hidden rounded bg-white/50">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img} alt="" className="h-full w-full object-cover" />
+                </div>
+              ))}
+              {entry.images.length > 3 && (
+                <div className="relative w-8 h-8 flex items-center justify-center rounded bg-black/40 text-[10px] text-white">
+                  +{entry.images.length - 3}
+                </div>
+              )}
             </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
@@ -685,12 +786,7 @@ function CompactCard({ post, className }: { post: Post; className?: string }) {
           {post.species ? (
             <SpeciesChip species={post.species} board={post.board} compact />
           ) : (
-            <Link
-              href={boardUrl(post.board)}
-              className="text-[11px] text-leaf-700 hover:underline"
-            >
-              {post.board.name}
-            </Link>
+            <span className="inline-flex items-center gap-1 rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-400">—</span>
           )}
         </div>
         <h4 className="truncate text-sm font-medium text-ink-800">{post.title}</h4>
@@ -723,12 +819,12 @@ function SpeciesChip({
     <Link
       href={boardUrl(board)}
       className={cn(
-        'inline-flex items-center gap-1 rounded-full bg-leaf-50 px-2 py-0.5 text-leaf-700 transition-colors hover:bg-leaf-100',
-        compact ? 'text-[11px]' : 'text-xs'
+        'inline-flex items-center gap-1 rounded-full bg-leaf-50 px-3 py-1 text-leaf-700 transition-colors hover:bg-leaf-100',
+        compact ? 'text-[11px]' : 'text-sm'
       )}
       onClick={(e) => e.stopPropagation()}
     >
-      <span>🌱</span>
+      <span className="text-sm">🌱</span>
       <span className="font-medium">{species.name}</span>
       {species.ratingCount > 0 && (
         <span className="text-leaf-600/70">({species.ratingCount})</span>

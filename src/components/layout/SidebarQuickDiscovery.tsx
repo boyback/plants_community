@@ -43,7 +43,7 @@ export function SidebarQuickDiscovery() {
       {/* 热门品种 */}
       <div className="px-3 py-2.5">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-ink-800">🌱 热门品种</span>
+          <span className="text-sm font-bold text-ink-800">🌱 热门品种</span>
           <button
             type="button"
             onClick={refreshSpecies}
@@ -63,7 +63,7 @@ export function SidebarQuickDiscovery() {
               <Link
                 key={s.id}
                 href={s.url}
-                className="inline-flex items-center rounded-full bg-leaf-50 px-2.5 py-1 text-[9px] text-leaf-700 hover:bg-leaf-100 transition-colors"
+                className="inline-flex items-center rounded-full bg-leaf-50 px-2.5 py-1 text-[10px] text-leaf-700 hover:bg-leaf-100 transition-colors"
               >
                 {s.name}
               </Link>

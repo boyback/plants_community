@@ -15,9 +15,11 @@ import { SwipeBack } from '@/components/ui/SwipeBack';
 export function Shell({
   children,
   withSidebar = true,
+  recommendUsers = [],
 }: {
   children: ReactNode;
   withSidebar?: boolean;
+  recommendUsers?: any[];
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -31,7 +33,7 @@ export function Shell({
       <MobileNav open={mobileOpen} onClose={() => setMobileOpen(false)} />
 
       <div className="mx-auto flex max-w-[1280px] gap-6 px-4 py-4 lg:px-6">
-        {withSidebar && <Sidebar />}
+        {withSidebar && <Sidebar recommendUsers={recommendUsers} />}
         <main className="min-w-0 flex-1">{children}</main>
       </div>
 

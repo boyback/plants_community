@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { useTransition } from 'react';
 import { api, ApiError } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
 import { Toast, useToast, showToast } from '@/components/ui/Toast';
@@ -19,6 +20,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
+  verticalListSortingStrategy,
   horizontalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -30,7 +32,9 @@ interface SystemMenu {
   description: string | null;
   icon: string;
   path: string;
-  location: 'header' | 'sidebar';
+  location: 'header' | 'sidebar_left' | 'sidebar_right';
+  cardKey: string | null;
+  type: 'button' | 'card';
   orderIdx: number;
   enabled: boolean;
   createdAt: string;
@@ -51,6 +55,12 @@ export function SystemMenusManager() {
   const [loading, setLoading] = useState(true);
   const [editingMenu, setEditingMenu] = useState<SystemMenu | 'new' | null>(null);
   const [saving, setSaving] = useState(false);
+  const [, startTransition] = useTransition();
+
+  // 拖拽传感器
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
 
   useEffect(() => {
     loadMenus();
@@ -66,6 +76,28 @@ export function SystemMenusManager() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 拖拽排序
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = menus.findIndex((m) => m.id === active.id);
+    const newIndex = menus.findIndex((m) => m.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newMenus = arrayMove(menus, oldIndex, newIndex);
+    setMenus(newMenus);
+
+    // 保存排序
+    const orderedIds = newMenus.map((m) => m.id);
+    startTransition(() => {
+      api.patch('/api/admin/system-menus', { orderedIds }).catch(() => {
+        showToast('排序保存失败', 'error');
+        loadMenus(); // 失败则重新加载
+      });
+    });
   };
 
   const handleToggle = async (menu: SystemMenu) => {
@@ -140,12 +172,16 @@ export function SystemMenusManager() {
       ) : menus.length === 0 ? (
         <div className="text-center py-12 text-leaf-700/60">暂无菜单，请点击上方「新建菜单」添加</div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
-          <table className="w-full text-sm">
-            <thead className="bg-ink-50 text-ink-600">
-              <tr>
-                <th className="px-4 py-3 text-left">图标</th>
-                <th className="px-4 py-3 text-left">名称</th>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={menus.map((m) => m.id)} strategy={verticalListSortingStrategy}>
+            <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
+              <table className="w-full text-sm">
+                <thead className="bg-ink-50 text-ink-600">
+                  <tr>
+                    <th className="w-10 px-4 py-3 text-left"></th>
+                    <th className="px-4 py-3 text-left">图标</th>
+                    <th className="px-4 py-3 text-left">名称</th>
+                <th className="px-4 py-3 text-left">类型</th>
                 <th className="px-4 py-3 text-left">路径</th>
                 <th className="px-4 py-3 text-left">位置</th>
                 <th className="px-4 py-3 text-left">描述</th>
@@ -155,74 +191,19 @@ export function SystemMenusManager() {
             </thead>
             <tbody>
               {menus.map((menu) => (
-                <tr key={menu.id} className="border-t border-ink-100 hover:bg-ink-50/50">
-                  <td className="px-4 py-3">
-                    {(() => {
-                      const firstIcon = parseIcons(menu.icon)[0];
-                      return firstIcon ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={firstIcon} alt="" className="w-10 h-10 rounded-none object-cover border border-ink-100" />
-                      ) : (
-                        <span className="text-ink-300 text-sm">未设置</span>
-                      );
-                    })()}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-ink-800">{menu.name}</div>
-                    <div className="text-xs text-ink-500 font-mono">{menu.slug}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-xs font-mono text-leaf-600 bg-leaf-50 px-2 py-0.5 rounded">
-                      {menu.path}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={cn(
-                      'rounded-full px-2 py-0.5 text-xs',
-                      menu.location === 'header' ? 'bg-amber-50 text-amber-700' : 'bg-violet-50 text-violet-700'
-                    )}>
-                      {menu.location === 'header' ? '导航栏' : '侧边栏'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-ink-600 text-xs max-w-[200px]">
-                    {menu.description || '-'}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <button
-                      type="button"
-                      onClick={() => handleToggle(menu)}
-                      className={cn(
-                        'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                        menu.enabled ? 'bg-leaf-500' : 'bg-rose-400',
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
-                          menu.enabled ? 'translate-x-6' : 'translate-x-1'
-                        )}
-                      />
-                    </button>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => setEditingMenu(menu)}
-                      className="rounded border border-ink-200 px-3 py-1 text-xs hover:bg-ink-50 mr-2"
-                    >
-                      编辑
-                    </button>
-                    <button
-                      onClick={() => handleDelete(menu)}
-                      className="rounded bg-rose-100 px-3 py-1 text-xs text-rose-700 hover:bg-rose-200"
-                    >
-                      删除
-                    </button>
-                  </td>
-                </tr>
+                <MenuSortableRow
+                  key={menu.id}
+                  menu={menu}
+                  onToggle={handleToggle}
+                  onEdit={() => setEditingMenu(menu)}
+                  onDelete={handleDelete}
+                />
               ))}
             </tbody>
           </table>
         </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* 编辑对话框 */}
@@ -274,6 +255,100 @@ function SortableIcon({ id, url, onRemove }: { id: string; url: string; onRemove
   );
 }
 
+function MenuSortableRow({ menu, onToggle, onEdit, onDelete }: {
+  menu: SystemMenu;
+  onToggle: (menu: SystemMenu) => void;
+  onEdit: () => void;
+  onDelete: (menu: SystemMenu) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: menu.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  const firstIcon = parseIcons(menu.icon)[0];
+
+  return (
+    <tr ref={setNodeRef} style={style} className={cn('border-t border-ink-100 hover:bg-ink-50/50', isDragging && 'bg-leaf-50 shadow-lg relative z-10')}>
+      <td className="px-4 py-3 text-center">
+        <button {...attributes} {...listeners} className="cursor-grab text-ink-300 hover:text-ink-600 active:cursor-grabbing" title="拖拽排序">
+          ⠿
+        </button>
+      </td>
+      <td className="px-4 py-3">
+        {firstIcon ? (
+          firstIcon.startsWith('http') ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={firstIcon} alt="" className="w-10 h-10 rounded-none object-cover" />
+          ) : (
+            <span className="text-2xl">{firstIcon}</span>
+          )
+        ) : (
+          <span className="text-ink-300 text-sm">未设置</span>
+        )}
+      </td>
+      <td className="px-4 py-3">
+        <div className="font-medium text-ink-800">{menu.name}</div>
+        <div className="text-xs text-ink-500 font-mono">{menu.slug}</div>
+      </td>
+      <td className="px-4 py-3">
+        <span className={cn(
+          'rounded-full px-2 py-0.5 text-xs',
+          menu.type === 'button' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'
+        )}>
+          {menu.type === 'button' ? '按钮' : '卡片'}
+        </span>
+      </td>
+      <td className="px-4 py-3">
+        <span className="text-xs font-mono text-leaf-600 bg-leaf-50 px-2 py-0.5 rounded">
+          {menu.path || '-'}
+        </span>
+      </td>
+      <td className="px-4 py-3">
+        <span className={cn(
+          'rounded-full px-2 py-0.5 text-xs',
+          menu.location === 'header' ? 'bg-amber-50 text-amber-700' :
+          menu.location === 'sidebar_left' ? 'bg-violet-50 text-violet-700' :
+          'bg-sky-50 text-sky-700'
+        )}>
+          {menu.location === 'header' ? '导航栏' : menu.location === 'sidebar_left' ? '左侧侧边栏' : '右侧侧边栏'}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-ink-600 text-xs max-w-[200px]">
+        {menu.description || '-'}
+      </td>
+      <td className="px-4 py-3 text-center">
+        <button
+          type="button"
+          onClick={() => onToggle(menu)}
+          className={cn(
+            'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+            menu.enabled ? 'bg-leaf-500' : 'bg-rose-400',
+          )}
+        >
+          <span
+            className={cn(
+              'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
+              menu.enabled ? 'translate-x-6' : 'translate-x-1'
+            )}
+          />
+        </button>
+      </td>
+      <td className="px-4 py-3 text-right">
+        <button
+          onClick={onEdit}
+          className="rounded border border-ink-200 px-3 py-1 text-xs hover:bg-ink-50 mr-2"
+        >
+          编辑
+        </button>
+        <button
+          onClick={() => onDelete(menu)}
+          className="rounded bg-rose-100 px-3 py-1 text-xs text-rose-700 hover:bg-rose-200"
+        >
+          删除
+        </button>
+      </td>
+    </tr>
+  );
+}
+
 interface MenuEditDialogProps {
   menu: SystemMenu | null;
   onClose: () => void;
@@ -287,8 +362,9 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
   const [description, setDescription] = useState('');
   const [icons, setIcons] = useState<string[]>([]);
   const [path, setPath] = useState('');
-  const [location, setLocation] = useState<'header' | 'sidebar'>('header');
-  const [orderIdx, setOrderIdx] = useState(99);
+  const [location, setLocation] = useState<'header' | 'sidebar_left' | 'sidebar_right'>('header');
+  const [cardKey, setCardKey] = useState<string>('');
+  const [type, setType] = useState<'button' | 'card'>('button');
 
   // 字段级校验错误
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -300,8 +376,9 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
     setDescription(menu?.description || '');
     setIcons(menu ? parseIcons(menu.icon) : []);
     setPath(menu?.path || '');
-    setLocation((menu?.location as 'header' | 'sidebar') || 'header');
-    setOrderIdx(menu?.orderIdx ?? 99);
+    setLocation((menu?.location as 'header' | 'sidebar_left' | 'sidebar_right') || 'header');
+    setCardKey(menu?.cardKey || '');
+    setType((menu?.type as 'button' | 'card') || 'button');
     setErrors({});
   }, [menu]);
 
@@ -379,8 +456,6 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
     const next: Record<string, string> = {};
     if (!slug.trim()) next.slug = 'Slug 必填';
     if (!name.trim()) next.name = '名称必填';
-    if (!path.trim()) next.path = '路径必填';
-    if (icons.length === 0 && !menu) next.icons = '请上传图标';
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -397,7 +472,8 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
       icons,
       path,
       location,
-      orderIdx,
+      cardKey: cardKey || null,
+      type,
       enabled: menu?.enabled ?? true,
     });
   };
@@ -581,7 +657,7 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
           {/* 路径 */}
           <div>
             <label className="block text-sm font-medium text-ink-700 mb-1">
-              路径 <span className="text-rose-500">*</span>
+              路径
             </label>
             <input
               type="text"
@@ -596,15 +672,44 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
                   ? 'border-rose-400 focus:ring-rose-200'
                   : 'border-ink-200 focus:ring-leaf-500'
               )}
-              placeholder="/shaitu"
+              placeholder="/shaitu（可留空）"
             />
             {errors.path && <p className="mt-1 text-xs text-rose-500">{errors.path}</p>}
+          </div>
+
+          {/* 类型 */}
+          <div>
+            <label className="block text-sm font-medium text-ink-700 mb-1">类型</label>
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="type"
+                  value="button"
+                  checked={type === 'button'}
+                  onChange={() => setType('button')}
+                  className="accent-leaf-600"
+                />
+                <span className="text-sm text-ink-700">按钮（有路径，点击跳转）</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="type"
+                  value="card"
+                  checked={type === 'card'}
+                  onChange={() => setType('card')}
+                  className="accent-leaf-600"
+                />
+                <span className="text-sm text-ink-700">卡片（控制侧边栏卡片显示）</span>
+              </label>
+            </div>
           </div>
 
           {/* 位置 */}
           <div>
             <label className="block text-sm font-medium text-ink-700 mb-1">位置</label>
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
@@ -620,27 +725,25 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
                 <input
                   type="radio"
                   name="location"
-                  value="sidebar"
-                  checked={location === 'sidebar'}
-                  onChange={() => setLocation('sidebar')}
+                  value="sidebar_left"
+                  checked={location === 'sidebar_left'}
+                  onChange={() => setLocation('sidebar_left')}
                   className="accent-leaf-600"
                 />
-                <span className="text-sm text-ink-700">侧边栏</span>
+                <span className="text-sm text-ink-700">左侧侧边栏</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="location"
+                  value="sidebar_right"
+                  checked={location === 'sidebar_right'}
+                  onChange={() => setLocation('sidebar_right')}
+                  className="accent-leaf-600"
+                />
+                <span className="text-sm text-ink-700">右侧侧边栏</span>
               </label>
             </div>
-          </div>
-
-          {/* 排序 */}
-          <div>
-            <label className="block text-sm font-medium text-ink-700 mb-1">排序</label>
-            <input
-              type="number"
-              value={orderIdx}
-              onChange={(e) => setOrderIdx(Number(e.target.value))}
-              className="w-full rounded-none border border-ink-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-leaf-500"
-              placeholder="99"
-            />
-            <p className="mt-1 text-xs text-ink-500">数字越小越靠前</p>
           </div>
 
           {/* 按钮 */}

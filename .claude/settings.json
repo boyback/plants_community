@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mysql -h 118.145.162.6 -P 3307 -u root -p9b7be16ac4b0724d8ba9fdb6fa8e003baaf245d38e245dba plants_community -e \"SELECT slug, name, icon, path, cardKey, enabled FROM system_menus ORDER BY orderIdx;\")",
+      "Bash(mysql -h 118.145.162.6 -P 3307 -u root -p9b7be16ac4b0724d8ba9fdb6fa8e003baaf245d38e245dba plants_community -e \"SELECT slug, name, icon, cardKey, enabled FROM system_menus WHERE cardKey IS NOT NULL ORDER BY orderIdx;\")",
+      "Bash(curl -s \"http://localhost:3000/api/system-menus\")",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s \"http://localhost:3000/api/system-menus\" -H \"Cache-Control: no-cache\")",
+      "Bash(mysql -h 118.145.162.6 -P 3307 -u root -p9b7be16ac4b0724d8ba9fdb6fa8e003baaf245d38e245dba plants_community -e \"SHOW COLUMNS FROM system_menus WHERE Field = 'cardKey';\")",
+      "Bash(pkill -f \"next-server\")",
+      "Bash(npm run *)",
+      "Bash(tail -30 /tmp/next.log)",
+      "Read(//private/tmp/**)",
+      "Bash(kill -9 56787 56788)",
+      "Bash(/Users/duxing/.nvm/versions/node/v20.18.0/bin/node node_modules/.bin/next dev)",
+      "Bash(/Users/duxing/.nvm/versions/node/v20.18.0/bin/npx prisma *)",
+      "Bash(./node_modules/.bin/prisma generate *)",
+      "Bash(python3)",
+      "Bash(pkill -f \"next-server\\\\|next dev\")",
+      "Bash(curl -s \"http://localhost:3001/api/system-menus\")",
+      "Bash(pkill -f \"next\")",
+      "Bash(/Users/duxing/.nvm/versions/node/v20.18.0/bin/node node_modules/.bin/next dev > /tmp/next.log 2>&1 & *)",
+      "Bash(mysql -h 118.145.162.6 -P 3307 -u root -p9b7be16ac4b0724d8ba9fdb6fa8e003baaf245d38e245dba plants_community -e \"SELECT id, name, cardKey, enabled FROM system_menus WHERE cardKey IS NOT NULL;\")",
+      "Bash(node -e ' *)",
+      "Bash(mysql -h 118.145.162.6 -P 3307 -u root -p9b7be16ac4b0724d8ba9fdb6fa8e003baaf245d38e245dba plants_community -e \"SELECT id, name, cardKey FROM system_menus;\")",
+      "Bash(mysql -h 118.145.162.6 -P 3307 -u root -p9b7be16ac4b0724d8ba9fdb6fa8e003baaf245d38e245dba plants_community -e \"DELETE FROM system_menus WHERE slug IN \\('card-sidebar-menus', 'card-right-menus'\\);\")",
+      "Bash(mysql -h 118.145.162.6 -P 3307 -u root -p9b7be16ac4b0724d8ba9fdb6fa8e003baaf245d38e245dba plants_community -e \"SELECT slug, name, location, path, icon FROM system_menus ORDER BY location, orderIdx;\")",
+      "Bash(mysql -h 118.145.162.6 -P 3307 -u root -p9b7be16ac4b0724d8ba9fdb6fa8e003baaf245d38e245dba plants_community -e \"SELECT id, cardKey, enabled FROM system_menus WHERE cardKey IS NOT NULL;\")",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(mysql -h 118.145.162.6 -P 3307 -u root -p9b7be16ac4b0724d8ba9fdb6fa8e003baaf245d38e245dba plants_community -e \"SELECT id, cardKey FROM system_menus WHERE id LIKE 'card-%';\")",
+      "Bash(mysql -h 118.145.162.6 -P 3307 -u root -p9b7be16ac4b0724d8ba9fdb6fa8e003baaf245d38e245dba plants_community -e \"SELECT id, name, JSON_OBJECT\\('cardKey', cardKey\\) as data FROM system_menus WHERE id LIKE 'card-%';\")",
+      "Bash(mysql -h 118.145.162.6 -P 3307 -u root -p9b7be16ac4b0724d8ba9fdb6fa8e003baaf245d38e245dba plants_community -e \"SELECT id, name, location, path, cardKey, enabled FROM system_menus WHERE name LIKE '%热门%' OR cardKey = 'card:topics';\")"
+    ],
+    "additionalDirectories": [
+      "/private/tmp"
+    ]
+  }
+}

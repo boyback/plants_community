@@ -87,19 +87,23 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
 
             {/* 社区导航 - 桌面端显示 */}
             <nav className="hidden lg:flex items-center gap-1">
-              <HeaderLink href="/" icon="home" image="https://cdn.plantcommunity.cn/cmoz85oi8000ay601io2nm9iv/202605/mp847ljxfg8euq.png">首页</HeaderLink>
+              {/* 导航栏菜单 - 已按 orderIdx 排序 */}
               {featureFlags.systemMenus
-                .filter((menu) => menu.path)
-                .map((menu) => (
-                  <HeaderLink
-                    key={menu.id}
-                    href={menu.path!}
-                    icon="star"
-                    image={menu.icon.startsWith('http') ? menu.icon : undefined}
-                  >
-                    {menu.name}
-                  </HeaderLink>
-                ))}
+                .filter((menu) => menu.location === 'header' && menu.enabled && menu.path)
+                .map((menu) => {
+                  const { image, emoji } = parseMenuIcon(menu.icon);
+                  return (
+                    <HeaderLink
+                      key={menu.id}
+                      href={menu.path}
+                      icon="star"
+                      image={image}
+                      emoji={emoji}
+                    >
+                      {menu.name}
+                    </HeaderLink>
+                  );
+                })}
             </nav>
           </div>
 
@@ -282,16 +286,31 @@ export function Header({ onToggleMobileNav }: { onToggleMobileNav?: () => void }
   );
 }
 
+function parseMenuIcon(icon: string): { image?: string; emoji?: string } {
+  try {
+    const parsed = JSON.parse(icon);
+    const first = Array.isArray(parsed) ? parsed[0] : parsed;
+    if (!first) return {};
+    if (first.startsWith('http')) return { image: first };
+    return { emoji: first };
+  } catch {
+    if (icon.startsWith('http')) return { image: icon };
+    return { emoji: icon };
+  }
+}
+
 function HeaderLink({
   href,
   children,
   icon,
-  image
+  image,
+  emoji,
 }: {
   href: string;
   children: React.ReactNode;
   icon: Parameters<typeof Icon>[0]['name'];
   image?: string;
+  emoji?: string;
 }) {
   const pathname = usePathname();
   const active =
@@ -305,7 +324,13 @@ function HeaderLink({
           : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700'
       }`}
     >
-      {image?<img src={image} width={28} />:<Icon name="plus" size={16} />}
+      {image ? (
+        <img src={image} alt="" width={24} height={24} className="object-contain" />
+      ) : emoji ? (
+        <span className="text-base leading-none">{emoji}</span>
+      ) : (
+        <Icon name={icon} size={16} />
+      )}
       {children}
     </Link>
   );

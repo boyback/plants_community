@@ -89,11 +89,6 @@ export const PATCH = handler(async (req) => {
   if (post.deleted) return fail(400, '帖子已删除');
   if (post.authorId !== me.id) return fail(403, '只能编辑自己的帖子');
 
-  const LOCKED_TYPES = ['vote', 'event', 'journal', 'help'] as const;
-  if (LOCKED_TYPES.includes(post.type as (typeof LOCKED_TYPES)[number])) {
-    return fail(400, '该类型帖子不支持编辑(投票 / 活动 / 成长日记 / 求助)');
-  }
-
   const isRich = post.type === 'rich';
   let stored: { html: string; json: string | null; text: string | null } | null = null;
   if (body.content !== undefined || body.contentJson !== undefined) {

@@ -67,6 +67,22 @@ const plants = [
   { slug: 'qilinhua', name: '麒麟花', latinName: 'Euphorbia milii', family: '大戟科 · 大戟属', cover: 'https://images.unsplash.com/photo-1466692476868-9ee5a3a3e93b?w=1000', difficulty: 2, light: '全日照', watering: '耐旱,少水', hardiness: '5°C', description: '虽然叫「花」,实为多肉质灌木,茎布满硬刺,顶端苞片鲜艳,四季开花,非常皮实。汁液有毒,操作时戴手套。', tips: ['汁液有毒,避免接触皮肤和眼睛','开花性极好,常年不断花','耐修剪,可塑造造型','不耐寒,北方需室内越冬'], gallery: ['https://images.unsplash.com/photo-1466692476868-9ee5a3a3e93b?w=1000'] },
 ];
 
+/* ---------------- 系统菜单 ---------------- */
+const systemMenus = [
+  { id: 'seed-home', slug: 'home', name: '首页', description: '返回社区首页', icon: '["🏠"]', path: '/', location: 'header', cardKey: null, type: 'button', orderIdx: 0 },
+  { id: 'seed-shaitu', slug: 'shaitu', name: '晒图广场', description: '用户晒图分享', icon: '[]', path: '/shaitu', location: 'header', cardKey: null, type: 'button', orderIdx: 1 },
+  { id: 'seed-tujian', slug: 'tujian', name: '品种图鉴', description: '品种图鉴', icon: '[]', path: '/plants', location: 'header', cardKey: null, type: 'button', orderIdx: 2 },
+  { id: 'seed-card-boards', slug: 'card-boards', name: '板块', description: null, icon: '[]', path: null, location: 'sidebar_left', cardKey: 'card:boards', type: 'card', orderIdx: 3 },
+  { id: 'seed-card-hot-species', slug: 'card-hot-species', name: '热门品种', description: null, icon: '[]', path: null, location: 'sidebar_left', cardKey: 'card:hot_species', type: 'card', orderIdx: 4 },
+  { id: 'seed-market', slug: 'market', name: '交易中心', description: '二手交易市场', icon: '[]', path: '/market', location: 'sidebar_left', cardKey: null, type: 'button', orderIdx: 5 },
+  { id: 'seed-contests', slug: 'contests', name: '摄影大赛', description: '摄影比赛活动', icon: '[]', path: '/contests', location: 'sidebar_left', cardKey: null, type: 'button', orderIdx: 6 },
+  { id: 'seed-yangzhi', slug: 'yangzhi', name: '养殖交流', description: '养殖经验交流', icon: '[]', path: '/yangzhi', location: 'sidebar_left', cardKey: null, type: 'button', orderIdx: 7 },
+  { id: 'seed-beginner', slug: 'beginner', name: '新手村', description: '新手入门指导', icon: '[]', path: '/beginner', location: 'sidebar_left', cardKey: null, type: 'button', orderIdx: 8 },
+  { id: 'seed-card-signin', slug: 'card-signin', name: '签到日历', description: null, icon: '[]', path: null, location: 'sidebar_right', cardKey: 'card:signin', type: 'card', orderIdx: 9 },
+  { id: 'seed-card-recommend-users', slug: 'card-recommend-users', name: '推荐好友', description: null, icon: '[]', path: null, location: 'sidebar_right', cardKey: 'card:recommend_users', type: 'card', orderIdx: 10 },
+  { id: 'seed-card-topics', slug: 'card-topics', name: '热门话题', description: null, icon: '[]', path: null, location: 'sidebar_right', cardKey: 'card:topics', type: 'card', orderIdx: 11 },
+];
+
 /* ---------------- Banner ---------------- */
 const banners = [
   { title: '2026 多肉摄影大赛 征稿中', subtitle: '上传你最满意的多肉作品,万元奖金 · 限定徽章 · 大V 流量扶持', image: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=1600', link: '/board/paishe', tint: 'from-leaf-900/70', orderIdx: 0 },
@@ -207,6 +223,25 @@ async function main() {
   await prisma.banner.deleteMany({});
   for (const b of banners) {
     await prisma.banner.create({ data: b });
+  }
+
+  // 系统菜单
+  console.log('• 系统菜单');
+  for (const m of systemMenus) {
+    await prisma.systemMenu.upsert({
+      where: { slug: m.slug },
+      update: {
+        name: m.name,
+        description: m.description,
+        icon: m.icon,
+        path: m.path,
+        location: m.location,
+        cardKey: m.cardKey,
+        type: m.type,
+        orderIdx: m.orderIdx,
+      },
+      create: m,
+    });
   }
 
   /* -------------- 帖子 -------------- */

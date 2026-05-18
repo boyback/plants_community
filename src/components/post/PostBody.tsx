@@ -160,6 +160,7 @@ function VoteBody({ post, initialVoted }: { post: Post; initialVoted: string[] }
 
   const total = options.reduce((s, o) => s + o.votes, 0);
   const deadlinePassed = new Date(post.vote.deadline).getTime() < Date.now();
+  const showResult = voted || deadlinePassed;
 
   const toggle = (id: string) => {
     if (voted || deadlinePassed) return;
@@ -204,10 +205,19 @@ function VoteBody({ post, initialVoted }: { post: Post; initialVoted: string[] }
         </div>
         <h3 className="text-base font-semibold text-amber-900">{post.vote.question}</h3>
         <div className="mt-4 space-y-2">
-          {options.map((o) => {
+          {options.map((o, idx) => {
             const chosen = selected.includes(o.id);
-            const pct = total ? Math.round((o.votes / total) * 100) : 0;
-            const showResult = voted || deadlinePassed;
+            // 计算精确百分比
+            let pct: number;
+            if (total === 0) {
+              pct = 0;
+            } else if (idx === options.length - 1 && deadlinePassed) {
+              // 最后一个选项：如果投票结束，精确计算
+              const sumBefore = options.slice(0, idx).reduce((s, opt) => s + opt.votes, 0);
+              pct = total > 0 ? Number(((total - sumBefore) / total * 100).toFixed(1)) : 0;
+            } else {
+              pct = Number((o.votes / total * 100).toFixed(1));
+            }
             return (
               <button
                 key={o.id}
@@ -232,18 +242,27 @@ function VoteBody({ post, initialVoted }: { post: Post; initialVoted: string[] }
                 )}
                 <div className="relative flex items-center justify-between gap-3">
                   <span className="flex items-center gap-2">
+                    {/* 勾选图标 */}
                     <span
                       className={cn(
-                        'inline-block h-4 w-4 shrink-0 rounded-full border-2',
-                        post.vote!.multi ? 'rounded-[4px]' : '',
-                        chosen ? 'border-amber-500 bg-amber-500' : 'border-amber-300 bg-white'
+                        'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded border-2',
+                        post.vote!.multi ? 'rounded-[4px]' : 'rounded-full',
+                        chosen
+                          ? 'border-amber-500 bg-amber-500 text-white'
+                          : 'border-amber-300 bg-white'
                       )}
-                    />
+                    >
+                      {chosen && (
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </span>
                     {o.label}
                   </span>
                   {showResult && (
                     <span className="text-xs tabular-nums text-amber-700">
-                      {pct}% ({o.votes})
+                      {pct}% ({o.votes}票)
                     </span>
                   )}
                 </div>

@@ -260,7 +260,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
                   <Link
                     key={t}
                     href={`/topic/${encodeURIComponent(t)}`}
-                    className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs text-amber-700 hover:bg-amber-100 transition-colors"
+                    className="rounded-full bg-leaf-100 px-2.5 py-0.5 text-xs text-leaf-700 hover:bg-leaf-200 transition-colors"
                   >
                     #{t}
                   </Link>
@@ -291,17 +291,24 @@ export default async function PostDetailPage({ params }: { params: { id: string 
                     {formatNumber(post.views)} <I18nText k="detail.post.views" fallback="阅读" />
                   </div>
                 </div>
-                {/* 作者本人 · 仅 rich/short/video 可编辑(其他类型数据复杂禁止) */}
-                {me?.id === post.author.id &&
-                  ['rich', 'short', 'video'].includes(post.type) && (
-                    <Link
-                      href={`/post/${post.id}/edit`}
-                      className="btn-outline !text-xs"
-                    >
-                      <Icon name="edit" size={12} />
-                      编辑
-                    </Link>
-                  )}
+                {/* 作者本人可以编辑 */}
+                {me?.id === post.author.id && (
+                  <>
+                    {['vote', 'event', 'journal', 'help'].includes(post.type) ? (
+                      <span className="inline-flex items-center gap-1 text-xs text-ink-400">
+                        🔒 该类型帖子不支持编辑
+                      </span>
+                    ) : (
+                      <Link
+                        href={`/post/${post.id}/edit`}
+                        className="btn-outline !text-xs"
+                      >
+                        <Icon name="edit" size={12} />
+                        编辑
+                      </Link>
+                    )}
+                  </>
+                )}
                 {/* 管理员操作按钮（超管/管理员/版主可见） */}
                 {(me?.isSuperAdmin || me?.role === 'admin' || me?.role === 'moderator') && <PostAdminMenu post={post} user={me} />}
               </div>

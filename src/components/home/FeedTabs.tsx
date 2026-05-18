@@ -10,6 +10,8 @@ import { Icon } from '@/components/ui/Icon';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
 import { PostCard } from '@/components/post/PostCard';
 import { PostCardSkeleton } from '@/components/post/PostCardSkeleton';
+import { TopicTag } from '@/components/ui/TopicTag';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { STAGE_META } from '@/lib/journal';
 import { useI18n } from '@/i18n/I18nContext';
 import { useAuth } from '@/context/AuthContext';
@@ -165,8 +167,6 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
 
   // m 端列数偏好:1 或 2,默认 2(localStorage 持久化)
   const [mobileCols, setMobileCols] = useState<1 | 2>(2);
-  // PC 端列数偏好:3 或 4,默认 3(localStorage 持久化)
-  const [desktopCols, setDesktopCols] = useState<3 | 4>(3);
   // 布局模式:grid(瀑布流) 或 list(列表),默认列表
   const [layoutMode, setLayoutMode] = useState<'grid' | 'list'>('list');
   const [initialized, setInitialized] = useState(false);
@@ -178,8 +178,6 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
     if (typeof window === 'undefined') return;
     const savedM = Number(localStorage.getItem('rouyou.feed.mobileCols'));
     if (savedM === 1 || savedM === 2) setMobileCols(savedM as 1 | 2);
-    const savedD = Number(localStorage.getItem('rouyou.feed.desktopCols'));
-    if (savedD === 3 || savedD === 4) setDesktopCols(savedD as 3 | 4);
     const savedLayout = localStorage.getItem('rouyou.feed.layout');
     if (savedLayout === 'grid' || savedLayout === 'list') setLayoutMode(savedLayout);
     setInitialized(true);
@@ -220,12 +218,6 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
       localStorage.setItem('rouyou.feed.mobileCols', String(n));
     } catch {}
   };
-  const updateDesktopCols = (n: 3 | 4) => {
-    setDesktopCols(n);
-    try {
-      localStorage.setItem('rouyou.feed.desktopCols', String(n));
-    } catch {}
-  };
   const updateLayoutMode = (mode: 'grid' | 'list') => {
     setLayoutMode(mode);
     try {
@@ -233,9 +225,9 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
     } catch {}
   };
 
-  // m 端 column class:1 或 2;md+ 按用户偏好 3 或 4
+  // m 端 column class:1 或 2;md+ 固定 3 列
   const mobileColClass = mobileCols === 1 ? 'columns-1' : 'columns-2';
-  const desktopColClass = desktopCols === 4 ? 'md:columns-4' : 'md:columns-3';
+  const desktopColClass = 'md:columns-3';
 
   // 还没从 localStorage 读取完，不渲染内容避免闪烁
   if (!initialized) {
@@ -250,8 +242,6 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
         setTab={setTab}
         mobileCols={mobileCols}
         onMobileColsChange={updateMobileCols}
-        desktopCols={desktopCols}
-        onDesktopColsChange={updateDesktopCols}
         layoutMode={layoutMode}
         onLayoutModeChange={updateLayoutMode}
       />
@@ -293,7 +283,7 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
         layoutMode === 'list' ? (
           <ListFeedSkeleton />
         ) : (
-          <FeedSkeleton mobileCols={mobileCols} desktopCols={desktopCols} />
+          <FeedSkeleton mobileCols={mobileCols} />
         )
       ) : cur.items.length === 0 ? (
         <div className="mt-6 rounded-none border border-dashed border-leaf-200 bg-white/60 py-12 text-center text-sm text-leaf-700/70">
@@ -324,12 +314,8 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
           ) : (
             /* 瀑布流模式 */
             <>
-              {/* CSS columns 瀑布流:m 端按用户偏好 1/2,sm=2,md+ 按用户偏好 3/4 */}
-              {/* data-cols 用于 CSS 在 4 列时缩小卡片字号 */}
-              <div
-                data-cols={desktopCols}
-                className={`feed-grid mt-4 ${mobileColClass} gap-3 sm:columns-2 ${desktopColClass} [column-fill:_balance]`}
-              >
+              {/* CSS columns 瀑布流:m 端按用户偏好 1/2,sm=2,md+ 固定 3 列 */}
+              <div className={`feed-grid mt-4 ${mobileColClass} gap-3 sm:columns-2 ${desktopColClass} [column-fill:_balance]`}>
                 {cur.items.map((p) => (
                   <div key={p.id} className="mb-3 break-inside-avoid">
                     <FeedCard post={p} source={tabToSource(tab)} />
@@ -357,8 +343,6 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
           )}
         </>
       )}
-
-      {/* 回到顶部按钮 — 多肉风格 */}
       {showBackToTop && (
         <div
           className="fixed right-6 z-40 flex flex-col items-center"
@@ -451,37 +435,119 @@ function NestedLink({
   );
 }
 
-/** 投票预览(只读):展示问题 + top 3 选项进度条 */
+/** 投票预览(只读):展示问题 + 所有选项进度条 + 精确百分比 */
 function VotePreview({ post }: { post: Post }) {
   if (!post.vote) return null;
   const total = post.vote.options.reduce((s, o) => s + o.votes, 0);
-  const top = [...post.vote.options].sort((a, b) => b.votes - a.votes).slice(0, 3);
+  const deadlinePassed = new Date(post.vote.deadline).getTime() < Date.now();
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+
+  const handleSelect = (optionId: string) => {
+    if (deadlinePassed) return;
+    setSelectedOptions(prev => {
+      if (post.vote?.multi) {
+        // 多选：切换选中状态
+        return prev.includes(optionId)
+          ? prev.filter(id => id !== optionId)
+          : [...prev, optionId];
+      } else {
+        // 单选：直接替换
+        return prev.includes(optionId) ? [] : [optionId];
+      }
+    });
+  };
+
   return (
-    <div className="space-y-1.5 rounded-none bg-amber-50/60 p-2.5 text-amber-900 mb-2">
-      <div className="line-clamp-1 text-sm font-medium">🗳️ {post.vote.question}</div>
-      {top.map((o) => {
-        const pct = total ? Math.round((o.votes / total) * 100) : 0;
-        return (
-          <div
-            key={o.id}
-            className="relative overflow-hidden rounded bg-white/70 px-2 py-1 text-xs"
-          >
-            <div
-              className="absolute inset-y-0 left-0 bg-amber-200/70"
-              style={{ width: `${pct}%` }}
-            />
-            <div className="relative flex justify-between">
-              <span className="truncate">{o.label}</span>
-              <span className="ml-2 tabular-nums">{pct}%</span>
-            </div>
+    <div className="space-y-2 rounded-none bg-leaf-50/60 p-2 mb-3">
+      {/* 问题 */}
+      <div className="flex items-center gap-2">
+        <Tooltip content={post.vote.question} className="max-w-[200px]">
+          <div className="line-clamp-1 text-[13px] font-medium text-leaf-800 flex-1 min-w-0">
+            🗳️ {post.vote.question}
           </div>
-        );
-      })}
-      <div className="flex items-center justify-between text-xs text-amber-700/80">
-        <span>{total} 人参与</span>
-        <span>
-          {new Date(post.vote.deadline).getTime() < Date.now() ? '已截止' : '进行中'}
+        </Tooltip>
+        <span className={`shrink-0 px-1.5 py-0.5 rounded text-[11px] ${deadlinePassed ? 'bg-leaf-100 text-leaf-600' : 'bg-leaf-200 text-leaf-800'}`}>
+          {deadlinePassed ? '已截止' : '进行中'}
         </span>
+        <span className="shrink-0 text-[11px] text-leaf-600">{post.vote.multi ? '多选' : '单选'}</span>
+      </div>
+
+      {/* 选项列表 */}
+      <div className="space-y-1.5">
+        {post.vote.options.map((o, idx) => {
+          let pct: number;
+          if (total === 0) {
+            pct = 0;
+          } else if (idx === post.vote!.options.length - 1) {
+            const sumBefore = post.vote!.options.slice(0, idx).reduce((s, opt) => s + opt.votes, 0);
+            pct = Number(((total - sumBefore) / total * 100).toFixed(1));
+          } else {
+            pct = Number((o.votes / total * 100).toFixed(1));
+          }
+
+          const isSelectable = !deadlinePassed;
+          const isSelected = selectedOptions.includes(o.id);
+          return (
+            <div
+              key={o.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isSelectable) return;
+                handleSelect(o.id);
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                if (!isSelectable) return;
+                handleSelect(o.id);
+              }}
+              onTouchMove={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+              onPointerMove={(e) => e.stopPropagation()}
+              onPointerCancel={(e) => e.stopPropagation()}
+              className={cn(
+                'relative overflow-hidden rounded px-1 py-1 cursor-pointer transition-all',
+                isSelectable && 'bg-white/70 hover:bg-leaf-100 hover:shadow-sm active:bg-leaf-200',
+                !isSelectable && 'bg-white/70',
+                isSelected && 'bg-leaf-200/60'
+              )}
+            >
+              {/* 进度条 */}
+              <div
+                className="absolute inset-y-0 left-0 bg-leaf-200"
+                style={{ width: `${pct}%` }}
+              />
+              {/* 内容 */}
+              <div className="relative flex items-center justify-between gap-1 text-[11px]">
+                <div className="flex items-center gap-1 min-w-0 flex-1">
+                  <span className="w-[10px] text-center text-leaf-600 font-bold shrink-0">
+                    {isSelected ? '✓' : ''}
+                  </span>
+                  <span className="truncate text-leaf-900">{o.label}</span>
+                </div>
+                <span className="shrink-0 tabular-nums text-leaf-700">
+                  {pct}% <span className="text-leaf-600">({o.votes}票)</span>
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 底部统计 */}
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] text-leaf-700/80">{total} 票</span>
+        {!deadlinePassed && (
+          <button
+            type="button"
+            className="px-3 py-1 rounded bg-leaf-500 text-white text-[10px] font-medium hover:bg-leaf-600 transition-colors disabled:opacity-50"
+            disabled={selectedOptions.length === 0}
+          >
+            提交投票
+          </button>
+        )}
       </div>
     </div>
   );
@@ -511,33 +577,48 @@ function JournalPreview({ post }: { post: Post }) {
   if (!post.journal) return null;
   const j = post.journal;
   const shown = j.entries ?? [];
+  const totalCount = j.entriesCount ?? shown.length;
+
+  // 超过 4 条时：前 3 条 + 中间提示 + 最后 1 条
+  const showCompact = totalCount > 4;
+  const first3 = shown.slice(0, 3);
+  const lastEntry = shown[shown.length - 1];
+  const middleCount = totalCount - 4;
 
   return (
-    <div className="rounded-none bg-emerald-50/60 p-2.5 mb-2">
-      <div className="mb-1.5 flex items-center justify-between text-xs text-emerald-700/80">
+    <div className="rounded-none bg-leaf-50/60 p-2.5 mb-2">
+      <div className="mb-1.5 flex items-center justify-between text-sm text-leaf-700/80">
         <span className="truncate font-medium">📖 {j.subjectName}</span>
-        <span>第 {j.daysSinceStart} 天 · 共 {j.entriesCount} 条</span>
+        <span className="text-xs">第 {j.daysSinceStart} 天 · 共 {j.entriesCount} 条</span>
       </div>
 
       <div className="relative">
         <ol className="space-y-2">
-          {shown.slice(0, 3).map((e) => {
-            const meta = STAGE_META[e.stage];
+          {first3.map((e) => {
+            const meta = STAGE_META[e.stage] || STAGE_META.other;
             return (
               <li key={e.id} className="space-y-1">
                 <div className="flex items-start gap-2">
-                  <span className="mt-1 block h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
+                  <span className="mt-1 block h-2 w-2 shrink-0 rounded-full bg-leaf-400" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 text-xs">
                       <span className="font-medium text-ink-800">
-                        {new Date(e.entryDate).toLocaleDateString()}
+                        {(() => {
+                const d = new Date(e.entryDate);
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}/${mm}/${dd}`;
+              })()}
                       </span>
                       <span className={cn('rounded px-1.5 py-0.5 text-[11px] border', meta.color)}>
                         {meta.emoji} {meta.zh}
                       </span>
                     </div>
                     {e.note && (
-                      <p className="line-clamp-1 text-xs text-ink-600/80 mt-0.5">{e.note}</p>
+                      <Tooltip content={e.note}>
+                        <p className="line-clamp-1 text-xs text-ink-600/80 mt-0.5">{e.note}</p>
+                      </Tooltip>
                     )}
                   </div>
                 </div>
@@ -568,12 +649,63 @@ function JournalPreview({ post }: { post: Post }) {
               </li>
             );
           })}
+
+          {/* 中间省略提示 */}
+          {showCompact && (
+            <li className="pl-4 text-xs text-leaf-700/60">
+              + {middleCount} 条更多...
+            </li>
+          )}
+
+          {/* 最后 1 条 */}
+          {showCompact && lastEntry && (
+            <li key={lastEntry.id} className="space-y-1">
+              <div className="flex items-start gap-2">
+                <span className="mt-1 block h-2 w-2 shrink-0 rounded-full bg-leaf-400" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="font-medium text-ink-800">
+                      {(() => {
+                      const d = new Date(lastEntry.entryDate);
+                      const yyyy = d.getFullYear();
+                      const mm = String(d.getMonth() + 1).padStart(2, '0');
+                      const dd = String(d.getDate()).padStart(2, '0');
+                      return `${yyyy}/${mm}/${dd}`;
+                    })()}
+                    </span>
+                    <span className={cn('rounded px-1.5 py-0.5 text-[11px] border',
+                      STAGE_META[lastEntry.stage]?.color || STAGE_META.other.color
+                    )}>
+                      {STAGE_META[lastEntry.stage]?.emoji || STAGE_META.other.emoji} {STAGE_META[lastEntry.stage]?.zh || STAGE_META.other.zh}
+                    </span>
+                  </div>
+                  {lastEntry.note && (
+                    <p className="line-clamp-1 text-xs text-ink-600/80 mt-0.5" title={lastEntry.note}>{lastEntry.note}</p>
+                  )}
+                </div>
+              </div>
+              {/* 配图展示 */}
+              {lastEntry.images && lastEntry.images.length > 0 && (
+                <div className="ml-3 grid grid-cols-9 gap-1">
+                  {lastEntry.images.slice(0, 9).map((img, idx) => (
+                    <div
+                      key={idx}
+                      className="relative aspect-square overflow-hidden rounded bg-white/50"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img} alt="" className="h-full w-full object-cover" />
+                      {idx === 8 && lastEntry.images.length > 9 && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                          <span className="text-xs font-bold text-white">+{lastEntry.images.length - 9}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </li>
+          )}
         </ol>
-        {j.entriesCount > 3 && (
-          <div className="mt-1.5 text-xs text-emerald-700/60">
-            + {j.entriesCount - 3} 条更多...
-          </div>
-        )}
       </div>
     </div>
   );
@@ -724,7 +856,7 @@ function FeedListCard({
           <button
             type="button"
             onClick={handleFollow}
-            className="text-[11px] px-2.5 py-1 rounded-full border border-leaf-500 text-leaf-600 hover:bg-leaf-500 hover:text-white transition-colors"
+            className="text-[10px] px-2 py-0.5 rounded-full border border-leaf-500 text-leaf-600 hover:bg-leaf-500 hover:text-white transition-colors"
           >
             +关注
           </button>
@@ -757,6 +889,10 @@ function FeedListCard({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (['vote', 'event', 'journal', 'help'].includes(post.type)) {
+                          alert('🔒 该类型帖子不支持编辑\n投票/活动/成长日记/求助类型涉及报名、投票、记录、悬赏等数据,不允许后续修改。');
+                          return;
+                        }
                         router.push(`/post/${post.id}/edit`);
                       }}
                       className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
@@ -878,13 +1014,12 @@ function FeedListCard({
       {post.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-3">
           {post.tags.slice(0, 5).map((tag, i) => (
-            <Link
+            <TopicTag
               key={i}
+              tag={tag}
               href={`/topic/${encodeURIComponent(tag)}`}
-              className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700 hover:bg-amber-100 transition-colors"
-            >
-              #{tag}
-            </Link>
+              size="md"
+            />
           ))}
         </div>
       )}
@@ -1021,15 +1156,12 @@ function FeedListCard({
 
 function FeedSkeleton({
   mobileCols = 2,
-  desktopCols = 3,
 }: {
   mobileCols?: 1 | 2;
-  desktopCols?: 3 | 4;
 }) {
   const colClass = mobileCols === 1 ? 'columns-1' : 'columns-2';
-  const dColClass = desktopCols === 4 ? 'md:columns-4' : 'md:columns-3';
   return (
-    <div className={`mt-4 ${colClass} gap-3 sm:columns-2 ${dColClass}`}>
+    <div className={`mt-4 ${colClass} gap-3 sm:columns-2 md:columns-3`}>
       {Array.from({ length: 9 }).map((_, i) => (
         <div key={i} className="mb-3 break-inside-avoid">
           <PostCardSkeleton variant={i} />
@@ -1096,8 +1228,6 @@ function TabHeader({
   setTab,
   mobileCols,
   onMobileColsChange,
-  desktopCols,
-  onDesktopColsChange,
   layoutMode,
   onLayoutModeChange,
 }: {
@@ -1105,8 +1235,6 @@ function TabHeader({
   setTab: (t: TabKey) => void;
   mobileCols: 1 | 2;
   onMobileColsChange: (n: 1 | 2) => void;
-  desktopCols: 3;
-  onDesktopColsChange: (n: 3 | 4) => void;
   layoutMode: 'grid' | 'list';
   onLayoutModeChange: (mode: 'grid' | 'list') => void;
 }) {

@@ -1,10 +1,7 @@
 import { Shell } from '@/components/layout/Shell';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
-import { SignInCard } from '@/components/home/SignInCard';
 import { FeedTabs } from '@/components/home/FeedTabs';
-import { TopicsCard } from '@/components/home/TopicsCard';
-import { RecommendUsers } from '@/components/home/RecommendUsers';
-import { SystemMenuShortcuts } from '@/components/home/SystemMenuShortcuts';
+import { RightSidebar } from '@/components/layout/RightSidebar';
 import { loadQuickDiscoveryData } from '@/lib/quick-discovery';
 import { prisma } from '@/lib/db';
 import { postInclude } from '@/lib/post-include';
@@ -54,7 +51,7 @@ export default async function HomePage() {
   const recommendUsers = recommendUsersRaw.map(serializeUser);
 
   return (
-    <Shell>
+    <Shell recommendUsers={recommendUsers}>
       {/* SEO: 全站根 JSON-LD —— Website 让 Google 显示站内搜索框,Organization 全站共享 */}
       {jsonLdScript([websiteJsonLd(), organizationJsonLd()])}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_280px]">
@@ -64,15 +61,7 @@ export default async function HomePage() {
         </div>
 
         <div className="space-y-5 xl:sticky xl:top-[60px] xl:self-start xl:h-[calc(100vh-72px)] xl:overflow-y-auto">
-          {/* 1. 快捷入口 */}
-          <SystemMenuShortcuts />
-          {/* 2. 签到 + 月历(整合) */}
-          <SignInCard />
-          {/* 3. 话题 */}
-          <TopicsCard />
-          {/* 4. 推荐肉友 */}
-          <RecommendUsers users={recommendUsers} />
-          {/* 法律入口已挪到全站 Footer,这里不再重复 */}
+          <RightSidebar recommendUsers={recommendUsers} />
         </div>
       </div>
     </Shell>

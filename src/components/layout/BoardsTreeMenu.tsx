@@ -111,7 +111,7 @@ export function BoardsTreeMenu({
               type="button"
               onClick={() => toggleCat(c.id)}
               className={cn(
-                'flex w-full items-center gap-2 rounded-none px-3 py-2 text-xs transition-colors',
+                'flex w-full items-center gap-2 rounded-none px-3 py-2 text-sm transition-colors',
                 isActiveCategory
                   ? 'bg-leaf-100 font-medium text-leaf-800'
                   : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700',
@@ -139,7 +139,7 @@ export function BoardsTreeMenu({
                         href={`/board/${c.slug}/${g.slug}`}
                         onClick={onNavigate}
                         className={cn(
-                          "flex items-center justify-between gap-2 rounded-none px-2 py-1.5 text-[11px] transition-colors",
+                          "flex items-center justify-between gap-2 rounded-none px-2 py-1.5 text-xs transition-colors",
                           isActive
                             ? "bg-leaf-500 text-white font-medium"
                             : "text-ink-700 hover:bg-leaf-50 hover:text-leaf-700"
@@ -149,7 +149,7 @@ export function BoardsTreeMenu({
                           <span className="block truncate">{g.name}</span>
                           {g.latinName && (
                             <span className={cn(
-                              "block truncate text-[9px] italic",
+                              "block truncate text-[10px] italic",
                               isActive ? "text-white/80" : "text-leaf-700/50"
                             )}>
                               {g.latinName}
@@ -157,7 +157,7 @@ export function BoardsTreeMenu({
                           )}
                         </span>
                         <span className={cn(
-                          "shrink-0 text-[9px]",
+                          "shrink-0 text-[10px]",
                           isActive ? "text-white/80" : "text-leaf-700/40"
                         )}>
                           {g._count.posts}
