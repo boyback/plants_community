@@ -38,7 +38,7 @@ export async function loadQuickDiscoveryData(opts: { n?: number; shuffle?: boole
     species: pickedSpecies.map((s) => ({
       id: s.id,
       name: s.name,
-      url: `/board/${s.genus.board.slug}/${s.genus.slug}/${s.slug}`,
+      url: `/board/${s.genus.board?.slug ?? ''}/${s.genus.slug}/${s.slug}`,
     })),
     boards: boards.map((c) => ({
       id: c.id,

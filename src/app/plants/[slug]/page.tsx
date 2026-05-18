@@ -14,6 +14,6 @@ export default async function LegacyPlantRedirect({ params }: { params: { slug: 
     include: { genus: { include: { board: true } } },
   });
   if (!s) notFound();
-  const path = `/board/${s.genus.board.slug}/${s.genus.slug}/${s.slug}`;
+  const path = `/board/${s.genus.board?.slug ?? ''}/${s.genus.slug}/${s.slug}`;
   redirect(path);
 }

@@ -55,23 +55,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const c of boards) {
       out.push({
         url: `${SITE_URL}/board/${c.slug}`,
-        lastModified: c.updatedAt,
+        lastModified: c.updatedAt ?? new Date(),
         changeFrequency: 'weekly',
         priority: 0.8,
       });
     }
     for (const g of genera) {
       out.push({
-        url: `${SITE_URL}/board/${g.board.slug}/${g.slug}`,
-        lastModified: g.updatedAt,
+        url: `${SITE_URL}/board/${g.board?.slug ?? ''}/${g.slug}`,
+        lastModified: g.updatedAt ?? new Date(),
         changeFrequency: 'weekly',
         priority: 0.7,
       });
     }
     for (const s of species) {
       out.push({
-        url: `${SITE_URL}/board/${s.genus.board.slug}/${s.genus.slug}/${s.slug}`,
-        lastModified: s.updatedAt,
+        url: `${SITE_URL}/board/${s.genus.board?.slug ?? ''}/${s.genus.slug}/${s.slug}`,
+        lastModified: s.updatedAt ?? new Date(),
         changeFrequency: 'weekly',
         priority: 0.8, // 品种页 SEO 价值高(用户搜「银冠玉」会落到这里)
       });

@@ -7,7 +7,7 @@ import { api, ApiError } from '@/lib/client-api';
 
 interface Genus {
   id: string;
-  boardId: string;
+  boardId: string | null;
   slug: string;
   name: string;
   latinName: string | null;

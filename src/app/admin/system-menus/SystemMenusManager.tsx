@@ -474,6 +474,7 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
       location,
       cardKey: cardKey || null,
       type,
+      orderIdx: menu?.orderIdx ?? 0,
       enabled: menu?.enabled ?? true,
     });
   };
@@ -485,7 +486,7 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
     { name: '品种图鉴', slug: 'plants', path: '/plants', description: '多肉品种图鉴', location: 'header' as const },
     { name: '摄影大赛', slug: 'contests', path: '/contests', description: '摄影比赛活动', location: 'header' as const },
     { name: '养殖交流', slug: 'forum', path: '/forum', description: '养殖经验交流', location: 'header' as const },
-    { name: '新手村', slug: 'beginner', path: '/beginner', description: '新手入门指导', location: 'sidebar' as const },
+    { name: '新手村', slug: 'beginner', path: '/beginner', description: '新手入门指导', location: 'sidebar_left' as const },
   ];
 
   const applyPreset = (preset: typeof presets[0]) => {

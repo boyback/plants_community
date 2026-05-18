@@ -741,7 +741,7 @@ function EntryItem({ entry, meta }: { entry: any; meta: any }) {
           {/* 配图展示 - 在描述下面 */}
           {entry.images && entry.images.length > 0 && (
             <div className="mt-1 flex flex-wrap gap-1">
-              {entry.images.slice(0, 3).map((img, idx) => (
+              {entry.images.slice(0, 3).map((img: string, idx: number) => (
                 <div key={idx} className="relative w-8 h-8 overflow-hidden rounded bg-white/50">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={img} alt="" className="h-full w-full object-cover" />

@@ -128,7 +128,7 @@ export async function GET(req: Request) {
         name: s.name,
         latinName: s.latinName,
         cover: s.cover,
-        url: `/board/${s.genus.board.slug}/${s.genus.slug}/${s.slug}`,
+        url: `/board/${s.genus.board?.slug ?? ''}/${s.genus.slug}/${s.slug}`,
       })),
       boards: boards.map((b) => ({
         id: b.id,

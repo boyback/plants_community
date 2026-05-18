@@ -117,7 +117,7 @@ export default async function TopicPage({
       {/* 如果该话题恰好是一个品种 → 给一个跳到图鉴的入口卡 */}
       {matchedSpecies && (
         <Link
-          href={`/board/${matchedSpecies.genus.board.slug}/${matchedSpecies.genus.slug}/${matchedSpecies.slug}`}
+          href={`/board/${matchedSpecies.genus.board?.slug ?? ''}/${matchedSpecies.genus.slug}/${matchedSpecies.slug}`}
           className="card-hoverable mb-5 flex items-center gap-3 p-3"
         >
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-leaf-50">

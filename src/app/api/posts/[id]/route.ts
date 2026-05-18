@@ -149,7 +149,7 @@ async function resolveBoardIds(body: {
   genusSlug?: string;
   speciesSlug?: string;
 }): Promise<
-  | { ok: true; ids: { boardId: string; genusId: string | null; speciesId: string | null } | null }
+  | { ok: true; ids: { boardId: string | null; genusId: string | null; speciesId: string | null } | null }
   | { ok: false; error: string }
 > {
   if (body.speciesSlug) {
@@ -161,7 +161,7 @@ async function resolveBoardIds(body: {
     return {
       ok: true,
       ids: {
-        boardId: sp.genus.boardId,
+        boardId: sp.genus.boardId ?? null,
         genusId: sp.genusId,
         speciesId: sp.id,
       },
@@ -179,7 +179,7 @@ async function resolveBoardIds(body: {
     return {
       ok: true,
       ids: {
-        boardId: g.boardId,
+        boardId: g.boardId ?? null,
         genusId: g.id,
         speciesId: null,
       },

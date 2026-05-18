@@ -323,7 +323,7 @@ async function GenusView({
       <div className="card mb-6 overflow-hidden">
         <div className="relative aspect-[21/8] bg-gradient-to-br from-leaf-300 to-leaf-600 md:aspect-[21/6]">
           <Image
-            src={g.cover || g.board.cover}
+            src={g.cover ?? (g.board?.cover ?? '')}
             alt={g.name}
             fill
             className="object-cover"
@@ -333,7 +333,7 @@ async function GenusView({
           <div className="absolute inset-0 bg-gradient-to-t from-ink-900/85 via-ink-900/40 to-ink-900/20" />
 
           <div className="absolute inset-0 flex flex-col justify-end p-5 text-white md:p-6">
-            <div className="mb-1 text-xs opacity-80">{g.board.name}</div>
+            <div className="mb-1 text-xs opacity-80">{genus.path[0]?.name ?? ''}</div>
             <h1 className="text-2xl font-bold md:text-3xl">
               {g.name}
               {g.latinName && (
@@ -365,7 +365,7 @@ async function GenusView({
                 <FollowBoardButton
                   type="genus"
                   slug={g.slug}
-                  categorySlug={g.board.slug}
+                  categorySlug={genus.path[0]?.slug ?? ''}
                 />
               </div>
             </div>
@@ -479,7 +479,7 @@ async function SpeciesView({
   const speciesLd = speciesJsonLd({
     name: full.name,
     latinName: full.latinName,
-    family: `${s.genus.board.name} · ${s.genus.name}`,
+    family: `${s.genus.board?.name ?? ''} · ${s.genus.name}`,
     description: full.description,
     cover: full.cover.startsWith('http') ? full.cover : `${SITE_URL}${full.cover}`,
     url: speciesUrl,
@@ -487,7 +487,7 @@ async function SpeciesView({
   });
   const breadcrumbLd = breadcrumbJsonLd([
     { name: '首页', url: SITE_URL },
-    { name: s.genus.board.name, url: `${SITE_URL}/board/${categorySlug}` },
+    { name: s.genus.board?.name ?? '', url: `${SITE_URL}/board/${categorySlug}` },
     { name: s.genus.name, url: `${SITE_URL}/board/${categorySlug}/${genusSlug}` },
     { name: full.name, url: speciesUrl },
   ]);
@@ -520,7 +520,7 @@ async function SpeciesView({
             </div>
             <div className="p-5">
               <div className="text-[11px] text-leaf-700/70">
-                {s.genus.board.name} · {s.genus.name}
+                {s.genus.board?.name ?? ''} · {s.genus.name}
               </div>
               <h1 className="mt-1 flex flex-wrap items-baseline gap-3">
                 <span className="text-2xl font-bold text-ink-800 md:text-3xl">{full.name}</span>

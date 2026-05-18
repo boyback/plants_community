@@ -19,9 +19,9 @@ async function main() {
     });
     console.log('Sidebar menus:', sidebarMenus.length);
     sidebarMenus.forEach(m => console.log(`  - ${m.name} (${m.location})`));
-  } catch (e) {
-    console.error('Error:', e.message);
-    console.error(e.stack);
+  } catch (e: unknown) {
+    console.error('Error:', (e as Error).message);
+    console.error((e as Error).stack);
   } finally {
     await prisma.$disconnect();
   }

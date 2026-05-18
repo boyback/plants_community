@@ -40,9 +40,9 @@ export async function GET(req: Request) {
       name: g.name,
       latinName: g.latinName,
       posts: g._count.posts,
-      categorySlug: g.board.slug,
-      categoryName: g.board.name,
-      categoryIcon: g.board.icons,
+      categorySlug: g.board?.slug ?? null,
+      categoryName: g.board?.name ?? null,
+      categoryIcon: g.board?.icons ?? null,
     })),
   });
 }

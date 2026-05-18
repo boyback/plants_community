@@ -28,7 +28,7 @@ export const GET = handler(async (req) => {
   return {
     genus: serializeGenus(g),
     latinName: g.latinName ?? null,
-    category: serializeCategory(g.board),
+    category: g.board ? serializeCategory(g.board) : null,
     species: g.species.map((s) =>
       serializeSpecies({ ...s, genus: { ...g, board: g.board } })
     ),

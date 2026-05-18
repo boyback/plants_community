@@ -103,11 +103,11 @@ import type {
 } from '@prisma/client';
 
 type GenusWithRelations = DBGenus & {
-  board?: DBBoard;
+  board?: DBBoard | null;
   _count?: { posts?: number; species?: number };
 };
 type SpeciesWithRelations = DBSpecies & {
-  genus?: DBGenus & { board?: DBBoard };
+  genus?: (DBGenus & { board?: DBBoard | null }) | null;
   _count?: { posts?: number };
 };
 

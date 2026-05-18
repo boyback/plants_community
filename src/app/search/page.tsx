@@ -255,7 +255,7 @@ export default async function SearchPage({
                 {species.map((s) => (
                   <Link
                     key={s.id}
-                    href={`/board/${s.genus.board.slug}/${s.genus.slug}/${s.slug}`}
+                    href={`/board/${s.genus.board?.slug ?? ''}/${s.genus.slug}/${s.slug}`}
                     className="card-hoverable group overflow-hidden"
                   >
                     <div className="relative aspect-[4/3] bg-leaf-50">

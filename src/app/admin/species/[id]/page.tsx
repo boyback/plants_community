@@ -68,7 +68,7 @@ export default async function EditSpeciesPage({
         }
         genera={allGenera.map((g) => ({
           id: g.id,
-          label: `${g.board.name} / ${g.name}(${g.slug})`,
+          label: `${g.board?.name ?? '未分类'} / ${g.name}(${g.slug})`,
         }))}
       />
     </div>

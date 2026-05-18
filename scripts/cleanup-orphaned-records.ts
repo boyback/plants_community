@@ -30,7 +30,7 @@ async function main() {
   });
 
   // 过滤出孤立的 genus（boardId 不在存在的 board 中）
-  const orphanedGenera = allGenera.filter((g) => !existingBoardIds.has(g.boardId));
+  const orphanedGenera = allGenera.filter((g) => g.boardId && !existingBoardIds.has(g.boardId));
 
   console.log(`找到 ${orphanedGenera.length} 个孤立的属记录：`);
   orphanedGenera.forEach((g) => {

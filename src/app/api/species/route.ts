@@ -35,7 +35,7 @@ export async function GET(req: Request) {
       slug: s.slug,
       name: s.name,
       latinName: s.latinName,
-      familySlug: s.genus.board.slug,
+      familySlug: s.genus.board?.slug ?? '',
       genusSlug: s.genus.slug,
     })),
   );
