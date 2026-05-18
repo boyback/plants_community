@@ -299,6 +299,7 @@ model SystemMenu {
   path        String? // 菜单链接路径
   location    String   @default("sidebar_left") // sidebar_left | sidebar_right | header
   cardKey     String? // 控制前台卡片显示，如 card:boards、card:signin、card:topics 等
+  type        String   @default("button") // button | card
   orderIdx    Int      @default(0)
   enabled     Boolean  @default(true)
   createdAt   DateTime @default(now())
