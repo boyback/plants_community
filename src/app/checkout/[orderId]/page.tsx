@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from '@/lib/client-api';
 import { cn, countdown, formatPrice } from '@/lib/utils';
+import { toast } from '@/components/ui/Toast';
 import type { Order, Payment } from '@/lib/types';
 import { PaymentQr, type PayChannel } from '@/components/payment/PaymentQr';
 
@@ -28,7 +29,6 @@ export default function CheckoutPage() {
   const [creating, setCreating] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const [abandoned, setAbandoned] = useState(false);
   const [regenTick, setRegenTick] = useState(0);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -86,7 +86,7 @@ export default function CheckoutPage() {
             everScanned = false;
             notScanningStreak = 0;
             setAbandoned(false);
-            setToast(t('checkout.paySuccessRedirect'));
+            toast.success(t('checkout.paySuccessRedirect'));
             await refresh();
             setTimeout(() => router.push('/orders'), 3000);
           } else if (p.status === 'expired' || p.status === 'cancelled') {
@@ -126,7 +126,7 @@ export default function CheckoutPage() {
       await api.post(`/api/payments/${payment.payNo}/confirm`);
       const p = await api.get<Payment>(`/api/payments/${payment.payNo}`);
       setPayment(p);
-      setToast(t('checkout.paySuccessRedirect'));
+      toast.success(t('checkout.paySuccessRedirect'));
       await refresh();
       setTimeout(() => router.push('/orders'), 3000);
     } catch (e) {
@@ -414,12 +414,6 @@ export default function CheckoutPage() {
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {toast && (
-        <div className="pointer-events-none fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg lg:bottom-10">
-          {toast}
         </div>
       )}
     </Shell>

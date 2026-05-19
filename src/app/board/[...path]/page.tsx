@@ -208,7 +208,7 @@ async function CategoryView({ categorySlug }: { categorySlug: string }) {
   if (postsRaw.length > PAGE) {
     nextCursor = postsRaw.pop()!.id;
   }
-  const posts = postsRaw.map(serializePost);
+  const posts = postsRaw.map((p: any) => serializePost(p));
   const board = serializeCategory(c);
 
   return (
@@ -311,7 +311,7 @@ async function GenusView({
   if (postsRaw.length > PAGE) {
     nextCursor = postsRaw.pop()!.id;
   }
-  const posts = postsRaw.map(serializePost);
+  const posts = postsRaw.map((p: any) => serializePost(p));
 
   const genus = serializeGenus(g);
 
@@ -470,7 +470,7 @@ async function SpeciesView({
   if (postsRaw.length > PAGE) {
     nextCursor = postsRaw.pop()!.id;
   }
-  const posts = postsRaw.map(serializePost);
+  const posts = postsRaw.map((p: any) => serializePost(p));
 
   const full = serializeSpeciesFull(s);
 

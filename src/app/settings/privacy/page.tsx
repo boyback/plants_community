@@ -5,6 +5,7 @@ import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
+import { toast } from '@/components/ui/Toast';
 
 interface PrivacyState {
   showFollowing: boolean;
@@ -16,12 +17,6 @@ export default function PrivacySettingsPage() {
   const [privacy, setPrivacy] = useState<PrivacyState | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = (s: string) => {
-    setToast(s);
-    setTimeout(() => setToast(null), 2000);
-  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -46,9 +41,9 @@ export default function PrivacySettingsPage() {
       });
       setPrivacy(r);
       await refresh();
-      showToast('✓ 已保存');
+      toast.success('已保存');
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : '保存失败');
+      toast.error(e instanceof ApiError ? e.message : '保存失败');
     } finally {
       setSaving(null);
     }
@@ -104,12 +99,6 @@ export default function PrivacySettingsPage() {
               <li>新注册用户默认两个开关都开启,以促进社区互动</li>
             </ul>
           </div>
-        </div>
-      )}
-
-      {toast && (
-        <div className="pointer-events-none fixed bottom-10 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg">
-          {toast}
         </div>
       )}
     </div>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
 
 export function AuctionRowActions({ id, status }: { id: string; status: string }) {
   const router = useRouter();
@@ -16,7 +17,7 @@ export function AuctionRowActions({ id, status }: { id: string; status: string }
       await api.patch(`/api/admin/auctions/${id}`, body);
       router.refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '操作失败');
+      toast.error(e instanceof ApiError ? e.message : '操作失败');
     } finally {
       setBusy(false);
     }

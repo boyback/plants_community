@@ -9,6 +9,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
 
 interface Contest {
   id: string;
@@ -100,7 +101,7 @@ export default function ContestDetailPage() {
 
   const handleVote = async (entryId: string) => {
     if (!user) {
-      alert('请先登录');
+      toast.error('请先登录');
       return;
     }
 
@@ -110,7 +111,7 @@ export default function ContestDetailPage() {
       });
       loadEntries();
     } catch (error: any) {
-      alert(error.message || '投票失败');
+      toast.error(error.message || '投票失败');
     }
   };
 

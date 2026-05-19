@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { toast } from '@/components/ui/Toast';
 
 interface Broadcast {
   id: string;
@@ -66,10 +67,10 @@ export default function EmailBroadcastPage() {
       });
       const data = await r.json();
       if (!r.ok) {
-        alert(data?.error?.message || '创建失败');
+        toast.error(data?.error?.message || '创建失败');
         return;
       }
-      alert(`✓ 已创建,共 ${data.data.total} 个收件人。请到列表点「启动」`);
+      toast.success(`已创建,共 ${data.data.total} 个收件人。请到列表点「启动」`);
       setShowCreate(false);
       setSubject('');
       setHtml('');
@@ -92,7 +93,7 @@ export default function EmailBroadcastPage() {
           });
     const data = await r.json();
     if (!r.ok) {
-      alert(data?.error?.message || '操作失败');
+      toast.error(data?.error?.message || '操作失败');
       return;
     }
     load();

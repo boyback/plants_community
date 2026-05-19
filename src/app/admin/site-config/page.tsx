@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
 
 interface Config {
   photoUploadMinLevel: number;
@@ -19,13 +20,7 @@ interface PingResult {
 export default function Page() {
   const [cfg, setCfg] = useState<Config | null>(null);
   const [busy, setBusy] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [err, setErr] = useState('');
-
-  const showToast = (m: string) => {
-    setToast(m);
-    setTimeout(() => setToast(null), 2000);
-  };
 
   useEffect(() => {
     api
@@ -40,9 +35,9 @@ export default function Page() {
     try {
       const r = await api.patch<Config>('/api/admin/site-config', next);
       setCfg(r);
-      showToast('已保存');
+      toast.success('已保存');
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : '保存失败');
+      toast.error(e instanceof ApiError ? e.message : '保存失败');
     } finally {
       setBusy(false);
     }
@@ -127,12 +122,6 @@ export default function Page() {
           </div>
         </div>
       </section>
-
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-leaf-900/85 px-4 py-2 text-xs text-white shadow-lg">
-          {toast}
-        </div>
-      )}
     </div>
   );
 }

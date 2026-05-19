@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from '@/lib/client-api';
 import { cn, countdown, formatPrice } from '@/lib/utils';
+import { toast } from '@/components/ui/Toast';
 import type { Payment } from '@/lib/types';
 import { PaymentQr, type PayChannel } from '@/components/payment/PaymentQr';
 
@@ -35,7 +36,6 @@ export default function VipCheckoutPage() {
   const [creating, setCreating] = useState(true);
   const [confirming, setConfirming] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const [abandoned, setAbandoned] = useState(false);
   const [regenTick, setRegenTick] = useState(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -76,7 +76,7 @@ export default function VipCheckoutPage() {
             everScanned = false;
             notScanningStreak = 0;
             setAbandoned(false);
-            setToast(t('checkout.paySuccess'));
+            toast.success(t('checkout.paySuccess'));
             await refresh();
             setTimeout(() => router.push('/vip'), 3000);
           } else if (p.status === 'expired' || p.status === 'cancelled') {
@@ -112,7 +112,7 @@ export default function VipCheckoutPage() {
     setConfirming(true);
     try {
       await api.post(`/api/payments/${payment.payNo}/confirm`);
-      setToast(t('checkout.paySuccess'));
+      toast.success(t('checkout.paySuccess'));
       await refresh();
       setTimeout(() => router.push('/vip'), 3000);
     } catch (e) {
@@ -250,12 +250,6 @@ export default function VipCheckoutPage() {
           </div>
         </div>
       </div>
-
-      {toast && (
-        <div className="pointer-events-none fixed bottom-10 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg">
-          {toast}
-        </div>
-      )}
     </Shell>
   );
 }

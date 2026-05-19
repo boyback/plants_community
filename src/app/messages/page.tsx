@@ -13,6 +13,7 @@ import { useRealtime, type RealtimePayload } from '@/context/RealtimeContext';
 import { useI18n } from '@/i18n/I18nContext';
 import type { Conversation, Message, User } from '@/lib/types';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
 
 export default function Page() {
   return (
@@ -138,7 +139,7 @@ function MessagesInner() {
       // 刷新列表(最新消息时间)
       await loadList();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : t('messages.errorSend'));
+      toast.error(e instanceof ApiError ? e.message : t('messages.errorSend'));
     } finally {
       setSending(false);
     }

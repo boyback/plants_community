@@ -26,8 +26,9 @@ import { CategoryEditDialog } from './CategoryEditDialog';
 import { GenusEditDialog } from './GenusEditDialog';
 import { SpeciesEditDialog } from './SpeciesEditDialog';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
-import { Toast, useToast, showToast } from '@/components/ui/Toast';
+import { Toast, useToast, showToast, toast } from '@/components/ui/Toast';
 import { ConfirmDialog } from '@/components/ui/Dialog';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 
 interface SpeciesNode {
   id: string;
@@ -109,13 +110,13 @@ export function BoardsManager({ initial }: { initial: BoardNode[] }) {
   const removeBoard = async (c: BoardNode) => {
     // 特殊板块（晒图广场、交易市场）无法删除
     if (c.kind === 'system' || c.slug === 'shaitu' || c.slug === 'jiaoyi') {
-      alert('该板块为系统功能板块，无法删除，只能启用或关闭');
+      toast.error('该板块为系统功能板块，无法删除，只能启用或关闭');
       return;
     }
     // 检查所有属下是否有帖子
     const totalPosts = c.genera.reduce((sum, g) => sum + g.postsCount, 0);
     if (totalPosts > 0) {
-      alert('该板块下的属中还有帖子，无法删除');
+      toast.error('该板块下的属中还有帖子，无法删除');
       return;
     }
 
@@ -150,7 +151,6 @@ export function BoardsManager({ initial }: { initial: BoardNode[] }) {
       showToast('该属下还有品种或帖子，无法删除', 'error');
       return;
     }
-    if (!confirm(`删除「${g.name}」属?`)) return;
     setBusy(g.id);
     try {
       await api.delete(`/api/admin/genera/${g.id}`);
@@ -168,7 +168,6 @@ export function BoardsManager({ initial }: { initial: BoardNode[] }) {
       showToast('该品种下还有帖子，无法删除', 'error');
       return;
     }
-    if (!confirm(`删除品种「${s.name}」?`)) return;
     setBusy(s.id);
     try {
       await api.delete(`/api/admin/species/${s.id}`);
@@ -183,7 +182,6 @@ export function BoardsManager({ initial }: { initial: BoardNode[] }) {
 
   const batchDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`批量删除 ${selectedIds.size} 个板块？`)) return;
     setBusy('batch');
     try {
       const result = await api.post<{ deleted: number; skipped: string[] }>(
@@ -282,14 +280,21 @@ export function BoardsManager({ initial }: { initial: BoardNode[] }) {
             </button>
           </div>
           {selectedIds.size > 0 && (
-            <button
-              type="button"
-              onClick={batchDelete}
-              disabled={busy === 'batch'}
-              className="rounded-lg bg-rose-500 px-3 py-2 text-xs text-white hover:bg-rose-600"
+            <ConfirmPopover
+              title={`确定批量删除 ${selectedIds.size} 个板块？`}
+              message="此操作不可恢复"
+              confirmText="删除"
+              danger
+              onConfirm={batchDelete}
             >
-              {busy === 'batch' ? '删除中...' : `删除 ${selectedIds.size} 项`}
-            </button>
+              <button
+                type="button"
+                disabled={busy === 'batch'}
+                className="rounded-lg bg-rose-500 px-3 py-2 text-xs text-white hover:bg-rose-600"
+              >
+                {busy === 'batch' ? '删除中...' : `删除 ${selectedIds.size} 项`}
+              </button>
+            </ConfirmPopover>
           )}
           <button
             type="button"
@@ -627,7 +632,15 @@ function SortableRow({
           <button onClick={onEdit} className="rounded border border-ink-200 px-2 py-1 text-[10px] hover:bg-ink-50">编辑</button>
           {/* 特殊板块不显示删除按钮 */}
           {board.kind !== 'system' && board.slug !== 'shaitu' && board.slug !== 'jiaoyi' ? (
-            <button onClick={onRemove} disabled={busy} className="rounded bg-rose-100 px-2 py-1 text-[10px] text-rose-700 hover:bg-rose-200">删除</button>
+            <ConfirmPopover
+            title={`确定删除板块「${c.name}」？`}
+            message="此操作不可恢复"
+            confirmText="删除"
+            danger
+            onConfirm={() => onRemove(c)}
+          >
+            <button disabled={busy} className="rounded bg-rose-100 px-2 py-1 text-[10px] text-rose-700 hover:bg-rose-200">删除</button>
+          </ConfirmPopover>
           ) : (
             <span className="rounded bg-ink-100 px-2 py-1 text-[10px] text-ink-500">系统板块</span>
           )}
@@ -917,7 +930,15 @@ function TreeDndView({
                         <button onClick={() => setEditingBoard(cat)} className="rounded-md border border-ink-200 px-2 py-1 text-[10px] text-ink-600 hover:bg-ink-50">编辑</button>
                         {/* 特殊板块不显示删除按钮 */}
                         {cat.kind !== 'system' && cat.slug !== 'shaitu' && cat.slug !== 'jiaoyi' && (
-                          <button onClick={() => removeBoard(cat)} className="rounded-md bg-rose-50 border border-rose-200 px-2 py-1 text-[10px] text-rose-600 hover:bg-rose-100">删除</button>
+                          <ConfirmPopover
+                            title={`确定删除板块「${cat.name}」？`}
+                            message="此操作不可恢复"
+                            confirmText="删除"
+                            danger
+                            onConfirm={() => removeBoard(cat)}
+                          >
+                            <button className="rounded-md bg-rose-50 border border-rose-200 px-2 py-1 text-[10px] text-rose-600 hover:bg-rose-100">删除</button>
+                          </ConfirmPopover>
                         )}
                       </div>
                     </DndItem>
@@ -968,7 +989,15 @@ function TreeDndView({
                                     </div>
                                     <div className="flex items-center gap-1 shrink-0">
                                       <button onClick={() => setEditingGenus({ genus, boardId: cat.id })} className="rounded-md border border-ink-200 px-2 py-1 text-[10px] text-ink-600 hover:bg-ink-50">编辑</button>
-                                      <button onClick={() => removeGenus(genus)} className="rounded-md bg-rose-50 border border-rose-200 px-2 py-1 text-[10px] text-rose-600 hover:bg-rose-100">删除</button>
+                                      <ConfirmPopover
+                            title={`确定删除「${genus.name}」属？`}
+                            message="此操作不可恢复"
+                            confirmText="删除"
+                            danger
+                            onConfirm={() => removeGenus(genus)}
+                          >
+                            <button className="rounded-md bg-rose-50 border border-rose-200 px-2 py-1 text-[10px] text-rose-600 hover:bg-rose-100">删除</button>
+                          </ConfirmPopover>
                                     </div>
                                   </DndItem>
                                 </div>
@@ -1040,10 +1069,20 @@ function SpeciesCard({ species, onEdit, onRemove }: { species: SpeciesNode; onEd
             className="flex-1 rounded border border-ink-200 px-1.5 py-0.5 text-[9px] text-ink-600 hover:bg-ink-50">
             编辑
           </button>
-          <button onClick={(e) => { e.stopPropagation(); onRemove(); }}
-            className="flex-1 rounded bg-rose-50 border border-rose-200 px-1.5 py-0.5 text-[9px] text-rose-600 hover:bg-rose-100">
-            删除
-          </button>
+          <ConfirmPopover
+                        title="确定删除品种？"
+                        message="此操作不可恢复"
+                        confirmText="删除"
+                        danger
+                        onConfirm={() => removeSpecies(sp)}
+                      >
+                        <button
+                          onClick={(e) => { e.stopPropagation(); }}
+                          className="flex-1 rounded bg-rose-50 border border-rose-200 px-1.5 py-0.5 text-[9px] text-rose-600 hover:bg-rose-100"
+                        >
+                          删除
+                        </button>
+                      </ConfirmPopover>
         </div>
       </div>
     </div>

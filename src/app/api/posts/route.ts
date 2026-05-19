@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler, fail, stringifyJson } from '@/lib/api';
-import { requireUser } from '@/lib/auth';
+import { requireUser, getCurrentUser } from '@/lib/auth';
 import { serializePost } from '@/lib/serializers';
 import { postInclude } from '@/lib/post-include';
 import type { Permission } from '@/lib/levels';
@@ -71,8 +71,28 @@ export const GET = handler(async (req) => {
     nextCursor = next.id;
   }
 
+  // 获取当前用户（如果有登录）
+  const currentUser = await getCurrentUser().catch(() => null);
+
+  // 如果用户已登录，获取投票帖的已投票状态
+  const postsWithVoteStatus = await Promise.all(
+    list.map(async (post) => {
+      if (post.type !== 'vote' || !currentUser) {
+        return { post, userVoted: false };
+      }
+      const vote = await prisma.vote.findUnique({ where: { postId: post.id } });
+      if (!vote) return { post, userVoted: false };
+      const record = await prisma.voteRecord.findFirst({
+        where: { voteId: vote.id, userId: currentUser.id },
+      });
+      return { post, userVoted: !!record };
+    })
+  );
+
   return {
-    items: list.map(serializePost),
+    items: postsWithVoteStatus.map(({ post, userVoted }) =>
+      serializePost(post as any, userVoted)
+    ),
     nextCursor,
   };
 });

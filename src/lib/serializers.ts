@@ -261,6 +261,9 @@ type PostWithRelations = DBPost & {
   vote?:
     | (DBVote & { options: DBVoteOption[] })
     | null;
+  // 当前用户是否已投票
+  userVoted?: boolean;
+  userVotedOptionIds?: string[];
   event?: (DBEvent & { _count?: { attendees?: number } }) | null;
   journal?:
     | (DBJournal & {
@@ -276,7 +279,10 @@ type PostWithRelations = DBPost & {
   })[];
 };
 
-export function serializePost(p: PostWithRelations): Post {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyPost = any;
+
+export function serializePost(p: AnyPost, userVoted?: boolean, userVotedOptionIds?: string[]): Post {
   return {
     id: p.id,
     type: p.type as PostType,
@@ -310,6 +316,8 @@ export function serializePost(p: PostWithRelations): Post {
             .map((o) => ({ id: o.id, label: o.label, votes: o.votes })),
           multi: p.vote.multi,
           deadline: p.vote.deadline.toISOString(),
+          voted: p.userVoted ?? userVoted ?? false,
+          votedOptionIds: p.userVotedOptionIds ?? userVotedOptionIds ?? [],
         }
       : undefined,
     event: p.event

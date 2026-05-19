@@ -12,6 +12,8 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import { STAGE_META } from '@/lib/journal';
 import { formatNumber, formatDateTime, timeAgo, cn, boardUrl } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from '@/components/ui/Toast';
+import { PostAdminActions } from '@/components/post/PostAdminActions';
 
 /**
  * 推荐流/板块列表的帖子卡片
@@ -23,15 +25,17 @@ export function PostCard({
   post,
   layout = 'feed',
   className,
+  onVoteUpdate,
 }: {
   post: Post;
   layout?: 'feed' | 'compact';
   className?: string;
+  onVoteUpdate?: (postId: string, options: { id: string; label: string; votes: number }[], total: number, voted: boolean, votedOptionIds: string[]) => void;
 }) {
   if (layout === 'compact') {
     return <CompactCard post={post} className={className} />;
   }
-  return <FeedCard post={post} className={className} />;
+  return <FeedCard post={post} className={className} onVoteUpdate={onVoteUpdate} />;
 }
 
 /**
@@ -45,7 +49,7 @@ export function PostCard({
  *
  * 嵌套 Link(作者头像、species chip)用 `stopPropagation` 让它们生效但不触发卡片跳转
  */
-function FeedCard({ post, className }: { post: Post; className?: string }) {
+function FeedCard({ post, className, onVoteUpdate }: { post: Post; className?: string; onVoteUpdate?: (postId: string, options: { id: string; label: string; votes: number }[], total: number, voted: boolean, votedOptionIds: string[]) => void }) {
   const { user } = useAuth();
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
@@ -71,26 +75,6 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
       body: JSON.stringify({ action: post.pinned ? 'unpin' : 'pin' }),
     });
     if (res.ok) globalThis.location.reload();
-  };
-
-  const handleLock = async () => {
-    if (!confirm(post.locked ? '确定解锁？' : '确定锁定？')) return;
-    const res = await fetch(`/api/posts/${post.id}/admin`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: post.locked ? 'unlock' : 'lock' }),
-    });
-    if (res.ok) globalThis.location.reload();
-  };
-
-  const handleDelete = async () => {
-    if (!confirm('确定删除这篇帖子？')) return;
-    const res = await fetch(`/api/posts/${post.id}/admin`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete', reason: '管理员删除' }),
-    });
-    if (res.ok) globalThis.location.href = '/';
   };
 
   const handleBanUser = async () => {
@@ -150,25 +134,27 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
                         <button
                           type="button"
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
+                            toast.error('该类型帖子不支持编辑\n投票/活动/成长日记/求助类型涉及报名、投票、记录、悬赏等数据,不允许后续修改。');
                             if (['vote', 'event', 'journal', 'help'].includes(post.type)) {
-                              alert('🔒 该类型帖子不支持编辑\n投票/活动/成长日记/求助类型涉及报名、投票、记录、悬赏等数据,不允许后续修改。');
                               return;
                             }
-                            globalThis.location.href = `/post/${post.id}/edit`;
+                            // globalThis.location.href = `/post/${post.id}/edit`;
                             setAdminMenuOpen(false);
                           }}
                           className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
                         >
-                          编辑
+                          编辑111111
                         </button>
                       )}
                       {canMove && (
                         <button
                           type="button"
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
-                            alert('移贴功能开发中');
+                            toast.error('移贴功能开发中');
                             setAdminMenuOpen(false);
                           }}
                           className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
@@ -180,6 +166,7 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
                         <button
                           type="button"
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
                             handlePin();
                             setAdminMenuOpen(false);
@@ -189,23 +176,18 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
                           {post.pinned ? '取消置顶' : '置顶'}
                         </button>
                       )}
-                      {canLock && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleLock();
-                            setAdminMenuOpen(false);
-                          }}
-                          className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
-                        >
-                          {post.locked ? '解锁' : '锁定'}
-                        </button>
-                      )}
+                      <PostAdminActions
+                        postId={post.id}
+                        postTitle={post.title}
+                        isLocked={post.locked}
+                        canLock={canLock}
+                        canDelete={canDelete}
+                      />
                       {canBan && (
                         <button
                           type="button"
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
                             handleBanUser();
                             setAdminMenuOpen(false);
@@ -213,20 +195,6 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
                           className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
                         >
                           封禁用户
-                        </button>
-                      )}
-                      {canDelete && <div className="border-t border-leaf-50 my-0.5" />}
-                      {canDelete && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete();
-                            setAdminMenuOpen(false);
-                          }}
-                          className="w-full px-2 py-1.5 text-[11px] text-rose-600 hover:bg-rose-50 text-center"
-                        >
-                          删除
                         </button>
                       )}
                     </div>
@@ -264,21 +232,23 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
                       <button
                         type="button"
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           globalThis.location.href = `/post/${post.id}/edit`;
                           setAdminMenuOpen(false);
                         }}
                         className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
                       >
-                        编辑
+                        编辑22222
                       </button>
                     )}
                     {canMove && (
                       <button
                         type="button"
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
-                          alert('移贴功能开发中');
+                          toast.error('移贴功能开发中');
                           setAdminMenuOpen(false);
                         }}
                         className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
@@ -290,6 +260,7 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
                       <button
                         type="button"
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           handlePin();
                           setAdminMenuOpen(false);
@@ -299,23 +270,18 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
                         {post.pinned ? '取消置顶' : '置顶'}
                       </button>
                     )}
-                    {canLock && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleLock();
-                          setAdminMenuOpen(false);
-                        }}
-                        className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
-                      >
-                        {post.locked ? '解锁' : '锁定'}
-                      </button>
-                    )}
+                    <PostAdminActions
+                      postId={post.id}
+                      postTitle={post.title}
+                      isLocked={post.locked}
+                      canLock={!!canLock}
+                      canDelete={!!canDelete}
+                    />
                     {canBan && (
                       <button
                         type="button"
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           handleBanUser();
                           setAdminMenuOpen(false);
@@ -323,20 +289,6 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
                         className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
                       >
                         封禁用户
-                      </button>
-                    )}
-                    {canDelete && <div className="border-t border-leaf-50 my-0.5" />}
-                    {canDelete && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete();
-                          setAdminMenuOpen(false);
-                        }}
-                        className="w-full px-2 py-1.5 text-[11px] text-rose-600 hover:bg-rose-50 text-center"
-                      >
-                        删除
                       </button>
                     )}
                   </div>
@@ -373,7 +325,7 @@ function FeedCard({ post, className }: { post: Post; className?: string }) {
             </p>
           )}
 
-        {post.type === 'vote' && post.vote && <VotePreview post={post} />}
+        {post.type === 'vote' && post.vote && <VotePreview post={post} onVoteUpdate={onVoteUpdate} />}
 
         {post.type === 'event' && post.event && <EventPreview post={post} />}
 
@@ -525,15 +477,19 @@ function NestedLink({
 }
 
 /** 投票预览(只读):展示问题 + 所有选项进度条 + 精确百分比 */
-function VotePreview({ post }: { post: Post }) {
+function VotePreview({ post, onVoteUpdate }: { post: Post; onVoteUpdate?: (postId: string, options: { id: string; label: string; votes: number }[], total: number, voted: boolean, votedOptionIds: string[]) => void }) {
   if (!post.vote) return null;
   const total = post.vote.options.reduce((s, o) => s + o.votes, 0);
   const deadlinePassed = new Date(post.vote.deadline).getTime() < Date.now();
-  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const showResult = true;
+  const hasVoted = post.vote.voted;
+  const votedOptionIds = post.vote.votedOptionIds ?? [];
+  const canVote = !deadlinePassed && !hasVoted;
+  const [selectedOptions, setSelectedOptions] = useState<string[]>(hasVoted ? votedOptionIds : []);
+  const [submitting, setSubmitting] = useState(false);
+  const { user } = useAuth();
 
   const handleSelect = (optionId: string) => {
-    if (deadlinePassed) return;
+    if (!canVote) return;
     setSelectedOptions(prev => {
       if (post.vote?.multi) {
         return prev.includes(optionId)
@@ -545,15 +501,51 @@ function VotePreview({ post }: { post: Post }) {
     });
   };
 
+  const handleSubmit = async () => {
+    if (!user) {
+      toast.error('请先登录');
+      return;
+    }
+    if (selectedOptions.length === 0 || submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/posts/${post.id}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ optionIds: selectedOptions }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        const msg = data.error?.message || data.code || '投票失败';
+        toast.error(msg);
+        setSubmitting(false);
+        return;
+      }
+      toast.success('投票成功');
+      onVoteUpdate?.(post.id, data.data.options, data.data.total, true, selectedOptions);
+    } catch (err) {
+      console.error('投票失败:', err);
+      toast.error('网络错误');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
-    <div className="space-y-2 rounded-none bg-leaf-50/60 p-2">
+    <div className="space-y-2 rounded-none bg-leaf-50/60 p-2" onClick={(e) => e.stopPropagation()}>
       {/* 问题 */}
       <div className="flex items-center gap-2">
-        <Tooltip content={post.vote.question} className="max-w-[200px]">
-          <div className="line-clamp-1 text-[12px] font-medium text-leaf-800 flex-1 min-w-0">
-            🗳️ {post.vote.question}
-          </div>
-        </Tooltip>
+        <Link
+          href={`/post/${post.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="flex-1 min-w-0"
+        >
+          <Tooltip content={post.vote.question} className="max-w-[200px]">
+            <div className="line-clamp-1 text-[12px] font-medium text-leaf-800 hover:text-leaf-600 transition-colors">
+              🗳️ {post.vote.question}
+            </div>
+          </Tooltip>
+        </Link>
         <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] ${deadlinePassed ? 'bg-leaf-100 text-leaf-600' : 'bg-leaf-200 text-leaf-800'}`}>
           {deadlinePassed ? '已截止' : '进行中'}
         </span>
@@ -574,7 +566,7 @@ function VotePreview({ post }: { post: Post }) {
             pct = Number((o.votes / total * 100).toFixed(1));
           }
 
-          const isSelectable = !deadlinePassed;
+          const isSelectable = canVote;
           const isSelected = selectedOptions.includes(o.id);
           return (
             <div
@@ -598,10 +590,10 @@ function VotePreview({ post }: { post: Post }) {
               onPointerMove={(e) => e.stopPropagation()}
               onPointerCancel={(e) => e.stopPropagation()}
               className={cn(
-                'relative overflow-hidden rounded px-1 py-1 cursor-pointer transition-all',
-                isSelectable && 'bg-white/70 hover:bg-leaf-100 hover:shadow-sm active:bg-leaf-200',
-                !isSelectable && 'bg-white/70',
-                isSelected && 'bg-leaf-200/60'
+                'relative overflow-hidden rounded px-1 py-1 transition-all',
+                isSelectable && 'cursor-pointer hover:bg-leaf-100 hover:shadow-sm active:bg-leaf-200',
+                isSelected && 'bg-leaf-200/40', // 选中时用进度条色加透明度
+                !isSelectable && !isSelected && 'bg-white/70', !isSelectable && isSelected && 'bg-leaf-200/40'
               )}
             >
               {/* 进度条 */}
@@ -629,14 +621,29 @@ function VotePreview({ post }: { post: Post }) {
       {/* 底部统计 */}
       <div className="flex items-center justify-between">
         <span className="text-[11px] text-leaf-700/80">{total} 票</span>
-        {!deadlinePassed && (
+        {canVote && (
           <button
             type="button"
             className="px-3 py-1 rounded bg-leaf-500 text-white text-[10px] font-medium hover:bg-leaf-600 transition-colors disabled:opacity-50"
-            disabled={selectedOptions.length === 0}
+            disabled={selectedOptions.length === 0 || submitting}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleSubmit();
+            }}
           >
-            提交投票
+            {submitting ? '提交中...' : '提交投票'}
           </button>
+        )}
+        {hasVoted && (
+          <span className="px-3 py-1 rounded bg-leaf-200/60 text-leaf-700 text-[10px] font-medium">
+            已投票
+          </span>
+        )}
+        {!canVote && !hasVoted && deadlinePassed && (
+          <span className="px-3 py-1 rounded bg-leaf-100 text-leaf-600 text-[10px] font-medium">
+            已截止
+          </span>
         )}
       </div>
     </div>

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 
 interface Banner {
   id: string;
@@ -35,12 +37,11 @@ export function BannerClient({ initial }: { initial: Banner[] }) {
   const refresh = () => router.refresh();
 
   const remove = async (id: string) => {
-    if (!confirm('确认删除该 banner?')) return;
     try {
       await api.delete(`/api/admin/banners/${id}`);
       refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '删除失败');
+      toast.error(e instanceof ApiError ? e.message : '删除失败');
     }
   };
 
@@ -49,7 +50,7 @@ export function BannerClient({ initial }: { initial: Banner[] }) {
       await api.patch(`/api/admin/banners/${b.id}`, { enabled: !b.enabled });
       refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '操作失败');
+      toast.error(e instanceof ApiError ? e.message : '操作失败');
     }
   };
 
@@ -129,13 +130,20 @@ export function BannerClient({ initial }: { initial: Banner[] }) {
                 >
                   {b.enabled ? '停用' : '启用'}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => remove(b.id)}
-                  className="rounded bg-rose-100 px-2 py-1 text-rose-700 hover:bg-rose-200"
+                <ConfirmPopover
+                  title="确认删除 Banner"
+                  message="此操作不可恢复"
+                  confirmText="删除"
+                  danger
+                  onConfirm={() => remove(b.id)}
                 >
-                  删除
-                </button>
+                  <button
+                    type="button"
+                    className="rounded bg-rose-100 px-2 py-1 text-rose-700 hover:bg-rose-200"
+                  >
+                    删除
+                  </button>
+                </ConfirmPopover>
               </div>
             </div>
           </article>

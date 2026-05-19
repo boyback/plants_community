@@ -1,76 +1,35 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { Toaster as HotToaster, toast as hotToast, useToaster as useHotToaster } from 'react-hot-toast';
 
-export type ToastType = 'success' | 'error' | 'info';
+export const ToastProvider = HotToaster;
 
-interface ToastProps {
-  message: string;
-  type: ToastType;
-  duration?: number;
-  onClose: () => void;
-}
+export const toast = {
+  success: (message: string) => hotToast.success(message),
+  error: (message: string) => hotToast.error(message),
+  loading: (message: string) => hotToast.loading(message),
+  dismiss: (id?: string) => hotToast.dismiss(id),
+};
 
-export function Toast({ message, type, duration = 3000, onClose }: ToastProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    const timer = setTimeout(onClose, duration);
-    return () => clearTimeout(timer);
-  }, [duration, onClose]);
-
-  if (!mounted) return null;
-
-  const bgColor = {
-    success: 'bg-leaf-500',
-    error: 'bg-rose-500',
-    info: 'bg-blue-500',
-  }[type];
-
-  const icon = {
-    success: '✓',
-    error: '✗',
-    info: 'ℹ',
-  }[type];
-
-  return createPortal(
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] animate-in fade-in slide-in-from-top-2 duration-300">
-      <div className={`${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 min-w-[300px]`}>
-        <span className="text-lg font-semibold">{icon}</span>
-        <span className="text-sm">{message}</span>
-      </div>
-    </div>,
-    document.body
-  );
-}
-
-// Toast 管理器
-let toastId = 0;
-const toastListeners = new Set<(toast: { id: number; message: string; type: ToastType }) => void>();
-
-export function showToast(message: string, type: ToastType = 'info') {
-  const id = toastId++;
-  toastListeners.forEach((listener) => listener({ id, message, type }));
-}
+export { hotToast };
 
 export function useToast() {
-  const [toasts, setToasts] = useState<Array<{ id: number; message: string; type: ToastType }>>([]);
+  const { toasts, handlers } = useHotToaster();
 
-  useEffect(() => {
-    const listener = (toast: { id: number; message: string; type: ToastType }) => {
-      setToasts((prev) => [...prev, toast]);
-    };
-    toastListeners.add(listener);
-    return () => {
-      toastListeners.delete(listener);
-    };
-  }, []);
-
-  const removeToast = (id: number) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+  return {
+    toasts: toasts.map((t) => ({
+      id: t.id,
+      message: typeof t.message === 'string' ? t.message : '',
+      type: (t.type === 'success' ? 'success' : t.type === 'error' ? 'error' : 'info') as 'success' | 'error' | 'info',
+    })),
+    removeToast: handlers.removeToast,
   };
+}
 
-  return { toasts, removeToast };
+export function showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
+  if (type === 'error') {
+    hotToast.error(message);
+  } else {
+    hotToast.success(message);
+  }
 }

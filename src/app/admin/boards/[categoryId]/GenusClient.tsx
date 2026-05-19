@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 
 interface Genus {
   id: string;
@@ -33,16 +35,15 @@ export function GenusClient({
 
   const remove = async (g: Genus) => {
     if (g.speciesCount > 0 || g.postCount > 0) {
-      alert('该属下还有品种或帖子,无法删除');
+      toast.error('该属下还有品种或帖子,无法删除');
       return;
     }
-    if (!confirm(`删除「${g.name}」属?`)) return;
     setBusy(g.id);
     try {
       await api.delete(`/api/admin/genera/${g.id}`);
       refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '删除失败');
+      toast.error(e instanceof ApiError ? e.message : '删除失败');
     } finally {
       setBusy(null);
     }
@@ -55,7 +56,7 @@ export function GenusClient({
       await api.patch(`/api/admin/genera/${g.id}`, { orderIdx: n });
       refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '操作失败');
+      toast.error(e instanceof ApiError ? e.message : '操作失败');
     } finally {
       setBusy(null);
     }
@@ -118,14 +119,21 @@ export function GenusClient({
                   >
                     编辑
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => remove(g)}
-                    disabled={busy === g.id}
-                    className="ml-1 rounded bg-rose-100 px-2 py-1 text-[10px] text-rose-700 hover:bg-rose-200"
+                  <ConfirmPopover
+                    title={`确定删除「${g.name}」属？`}
+                    message="此操作不可恢复"
+                    confirmText="删除"
+                    danger
+                    onConfirm={() => remove(g)}
                   >
-                    删除
-                  </button>
+                    <button
+                      type="button"
+                      disabled={busy === g.id}
+                      className="ml-1 rounded bg-rose-100 px-2 py-1 text-[10px] text-rose-700 hover:bg-rose-200"
+                    >
+                      删除
+                    </button>
+                  </ConfirmPopover>
                 </td>
               </tr>
             ))}

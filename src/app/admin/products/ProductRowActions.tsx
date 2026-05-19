@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
 
 export function ProductRowActions({ productId, status }: { productId: string; status: string }) {
   const router = useRouter();
@@ -19,7 +20,7 @@ export function ProductRowActions({ productId, status }: { productId: string; st
       await api.patch(`/api/admin/products/${productId}`, { status: nextStatus, reason });
       router.refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '操作失败');
+      toast.error(e instanceof ApiError ? e.message : '操作失败');
     } finally {
       setBusy(false);
     }

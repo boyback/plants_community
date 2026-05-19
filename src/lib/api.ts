@@ -14,6 +14,13 @@ export function fail(status: number, message: string, detail?: unknown) {
   );
 }
 
+export function failWithCode(status: number, code: string, message: string, detail?: unknown) {
+  return NextResponse.json(
+    { ok: false, code, error: { message, detail } },
+    { status }
+  );
+}
+
 /**
  * 统一 API 错误处理。Route Handler 里这样用:
  *   export const POST = handler(async (req) => { ... })
@@ -32,7 +39,7 @@ export function handler<T>(fn: (req: Request) => Promise<T | NextResponse>) {
       // eslint-disable-next-line no-console
       console.error('[API ERROR]', e);
       const msg = e instanceof Error ? e.message : String(e);
-      return fail(500, '服务器内部错误', msg);
+      return fail(500, msg);
     }
   };
 }

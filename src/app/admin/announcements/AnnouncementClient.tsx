@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 
 export interface Announcement {
   id: string;
@@ -30,12 +32,11 @@ export function AnnouncementClient({ initial }: { initial: Announcement[] }) {
   const refresh = () => router.refresh();
 
   const remove = async (id: string) => {
-    if (!confirm('确认删除这条公告?')) return;
     try {
       await api.delete(`/api/admin/announcements/${id}`);
       refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '删除失败');
+      toast.error(e instanceof ApiError ? e.message : '删除失败');
     }
   };
 
@@ -44,7 +45,7 @@ export function AnnouncementClient({ initial }: { initial: Announcement[] }) {
       await api.patch(`/api/admin/announcements/${a.id}`, { enabled: !a.enabled });
       refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '操作失败');
+      toast.error(e instanceof ApiError ? e.message : '操作失败');
     }
   };
 
@@ -105,13 +106,20 @@ export function AnnouncementClient({ initial }: { initial: Announcement[] }) {
               >
                 {a.enabled ? '停用' : '启用'}
               </button>
-              <button
-                type="button"
-                onClick={() => remove(a.id)}
-                className="ml-auto rounded bg-rose-100 px-2 py-1 text-rose-700 hover:bg-rose-200"
+              <ConfirmPopover
+                title="确认删除公告"
+                message="此操作不可恢复"
+                confirmText="删除"
+                danger
+                onConfirm={() => remove(a.id)}
               >
-                删除
-              </button>
+                <button
+                  type="button"
+                  className="rounded bg-rose-100 px-2 py-1 text-rose-700 hover:bg-rose-200"
+                >
+                  删除
+                </button>
+              </ConfirmPopover>
             </div>
           </article>
         ))}

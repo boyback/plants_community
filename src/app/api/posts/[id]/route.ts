@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler, fail, stringifyJson } from '@/lib/api';
-import { requireUser } from '@/lib/auth';
+import { requireUser, getCurrentUser } from '@/lib/auth';
 import { serializePost } from '@/lib/serializers';
 import { postInclude } from '@/lib/post-include';
 import { processRichInput } from '@/lib/richtext';
@@ -18,6 +18,9 @@ export const GET = handler(async (req) => {
     where: { id },
     data: { views: { increment: 1 } },
   }).catch(() => null);
+
+  // 获取当前用户（如果有登录）
+  const currentUser = await getCurrentUser().catch(() => null);
 
   const post = await prisma.post.findUnique({
     where: { id },
@@ -50,9 +53,21 @@ export const GET = handler(async (req) => {
     },
   });
 
-  if (!post) return fail(404, '帖子不存在');
+  if (!post) return fail(200, 'NOT_FOUND', '帖子不存在');
 
-  return serializePost(post);
+  // 如果是投票帖且用户已登录，查询是否已投票
+  let userVoted = false;
+  if (post.type === 'vote' && currentUser) {
+    const vote = await prisma.vote.findUnique({ where: { postId: id } });
+    if (vote) {
+      const record = await prisma.voteRecord.findFirst({
+        where: { voteId: vote.id, userId: currentUser.id },
+      });
+      userVoted = !!record;
+    }
+  }
+
+  return serializePost(post as any, userVoted);
 });
 
 function pickId(req: Request): string {

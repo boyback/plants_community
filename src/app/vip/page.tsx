@@ -9,6 +9,7 @@ import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from '@/lib/client-api';
 import { cn, formatPrice } from '@/lib/utils';
 import { VipBadge } from '@/components/ui/VipBadge';
+import { toast } from '@/components/ui/Toast';
 import type { VipPlanInfo } from '@/lib/types';
 
 const PERKS: { icon: string; titleKey: string; descKey: string }[] = [
@@ -29,7 +30,6 @@ export default function VipPage() {
   const [plans, setPlans] = useState<VipPlanInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     api
@@ -39,25 +39,19 @@ export default function VipPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const showToast = (s: string) => {
-    setToast(s);
-    setTimeout(() => setToast(null), 2400);
-  };
-
   const buy = async (plan: VipPlanInfo) => {
     if (!user) {
       router.push('/login?redirect=/vip');
       return;
     }
     if (plan.key === 'monthly_points') {
-      // 积分兑换
       setSubmitting(plan.key);
       try {
         await api.post('/api/vip/exchange');
-        showToast('🎉 ' + t('auth.login.success'));
+        toast.success(t('auth.login.success'));
         await refresh();
       } catch (e) {
-        showToast(e instanceof ApiError ? e.message : t('error.generic'));
+        toast.error(e instanceof ApiError ? e.message : t('error.generic'));
       } finally {
         setSubmitting(null);
       }
@@ -68,7 +62,7 @@ export default function VipPage() {
       const r = await api.post<{ orderId: string }>('/api/vip/order', { plan: plan.key });
       router.push(`/checkout/vip/${r.orderId}`);
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : t('error.generic'));
+      toast.error(e instanceof ApiError ? e.message : t('error.generic'));
       setSubmitting(null);
     }
   };
@@ -205,12 +199,6 @@ export default function VipPage() {
           <Link href="/login?redirect=/vip" className="btn-primary">
             {t('nav.login')}
           </Link>
-        </div>
-      )}
-
-      {toast && (
-        <div className="pointer-events-none fixed bottom-10 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg">
-          {toast}
         </div>
       )}
     </Shell>

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
-import { handler, fail } from '@/lib/api';
+import { handler, fail, failWithCode } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
 import { emitEvent } from '@/lib/events';
 
@@ -19,24 +19,29 @@ function pickPostId(req: Request) {
 export const POST = handler(async (req) => {
   const me = await requireUser();
   const postId = pickPostId(req);
+
   const body = Body.parse(await req.json());
 
   const vote = await prisma.vote.findUnique({
     where: { postId },
     include: { options: true },
   });
-  if (!vote) return fail(404, '投票不存在');
-  if (vote.deadline.getTime() < Date.now()) return fail(400, '投票已结束');
+  if (!vote) return failWithCode(200, 'VOTE_NOT_FOUND', '投票不存在');
+  if (vote.deadline.getTime() < Date.now()) return failWithCode(200, 'VOTE_ENDED', '投票已截止');
 
-  // 已投过就先删除(改投)
-  await prisma.voteRecord.deleteMany({
+  // 校验用户是否已经投过票
+  const existingRecords = await prisma.voteRecord.findMany({
     where: { voteId: vote.id, userId: me.id },
   });
+  if (existingRecords.length > 0) {
+    return failWithCode(200, 'ALREADY_VOTED', '您已经投过票了');
+  }
 
   const optionIds = vote.multi ? body.optionIds : body.optionIds.slice(0, 1);
   const valid = vote.options.filter((o) => optionIds.includes(o.id));
-  if (valid.length === 0) return fail(400, '无效的选项');
+  if (valid.length === 0) return failWithCode(200, 'INVALID_OPTION', '无效的选项');
 
+  // 创建投票记录（不删除，每个用户的票都计入）
   await prisma.$transaction(
     valid.map((o) =>
       prisma.voteRecord.create({

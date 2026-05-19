@@ -11,6 +11,7 @@ import { cookies, headers } from 'next/headers';
 import { AuthProvider } from '@/context/AuthContext';
 import { I18nProvider } from '@/i18n/I18nContext';
 import { ThemeProvider } from '@/theme/ThemeContext';
+import { ToastProvider } from '@/components/ui/Toast';
 import { CookieConsentProvider } from '@/theme/CookieConsent';
 import { RealtimeProvider } from '@/context/RealtimeContext';
 import { FeatureFlagsProvider } from '@/context/FeatureFlagsContext';
@@ -218,7 +219,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     initialVip={initialVip}
                     initialEquip={initialEquip}
                   >
-                    <RealtimeProvider>{children}</RealtimeProvider>
+                    <RealtimeProvider>
+                      <ToastProvider />
+                      {children}
+                    </RealtimeProvider>
                   </AuthProvider>
                 </FeatureFlagsProvider>
               </CookieConsentProvider>

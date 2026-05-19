@@ -6,7 +6,7 @@ import { Shell } from '@/components/layout/Shell';
 import { Avatar } from '@/components/ui/Avatar';
 import { UserName } from '@/components/ui/UserName';
 import { Empty } from '@/components/ui/Empty';
-import { useAuth } from '@/context/AuthContext';
+import { toast } from '@/components/ui/Toast';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
@@ -52,12 +52,6 @@ export default function TasksPage() {
   const [ranking, setRanking] = useState<RankingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = (s: string) => {
-    setToast(s);
-    setTimeout(() => setToast(null), 2200);
-  };
 
   const load = async () => {
     setLoading(true);
@@ -104,11 +98,11 @@ export default function TasksPage() {
         '/api/tasks/claim',
         { taskId: task.id }
       );
-      showToast(t('tasks.claimedToast', { points: r.rewardPoints, activity: r.rewardActivity }));
+      toast.success(t('tasks.claimedToast', { points: r.rewardPoints, activity: r.rewardActivity }));
       load();
       refresh();
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : t('tasks.claimFail'));
+      toast.error(e instanceof ApiError ? e.message : t('tasks.claimFail'));
     } finally {
       setBusyId(null);
     }
@@ -120,7 +114,7 @@ export default function TasksPage() {
       const r = await api.post<{ rewardPoints: number; rewardSkinId: string | null }>(
         `/api/activity/rewards/${reward.id}/claim`
       );
-      showToast(
+      toast.success(
         t('tasks.rewardClaimed', {
           points: r.rewardPoints,
           skin: r.rewardSkinId ? t('tasks.rewardClaimedSkin') : '',
@@ -129,7 +123,7 @@ export default function TasksPage() {
       load();
       refresh();
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : t('tasks.claimFail'));
+      toast.error(e instanceof ApiError ? e.message : t('tasks.claimFail'));
     } finally {
       setBusyId(null);
     }
@@ -252,12 +246,6 @@ export default function TasksPage() {
         />
       ) : (
         <Ranking ranking={ranking} myUserId={user?.id} />
-      )}
-
-      {toast && (
-        <div className="pointer-events-none fixed bottom-10 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg">
-          {toast}
-        </div>
       )}
     </Shell>
   );

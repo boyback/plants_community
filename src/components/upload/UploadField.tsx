@@ -7,6 +7,7 @@ import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
 import { CropImageDialog } from './CropImageDialog';
 import { Lightbox } from '@/components/ui/Lightbox';
+import { toast } from '@/components/ui/Toast';
 
 export type UploadKind = 'image' | 'video';
 
@@ -220,23 +221,23 @@ export function UploadField({
   const handleLiveFiles = async (files: FileList | File[]) => {
     const list = Array.from(files);
     if (list.length !== 2) {
-      alert('实况图必须同时选择 2 个文件:1 张 .HEIC 和 1 个同名 .MOV');
+      toast.error('实况图必须同时选择 2 个文件:1 张 .HEIC 和 1 个同名 .MOV');
       return;
     }
     const heic = list.find((f) => /\.(heic|heif)$/i.test(f.name));
     const mov = list.find((f) => /\.mov$/i.test(f.name));
     if (!heic || !mov) {
-      alert('需要 1 张 .HEIC + 1 个 .MOV(配套视频),目前选中的两个文件类型不对');
+      toast.error('需要 1 张 .HEIC + 1 个 .MOV(配套视频),目前选中的两个文件类型不对');
       return;
     }
     if (basename(heic.name) !== basename(mov.name)) {
-      alert(
+      toast.error(
         `两个文件需同名才能配对为实况图:\n${heic.name}\n${mov.name}\n请确认它们来自同一张 Live Photo(导出时保留所有数据)`
       );
       return;
     }
     if (value.length >= max) {
-      alert('已达图片上限');
+      toast.error('已达图片上限');
       return;
     }
 

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/ui/Icon';
+import { toast } from '@/components/ui/Toast';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import type { Post } from '@/lib/types';
 
 interface PostAdminMenuProps {
@@ -47,14 +49,14 @@ export function PostAdminMenu({ post, user }: PostAdminMenuProps) {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || '操作失败');
+        toast.error(data.error || '操作失败');
         return;
       }
-      alert('操作成功');
+      toast.success('操作成功');
       router.refresh();
     } catch (err) {
       console.error(err);
-      alert('操作失败');
+      toast.error('操作失败');
     }
   };
 
@@ -64,13 +66,6 @@ export function PostAdminMenu({ post, user }: PostAdminMenuProps) {
 
   const handleLock = async () => {
     await handleAdminAction(post.locked ? 'unlock' : 'lock');
-  };
-
-  const handleAdminDelete = async () => {
-    if (!confirm('确定删除这篇帖子？')) return;
-    const reason = prompt('删除原因（可选）:');
-    await handleAdminAction('delete', { reason: reason || '管理员删除' });
-    router.push('/');
   };
 
   const handleBanUser = async () => {
@@ -83,7 +78,7 @@ export function PostAdminMenu({ post, user }: PostAdminMenuProps) {
   };
 
   const handleMove = () => {
-    alert('移贴功能开发中');
+    toast.error('移贴功能开发中');
   };
 
   return (
@@ -158,13 +153,23 @@ export function PostAdminMenu({ post, user }: PostAdminMenuProps) {
 
             {/* 发帖人 + 管理员：删除 */}
             {canDelete && (
-              <button
-                type="button"
-                onClick={handleAdminDelete}
-                className="w-full px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 text-left whitespace-nowrap"
+              <ConfirmPopover
+                title="确定删除这篇帖子？"
+                confirmText="删除"
+                danger
+                onConfirm={() => {
+                  const reason = prompt('删除原因（可选）:');
+                  handleAdminAction('delete', { reason: reason || '管理员删除' });
+                  router.push('/');
+                }}
               >
-                删除
-              </button>
+                <button
+                  type="button"
+                  className="w-full px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 text-left whitespace-nowrap"
+                >
+                  删除
+                </button>
+              </ConfirmPopover>
             )}
           </div>
         </div>

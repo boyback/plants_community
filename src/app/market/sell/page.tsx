@@ -12,6 +12,7 @@ import { UserAccountCard } from '@/components/layout/UserAccountCard';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
 import type { Board } from '@/lib/types';
 
 interface ProductItem {
@@ -49,7 +50,6 @@ export default function SellPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
   // 拉一级(科)
   useEffect(() => {
@@ -168,7 +168,7 @@ export default function SellPage() {
         });
         ids.push(r.id);
       }
-      setToast('发布成功');
+      toast.success('发布成功');
       setTimeout(() => router.push(`/market/${ids[0]}`), 1000);
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : '发布失败');
@@ -421,12 +421,6 @@ export default function SellPage() {
           </div>
         </aside>
       </div>
-
-      {toast && (
-        <div className="pointer-events-none fixed bottom-10 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg">
-          {toast}
-        </div>
-      )}
     </Shell>
   );
 }

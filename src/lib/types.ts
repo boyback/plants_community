@@ -198,6 +198,8 @@ export interface Post {
     options: VoteOption[];
     multi: boolean;
     deadline: string;
+    voted: boolean; // 当前用户是否已投票
+    votedOptionIds?: string[]; // 用户投的选项ID列表
   };
   // EVENT 贴
   event?: {

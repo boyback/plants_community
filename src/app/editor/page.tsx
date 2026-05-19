@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { cn } from '@/lib/utils';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
 import { RichTextEditor } from '@/components/richtext/RichTextEditor';
 import {
   JournalEditor,
@@ -69,7 +70,6 @@ function EditorInner() {
 
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
 
@@ -129,11 +129,6 @@ function EditorInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user]);
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2500);
-  };
-
   const buildPayload = () => ({
     type,
     title,
@@ -166,7 +161,7 @@ function EditorInner() {
 
   const onSaveDraft = async () => {
     if (!title.trim() && !hasContent()) {
-      showToast(t('editor.errors.contentRequired'));
+      toast.error(t('editor.errors.contentRequired'));
       return;
     }
     try {
@@ -178,9 +173,9 @@ function EditorInner() {
       });
       setCurrentDraftId(res.id);
       await loadDrafts();
-      showToast(t('editor.draftSaved') + ' 💾');
+      toast.success(t('editor.draftSaved') + ' 💾');
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : t('common.retry'));
+      toast.error(e instanceof ApiError ? e.message : t('common.retry'));
     }
   };
 
@@ -203,7 +198,7 @@ function EditorInner() {
     setEventStartAt(p.eventStartAt ?? '');
     if (p.journal) setJournal(p.journal as JournalDraft);
     setCurrentDraftId(d.id);
-    showToast(t('editor.draftSaved'));
+    toast.success(t('editor.draftSaved'));
   };
 
   const onDeleteDraft = async (id: string) => {
@@ -214,49 +209,49 @@ function EditorInner() {
 
   const onPublish = async () => {
     const errors = new Set<string>();
-    
+
     if (!title.trim()) {
       errors.add('title');
-      showToast(t('editor.errors.titleRequired'));
+      toast.error(t('editor.errors.titleRequired'));
     }
     if (!genusSlug && !categorySlug) {
       errors.add('board');
-      showToast(t('editor.chooseBoard'));
+      toast.error(t('editor.chooseBoard'));
     }
     if (type === 'short' && !content.trim()) {
       errors.add('content');
-      showToast(t('editor.errors.contentRequired'));
+      toast.error(t('editor.errors.contentRequired'));
     }
     if (type === 'rich' && !hasContent()) {
       errors.add('content');
-      showToast(t('editor.errors.contentRequired'));
+      toast.error(t('editor.errors.contentRequired'));
     }
     if (type === 'event' && !hasContent()) {
       errors.add('content');
-      showToast(t('editor.errors.contentRequired'));
+      toast.error(t('editor.errors.contentRequired'));
     }
     if (type === 'video' && !videoUrl.trim()) {
       errors.add('content');
-      showToast(t('editor.errors.videoUrlRequired'));
+      toast.error(t('editor.errors.videoUrlRequired'));
     }
     if (type === 'vote' && voteOptions.filter((x) => x.trim()).length < 2) {
       errors.add('content');
-      showToast(t('editor.errors.voteOptionsMin'));
+      toast.error(t('editor.errors.voteOptionsMin'));
     }
     if (type === 'vote' && !voteDeadline) {
       errors.add('content');
-      showToast(t('editor.voteDeadline'));
+      toast.error(t('editor.voteDeadline'));
     }
     if (type === 'event' && (!eventLocation.trim() || !eventStartAt)) {
       errors.add('content');
-      showToast(t('editor.event'));
+      toast.error(t('editor.event'));
     }
     if (type === 'journal') {
-      if (!journal.subjectName.trim()) { errors.add('content'); showToast('请填写植物昵称'); }
-      if (!journal.startDate) { errors.add('content'); showToast('请填写起始日期'); }
-      if (!journal.entries.length) { errors.add('content'); showToast('至少需要一条记录'); }
+      if (!journal.subjectName.trim()) { errors.add('content'); toast.error('请填写植物昵称'); }
+      if (!journal.startDate) { errors.add('content'); toast.error('请填写起始日期'); }
+      if (!journal.entries.length) { errors.add('content'); toast.error('至少需要一条记录'); }
       const bad = journal.entries.find((e) => !e.entryDate);
-      if (bad) { errors.add('content'); showToast('每条记录都要填日期'); }
+      if (bad) { errors.add('content'); toast.error('每条记录都要填日期'); }
     }
 
     setValidationErrors(errors);
@@ -264,7 +259,7 @@ function EditorInner() {
 
     const isRich = type === 'rich' || type === 'event';
 
-    if (!categorySlug && !genusSlug && !speciesSlug) return showToast(t('editor.chooseBoard'));
+    if (!categorySlug && !genusSlug && !speciesSlug) return toast.error(t('editor.chooseBoard'));
 
     setSubmitting(true);
     try {
@@ -318,10 +313,10 @@ function EditorInner() {
       if (currentDraftId) {
         await api.delete(`/api/drafts/${currentDraftId}`).catch(() => null);
       }
-      showToast('🎉 ' + t('editor.submit'));
+      toast.success('🎉 ' + t('editor.submit'));
       setTimeout(() => router.push(`/post/${created.id}`), 800);
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : t('error.generic'));
+      toast.error(e instanceof ApiError ? e.message : t('error.generic'));
     } finally {
       setSubmitting(false);
     }
@@ -718,12 +713,6 @@ function EditorInner() {
           </div>
         </div>
       </div>
-
-      {toast && (
-        <div className="pointer-events-none fixed bottom-10 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg">
-          {toast}
-        </div>
-      )}
     </Shell>
   );
 }

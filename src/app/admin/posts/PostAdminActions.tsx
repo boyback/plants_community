@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
 
 export function PostAdminActions({
   postId,
@@ -27,7 +28,7 @@ export function PostAdminActions({
       );
       router.refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '删除失败');
+      toast.error(e instanceof ApiError ? e.message : '删除失败');
     } finally {
       setBusy(false);
     }
@@ -40,7 +41,7 @@ export function PostAdminActions({
       await api.post(`/api/admin/posts/${postId}/restore`);
       router.refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '恢复失败');
+      toast.error(e instanceof ApiError ? e.message : '恢复失败');
     } finally {
       setBusy(false);
     }
@@ -57,7 +58,7 @@ export function PostAdminActions({
       await api.patch(`/api/admin/posts/${postId}`, { action, reason });
       router.refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '操作失败');
+      toast.error(e instanceof ApiError ? e.message : '操作失败');
     } finally {
       setBusy(false);
     }

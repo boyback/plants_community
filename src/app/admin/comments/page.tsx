@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { api } from '@/lib/client-api';
 import { Avatar } from '@/components/ui/Avatar';
 import { cn } from '@/lib/utils';
+import { toast } from '@/components/ui/Toast';
 
 interface CommentItem {
   id: string;
@@ -82,7 +83,7 @@ export default function CommentsAdminPage() {
       );
       await load();
     } catch (e) {
-      alert((e as Error).message);
+      toast.error((e as Error).message);
     }
   };
 
@@ -92,7 +93,7 @@ export default function CommentsAdminPage() {
       await api.post(`/api/admin/comments/${id}/restore`);
       await load();
     } catch (e) {
-      alert((e as Error).message);
+      toast.error((e as Error).message);
     }
   };
 

@@ -7,6 +7,8 @@ import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
 import { Lightbox } from '@/components/ui/Lightbox';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { useAuth } from '@/context/AuthContext';
 
 interface Props {
@@ -21,24 +23,16 @@ export function JournalTimeline({ post }: Props) {
   const [entries, setEntries] = useState<JournalEntry[]>(post.journal?.entries ?? []);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<JournalEntry | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
   if (!post.journal) return null;
 
-  const showToast = (m: string) => {
-    setToast(m);
-    setTimeout(() => setToast(null), 2200);
-  };
-
   const handleDelete = async (entry: JournalEntry) => {
-    if (!confirm('确定要删除这条记录吗？')) return;
-
     try {
       await api.delete(`/api/posts/${post.id}/journal/${entry.id}`);
       setEntries(entries.filter(e => e.id !== entry.id));
-      showToast('已删除 ✅');
+      toast.success('已删除');
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : '删除失败');
+      toast.error(e instanceof ApiError ? e.message : '删除失败');
     }
   };
 
@@ -98,7 +92,7 @@ export function JournalTimeline({ post }: Props) {
           onAdded={(entry) => {
             setEntries([...entries, entry]);
             setAdding(false);
-            showToast('已添加 ✅');
+            toast.success('已添加');
           }}
         />
       )}
@@ -111,15 +105,9 @@ export function JournalTimeline({ post }: Props) {
           onUpdated={(updated) => {
             setEntries(entries.map(e => e.id === updated.id ? updated : e));
             setEditing(null);
-            showToast('已更新 ✅');
+            toast.success('已更新');
           }}
         />
-      )}
-
-      {toast && (
-        <div className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-full bg-leaf-900/85 px-4 py-2 text-xs text-white shadow-lg">
-          {toast}
-        </div>
       )}
     </section>
   );
@@ -188,13 +176,19 @@ function EntryNode({
               >
                 编辑
               </button>
-              <button
-                type="button"
-                className="text-xs text-rose-600 hover:text-rose-700 hover:underline"
-                onClick={onDelete}
+              <ConfirmPopover
+                title="确定删除这条记录？"
+                confirmText="删除"
+                danger
+                onConfirm={onDelete}
               >
-                删除
-              </button>
+                <button
+                  type="button"
+                  className="text-xs text-rose-600 hover:text-rose-700 hover:underline"
+                >
+                  删除
+                </button>
+              </ConfirmPopover>
             </div>
           )}
         </div>

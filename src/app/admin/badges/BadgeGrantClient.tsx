@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
 
 interface BadgeItem {
   id: string;
@@ -30,7 +31,7 @@ export function BadgeGrantClient({
   const grant = async () => {
     if (!selected) return;
     const ids = userIds.split(/\s+|,|;/).map((s) => s.trim()).filter(Boolean);
-    if (!toAll && ids.length === 0) return alert('请输入至少一个用户 ID,或勾选「发给所有用户」');
+    if (!toAll && ids.length === 0) return toast.error('请输入至少一个用户 ID,或勾选「发给所有用户」');
     if (toAll && !confirm(`确认给全部 ${userTotal} 个用户发放徽章「${selected.name}」?此操作不可撤销。`)) return;
     if (!toAll && !confirm(`给 ${ids.length} 个用户发放徽章「${selected.name}」?`)) return;
     setBusy(true);
@@ -48,7 +49,7 @@ export function BadgeGrantClient({
       setToAll(false);
       router.refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '发放失败');
+      toast.error(e instanceof ApiError ? e.message : '发放失败');
     } finally {
       setBusy(false);
     }

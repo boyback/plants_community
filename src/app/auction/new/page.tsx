@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Shell } from '@/components/layout/Shell';
 import { Icon } from '@/components/ui/Icon';
 import { PermissionGate } from '@/components/ui/PermissionGate';
+import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from '@/lib/client-api';
@@ -52,7 +53,6 @@ export default function NewAuctionPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
   const [boards, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   useEffect(() => {
@@ -138,7 +138,7 @@ export default function NewAuctionPage() {
         endAt: endAtISO,
         antiSnipeMinutes,
       });
-      setToast(t('auction.create.success'));
+      toast.success(t('auction.create.success'));
       setTimeout(() => router.push(`/auction/${r.id}`), 800);
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : t('auction.create.submitFail'));
@@ -357,12 +357,6 @@ export default function NewAuctionPage() {
           </ul>
         </div>
       </div>
-
-      {toast && (
-        <div className="pointer-events-none fixed bottom-10 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg">
-          {toast}
-        </div>
-      )}
     </Shell>
   );
 }

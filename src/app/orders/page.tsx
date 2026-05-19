@@ -8,6 +8,7 @@ import { Empty } from '@/components/ui/Empty';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
 import { cn, formatDateTime, formatPrice } from '@/lib/utils';
 import { usePullToRefresh, PullIndicator } from '@/lib/hooks/usePullToRefresh';
 import { RichTextEditor } from '@/components/richtext/RichTextEditor';
@@ -187,7 +188,7 @@ function OrderRow({
       await api.post(path, body);
       onRefresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : t('error.generic'));
+      toast.error(e instanceof ApiError ? e.message : t('error.generic'));
     } finally {
       setBusy(false);
     }

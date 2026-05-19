@@ -38,7 +38,7 @@ export default async function HomePage() {
     loadQuickDiscoveryData({ n: 12 }),
   ]);
 
-  const posts = postsRaw.map(serializePost);
+  const posts = postsRaw.map((p: any) => serializePost(p));
   const banners: BannerItem[] = bannersRaw.map((b) => ({
     id: b.id,
     title: b.title,

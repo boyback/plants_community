@@ -6,6 +6,7 @@ import { Icon } from '@/components/ui/Icon';
 import { AvatarField } from '@/components/upload/AvatarField';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
 
 export default function ProfileSettingsPage() {
   const { user, loading, refresh } = useAuth();
@@ -13,7 +14,6 @@ export default function ProfileSettingsPage() {
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [busy, setBusy] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -22,11 +22,6 @@ export default function ProfileSettingsPage() {
       setBio(user.bio ?? '');
     }
   }, [user]);
-
-  const showToast = (m: string) => {
-    setToast(m);
-    setTimeout(() => setToast(null), 2200);
-  };
 
   const onSave = async () => {
     if (!user) return;
@@ -37,14 +32,14 @@ export default function ProfileSettingsPage() {
       if (name !== user.name) payload.name = name;
       if (bio !== (user.bio ?? '')) payload.bio = bio;
       if (Object.keys(payload).length === 0) {
-        showToast('没有修改');
+        toast.success('没有修改');
         return;
       }
       await api.patch('/api/users/me/profile', payload);
       await refresh();
-      showToast('已保存 ✅');
+      toast.success('已保存');
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : '保存失败');
+      toast.error(e instanceof ApiError ? e.message : '保存失败');
     } finally {
       setBusy(false);
     }
@@ -133,11 +128,6 @@ export default function ProfileSettingsPage() {
         </div>
       </div>
 
-      {toast && (
-        <div className="pointer-events-none fixed bottom-10 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg">
-          {toast}
-        </div>
-      )}
-    </>
+      </div>
   );
 }

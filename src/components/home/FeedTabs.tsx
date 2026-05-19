@@ -18,6 +18,7 @@ import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from '@/lib/client-api';
 import { usePullToRefresh, PullIndicator } from '@/lib/hooks/usePullToRefresh';
 import { ConfirmDialog, PromptDialog } from '@/components/ui/Dialog';
+import { toast } from '@/components/ui/Toast';
 import type { Post, PostType } from '@/lib/types';
 
 function stripHtml(html: string): string {
@@ -146,6 +147,22 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
     stateRef.current[tab].loaded = false;
     await load(tab, false);
   });
+
+  // 投票更新回调
+  const onVoteUpdate = useCallback((
+    postId: string,
+    options: { id: string; label: string; votes: number }[],
+    total: number,
+    voted: boolean,
+    votedOptionIds: string[]
+  ) => {
+    stateRef.current[tab].items = stateRef.current[tab].items.map(p =>
+      p.id === postId && p.vote
+        ? { ...p, vote: { ...p.vote, options, total, voted, votedOptionIds } }
+        : p
+    );
+    rerender();
+  }, [tab]);
 
   // 哨兵:接近视口时自动拉下一页
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -296,7 +313,7 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
             <div className="mt-4 rounded-none border border-leaf-100 bg-white">
               {cur.items.map((p, i) => (
                 <div key={p.id}>
-                  <FeedListCard post={p} source={tabToSource(tab)} />
+                  <FeedListCard post={p} source={tabToSource(tab)} onVoteUpdate={onVoteUpdate} />
                   {i < cur.items.length - 1 && (
                     <div className="mx-4 border-t border-leaf-100" />
                   )}
@@ -318,7 +335,7 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
               <div className={`feed-grid mt-4 ${mobileColClass} gap-3 sm:columns-2 ${desktopColClass} [column-fill:_balance]`}>
                 {cur.items.map((p) => (
                   <div key={p.id} className="mb-3 break-inside-avoid">
-                    <FeedCard post={p} source={tabToSource(tab)} />
+                    <FeedCard post={p} source={tabToSource(tab)} onVoteUpdate={onVoteUpdate} />
                   </div>
                 ))}
                 {/* 加载下一页时插入骨架屏占位 */}
@@ -380,9 +397,11 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
 function FeedCard({
   post,
   source,
+  onVoteUpdate,
 }: {
   post: Post;
   source: string;
+  onVoteUpdate?: (postId: string, options: { id: string; label: string; votes: number }[], total: number, voted: boolean, votedOptionIds: string[]) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const sentRef = useRef(false);
@@ -409,7 +428,7 @@ function FeedCard({
   }, [post.id, source]);
   return (
     <div ref={ref}>
-      <PostCard post={post} />
+      <PostCard post={post} onVoteUpdate={onVoteUpdate} />
     </div>
   );
 }
@@ -436,36 +455,75 @@ function NestedLink({
 }
 
 /** 投票预览(只读):展示问题 + 所有选项进度条 + 精确百分比 */
-function VotePreview({ post }: { post: Post }) {
+function VotePreview({ post, onVoteUpdate }: { post: Post; onVoteUpdate?: (postId: string, options: { id: string; label: string; votes: number }[], total: number, voted: boolean, votedOptionIds: string[]) => void }) {
   if (!post.vote) return null;
   const total = post.vote.options.reduce((s, o) => s + o.votes, 0);
   const deadlinePassed = new Date(post.vote.deadline).getTime() < Date.now();
-  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const hasVoted = post.vote.voted;
+  const votedOptionIds = post.vote.votedOptionIds ?? [];
+  const canVote = !deadlinePassed && !hasVoted;
+  const [selectedOptions, setSelectedOptions] = useState<string[]>(hasVoted ? votedOptionIds : []);
+  const [submitting, setSubmitting] = useState(false);
+  const { user } = useAuth();
 
   const handleSelect = (optionId: string) => {
-    if (deadlinePassed) return;
+    if (!canVote) return;
     setSelectedOptions(prev => {
       if (post.vote?.multi) {
-        // 多选：切换选中状态
         return prev.includes(optionId)
           ? prev.filter(id => id !== optionId)
           : [...prev, optionId];
       } else {
-        // 单选：直接替换
         return prev.includes(optionId) ? [] : [optionId];
       }
     });
   };
 
+  const handleSubmit = async () => {
+    if (!user) {
+      toast.error('请先登录');
+      return;
+    }
+    if (selectedOptions.length === 0 || submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/posts/${post.id}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ optionIds: selectedOptions }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        const msg = data.error?.message || data.code || '投票失败';
+        toast.error(msg);
+        setSubmitting(false);
+        return;
+      }
+      toast.success('投票成功');
+      onVoteUpdate?.(post.id, data.data.options, data.data.total, true, selectedOptions);
+    } catch (err) {
+      console.error('投票失败:', err);
+      toast.error('网络错误');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
-    <div className="space-y-2 rounded-none bg-leaf-50/60 p-2 mb-3">
+    <div className="space-y-2 rounded-none bg-leaf-50/60 p-2 mb-3" onClick={(e) => e.stopPropagation()}>
       {/* 问题 */}
       <div className="flex items-center gap-2">
-        <Tooltip content={post.vote.question} className="max-w-[200px]">
-          <div className="line-clamp-1 text-[13px] font-medium text-leaf-800 flex-1 min-w-0">
-            🗳️ {post.vote.question}
-          </div>
-        </Tooltip>
+        <Link
+          href={`/post/${post.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="flex-1 min-w-0"
+        >
+          <Tooltip content={post.vote.question} className="max-w-[200px]">
+            <div className="line-clamp-1 text-[13px] font-medium text-leaf-800 hover:text-leaf-600 transition-colors">
+              🗳️ {post.vote.question}
+            </div>
+          </Tooltip>
+        </Link>
         <span className={`shrink-0 px-1.5 py-0.5 rounded text-[11px] ${deadlinePassed ? 'bg-leaf-100 text-leaf-600' : 'bg-leaf-200 text-leaf-800'}`}>
           {deadlinePassed ? '已截止' : '进行中'}
         </span>
@@ -485,7 +543,7 @@ function VotePreview({ post }: { post: Post }) {
             pct = Number((o.votes / total * 100).toFixed(1));
           }
 
-          const isSelectable = !deadlinePassed;
+          const isSelectable = canVote;
           const isSelected = selectedOptions.includes(o.id);
           return (
             <div
@@ -508,10 +566,10 @@ function VotePreview({ post }: { post: Post }) {
               onPointerMove={(e) => e.stopPropagation()}
               onPointerCancel={(e) => e.stopPropagation()}
               className={cn(
-                'relative overflow-hidden rounded px-1 py-1 cursor-pointer transition-all',
-                isSelectable && 'bg-white/70 hover:bg-leaf-100 hover:shadow-sm active:bg-leaf-200',
-                !isSelectable && 'bg-white/70',
-                isSelected && 'bg-leaf-200/60'
+                'relative overflow-hidden rounded px-1 py-1 transition-all',
+                isSelectable && 'cursor-pointer hover:bg-leaf-100 hover:shadow-sm active:bg-leaf-200',
+                isSelected && 'bg-leaf-200/40',
+                !isSelectable && !isSelected && 'bg-white/70'
               )}
             >
               {/* 进度条 */}
@@ -539,14 +597,29 @@ function VotePreview({ post }: { post: Post }) {
       {/* 底部统计 */}
       <div className="flex items-center justify-between">
         <span className="text-[11px] text-leaf-700/80">{total} 票</span>
-        {!deadlinePassed && (
+        {canVote && (
           <button
             type="button"
             className="px-3 py-1 rounded bg-leaf-500 text-white text-[10px] font-medium hover:bg-leaf-600 transition-colors disabled:opacity-50"
-            disabled={selectedOptions.length === 0}
+            disabled={selectedOptions.length === 0 || submitting}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleSubmit();
+            }}
           >
-            提交投票
+            {submitting ? '提交中...' : '提交投票'}
           </button>
+        )}
+        {hasVoted && (
+          <span className="px-3 py-1 rounded bg-leaf-200/60 text-leaf-700 text-[10px] font-medium">
+            已投票
+          </span>
+        )}
+        {!canVote && !hasVoted && deadlinePassed && (
+          <span className="px-3 py-1 rounded bg-leaf-100 text-leaf-600 text-[10px] font-medium">
+            已截止
+          </span>
         )}
       </div>
     </div>
@@ -715,9 +788,11 @@ function JournalPreview({ post }: { post: Post }) {
 function FeedListCard({
   post,
   source,
+  onVoteUpdate,
 }: {
   post: Post;
   source: string;
+  onVoteUpdate?: (postId: string, options: { id: string; label: string; votes: number }[], total: number, voted: boolean, votedOptionIds: string[]) => void;
 }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -762,7 +837,7 @@ function FeedListCard({
       // 刷新页面或更新状态
       window.location.reload();
     } catch (e) {
-      alert(e instanceof Error ? e.message : '操作失败');
+      toast.error(e instanceof Error ? e.message : '操作失败');
     }
   };
 
@@ -890,7 +965,7 @@ function FeedListCard({
                       onClick={(e) => {
                         e.stopPropagation();
                         if (['vote', 'event', 'journal', 'help'].includes(post.type)) {
-                          alert('🔒 该类型帖子不支持编辑\n投票/活动/成长日记/求助类型涉及报名、投票、记录、悬赏等数据,不允许后续修改。');
+                          toast.error('该类型帖子不支持编辑\n投票/活动/成长日记/求助类型涉及报名、投票、记录、悬赏等数据,不允许后续修改。');
                           return;
                         }
                         router.push(`/post/${post.id}/edit`);
@@ -907,7 +982,7 @@ function FeedListCard({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        alert('移贴功能开发中');
+                        toast.error('移贴功能开发中');
                       }}
                       className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
                     >
@@ -1005,7 +1080,7 @@ function FeedListCard({
       {post.type === 'journal' && post.journal && <JournalPreview post={post} />}
 
       {/* 投票预览 */}
-      {post.type === 'vote' && post.vote && <VotePreview post={post} />}
+      {post.type === 'vote' && post.vote && <VotePreview post={post} onVoteUpdate={onVoteUpdate} />}
 
       {/* 活动预览 */}
       {post.type === 'event' && post.event && <EventPreview post={post} />}

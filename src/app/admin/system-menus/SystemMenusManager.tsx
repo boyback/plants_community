@@ -6,6 +6,7 @@ import { api, ApiError } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
 import { Toast, useToast, showToast } from '@/components/ui/Toast';
 import { CropImageDialog } from '@/components/upload/CropImageDialog';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import {
   DndContext,
   closestCenter,
@@ -130,7 +131,6 @@ export function SystemMenusManager() {
   };
 
   const handleDelete = async (menu: SystemMenu) => {
-    if (!confirm(`确定删除「${menu.name}」？`)) return;
     try {
       await api.delete(`/api/admin/system-menus/${menu.id}`);
       showToast(`${menu.name} 已删除`, 'success');
@@ -338,12 +338,20 @@ function MenuSortableRow({ menu, onToggle, onEdit, onDelete }: {
         >
           编辑
         </button>
-        <button
-          onClick={() => onDelete(menu)}
-          className="rounded bg-rose-100 px-3 py-1 text-xs text-rose-700 hover:bg-rose-200"
+        <ConfirmPopover
+          title={`确定删除「${menu.name}」？`}
+          message="此操作不可恢复"
+          confirmText="删除"
+          danger
+          onConfirm={() => onDelete(menu)}
         >
-          删除
-        </button>
+          <button
+            onClick={() => {}}
+            className="rounded bg-rose-100 px-3 py-1 text-xs text-rose-700 hover:bg-rose-200"
+          >
+            删除
+          </button>
+        </ConfirmPopover>
       </td>
     </tr>
   );

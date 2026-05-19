@@ -8,6 +8,7 @@ import { Empty } from '@/components/ui/Empty';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
 import { cn, formatDateTime } from '@/lib/utils';
 import { SkinCard } from '@/components/skin/SkinCard';
 import type { SkinItem, SkinKind, PointsLedgerItem } from '@/lib/types';
@@ -192,7 +193,7 @@ function SkinShop({ kind, onChange }: { kind: SkinKind; onChange: () => void | P
       load();
       onChange();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '兑换失败');
+      toast.error(e instanceof ApiError ? e.message : '兑换失败');
     } finally {
       setBusyId(null);
     }
@@ -248,7 +249,7 @@ function Wardrobe({ onChange }: { onChange: () => void | Promise<void> }) {
       load();
       onChange();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '操作失败');
+      toast.error(e instanceof ApiError ? e.message : '操作失败');
     } finally {
       setBusyId(null);
     }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/Icon';
+import { toast } from '@/components/ui/Toast';
 
 interface FeatureConfig {
   key: string;
@@ -45,11 +46,11 @@ export default function FeatureManagementPage() {
           prev.map((f) => (f.key === key ? { ...f, enabled } : f))
         );
       } else {
-        alert('保存失败');
+        toast.error('保存失败');
       }
     } catch (error) {
       console.error('保存失败:', error);
-      alert('保存失败');
+      toast.error('保存失败');
     } finally {
       setSaving(null);
     }

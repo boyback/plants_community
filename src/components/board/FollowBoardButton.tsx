@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/client-api';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
+import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 
 /**
@@ -67,7 +68,7 @@ export function FollowBoardButton({
         setFollowed(true);
       }
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : t('detail.board.opFail'));
+      toast.error(e instanceof ApiError ? e.message : t('detail.board.opFail'));
     } finally {
       setBusy(false);
     }

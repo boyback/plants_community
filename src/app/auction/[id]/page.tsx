@@ -15,6 +15,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from '@/lib/client-api';
 import { cn, formatDateTime, formatPrice, timeAgo } from '@/lib/utils';
+import { toast } from '@/components/ui/Toast';
 import type { AuctionDetail, Payment } from '@/lib/types';
 
 export default function AuctionDetailPage() {
@@ -29,13 +30,7 @@ export default function AuctionDetailPage() {
 
   const [bidAmount, setBidAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [showJoin, setShowJoin] = useState(false);
-
-  const showToast = (s: string) => {
-    setToast(s);
-    setTimeout(() => setToast(null), 2400);
-  };
 
   const reload = async () => {
     if (!params?.id) return;
@@ -114,7 +109,7 @@ export default function AuctionDetailPage() {
     let amount = Math.round(Number(bidAmount) * 100);
     if (buyNow && data.buyNowPrice) amount = data.buyNowPrice;
     if (!buyNow && (!Number.isFinite(amount) || amount < minNext)) {
-      showToast(t('auction.bidAtLeast', { yuan: (minNext / 100).toFixed(2) }));
+      toast.error(t('auction.bidAtLeast', { yuan: (minNext / 100).toFixed(2) }));
       return;
     }
     setSubmitting(true);
@@ -125,9 +120,9 @@ export default function AuctionDetailPage() {
       );
       setBidAmount('');
       await reload();
-      showToast(r.extended ? t('auction.bidSuccessExtended') : t('auction.bidSuccess'));
+      toast.success(r.extended ? t('auction.bidSuccessExtended') : t('auction.bidSuccess'));
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : t('auction.bidFail'));
+      toast.error(e instanceof ApiError ? e.message : t('auction.bidFail'));
     } finally {
       setSubmitting(false);
     }
@@ -139,9 +134,9 @@ export default function AuctionDetailPage() {
     try {
       await api.post(`/api/auctions/${data.id}/cancel`);
       await reload();
-      showToast(t('auction.detail.cancelled'));
+      toast.success(t('auction.detail.cancelled'));
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : t('auction.detail.cancelFail'));
+      toast.error(e instanceof ApiError ? e.message : t('auction.detail.cancelFail'));
     }
   };
 
@@ -442,15 +437,9 @@ export default function AuctionDetailPage() {
             setShowJoin(false);
             await reload();
             await refresh();
-            showToast(t('auction.depositModal.toastEscrowed'));
+            toast.success(t('auction.depositModal.toastEscrowed'));
           }}
         />
-      )}
-
-      {toast && (
-        <div className="pointer-events-none fixed bottom-10 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg">
-          {toast}
-        </div>
       )}
     </Shell>
   );

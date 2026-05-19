@@ -7,6 +7,7 @@ import { cn, formatNumber } from '@/lib/utils';
 import type { Post } from '@/lib/types';
 import { api, ApiError } from '@/lib/client-api';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from '@/components/ui/Toast';
 import { useI18n } from '@/i18n/I18nContext';
 
 export function PostActions({
@@ -24,12 +25,6 @@ export function PostActions({
   const [liked, setLiked] = useState(initialLiked);
   const [saved, setSaved] = useState(initialCollected);
   const [likes, setLikes] = useState(post.likes);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = (s: string) => {
-    setToast(s);
-    setTimeout(() => setToast(null), 2000);
-  };
 
   const ensureLogin = () => {
     if (!user) {
@@ -48,7 +43,7 @@ export function PostActions({
       setLiked(res.liked);
       setLikes(res.total);
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : t('detail.post.opFail'));
+      toast.error(e instanceof ApiError ? e.message : t('detail.post.opFail'));
     }
   };
 
@@ -59,9 +54,9 @@ export function PostActions({
         `/api/posts/${post.id}/collect`
       );
       setSaved(res.collected);
-      showToast(res.collected ? t('detail.post.collectSuccess') : t('detail.post.collectUnsetSuccess'));
+      toast.success(res.collected ? t('detail.post.collectSuccess') : t('detail.post.collectUnsetSuccess'));
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : t('detail.post.opFail'));
+      toast.error(e instanceof ApiError ? e.message : t('detail.post.opFail'));
     }
   };
 
@@ -69,7 +64,7 @@ export function PostActions({
     if (channelKey === 'link' && typeof navigator !== 'undefined') {
       navigator.clipboard?.writeText(window.location.href).catch(() => null);
     }
-    showToast(t('detail.post.shareSuccess', { channel: t(`detail.post.shareChannels.${channelKey}`) }));
+    toast.success(t('detail.post.shareSuccess', { channel: t(`detail.post.shareChannels.${channelKey}`) }));
   };
 
   return (
@@ -110,12 +105,6 @@ export function PostActions({
           })}
         </div>
       </div>
-
-      {toast && (
-        <div className="pointer-events-none fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg">
-          {toast}
-        </div>
-      )}
     </div>
   );
 }

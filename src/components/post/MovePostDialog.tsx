@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { toast } from '@/components/ui/Toast';
 
 interface Board {
   id: string;
@@ -73,7 +74,7 @@ export function MovePostDialog({ currentBoard, onConfirm, onCancel }: MovePostDi
 
   const handleConfirm = () => {
     if (!categorySlug) {
-      alert('请选择目标板块');
+      toast.error('请选择目标板块');
       return;
     }
     

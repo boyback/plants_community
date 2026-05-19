@@ -10,16 +10,15 @@ import { useI18n } from '@/i18n/I18nContext';
 import { useRouter } from 'next/navigation';
 import { RichTextView } from '@/components/richtext/RichTextView';
 import { Lightbox } from '@/components/ui/Lightbox';
+import { toast } from '@/components/ui/Toast';
 
 /** 根据帖子类型渲染主体内容 */
 export function PostBody({
   post,
-  initialVoted = [],
   initialAttending = false,
   livePhotoMap,
 }: {
   post: Post;
-  initialVoted?: string[];
   initialAttending?: boolean;
   /** 图片 URL → Live Photo 视频 URL 映射(详情页 server 端反查后传入) */
   livePhotoMap?: Record<string, string>;
@@ -32,7 +31,7 @@ export function PostBody({
     case 'video':
       return <VideoBody post={post} />;
     case 'vote':
-      return <VoteBody post={post} initialVoted={initialVoted} />;
+      return <VoteBody post={post} />;
     case 'event':
       return <EventBody post={post} initialAttending={initialAttending} />;
     case 'journal':
@@ -146,47 +145,59 @@ function VideoBody({ post }: { post: Post }) {
   );
 }
 
-function VoteBody({ post, initialVoted }: { post: Post; initialVoted: string[] }) {
+function VoteBody({ post }: { post: Post }) {
   const { user } = useAuth();
-  const { t } = useI18n();
-  const router = useRouter();
-  const [selected, setSelected] = useState<string[]>(initialVoted);
-  const [voted, setVoted] = useState(initialVoted.length > 0);
+  const [voted, setVoted] = useState(post.vote?.voted ?? false);
+  const [votedOptionIds, setVotedOptionIds] = useState<string[]>(post.vote?.votedOptionIds ?? []);
   const [options, setOptions] = useState(post.vote?.options ?? []);
+  const [selected, setSelected] = useState<string[]>(voted ? votedOptionIds : []);
   const [submitting, setSubmitting] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
 
   if (!post.vote) return null;
 
   const total = options.reduce((s, o) => s + o.votes, 0);
   const deadlinePassed = new Date(post.vote.deadline).getTime() < Date.now();
-  const showResult = voted || deadlinePassed;
+  const canVote = !deadlinePassed && !voted;
 
-  const toggle = (id: string) => {
-    if (voted || deadlinePassed) return;
-    setSelected((prev) => {
+  const handleSelect = (optionId: string) => {
+    if (!canVote) return;
+    setSelected(prev => {
       if (post.vote!.multi) {
-        return prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+        return prev.includes(optionId)
+          ? prev.filter(id => id !== optionId)
+          : [...prev, optionId];
+      } else {
+        return prev.includes(optionId) ? [] : [optionId];
       }
-      return [id];
     });
   };
 
-  const submit = async () => {
+  const handleSubmit = async () => {
     if (!user) {
-      router.push('/login?redirect=' + encodeURIComponent(window.location.pathname));
+      toast.error('请先登录');
       return;
     }
-    setErr(null);
+    if (selected.length === 0 || submitting) return;
     setSubmitting(true);
     try {
-      const res = await api.post<{
-        options: { id: string; label: string; votes: number }[];
-      }>(`/api/posts/${post.id}/vote`, { optionIds: selected });
-      setOptions(res.options);
+      const res = await fetch(`/api/posts/${post.id}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ optionIds: selected }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        const msg = data.error?.message || data.code || '投票失败';
+        toast.error(msg);
+        setSubmitting(false);
+        return;
+      }
+      setVotedOptionIds(selected);
       setVoted(true);
-    } catch (e) {
-      setErr(e instanceof ApiError ? e.message : t('detail.vote.voteFail'));
+      setOptions(data.data.options);
+      toast.success('投票成功');
+    } catch {
+      toast.error('网络错误');
     } finally {
       setSubmitting(false);
     }
@@ -195,95 +206,90 @@ function VoteBody({ post, initialVoted }: { post: Post; initialVoted: string[] }
   return (
     <div className="space-y-4">
       <RichTextView html={post.content} />
-      <div className="rounded-none border border-amber-100 bg-amber-50/30 p-5">
-        <div className="mb-1 text-xs text-amber-700">
-          {t('detail.vote.title', {
-            mode: post.vote.multi ? t('detail.vote.multi') : t('detail.vote.single'),
-            date: new Date(post.vote.deadline).toLocaleDateString(),
-          })}
-          {deadlinePassed && <span className="ml-2 rounded bg-amber-200/60 px-1.5 py-0.5">{t('detail.vote.ended')}</span>}
+      <div className="space-y-2 rounded-none bg-leaf-50/60 p-2">
+        {/* 问题 */}
+        <div className="flex items-center gap-2">
+          <span className="line-clamp-1 text-[12px] font-medium text-leaf-800 flex-1 min-w-0">
+            🗳️ {post.vote.question}
+          </span>
+          <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] ${deadlinePassed ? 'bg-leaf-100 text-leaf-600' : 'bg-leaf-200 text-leaf-800'}`}>
+            {deadlinePassed ? '已截止' : '进行中'}
+          </span>
+          <span className="shrink-0 text-[10px] text-leaf-600">{post.vote.multi ? '多选' : '单选'}</span>
         </div>
-        <h3 className="text-base font-semibold text-amber-900">{post.vote.question}</h3>
-        <div className="mt-4 space-y-2">
+
+        {/* 选项列表 */}
+        <div className="space-y-1.5">
           {options.map((o, idx) => {
-            const chosen = selected.includes(o.id);
-            // 计算精确百分比
             let pct: number;
             if (total === 0) {
               pct = 0;
-            } else if (idx === options.length - 1 && deadlinePassed) {
-              // 最后一个选项：如果投票结束，精确计算
+            } else if (idx === options.length - 1) {
               const sumBefore = options.slice(0, idx).reduce((s, opt) => s + opt.votes, 0);
-              pct = total > 0 ? Number(((total - sumBefore) / total * 100).toFixed(1)) : 0;
+              pct = Number(((total - sumBefore) / total * 100).toFixed(1));
             } else {
               pct = Number((o.votes / total * 100).toFixed(1));
             }
+
+            const isSelectable = canVote;
+            const isSelected = selected.includes(o.id);
             return (
-              <button
+              <div
                 key={o.id}
-                type="button"
-                onClick={() => toggle(o.id)}
-                disabled={voted || deadlinePassed}
+                onClick={() => handleSelect(o.id)}
                 className={cn(
-                  'relative block w-full overflow-hidden rounded-none border px-4 py-2.5 text-left text-sm transition-colors',
-                  chosen
-                    ? 'border-amber-500 bg-amber-100/60'
-                    : 'border-amber-100 bg-white hover:bg-amber-50'
+                  'relative overflow-hidden rounded px-1 py-1 transition-all',
+                  isSelectable && 'cursor-pointer hover:bg-leaf-100 hover:shadow-sm active:bg-leaf-200',
+                  isSelected && 'bg-leaf-200/40',
+                  !isSelectable && !isSelected && 'bg-white/70'
                 )}
               >
-                {showResult && (
-                  <div
-                    className={cn(
-                      'absolute inset-y-0 left-0',
-                      chosen ? 'bg-amber-300/40' : 'bg-amber-200/30'
-                    )}
-                    style={{ width: `${pct}%` }}
-                  />
-                )}
-                <div className="relative flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-2">
-                    {/* 勾选图标 */}
-                    <span
-                      className={cn(
-                        'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded border-2',
-                        post.vote!.multi ? 'rounded-[4px]' : 'rounded-full',
-                        chosen
-                          ? 'border-amber-500 bg-amber-500 text-white'
-                          : 'border-amber-300 bg-white'
-                      )}
-                    >
-                      {chosen && (
-                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
+                {/* 进度条 */}
+                <div
+                  className="absolute inset-y-0 left-0 bg-leaf-200"
+                  style={{ width: `${pct}%` }}
+                />
+                {/* 内容 */}
+                <div className="relative flex items-center justify-between gap-1 text-[11px]">
+                  <div className="flex items-center gap-1 min-w-0 flex-1">
+                    <span className="w-[10px] text-center text-leaf-600 font-bold shrink-0">
+                      {isSelected ? '✓' : ''}
                     </span>
-                    {o.label}
+                    <span className="truncate text-leaf-900">{o.label}</span>
+                  </div>
+                  <span className="shrink-0 tabular-nums text-leaf-700">
+                    {pct}% <span className="text-leaf-600">({o.votes}票)</span>
                   </span>
-                  {showResult && (
-                    <span className="text-xs tabular-nums text-amber-700">
-                      {pct}% ({o.votes}票)
-                    </span>
-                  )}
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
-        <div className="mt-4 flex items-center justify-between text-xs text-amber-700">
-          <span>{t('detail.vote.totalParticipants', { n: total })}</span>
-          {!voted && !deadlinePassed && (
+
+        {/* 底部统计 */}
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] text-leaf-700/80">{total} 票</span>
+          {canVote && (
             <button
               type="button"
+              className="px-3 py-1 rounded bg-leaf-500 text-white text-[10px] font-medium hover:bg-leaf-600 transition-colors disabled:opacity-50"
               disabled={selected.length === 0 || submitting}
-              onClick={submit}
-              className="btn-primary h-8 !px-4 !text-xs bg-amber-500 hover:bg-amber-600"
+              onClick={handleSubmit}
             >
-              {submitting ? t('detail.vote.submitting') : t('detail.vote.submit')}
+              {submitting ? '提交中...' : '提交投票'}
             </button>
           )}
+          {voted && (
+            <span className="px-3 py-1 rounded bg-leaf-200/60 text-leaf-700 text-[10px] font-medium">
+              已投票
+            </span>
+          )}
+          {!canVote && !voted && deadlinePassed && (
+            <span className="px-3 py-1 rounded bg-leaf-100 text-leaf-600 text-[10px] font-medium">
+              已截止
+            </span>
+          )}
         </div>
-        {err && <div className="mt-2 text-xs text-rose-600">{err}</div>}
       </div>
     </div>
   );

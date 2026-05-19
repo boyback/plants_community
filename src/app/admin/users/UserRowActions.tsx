@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
 import { ALL_PERMISSIONS, PERMISSION_LABEL, permissionsForLevel, type Permission } from '@/lib/levels';
 
 export function UserRowActions({
@@ -34,7 +35,7 @@ export function UserRowActions({
       // 小 toast
       console.log(successMsg);
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '操作失败');
+      toast.error(e instanceof ApiError ? e.message : '操作失败');
     } finally {
       setBusy(false);
     }
@@ -44,7 +45,7 @@ export function UserRowActions({
     const daysStr = window.prompt('封禁天数(0 = 永久):', '7');
     if (daysStr === null) return;
     const days = Number(daysStr);
-    if (!Number.isFinite(days) || days < 0) return alert('天数无效');
+    if (!Number.isFinite(days) || days < 0) return toast.error('天数无效');
     const reason = window.prompt('封禁原因(展示给用户):', '') ?? '';
     if (!confirm(`确认封禁 ${userName} ${days === 0 ? '永久' : days + ' 天'}?`)) return;
     void doPatch({ ban: { days, reason } }, '已封禁');
@@ -61,7 +62,7 @@ export function UserRowActions({
       role
     );
     if (!next) return;
-    if (!['user', 'moderator', 'admin'].includes(next)) return alert('role 无效');
+    if (!['user', 'moderator', 'admin'].includes(next)) return toast.error('role 无效');
     if (next === role) return;
     if (!confirm(`确认改 ${userName} 的角色 → ${next}?`)) return;
     void doPatch({ role: next }, '已改角色');
@@ -71,7 +72,7 @@ export function UserRowActions({
     const deltaStr = window.prompt('积分调整(可正可负,如 100 或 -50):');
     if (!deltaStr) return;
     const delta = parseInt(deltaStr, 10);
-    if (!Number.isFinite(delta) || delta === 0) return alert('数字无效');
+    if (!Number.isFinite(delta) || delta === 0) return toast.error('数字无效');
     const reason = window.prompt('调整原因:', '');
     if (reason === null) return;
     if (!confirm(`确认为 ${userName} ${delta > 0 ? '+' : ''}${delta} 积分?`)) return;

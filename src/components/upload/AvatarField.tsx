@@ -6,6 +6,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
 import { CropAvatarDialog } from './CropAvatarDialog';
+import { toast } from '@/components/ui/Toast';
 
 interface Props {
   value: string;
@@ -34,17 +35,11 @@ export function AvatarField({
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [cropIsGif, setCropIsGif] = useState(false);
 
   const { upload, progress, status, error, abort } = useChunkUpload();
   const busy = status === 'uploading' || status === 'hashing';
-
-  const showToast = (m: string) => {
-    setToast(m);
-    setTimeout(() => setToast(null), 2200);
-  };
 
   /** 用户选完文件 → 转 dataURL → 弹裁剪 */
   const onPickFile = async (file: File | undefined) => {
@@ -57,7 +52,7 @@ export function AvatarField({
       const r = await upload(file, 'image');
       if (r?.url) {
         onChange(r.url);
-        showToast('✅ 已更新');
+        toast.success('头像已更新');
       }
       return;
     }
@@ -80,7 +75,7 @@ export function AvatarField({
     URL.revokeObjectURL(out.preview);
     if (r?.url) {
       onChange(r.url);
-      showToast('✅ 已更新');
+      toast.success('头像已更新');
     }
   };
 
@@ -180,12 +175,6 @@ export function AvatarField({
           onCancel={onCropCancel}
           onConfirm={onCropConfirm}
         />
-      )}
-
-      {toast && (
-        <div className="pointer-events-none fixed bottom-10 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg">
-          {toast}
-        </div>
       )}
     </div>
   );

@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from '@/lib/client-api';
 import { cn, countdown, formatPrice } from '@/lib/utils';
+import { toast } from '@/components/ui/Toast';
 import {
   AddressPicker,
   type AddressPickerValue,
@@ -38,7 +39,6 @@ export default function AuctionCheckoutPage() {
   const [creating, setCreating] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const [abandoned, setAbandoned] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -130,7 +130,7 @@ export default function AuctionCheckoutPage() {
             everScanned = false;
             notScanningStreak = 0;
             setAbandoned(false);
-            setToast(t('checkout.paySuccessShipping'));
+            toast.success(t('checkout.paySuccessShipping'));
             await refresh();
             setTimeout(() => router.push('/orders'), 3000);
           } else if (p.status === 'expired' || p.status === 'cancelled') {
@@ -166,7 +166,7 @@ export default function AuctionCheckoutPage() {
     setConfirming(true);
     try {
       await api.post(`/api/payments/${payment.payNo}/confirm`);
-      setToast(t('checkout.paySuccess'));
+      toast.success(t('checkout.paySuccess'));
       await refresh();
       setTimeout(() => router.push('/orders'), 3000);
     } catch (e) {
@@ -470,12 +470,6 @@ export default function AuctionCheckoutPage() {
           </div>
         </div>
       </div>
-
-      {toast && (
-        <div className="pointer-events-none fixed bottom-10 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg">
-          {toast}
-        </div>
-      )}
     </Shell>
   );
 }

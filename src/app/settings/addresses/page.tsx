@@ -8,6 +8,8 @@ import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
 import { AddressForm, type AddressFormValue } from '@/components/address/AddressForm';
+import { toast } from '@/components/ui/Toast';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import type { Address } from '@/lib/types';
 
 export default function AddressSettingsPage() {
@@ -18,12 +20,6 @@ export default function AddressSettingsPage() {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Address | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = (s: string) => {
-    setToast(s);
-    setTimeout(() => setToast(null), 2200);
-  };
 
   const load = async () => {
     setLoading(true);
@@ -49,9 +45,9 @@ export default function AddressSettingsPage() {
       await api.post('/api/addresses', v);
       setCreating(false);
       await load();
-      showToast(t('addresses.toast.added'));
+      toast.success(t('addresses.toast.added'));
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : t('addresses.toast.saveFail'));
+      toast.error(e instanceof ApiError ? e.message : t('addresses.toast.saveFail'));
     } finally {
       setSubmitting(false);
     }
@@ -64,22 +60,21 @@ export default function AddressSettingsPage() {
       await api.patch(`/api/addresses/${editing.id}`, v);
       setEditing(null);
       await load();
-      showToast(t('addresses.toast.updated'));
+      toast.success(t('addresses.toast.updated'));
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : t('addresses.toast.updateFail'));
+      toast.error(e instanceof ApiError ? e.message : t('addresses.toast.updateFail'));
     } finally {
       setSubmitting(false);
     }
   };
 
   const onDelete = async (id: string) => {
-    if (!confirm(t('addresses.deleteConfirm'))) return;
     try {
       await api.delete(`/api/addresses/${id}`);
       await load();
-      showToast(t('addresses.toast.deleted'));
+      toast.success(t('addresses.toast.deleted'));
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : t('addresses.toast.deleteFail'));
+      toast.error(e instanceof ApiError ? e.message : t('addresses.toast.deleteFail'));
     }
   };
 
@@ -87,9 +82,9 @@ export default function AddressSettingsPage() {
     try {
       await api.post(`/api/addresses/${id}/default`);
       await load();
-      showToast(t('addresses.toast.defaulted'));
+      toast.success(t('addresses.toast.defaulted'));
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : t('addresses.toast.setFail'));
+      toast.error(e instanceof ApiError ? e.message : t('addresses.toast.setFail'));
     }
   };
 
@@ -188,13 +183,20 @@ export default function AddressSettingsPage() {
                     >
                       <Icon name="edit" size={14} />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(a.id)}
-                      className="text-xs text-rose-500 hover:text-rose-600"
+                    <ConfirmPopover
+                      title={t('addresses.deleteConfirm')}
+                      message={t('addresses.tips.deleteWarning')}
+                      confirmText={t('addresses.delete')}
+                      danger
+                      onConfirm={() => onDelete(a.id)}
                     >
-                      <Icon name="trash" size={14} />
-                    </button>
+                      <button
+                        type="button"
+                        className="text-xs text-rose-500 hover:text-rose-600"
+                      >
+                        <Icon name="trash" size={14} />
+                      </button>
+                    </ConfirmPopover>
                   </div>
                 </li>
               ))}
@@ -227,12 +229,6 @@ export default function AddressSettingsPage() {
               <li>{t('addresses.tips.item4')}</li>
             </ul>
           </div>
-        </div>
-      )}
-
-      {toast && (
-        <div className="pointer-events-none fixed bottom-10 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg">
-          {toast}
         </div>
       )}
     </div>

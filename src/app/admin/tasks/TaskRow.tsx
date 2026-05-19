@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
 
 interface Task {
   id: string;
@@ -36,7 +37,7 @@ export function TaskRow({ task }: { task: Task }) {
       await api.patch(`/api/admin/tasks/${task.id}`, body);
       router.refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '操作失败');
+      toast.error(e instanceof ApiError ? e.message : '操作失败');
     } finally {
       setBusy(false);
     }

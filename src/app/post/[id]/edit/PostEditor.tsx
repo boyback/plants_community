@@ -9,6 +9,7 @@ import { RichTextEditor } from '@/components/richtext/RichTextEditor';
 import { UploadField } from '@/components/upload/UploadField';
 import { PostPreview } from '@/components/editor/PostPreview';
 import { UserAccountCard } from '@/components/layout/UserAccountCard';
+import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from '@/lib/client-api';
 import type { Board } from '@/lib/types';
@@ -60,12 +61,6 @@ export function PostEditor({ post }: { post: InitialPost }) {
   const [speciesSlug, setSpeciesSlug] = useState(post.speciesSlug);
 
   const [submitting, setSubmitting] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = (m: string) => {
-    setToast(m);
-    setTimeout(() => setToast(null), 2200);
-  };
 
   useEffect(() => {
     api.get<Board[]>('/api/boards').then(setCategories).catch(() => null);
@@ -110,19 +105,19 @@ export function PostEditor({ post }: { post: InitialPost }) {
   };
 
   const onSubmit = async () => {
-    if (!title.trim()) return showToast('请填写标题');
+    if (!title.trim()) return toast.error('请填写标题');
     if (post.type === 'short' && !content.trim())
-      return showToast('请填写内容');
+      return toast.error('请填写内容');
     if (post.type === 'rich') {
       const j = contentJson as { content?: unknown[] } | null;
       const empty =
         !j || !Array.isArray(j.content) || j.content.length === 0;
-      if (empty) return showToast('请填写正文');
+      if (empty) return toast.error('请填写正文');
     }
     if (post.type === 'video' && !videoUrl.trim())
-      return showToast('请上传视频或填写视频 URL');
+      return toast.error('请上传视频或填写视频 URL');
     if (!speciesSlug)
-      return showToast('请选择完整的板块（科 → 属 → 品种）');
+      return toast.error('请选择完整的板块（科 → 属 → 品种）');
 
     setSubmitting(true);
     try {
@@ -144,13 +139,13 @@ export function PostEditor({ post }: { post: InitialPost }) {
         payload
       );
       if (r.needsReview) {
-        showToast('🕒 已保存,因含外链将进入审核');
+        toast.success('已保存,因含外链将进入审核');
       } else {
-        showToast('✅ 已保存');
+        toast.success('已保存');
       }
       setTimeout(() => router.push(`/post/${post.id}`), 1000);
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : '保存失败');
+      toast.error(e instanceof ApiError ? e.message : '保存失败');
     } finally {
       setSubmitting(false);
     }
@@ -383,12 +378,6 @@ export function PostEditor({ post }: { post: InitialPost }) {
           <UserAccountCard />
         </div>
       </div>
-
-      {toast && (
-        <div className="pointer-events-none fixed bottom-10 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg">
-          {toast}
-        </div>
-      )}
     </div>
   );
 }

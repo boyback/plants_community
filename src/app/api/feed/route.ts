@@ -59,6 +59,23 @@ export const GET = handler(async (req) => {
     baseWhere.authorId = { in: ids };
   }
 
+  // 查询用户已投票状态
+  const userVotedMap = new Map<string, boolean>();
+  const userVotedOptionIdsMap = new Map<string, string[]>();
+  if (me) {
+    const voteRecords = await prisma.voteRecord.findMany({
+      where: { userId: me.id },
+      select: { voteId: true, optionId: true },
+    });
+    voteRecords.forEach(r => {
+      userVotedMap.set(r.voteId, true);
+      if (!userVotedOptionIdsMap.has(r.voteId)) {
+        userVotedOptionIdsMap.set(r.voteId, []);
+      }
+      userVotedOptionIdsMap.get(r.voteId)!.push(r.optionId);
+    });
+  }
+
   // -------- 各 tab 的排序 --------
   if (tab === 'latest' || tab === 'following') {
     const decodedCursor = cursor ? decodeLatestCursor(cursor) : null;
@@ -74,7 +91,12 @@ export const GET = handler(async (req) => {
     const hasMore = items.length > limit;
     const slice = items.slice(0, limit);
     return {
-      items: slice.map((p) => serializePost(p)),
+      items: slice.map((p) => {
+        const vote = p.vote;
+        const voted = vote ? (userVotedMap.get(vote.id) ?? false) : false;
+        const votedOptionIds = vote ? (userVotedOptionIdsMap.get(vote.id) ?? []) : [];
+        return serializePost(p as any, voted, votedOptionIds);
+      }),
       nextCursor: hasMore ? encodeLatestCursor(slice[slice.length - 1].createdAt) : null,
     };
   }
@@ -97,7 +119,12 @@ export const GET = handler(async (req) => {
     const hasMore = items.length > limit;
     const slice = items.slice(0, limit);
     return {
-      items: slice.map((p) => serializePost(p)),
+      items: slice.map((p) => {
+        const vote = p.vote;
+        const voted = vote ? (userVotedMap.get(vote.id) ?? false) : false;
+        const votedOptionIds = vote ? (userVotedOptionIdsMap.get(vote.id) ?? []) : [];
+        return serializePost(p as any, voted, votedOptionIds);
+      }),
       nextCursor: hasMore
         ? encodeHotCursor({ score: slice[slice.length - 1].hotScore, id: slice[slice.length - 1].id })
         : null,
@@ -139,7 +166,12 @@ export const GET = handler(async (req) => {
   const slice = ranked.slice(start, start + limit);
   const hasMore = start + limit < ranked.length;
   return {
-    items: slice.map((p) => serializePost(p)),
+    items: slice.map((p) => {
+      const vote = p.vote;
+      const voted = vote ? (userVotedMap.get(vote.id) ?? false) : false;
+      const votedOptionIds = vote ? (userVotedOptionIdsMap.get(vote.id) ?? []) : [];
+      return serializePost(p as any, voted, votedOptionIds);
+    }),
     nextCursor: hasMore ? String(page + 1) : null,
   };
 });

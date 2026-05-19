@@ -176,7 +176,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
     orderBy: { createdAt: 'desc' },
     include: postInclude(),
   });
-  let related = relatedRaw.map(serializePost);
+  let related = relatedRaw.map((p: any) => serializePost(p));
   if (related.length === 0) {
     const fRaw = await prisma.post.findMany({
       where: { id: { not: post.id } },
@@ -184,7 +184,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
       orderBy: { createdAt: 'desc' },
       include: postInclude(),
     });
-    related = fRaw.map(serializePost);
+    related = fRaw.map((p: any) => serializePost(p));
   }
 
   // SEO: 帖子页 JSON-LD
@@ -338,7 +338,6 @@ export default async function PostDetailPage({ params }: { params: { id: string 
 
               <PostBody
                 post={post}
-                initialVoted={myVoteOptions}
                 initialAttending={attending}
                 livePhotoMap={livePhotoMap}
               />
