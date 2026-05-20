@@ -52,7 +52,6 @@ export default function ProfileSettingsPage() {
   }
 
   return (
-    <>
       <div className="card space-y-6 p-6">
         <h1 className="flex items-center gap-2 text-xl font-semibold">
           👤 个人资料
@@ -126,8 +125,6 @@ export default function ProfileSettingsPage() {
             取消
           </Link>
         </div>
-      </div>
-
       </div>
   );
 }
