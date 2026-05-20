@@ -5,7 +5,7 @@ import type { Post, JournalEntry, JournalStage } from '@/lib/types';
 import { ALL_STAGES, STAGE_META } from '@/lib/journal';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
-import { Lightbox } from '@/components/ui/Lightbox';
+import { ImageGallery } from '@/components/ui/ImageGallery';
 import { api, ApiError } from '@/lib/client-api';
 import { toast } from '@/components/ui/Toast';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
@@ -136,7 +136,6 @@ function EntryNode({
   const day = Math.floor(
     (date.getTime() - start.getTime()) / 86400_000
   );
-  const [lbIdx, setLbIdx] = useState<number | null>(null);
 
   return (
     <li className="relative group">
@@ -198,32 +197,9 @@ function EntryNode({
           </p>
         )}
         {entry.images.length > 0 && (
-          <div className="mt-2 grid grid-cols-4 gap-1.5 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7">
-            {entry.images.map((u, i) => (
-              <button
-                key={i}
-                type="button"
-                className="block overflow-hidden rounded-md"
-                onClick={() => setLbIdx(i)}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={u}
-                  alt=""
-                  className="aspect-square w-full object-cover transition-transform hover:scale-105"
-                  loading="lazy"
-                />
-              </button>
-            ))}
-          </div>
+          <ImageGallery images={entry.images} />
         )}
       </div>
-      <Lightbox
-        images={entry.images}
-        index={lbIdx}
-        onClose={() => setLbIdx(null)}
-        onChange={setLbIdx}
-      />
     </li>
   );
 }

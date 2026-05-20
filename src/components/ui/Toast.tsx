@@ -4,6 +4,19 @@ import { Toaster as HotToaster, toast as hotToast, useToaster as useHotToaster }
 
 export const ToastProvider = HotToaster;
 
+// 自定义 Toast 组件(兼容旧接口)
+export function Toast({ message, type = 'success' }: {
+  message: string;
+  type?: 'success' | 'error' | 'info';
+}) {
+  if (type === 'error') {
+    hotToast.error(message);
+  } else {
+    hotToast.success(message);
+  }
+  return null;
+}
+
 export const toast = {
   success: (message: string) => hotToast.success(message),
   error: (message: string) => hotToast.error(message),
@@ -14,7 +27,7 @@ export const toast = {
 export { hotToast };
 
 export function useToast() {
-  const { toasts, handlers } = useHotToaster();
+  const { toasts } = useHotToaster();
 
   return {
     toasts: toasts.map((t) => ({
@@ -22,7 +35,6 @@ export function useToast() {
       message: typeof t.message === 'string' ? t.message : '',
       type: (t.type === 'success' ? 'success' : t.type === 'error' ? 'error' : 'info') as 'success' | 'error' | 'info',
     })),
-    removeToast: handlers.removeToast,
   };
 }
 

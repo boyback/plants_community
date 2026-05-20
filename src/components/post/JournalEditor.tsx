@@ -6,7 +6,7 @@ import { ALL_STAGES, STAGE_META } from '@/lib/journal';
 import type { JournalStage } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useRef, useState } from 'react';
-import { Lightbox } from '@/components/ui/Lightbox';
+import { ImageGallery } from '@/components/ui/ImageGallery';
 
 export interface JournalDraftEntry {
   entryDate: string; // yyyy-MM-dd
@@ -224,7 +224,6 @@ function SimpleImageGrid({
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
   const remaining = Math.max(0, max - images.length);
 
@@ -290,7 +289,11 @@ function SimpleImageGrid({
               src={url}
               alt=""
               className="h-full w-full cursor-pointer object-cover hover:opacity-90 transition-opacity"
-              onClick={() => setLightboxIdx(i)}
+              onClick={() => {
+                // 触发 ImageGallery 预览
+                const event = new CustomEvent('previewImage', { detail: { images, index: i } });
+                window.dispatchEvent(event);
+              }}
             />
             <button
               type="button"
@@ -323,14 +326,9 @@ function SimpleImageGrid({
         )}
       </div>
 
-      {/* Lightbox */}
+      {/* ImageGallery */}
       {images.length > 0 && (
-        <Lightbox
-          images={images}
-          index={lightboxIdx}
-          onClose={() => setLightboxIdx(null)}
-          onChange={setLightboxIdx}
-        />
+        <ImageGallery images={images} />
       )}
     </div>
   );

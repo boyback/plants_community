@@ -339,9 +339,8 @@ export function UploadField({
         </div>
       )}
       */}
-
       {/* 文件上传区 - 所有图片在同一个网格 */}
-      {(simpleMode || mode === 'file') && (
+      {( mode === 'file') && (
         <>
           <input
             ref={fileRef}

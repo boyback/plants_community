@@ -9,7 +9,7 @@ interface ConfirmPopoverProps {
   confirmText?: string;
   cancelText?: string;
   danger?: boolean;
-  onConfirm: () => void | Promise<void>;
+  onConfirm: (() => void | Promise<void>) | ((item: unknown) => void | Promise<void>);
   className?: string;
 }
 
@@ -62,7 +62,8 @@ export function ConfirmPopover({
   const handleConfirm = async () => {
     setLoading(true);
     try {
-      await onConfirm();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (onConfirm as (arg?: any) => Promise<void>)();
       setOpen(false);
     } finally {
       setLoading(false);

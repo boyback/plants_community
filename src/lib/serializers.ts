@@ -312,8 +312,8 @@ export function serializePost(p: AnyPost, userVoted?: boolean, userVotedOptionId
       ? {
           question: p.vote.question,
           options: p.vote.options
-            .sort((a, b) => a.orderIdx - b.orderIdx)
-            .map((o) => ({ id: o.id, label: o.label, votes: o.votes })),
+            .sort((a: { orderIdx: number }, b: { orderIdx: number }) => a.orderIdx - b.orderIdx)
+            .map((o: { id: string; label: string; votes: number }) => ({ id: o.id, label: o.label, votes: o.votes })),
           multi: p.vote.multi,
           deadline: p.vote.deadline.toISOString(),
           voted: p.userVoted ?? userVoted ?? false,
@@ -343,7 +343,7 @@ export function serializePost(p: AnyPost, userVoted?: boolean, userVotedOptionId
       : undefined,
     journal: p.journal ? serializeJournal(p.journal) : undefined,
     commentList: p.comments
-      ? p.comments.map((c) => serializeComment(c))
+      ? p.comments.map((c: any) => serializeComment(c))
       : undefined,
   };
 }

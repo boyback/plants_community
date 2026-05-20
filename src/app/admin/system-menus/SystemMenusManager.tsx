@@ -51,7 +51,7 @@ function parseIcons(iconField: string): string[] {
 }
 
 export function SystemMenusManager() {
-  const { toasts, removeToast } = useToast();
+  const { toasts } = useToast();
   const [menus, setMenus] = useState<SystemMenu[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingMenu, setEditingMenu] = useState<SystemMenu | 'new' | null>(null);
@@ -222,7 +222,6 @@ export function SystemMenusManager() {
           key={toast.id}
           message={toast.message}
           type={toast.type}
-          onClose={() => removeToast(toast.id)}
         />
       ))}
     </div>

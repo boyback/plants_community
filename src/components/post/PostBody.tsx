@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { useRouter } from 'next/navigation';
 import { RichTextView } from '@/components/richtext/RichTextView';
-import { Lightbox } from '@/components/ui/Lightbox';
+import { ImageGallery } from '@/components/ui/ImageGallery';
 import { toast } from '@/components/ui/Toast';
 
 /** 根据帖子类型渲染主体内容 */
@@ -388,98 +388,3 @@ function InfoBlock({ icon, title, value }: { icon: string; title: string; value:
   );
 }
 
-function ImageGallery({
-  images,
-  livePhotoMap,
-}: {
-  images: string[];
-  livePhotoMap?: Record<string, string>;
-}) {
-  const { t } = useI18n();
-  const [active, setActive] = useState<number | null>(null);
-
-  // 自适应布局策略:
-  //   1: 单张大图(16/10)
-  //   2: 左右对半(square)
-  //   3: 左大右上下(IG 式)
-  //   4: 2x2 田字
-  //   5+: 大图 + 缩略,最多 4 张可见,5+ 时最后一格遮罩 +N
-  const n = images.length;
-  const display = images.slice(0, n >= 5 ? 4 : n);
-  const remain = n - display.length;
-
-  let layoutClass = '';
-  let cellClass = (i: number) => {
-    void i;
-    return 'aspect-square';
-  };
-
-  if (n === 1) {
-    layoutClass = 'grid-cols-1';
-    cellClass = () => 'aspect-[16/10]';
-  } else if (n === 2) {
-    layoutClass = 'grid-cols-2';
-    cellClass = () => 'aspect-square';
-  } else if (n === 3) {
-    // 第一张大,占两行;后两张右侧叠
-    layoutClass = 'grid-cols-3 grid-rows-2 h-[260px] md:h-[320px]';
-    cellClass = (i) => (i === 0 ? 'col-span-2 row-span-2' : '');
-  } else {
-    // n>=4
-    layoutClass = 'grid-cols-2';
-    cellClass = () => 'aspect-square';
-  }
-
-  return (
-    <>
-      <div className={cn('grid gap-2 overflow-hidden rounded-none', layoutClass)}>
-        {display.map((src, i) => {
-          const showRemain = i === display.length - 1 && remain > 0;
-          const isLive = !!livePhotoMap?.[src];
-          return (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setActive(i)}
-              className={cn(
-                'relative overflow-hidden bg-leaf-50',
-                cellClass(i)
-              )}
-            >
-              <Image
-                src={src}
-                alt={t('detail.gallery.imgAlt', { n: i + 1 })}
-                fill
-                sizes="(max-width:768px) 50vw, 400px"
-                className="object-cover transition-transform hover:scale-105"
-                unoptimized
-              />
-              {isLive && (
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white shadow"
-                >
-                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                  LIVE
-                </span>
-              )}
-              {showRemain && (
-                <div className="absolute inset-0 grid place-items-center bg-ink-900/50 text-2xl font-bold text-white">
-                  +{remain}
-                </div>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      <Lightbox
-        images={images}
-        index={active}
-        onClose={() => setActive(null)}
-        onChange={setActive}
-        livePhotoMap={livePhotoMap}
-      />
-    </>
-  );
-}

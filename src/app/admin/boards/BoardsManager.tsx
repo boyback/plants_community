@@ -67,7 +67,7 @@ type ViewMode = 'list' | 'tree';
 
 export function BoardsManager({ initial }: { initial: BoardNode[] }) {
   const router = useRouter();
-  const { toasts, removeToast } = useToast();
+  const { toasts } = useToast();
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('admin.boards.view') as ViewMode) || 'list';
@@ -409,7 +409,6 @@ export function BoardsManager({ initial }: { initial: BoardNode[] }) {
           key={toast.id}
           message={toast.message}
           type={toast.type}
-          onClose={() => removeToast(toast.id)}
         />
       ))}
     </div>
@@ -633,11 +632,11 @@ function SortableRow({
           {/* 特殊板块不显示删除按钮 */}
           {board.kind !== 'system' && board.slug !== 'shaitu' && board.slug !== 'jiaoyi' ? (
             <ConfirmPopover
-            title={`确定删除板块「${c.name}」？`}
+            title={`确定删除板块「${board.name}」？`}
             message="此操作不可恢复"
             confirmText="删除"
             danger
-            onConfirm={() => onRemove(c)}
+            onConfirm={() => onRemove()}
           >
             <button disabled={busy} className="rounded bg-rose-100 px-2 py-1 text-[10px] text-rose-700 hover:bg-rose-200">删除</button>
           </ConfirmPopover>
@@ -1074,7 +1073,7 @@ function SpeciesCard({ species, onEdit, onRemove }: { species: SpeciesNode; onEd
                         message="此操作不可恢复"
                         confirmText="删除"
                         danger
-                        onConfirm={() => removeSpecies(sp)}
+                        onConfirm={() => onRemove()}
                       >
                         <button
                           onClick={(e) => { e.stopPropagation(); }}

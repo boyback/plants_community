@@ -7,6 +7,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { UserName } from '@/components/ui/UserName';
 import { Empty } from '@/components/ui/Empty';
 import { toast } from '@/components/ui/Toast';
+import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
