@@ -2,7 +2,6 @@
 
 import { Item } from 'react-photoswipe-gallery';
 import { LivePhotoView } from '@/components/upload/LivePhotoView';
-// @ts-expect-error - Dynamic caption plugin doesn't have types
 import 'photoswipe/dist/photoswipe.css';
 
 interface ImagePreviewProps {

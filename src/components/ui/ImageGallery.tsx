@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import { Gallery, Item } from "react-photoswipe-gallery";
-// @ts-expect-error - Dynamic caption plugin doesn't have types
 import "photoswipe/dist/photoswipe.css";
 import type { DataSourceArray } from "photoswipe";
 import { cn } from "@/lib/utils";
