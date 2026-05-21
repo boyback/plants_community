@@ -48,13 +48,10 @@ const baseExtensions = [
     },
   }),
   Image.configure({
-    HTMLAttributes: { class: 'my-3 rounded-lg max-w-full',style:{
-    // max-width: 50%;
-    // height: auto;
-    // margin: 0 auto;
-    // display: block;
-    // padding: 20px;
-    } },
+    HTMLAttributes: {
+      class: 'my-3 rounded-lg',
+      style: 'max-width: 50%; height: auto; margin: 0 auto; display: block; padding: 20px;outline: 0px;',
+    },
     inline: false,
     allowBase64: false,
   }),
