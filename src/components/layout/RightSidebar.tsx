@@ -6,6 +6,7 @@ import { TopicsCard } from '@/components/home/TopicsCard';
 import { RecommendUsers } from '@/components/home/RecommendUsers';
 import { SidebarQuickDiscovery } from '@/components/layout/SidebarQuickDiscovery';
 import { SystemMenuShortcutsRight } from '@/components/home/SystemMenuShortcutsRight';
+import { SystemBoardsCard } from '@/components/layout/SystemBoardsCard';
 import { useFeatureFlags } from '@/context/FeatureFlagsContext';
 
 interface RightSidebarProps {
@@ -29,6 +30,7 @@ function parseMenuIcon(icon: string): { image?: string; emoji?: string } {
 function CardComponent({ cardKey, users }: { cardKey: string; users?: any[] }) {
   switch (cardKey) {
     case 'card:boards': return <BoardsCard />;
+    case 'card:system_boards': return <SystemBoardsCard location="sidebar_right" />;
     case 'card:signin': return <SignInCard />;
     case 'card:hot_species': return <SidebarQuickDiscovery />;
     case 'card:topics': return <TopicsCard />;

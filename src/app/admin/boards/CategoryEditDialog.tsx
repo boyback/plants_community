@@ -33,6 +33,7 @@ interface Board {
   members?: number;
   orderIdx: number;
   enabled: boolean;
+  linkPath?: string | null;
 }
 
 function SortableIcon({ id, url, onRemove }: { id: string; url: string; onRemove: () => void }) {
@@ -84,6 +85,7 @@ export function CategoryEditDialog({
   const [icons, setIcons] = useState<string[]>(board?.icons ?? []);
   const [orderIdx, setOrderIdx] = useState(board?.orderIdx ?? 0);
   const [enabled, setEnabled] = useState(board?.enabled ?? true);
+  const [linkPath, setLinkPath] = useState(board?.linkPath ?? '');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [iconDragOver, setIconDragOver] = useState(false);
@@ -191,6 +193,7 @@ export function CategoryEditDialog({
           ? {
               icons: JSON.stringify(icons),
               name: name.trim(),
+              linkPath: linkPath.trim() || null,
             }
           : {
               slug: slug.trim(),
@@ -313,6 +316,18 @@ export function CategoryEditDialog({
                   />
                   <span className="text-[10px] text-ink-500">上传后裁剪</span>
                 </label>
+              </div>
+            </Field>
+
+            <Field label="跳转路径（可选）">
+              <input
+                className="w-full rounded-none border border-ink-200 px-3 py-2 font-mono"
+                value={linkPath}
+                onChange={(e) => setLinkPath(e.target.value)}
+                placeholder="/contests（留空则使用 /board/{slug} 标准板块页）"
+              />
+              <div className="mt-1 text-[10px] text-ink-500 leading-relaxed">
+                填了之后，访问 <span className="font-mono">/board/{board.slug}</span> 会被自动重定向到此路径。常用于让系统板块复用现有页面（如摄影大赛、交易中心）。
               </div>
             </Field>
 

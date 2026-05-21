@@ -7,12 +7,15 @@ export const dynamic = 'force-dynamic';
 export const GET = handler(async (req) => {
   const url = new URL(req.url);
   const slug = url.pathname.split('/').filter(Boolean).pop()!;
-  const categorySlug = url.searchParams.get('category') ?? undefined;
+  // 兼容两种参数名:?board=xxx(发帖页 / 移帖 / 市场卖家页都用这个)
+  // 与早期写法 ?category=xxx;两者等价,优先 board。
+  const boardSlug =
+    url.searchParams.get('board') ?? url.searchParams.get('category') ?? undefined;
 
   const g = await prisma.genus.findFirst({
     where: {
       slug,
-      ...(categorySlug ? { board: { slug: categorySlug } } : {}),
+      ...(boardSlug ? { board: { slug: boardSlug } } : {}),
     },
     include: {
       board: { include: { _count: { select: { posts: true, genera: true } } } },

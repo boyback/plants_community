@@ -74,17 +74,14 @@
       "clear": "서식 지우기",
       "imageDialog": {
         "title": "이미지 삽입",
-        "uploadHint": "로컬 업로드 (JPG/PNG/WebP/GIF, ≤ 5MB)",
         "dropzone": "이미지를 클릭 또는 드래그",
         "uploading": "업로드 중…",
-        "or": "또는",
-        "urlLabel": "이미지 URL 붙여넣기",
-        "insert": "삽입",
-        "uploadFail": "업로드 실패"
+        "uploadFail": "업로드 실패",
+        "success": "이미지가 삽입되었습니다"
       },
       "linkDialog": {
         "title": "링크 삽입",
-        "urlLabel": "URL",
+        
         "remove": "링크 제거",
         "confirm": "확인"
       }

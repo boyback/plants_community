@@ -172,7 +172,21 @@ export default async function BoardPage({
   if (genusSlug) {
     return <GenusView categorySlug={categorySlug} genusSlug={genusSlug} />;
   }
-  // 一级:科页已废除,统一重定向到 /board(全部板块入口)
+
+  // 一级:科页
+  //   - 如果该板块设置了 linkPath(主要用于 kind=system 的板块复用现有页面如 /contests),先 redirect 过去
+  //   - 如果 kind=system 且无 linkPath,渲染本板块详情页(避免 404)
+  //   - family/discussion/market 等其他类型保持原行为:统一回总入口 /board
+  const board = await prisma.board
+    .findUnique({
+      where: { slug: categorySlug },
+      select: { linkPath: true, kind: true },
+    })
+    .catch(() => null);
+
+  if (board?.linkPath) redirect(board.linkPath);
+  if (board?.kind === 'system') return <CategoryView categorySlug={categorySlug} />;
+
   redirect('/board');
 }
 

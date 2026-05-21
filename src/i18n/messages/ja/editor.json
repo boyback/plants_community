@@ -74,17 +74,14 @@
       "clear": "書式をクリア",
       "imageDialog": {
         "title": "画像を挿入",
-        "uploadHint": "ファイルからアップロード(JPG/PNG/WebP/GIF, ≤ 5MB)",
         "dropzone": "クリックまたはドラッグで画像を追加",
         "uploading": "アップロード中…",
-        "or": "または",
-        "urlLabel": "画像 URL を貼り付け",
-        "insert": "挿入",
-        "uploadFail": "アップロード失敗"
+        "uploadFail": "アップロード失敗",
+        "success": "画像を挿入しました"
       },
       "linkDialog": {
         "title": "リンクを挿入",
-        "urlLabel": "URL",
+        
         "remove": "リンクを削除",
         "confirm": "OK"
       }

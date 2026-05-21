@@ -60,6 +60,7 @@ interface BoardNode {
   enabled: boolean;
   orderIdx: number;
   postsCount: number;
+  linkPath?: string | null;
   genera: GenusNode[];
 }
 

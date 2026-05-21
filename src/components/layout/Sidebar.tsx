@@ -3,6 +3,7 @@
 import { useI18n } from '@/i18n/I18nContext';
 import { BoardsTreeMenu } from '@/components/layout/BoardsTreeMenu';
 import { SidebarQuickDiscovery } from '@/components/layout/SidebarQuickDiscovery';
+import { SystemBoardsCard } from '@/components/layout/SystemBoardsCard';
 import { TopicsCard } from '@/components/home/TopicsCard';
 import { SignInCard } from '@/components/home/SignInCard';
 import { RecommendUsers } from '@/components/home/RecommendUsers';
@@ -36,6 +37,7 @@ function parseMenuIcon(icon: string): { image?: string; emoji?: string } {
 function LeftCardComponent({ cardKey, users }: { cardKey: string; users?: any[] }) {
   switch (cardKey) {
     case 'card:boards': return <LeftBoardsCard />;
+    case 'card:system_boards': return <SystemBoardsCard location="sidebar_left" />;
     case 'card:hot_species': return <SidebarQuickDiscovery />;
     case 'card:topics': return <TopicsCard />;
     case 'card:signin': return <SignInCard />;

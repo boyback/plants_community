@@ -42,6 +42,7 @@ export default async function AdminBoardsPage() {
         enabled: c.enabled,
         orderIdx: c.orderIdx,
         postsCount: c._count.posts,
+        linkPath: c.linkPath,
         genera: c.genera.map((g) => ({
           id: g.id,
           slug: g.slug,

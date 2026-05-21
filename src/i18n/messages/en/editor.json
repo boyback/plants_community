@@ -74,17 +74,14 @@
       "clear": "Clear formatting",
       "imageDialog": {
         "title": "Insert image",
-        "uploadHint": "Upload from device (JPG/PNG/WebP/GIF, ≤ 5MB)",
         "dropzone": "Click or drop an image",
         "uploading": "Uploading…",
-        "or": "or",
-        "urlLabel": "Paste image URL",
-        "insert": "Insert",
-        "uploadFail": "Upload failed"
+        "uploadFail": "Upload failed",
+        "success": "Image inserted"
       },
       "linkDialog": {
         "title": "Insert link",
-        "urlLabel": "URL",
+        
         "remove": "Remove link",
         "confirm": "OK"
       }

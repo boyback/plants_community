@@ -25,6 +25,7 @@ const Body = z.object({
   description: z.string().optional(),
   cover: z.string().optional(),
   icons: z.string().optional(),
+  linkPath: z.string().max(200).nullable().optional(),
 });
 
 export const PATCH = handler(async (req) => {
@@ -46,6 +47,7 @@ export const PATCH = handler(async (req) => {
   if (body.description !== undefined) data.description = body.description;
   if (body.cover !== undefined) data.cover = body.cover;
   if (body.icons) data.icons = body.icons;
+  if (body.linkPath !== undefined) data.linkPath = body.linkPath;
   if (Object.keys(data).length === 0) return fail(400, '没有变更');
 
   const exists = await prisma.board.findUnique({ where: { id } });

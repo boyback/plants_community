@@ -74,17 +74,14 @@
       "clear": "清除格式",
       "imageDialog": {
         "title": "插入圖片",
-        "uploadHint": "從本機上傳(JPG/PNG/WebP/GIF, ≤ 5MB)",
         "dropzone": "點擊或拖曳圖片到此處",
         "uploading": "上傳中…",
-        "or": "或",
-        "urlLabel": "貼上外連 URL",
-        "insert": "插入",
-        "uploadFail": "上傳失敗"
+        "uploadFail": "上傳失敗",
+        "success": "圖片插入成功"
       },
       "linkDialog": {
         "title": "插入連結",
-        "urlLabel": "連結地址",
+        
         "remove": "移除連結",
         "confirm": "確定"
       }

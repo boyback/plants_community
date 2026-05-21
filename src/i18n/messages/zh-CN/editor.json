@@ -74,13 +74,10 @@
       "clear": "清除格式",
       "imageDialog": {
         "title": "插入图片",
-        "uploadHint": "从本地上传(JPG/PNG/WebP/GIF, ≤ 5MB)",
         "dropzone": "点击或拖拽图片到此处",
         "uploading": "上传中…",
-        "or": "或",
-        "urlLabel": "粘贴外链 URL",
-        "insert": "插入",
-        "uploadFail": "上传失败"
+        "uploadFail": "上传失败",
+        "success": "图片插入成功"
       },
       "linkDialog": {
         "title": "插入链接",

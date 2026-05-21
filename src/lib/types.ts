@@ -112,12 +112,15 @@ export interface BoardKind {
   family: 'family';
   discussion: 'discussion';
   market: 'market';
+  system: 'system';
 }
 
 export interface BoardFull extends Board {
   level: 'category';
   latinName?: string;
-  kind: 'family' | 'discussion' | 'market';
+  kind: 'family' | 'discussion' | 'market' | 'system';
+  /** 系统板块专用:可选的外部跳转路径(如 /contests),空则走 /board/{slug} */
+  linkPath?: string | null;
   genera?: Board[];
 }
 

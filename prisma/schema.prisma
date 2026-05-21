@@ -277,6 +277,9 @@ model Board {
   members     Int       @default(0)
   orderIdx    Int       @default(0)
   enabled     Boolean   @default(true)
+  /// 可选的外部跳转路径（如 /contests）；填了之后访问 /board/[slug] 会被 redirect 到该路径，
+  /// 主要用于 kind=system 的板块复用现有页面，family 板块通常留空走 /board/[slug] 标准页。
+  linkPath    String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime? @updatedAt
 

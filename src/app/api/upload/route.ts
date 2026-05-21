@@ -48,7 +48,7 @@ export const POST = handler(async (req) => {
   // 落 UploadFile 表(秒传 + Live Photo 配对都依赖它)
   // 注意:hash 用最终落地的 buffer(转换后)
   const sha256 = await sha256OfBuffer(buf);
-  let row;
+  let row: { id: string; url: string } | null = null;
   try {
     row = await prisma.uploadFile.create({
       data: {
@@ -61,19 +61,27 @@ export const POST = handler(async (req) => {
         url,
       },
     });
-  } catch {
-    // 已存在(同 sha256 + uploader),返回已有记录
-    row = await prisma.uploadFile.findUnique({
-      where: {
-        uploaderId_sha256: { uploaderId: me.id, sha256 },
-      },
-    });
-    if (!row) throw new Error('upload create + find both failed');
+  } catch (err: unknown) {
+    // 仅捕获 Prisma 唯一约束冲突 P2002(同 sha256 + uploader),回查已有记录
+    if (
+      typeof err === 'object' &&
+      err !== null &&
+      (err as any).code === 'P2002'
+    ) {
+      row = await prisma.uploadFile.findUnique({
+        where: {
+          uploaderId_sha256: { uploaderId: me.id, sha256 },
+        },
+      });
+      if (!row) throw new Error('upload create failed, findUnique returned null');
+    } else {
+      throw err; // 其他错误原样抛出
+    }
   }
 
   return {
-    id: row.id,
-    url: row.url,
+    id: row!.id,
+    url: row!.url,
     key,
     mime: finalMime,
     size: buf.length,

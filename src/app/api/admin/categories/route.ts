@@ -16,13 +16,17 @@ const Body = z.object({
   slug: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/, 'slug 只能含小写字母、数字、连字符'),
   name: z.string().min(1).max(80),
   latinName: z.string().max(120).nullable().optional(),
-  kind: z.enum(['family', 'discussion', 'market']).default('family'),
-  description: z.string().max(500),
-  cover: z.string().url(),
+  // system:系统功能板块(摄影大赛/交易中心/养殖交流/新手村等)
+  kind: z.enum(['family', 'discussion', 'market', 'system']).default('family'),
+  // 系统板块允许 description / cover 留空,只需要 name + icon
+  description: z.string().max(500).default(''),
+  cover: z.string().max(500).default(''),
   icons: z.string().max(5000).default('[]'), // JSON 数组字符串
   members: z.number().int().min(0).default(0),
   orderIdx: z.number().int().default(0),
   enabled: z.boolean().default(true),
+  // 可选的外部跳转路径,主要用于 system 板块复用现有页面(如 /contests)
+  linkPath: z.string().max(200).nullable().optional(),
 });
 
 export const GET = handler(async () => {
