@@ -28,6 +28,7 @@ interface InitialPost {
   categorySlug: string;
   genusSlug: string;
   speciesSlug: string;
+  cover?: string;
 }
 
 /**
@@ -45,11 +46,10 @@ export function PostEditor({ post }: { post: InitialPost }) {
 
   const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content);
-  // 如果 contentJson 为空，尝试从 content (HTML) 创建一个基础结构
   const [contentJson, setContentJson] = useState<unknown>(
     post.contentJson || (post.content ? createJsonFromHtml(post.content) : null)
   );
-  const [images, setImages] = useState<string[]>(post.images);
+  const [cover, setCover] = useState(post.cover ?? post.images?.[0] ?? '');
   const [videoUrl, setVideoUrl] = useState(post.videoUrl);
   const [tags, setTags] = useState<string[]>(post.tags);
   const [tagInput, setTagInput] = useState('');
@@ -104,6 +104,23 @@ export function PostEditor({ post }: { post: InitialPost }) {
     setTagInput('');
   };
 
+  /** 从 contentJson 中提取所有图片 URL */
+  const extractImagesFromJson = (json: unknown): string[] => {
+    const images: string[] = [];
+    const traverse = (node: unknown) => {
+      if (!node || typeof node !== 'object') return;
+      const n = node as { type?: string; attrs?: { src?: string } | null; content?: unknown[] };
+      if (n.type === 'image' && typeof n.attrs?.src === 'string' && n.attrs.src) {
+        images.push(n.attrs.src);
+      }
+      if (Array.isArray(n.content)) {
+        n.content.forEach(traverse);
+      }
+    };
+    traverse(json);
+    return images;
+  };
+
   const onSubmit = async () => {
     if (!title.trim()) return toast.error('请填写标题');
     if (post.type === 'short' && !content.trim())
@@ -122,11 +139,14 @@ export function PostEditor({ post }: { post: InitialPost }) {
     setSubmitting(true);
     try {
       const isRich = post.type === 'rich';
+      // rich/event 类型从 contentJson 提取图片
+      const contentImages = isRich ? extractImagesFromJson(contentJson) : [];
       const payload: Record<string, unknown> = {
         title,
         ...(isRich ? { contentJson } : { content }),
         tags,
-        images,
+        ...(cover && { cover }),
+        ...(contentImages.length > 0 && { images: contentImages }),
         ...(speciesSlug
           ? { speciesSlug }
           : genusSlug
@@ -283,13 +303,16 @@ export function PostEditor({ post }: { post: InitialPost }) {
               </>
             )}
 
-            <Row label="图片">
+            <Row label="封面图">
               <UploadField
                 kind="image"
-                value={images}
-                onChange={setImages}
-                max={9}
+                value={cover ? [cover] : []}
+                onChange={(arr) => setCover(arr[0] ?? '')}
+                max={1}
               />
+              <div className="mt-1 text-xs text-leaf-700/60">
+                帖子封面图（可选）
+              </div>
             </Row>
 
             <Row label="标签">
@@ -360,7 +383,7 @@ export function PostEditor({ post }: { post: InitialPost }) {
           title={title}
           content={content}
           contentJson={contentJson}
-          images={images}
+          images={extractImagesFromJson(contentJson)}
           videoUrl={videoUrl}
           tags={tags}
           user={user}
@@ -374,6 +397,7 @@ export function PostEditor({ post }: { post: InitialPost }) {
             startDate: '',
             entries: [],
           }}
+          cover={cover}
         />
           <UserAccountCard />
         </div>

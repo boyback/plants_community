@@ -59,7 +59,7 @@ function EditorInner() {
   const [speciesSlug, setSpeciesSlug] = useState(searchParams.get('species') ?? '');
   const [tags, setTags] = useState<string[]>([]);
   const [videoUrl, setVideoUrl] = useState('');
-  const [images, setImages] = useState<string[]>([]);
+  const [cover, setCover] = useState('');
   const [imageInput, setImageInput] = useState('');
   const [voteOptions, setVoteOptions] = useState<string[]>(['', '']);
   const [voteMulti, setVoteMulti] = useState(false);
@@ -138,7 +138,6 @@ function EditorInner() {
     genusSlug,
     speciesSlug,
     tags,
-    images,
     videoUrl,
     voteOptions,
     voteMulti,
@@ -146,6 +145,7 @@ function EditorInner() {
     eventLocation,
     eventStartAt,
     journal,
+    cover,
   });
 
   // 根据当前类型判断"内容是否非空"
@@ -189,7 +189,6 @@ function EditorInner() {
     setGenusSlug(p.genusSlug ?? '');
     setSpeciesSlug(p.speciesSlug ?? '');
     setTags(p.tags ?? []);
-    setImages(p.images ?? []);
     setVideoUrl(p.videoUrl ?? '');
     setVoteOptions(p.voteOptions ?? ['', '']);
     setVoteMulti(!!p.voteMulti);
@@ -197,6 +196,7 @@ function EditorInner() {
     setEventLocation(p.eventLocation ?? '');
     setEventStartAt(p.eventStartAt ?? '');
     if (p.journal) setJournal(p.journal as JournalDraft);
+    setCover(p.cover ?? '');
     setCurrentDraftId(d.id);
     toast.success(t('editor.draftSaved'));
   };
@@ -205,6 +205,23 @@ function EditorInner() {
     await api.delete(`/api/drafts/${id}`).catch(() => null);
     if (currentDraftId === id) setCurrentDraftId(null);
     await loadDrafts();
+  };
+
+  /** 从 contentJson 中提取所有图片 URL */
+  const extractImagesFromJson = (json: unknown): string[] => {
+    const images: string[] = [];
+    const traverse = (node: unknown) => {
+      if (!node || typeof node !== 'object') return;
+      const n = node as { type?: string; attrs?: { src?: string } | null; content?: unknown[] };
+      if (n.type === 'image' && typeof n.attrs?.src === 'string' && n.attrs.src) {
+        images.push(n.attrs.src);
+      }
+      if (Array.isArray(n.content)) {
+        n.content.forEach(traverse);
+      }
+    };
+    traverse(json);
+    return images;
   };
 
   const onPublish = async () => {
@@ -263,6 +280,8 @@ function EditorInner() {
 
     setSubmitting(true);
     try {
+      // rich/event 类型从 contentJson 提取图片
+      const contentImages = isRich ? extractImagesFromJson(contentJson) : [];
       const body: any = {
         type,
         // 优先传最细粒度的 slug
@@ -277,7 +296,8 @@ function EditorInner() {
           ? { contentJson }
           : { content }),
         tags,
-        ...(images.length > 0 && { images }),
+        ...(cover && { cover }),
+        ...(contentImages.length > 0 && { images: contentImages }),
         ...(type === 'video' && { videoUrl }),
         ...(type === 'vote' && {
           vote: {
@@ -324,7 +344,7 @@ function EditorInner() {
 
   if (!authLoading && !user) {
     return (
-      <Shell>
+      <Shell withSidebar={false}>
         <div className="card mx-auto max-w-md p-10 text-center">
           <div className="text-4xl">✍️</div>
           <div className="mt-3 text-lg font-semibold">{t('error.unauthorized')}</div>
@@ -345,7 +365,7 @@ function EditorInner() {
   }
 
   return (
-    <Shell>
+    <Shell withSidebar={false}>
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_280px]">
         <div className="min-w-0 space-y-5">
           <div className="card p-6">
@@ -596,15 +616,15 @@ function EditorInner() {
                 </Row>
               )}
 
-              <Row label={t('editor.images')}>
+              <Row label={t('editor.cover')}>
                 <UploadField
                   kind="image"
-                  value={images}
-                  onChange={setImages}
-                  max={20}
+                  value={cover ? [cover] : []}
+                  onChange={(arr) => setCover(arr[0] ?? '')}
+                  max={1}
                 />
                 <div className="mt-1 text-xs text-leaf-700/60">
-                  最多上传 20 张图片
+                  帖子封面图（可选）
                 </div>
               </Row>
 
@@ -643,7 +663,7 @@ function EditorInner() {
             title={title}
             content={content}
             contentJson={contentJson}
-            images={images}
+            images={extractImagesFromJson(contentJson)}
             videoUrl={videoUrl}
             tags={tags}
             user={user}
@@ -653,6 +673,7 @@ function EditorInner() {
             eventLocation={eventLocation}
             eventStartAt={eventStartAt}
             journal={journal}
+            cover={cover}
           />
 
           <div className="card p-4">

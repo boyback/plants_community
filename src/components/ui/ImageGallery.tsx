@@ -6,7 +6,6 @@ import { Gallery, Item } from "react-photoswipe-gallery";
 import "photoswipe/dist/photoswipe.css";
 import type { DataSourceArray } from "photoswipe";
 import { cn } from "@/lib/utils";
-import { Post } from "@/lib/types";
 
 interface ImageGalleryProps {
   images: string[];
@@ -46,8 +45,6 @@ export function ImageGallery({
 
   // 布局策略
   const n = images.length;
-  const display = images.slice(0, n >= 5 ? 4 : n);
-  const remain = n - display.length;
 
   let layoutClass = "";
   let cellClass = (_i: number) => "aspect-square";
@@ -146,8 +143,7 @@ export function ImageGallery({
         <div
           className={cn("grid gap-2 overflow-hidden rounded-none", layoutClass)}
         >
-          {display.map((src, i) => {
-            const showRemain = i === display.length - 1 && remain > 0;
+          {images.map((src, i) => {
             const isLive = !!livePhotoMap?.[src];
             const size = imageSizes[src] || { width: 1600, height: 1066 };
 
@@ -183,11 +179,6 @@ export function ImageGallery({
                         <span className='h-1.5 w-1.5 rounded-full bg-white' />
                         LIVE
                       </span>
-                    )}
-                    {showRemain && (
-                      <div className='absolute inset-0 grid place-items-center bg-ink-900/50 text-2xl font-bold text-white'>
-                        +{remain}
-                      </div>
                     )}
                   </div>
                 )}

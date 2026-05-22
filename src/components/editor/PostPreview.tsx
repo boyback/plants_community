@@ -43,6 +43,7 @@ interface Props {
   eventLocation: string;
   eventStartAt: string;
   journal: JournalDraft;
+  cover?: string;
 }
 
 /**
@@ -64,7 +65,10 @@ export function PostPreview({
   eventLocation,
   eventStartAt,
   journal,
+  cover,
 }: Props) {
+  // 优先使用封面图，没有则用内容中的第一张图
+  const displayImage = cover || images[0];
   return (
     <div className="card overflow-hidden">
       <div className="flex items-center justify-between border-b border-leaf-100 px-4 py-2.5">
@@ -93,11 +97,11 @@ export function PostPreview({
         )}
 
         {/* 主图 */}
-        {images.length > 0 && (
+        {displayImage && (
           <div className="overflow-hidden rounded-lg bg-leaf-50">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={images[0]}
+              src={displayImage}
               alt=""
               className="block max-h-64 w-full object-cover"
             />
@@ -211,7 +215,7 @@ export function PostPreview({
           </div>
         )}
 
-        {!title && !content && images.length === 0 && (
+        {!title && !content && !displayImage && (
           <div className="rounded-lg bg-leaf-50/40 py-6 text-center text-xs text-leaf-700/60">
             <Icon name="eye" size={20} className="mx-auto mb-1 opacity-50" />
             填写左侧表单,这里会实时预览最终效果

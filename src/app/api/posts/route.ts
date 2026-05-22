@@ -124,7 +124,7 @@ const JournalEntryInput = z.object({
     ])
     .default('other'),
   note: z.string().max(2000).default(''),
-  images: z.array(z.string()).max(9).default([]),
+  images: z.array(z.string()).max(50).default([]),
 });
 
 const CreateBody = z
@@ -139,7 +139,7 @@ const CreateBody = z
     content: z.unknown().optional(),
     contentJson: z.unknown().optional(),
     tags: z.array(z.string()).max(10).default([]),
-    images: z.array(z.string()).max(9).optional(),
+    images: z.array(z.string()).max(50).optional(),
     videoUrl: z.string().url().optional(),
     vote: z
       .object({
@@ -262,6 +262,7 @@ export const POST = handler(async (req) => {
   }
 
   const resolved = await resolveBoardIds(body);
+  
   if (!resolved.ok) return fail(400, resolved.error);
   const { ids: resolvedIds } = resolved;
 

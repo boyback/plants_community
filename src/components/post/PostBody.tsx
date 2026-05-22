@@ -25,7 +25,7 @@ export function PostBody({
 }) {
   switch (post.type) {
     case 'rich':
-      return <RichBody post={post} livePhotoMap={livePhotoMap} />;
+      return <RichTextView json={post.contentJson} html={post.content} />;;
     case 'short':
       return <ShortBody post={post} livePhotoMap={livePhotoMap} />;
     case 'video':
@@ -90,24 +90,6 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
     </div>
   );
 }
-
-function RichBody({
-  post,
-  livePhotoMap,
-}: {
-  post: Post;
-  livePhotoMap?: Record<string, string>;
-}) {
-  return (
-    <div className="space-y-4">
-      <RichTextView json={post.contentJson} html={post.content} />
-      {post.images && post.images.length > 0 && (
-        <ImageGallery images={post.images} livePhotoMap={livePhotoMap} />
-      )}
-    </div>
-  );
-}
-
 function ShortBody({
   post,
   livePhotoMap,
@@ -132,7 +114,6 @@ function VideoBody({ post }: { post: Post }) {
         <div className="overflow-hidden rounded-none bg-black">
           <video
             controls
-            poster={post.cover}
             className="aspect-video w-full"
             preload="metadata"
           >
@@ -141,6 +122,9 @@ function VideoBody({ post }: { post: Post }) {
         </div>
       )}
       <RichTextView html={post.content} />
+      {post.images && post.images.length > 0 && (
+        <ImageGallery images={post.images} />
+      )}
     </div>
   );
 }

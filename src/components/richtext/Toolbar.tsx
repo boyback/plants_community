@@ -141,6 +141,39 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
 
       <Group>
         <ToolBtn
+          title='左对齐'
+          active={editor.isActive({ textAlign: "left" })}
+          onClick={() => editor.chain().focus().setTextAlign("left").run()}
+        >
+          ≡
+        </ToolBtn>
+        <ToolBtn
+          title='居中'
+          active={editor.isActive({ textAlign: "center" })}
+          onClick={() => editor.chain().focus().setTextAlign("center").run()}
+        >
+          ⊡
+        </ToolBtn>
+        <ToolBtn
+          title='右对齐'
+          active={editor.isActive({ textAlign: "right" })}
+          onClick={() => editor.chain().focus().setTextAlign("right").run()}
+        >
+          ≡
+        </ToolBtn>
+        <ToolBtn
+          title='高亮'
+          active={editor.isActive("highlight")}
+          onClick={() => editor.chain().focus().toggleHighlight().run()}
+        >
+          🖍
+        </ToolBtn>
+      </Group>
+
+      <Divider />
+
+      <Group>
+        <ToolBtn
           title={t("editor.toolbar.link")}
           active={editor.isActive("link")}
           onClick={() => setLinkOpen(true)}
@@ -186,9 +219,19 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
         <ImageDialog
           onCancel={() => setImageOpen(false)}
           onInsert={(urls) => {
-            urls.forEach(url => {
-              editor.chain().focus().setImage({ src: url }).run();
-            });
+            editor
+              .chain()
+              .focus()
+              .insertContent([
+                ...urls.map((url) => ({
+                  type: "image",
+                  attrs: { src: url },
+                })),
+                {
+                  type: "paragraph",
+                },
+              ])
+              .run();
             setImageOpen(false);
           }}
         />
@@ -269,8 +312,28 @@ function ImageDialog({
 
   const isUploading = status === "uploading" || status === "hashing";
 
+  const handleFiles = async (files: FileList) => {
+  const uploadPromises = Array.from(files).map(async (file) => {
+        try {
+          const result = await upload(file, "image");
+          if (result?.url) {
+            reset();
+            return result.url;
+          }
+          return null;
+        } catch (error: any) {
+          toast.error(error.message || "上传失败");
+          return null;
+        }
+      });
+      const results = await Promise.all(uploadPromises);
+      const uploadedList = results.filter(Boolean) as string[];
+      console.log(uploadedList);
+      setUploadedUrls([...uploadedUrls, ...uploadedList]);
+  };
   const handleFile = async (file: File) => {
     const result = await upload(file, "image");
+    console.log(result);
     if (result) {
       setUploadedUrls([...uploadedUrls, result.url]);
       reset();
@@ -278,14 +341,14 @@ function ImageDialog({
       toast.error(error);
     }
   };
-  const handleRemoveImage = (delIndex:number)=>{
-    const newUploaderUrls = [...uploadedUrls]
-    newUploaderUrls.splice(delIndex,1)
-    setUploadedUrls(newUploaderUrls)
-  }
-  const handleInsertRich = ()=>{
-      onInsert(uploadedUrls)
-  }
+  const handleRemoveImage = (delIndex: number) => {
+    const newUploaderUrls = [...uploadedUrls];
+    newUploaderUrls.splice(delIndex, 1);
+    setUploadedUrls(newUploaderUrls);
+  };
+  const handleInsertRich = () => {
+    onInsert(uploadedUrls);
+  };
   return (
     <div
       className='fixed inset-0 z-[60] grid place-items-center bg-ink-900/40 p-4'
@@ -367,7 +430,7 @@ function ImageDialog({
             </button>
             {uploadedUrls && uploadedUrls.length > 0 && (
               <div className='grid grid-cols-5 gap-1'>
-                {uploadedUrls.map((url,delIndex) => (
+                {uploadedUrls.map((url, delIndex) => (
                   <div
                     key={url}
                     className='relative w-[90px] h-[90px]'
@@ -381,7 +444,7 @@ function ImageDialog({
                     />
                     <button
                       type='button'
-                      onClick={()=>handleRemoveImage(delIndex)}
+                      onClick={() => handleRemoveImage(delIndex)}
                       className='absolute top-0 right-0 flex items-center justify-center text-white bg-[#9f9486]'
                       style={{
                         width: 20,
@@ -412,7 +475,7 @@ function ImageDialog({
             )}
             <div className='mt-auto flex justify-end'>
               <button
-                type='button' 
+                type='button'
                 onClick={handleInsertRich}
                 className='btn-primary'
               >
@@ -428,11 +491,12 @@ function ImageDialog({
                 <span className='text-[10px] text-leaf-700/70'>图片</span>
                 <input
                   type='file'
+                  multiple
                   accept='image/jpeg,image/png,image/webp,image/gif,.heic,.heif'
                   className='hidden'
                   onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) void handleFile(f);
+                    const files = e.target.files
+                      if (files) void handleFiles(files);
                   }}
                   onDrop={(e) => {
                     e.preventDefault();
@@ -442,7 +506,7 @@ function ImageDialog({
                 />
               </label>
               <div className='text-center text-[11px] text-leaf-700/50 space-y-0.5'>
-                <div>单张不超过 10 MB</div>
+                <div>最多一次上传9张,单张不超过 10 MB</div>
                 <div>仅支持 jpg / png / webp / gif 等文件</div>
               </div>
             </div>

@@ -48,6 +48,7 @@ export const ALLOWED_TAGS = [
   'hr',
   'span',
   'div',
+  'mark',
 ];
 
 /** 允许在标签上的属性集合 */
@@ -61,6 +62,9 @@ export const ALLOWED_ATTR = [
   'rel',
   'width',
   'height',
+  'style',
+  'data-type',
+  'data-value',
 ];
 
 /** 允许 src/href 协议 */
@@ -86,9 +90,16 @@ export function sanitizeHtml(html: string): string {
     allowedTags: ALLOWED_TAGS,
     allowedAttributes: {
       a: ['href', 'title'],
-      img: ['src', 'alt', 'title', 'width', 'height'],
+      img: ['src', 'alt', 'title', 'width', 'height', 'class', 'style'],
+      mark: ['class', 'data-type'],
+      span: ['class', 'style', 'data-type', 'data-value'],
+      p: ['class', 'style', 'data-text-align'],
+      h1: ['class', 'style'],
+      h2: ['class', 'style'],
+      h3: ['class', 'style'],
+      div: ['class', 'style', 'data-type', 'data-value'],
       // 通用属性
-      '*': ['class'],
+      '*': ['class', 'style', 'data-type', 'data-value'],
     },
     allowedSchemes: ['http', 'https', 'mailto'],
     allowedSchemesByTag: {
@@ -115,8 +126,31 @@ export function sanitizeHtml(html: string): string {
         if (!attribs.src || !isUrlSafe(attribs.src)) {
           return { tagName: 'span', attribs: {}, text: '' };
         }
-        return { tagName, attribs };
+        // 保留 class 和 style
+        const preserved: Record<string, string> = { src: attribs.src };
+        if (attribs.alt) preserved.alt = attribs.alt;
+        if (attribs.title) preserved.title = attribs.title;
+        if (attribs.class) preserved.class = attribs.class;
+        if (attribs.style) preserved.style = attribs.style;
+        return { tagName, attribs: preserved };
       },
+      // 保留 heading/paragraph 的 style 属性
+      h1: (tagName, attribs) => ({
+        tagName,
+        attribs: { ...attribs, class: attribs.class || '', style: attribs.style || '' },
+      }),
+      h2: (tagName, attribs) => ({
+        tagName,
+        attribs: { ...attribs, class: attribs.class || '', style: attribs.style || '' },
+      }),
+      h3: (tagName, attribs) => ({
+        tagName,
+        attribs: { ...attribs, class: attribs.class || '', style: attribs.style || '' },
+      }),
+      p: (tagName, attribs) => ({
+        tagName,
+        attribs: { ...attribs, class: attribs.class || '', style: attribs.style || '' },
+      }),
     },
   });
 }

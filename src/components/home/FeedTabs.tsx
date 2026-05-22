@@ -819,9 +819,14 @@ function FeedListCard({
     return () => io.disconnect();
   }, [post.id, source]);
 
-  const cover = post.cover ?? post.images?.[0];
-  const images = post.images || (post.cover ? [post.cover] : []);
-  const displayImages = images.slice(0, 5);
+  // 封面图 + 内容图片，最多显示5张
+  const displayImages: string[] = [];
+  if (post.cover) displayImages.push(post.cover);
+  if (post.images) {
+    post.images.slice(0, 5 - displayImages.length).forEach(img => {
+      if (!displayImages.includes(img)) displayImages.push(img);
+    });
+  }
 
   const handleLike = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -1118,9 +1123,9 @@ function FeedListCard({
                   </div>
                 )}
                 {/* 第5张且有剩余 */}
-                {i === 4 && images.length > 5 && (
+                {i === 4 && ((post.cover ? 1 : 0) + (post.images?.length ?? 0)) > 5 && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                    <span className="text-lg font-bold text-white">+{images.length - 5}</span>
+                    <span className="text-lg font-bold text-white">+{((post.cover ? 1 : 0) + (post.images?.length ?? 0)) - 5}</span>
                   </div>
                 )}
               </div>

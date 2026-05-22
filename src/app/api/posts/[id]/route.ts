@@ -87,7 +87,8 @@ const PatchBody = z.object({
   content: z.unknown().optional(),
   contentJson: z.unknown().optional(),
   tags: z.array(z.string()).max(10).optional(),
-  images: z.array(z.string()).max(9).optional(),
+  images: z.array(z.string()).optional(),
+  cover: z.string().nullable().optional(),
   videoUrl: z.string().nullable().optional(),
   categorySlug: z.string().optional(),
   genusSlug: z.string().optional(),
@@ -119,7 +120,10 @@ export const PATCH = handler(async (req) => {
   const finalImages = body.images ?? null;
   const finalVideoUrl =
     body.videoUrl !== undefined ? body.videoUrl : post.videoUrl;
-  const finalCover = finalImages ? finalImages[0] ?? null : post.cover;
+  // 优先使用 body.cover，其次从 images[0] 获取，都没有则保留原 cover
+  const finalCover = body.cover !== undefined
+    ? body.cover
+    : (finalImages ? finalImages[0] ?? null : post.cover);
   const finalContent = stored ? stored.html : post.content;
 
   const needsReview = postNeedsReview({
@@ -144,8 +148,11 @@ export const PATCH = handler(async (req) => {
       ...(body.tags !== undefined && { tags: stringifyJson(body.tags) }),
       ...(body.images !== undefined && {
         images: stringifyJson(body.images),
-        cover: body.images[0] ?? null,
+        // images 变更时同步更新 cover（除非显式传了 cover）
+        ...(body.cover === undefined && { cover: body.images[0] ?? null }),
       }),
+      // 显式传 cover 时直接更新
+      ...(body.cover !== undefined && { cover: body.cover }),
       ...(body.videoUrl !== undefined && { videoUrl: body.videoUrl }),
       ...(boardIds.ids && boardIds.ids),
       ...(REVIEW_FILTER_ENABLED && {

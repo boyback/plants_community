@@ -34,6 +34,7 @@ export function handler<T>(fn: (req: Request) => Promise<T | NextResponse>) {
     } catch (e) {
       if (e instanceof HttpError) return fail(e.status, e.message);
       if (e instanceof ZodError) {
+        console.log(e);
         return fail(400, '参数错误', e.issues);
       }
       // eslint-disable-next-line no-console

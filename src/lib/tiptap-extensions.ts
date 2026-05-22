@@ -12,7 +12,9 @@ import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import CharacterCount from '@tiptap/extension-character-count';
-
+import TextAlign from '@tiptap/extension-text-align';
+import Highlight from '@tiptap/extension-highlight';
+import Gapcursor from '@tiptap/extension-gapcursor'
 /**
  * StarterKit 在 v3+ 已内置 link + underline 等。
  * 我们用 configure 关闭它内置的 link(因为我们要自定义 HTMLAttributes / rel),
@@ -49,12 +51,18 @@ const baseExtensions = [
   }),
   Image.configure({
     HTMLAttributes: {
-      class: 'my-3 rounded-lg',
-      style: 'max-width: 50%; height: auto; margin: 0 auto; display: block; padding: 20px;outline: 0px;',
+      // style: 'max-width: 50%;height: auto;margin: 0 auto; display:block;border-radius: 0px;padding: 20px;outline: 0px;',
     },
     inline: false,
     allowBase64: false,
   }),
+  TextAlign.configure({
+    types: ['heading', 'paragraph'],
+  }),
+  Highlight.configure({
+    multicolor: false,
+  }),
+  Gapcursor,
 ];
 
 export function getServerExtensions() {

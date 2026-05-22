@@ -225,7 +225,7 @@ export default async function PostDetailPage({
   ]);
 
   return (
-    <Shell>
+    <Shell withSidebar={false}>
       {/* SEO: 帖子页 JSON-LD(DiscussionForumPosting + 面包屑) */}
       {jsonLdScript([ld, breadcrumb])}
 

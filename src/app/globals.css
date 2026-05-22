@@ -851,8 +851,35 @@ img, video, svg {
 .prose-article code {
   @apply rounded bg-leaf-50 px-1 py-0.5 text-[0.9em] text-leaf-700;
 }
-.prose-article img {
-  @apply my-3 rounded-lg max-w-full h-auto;
+.tiptap.prose-article img {
+    max-width: 50%;
+    padding: 20px;
+}
+.prose-article{
+  font-size: 18px;
+}
+.prose-article img{
+    height: auto;
+    margin: 10px auto;
+    display: block;
+}
+.prose-article mark,
+.prose-article .highlight,
+.prose-article mark[data-type="highlight"] {
+  background-color: #fef08a;
+  color: inherit;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.125rem;
+}
+.prose-article [style*="text-align: center"],
+.prose-article p[data-text-align="center"],
+.prose-article [data-type="textAlign"][data-value="center"] {
+  text-align: center;
+}
+.prose-article [style*="text-align: right"],
+.prose-article p[data-text-align="right"],
+.prose-article [data-type="textAlign"][data-value="right"] {
+  text-align: right;
 }
 
 /* line-clamp utilities backup (Tailwind 3.4 原生已支持) */
@@ -873,6 +900,9 @@ img, video, svg {
 }
 .rich-editor.ProseMirror img.ProseMirror-selectednode {
   outline: 3px solid theme('colors.leaf.400');
+}
+@keyframes blink {
+  50% { opacity: 0; }
 }
 .rich-editor.ProseMirror hr.ProseMirror-selectednode {
   outline: 2px solid theme('colors.leaf.400');
