@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/client-api';
 import { toast } from '@/components/ui/Toast';
-import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
+import { DangerConfirmPopover } from '@/components/ui/ConfirmPopover';
 
 interface Genus {
   id: string;
@@ -74,7 +74,7 @@ export function GenusClient({
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
+      <div className="rounded-xl border border-ink-100 bg-white">
         <table className="w-full text-xs">
           <thead className="bg-ink-50 text-ink-600">
             <tr>
@@ -119,11 +119,10 @@ export function GenusClient({
                   >
                     编辑
                   </button>
-                  <ConfirmPopover
+                  <DangerConfirmPopover
                     title={`确定删除「${g.name}」属？`}
                     message="此操作不可恢复"
-                    confirmText="删除"
-                    danger
+                    confirmText="确定"
                     onConfirm={() => remove(g)}
                   >
                     <button
@@ -133,7 +132,7 @@ export function GenusClient({
                     >
                       删除
                     </button>
-                  </ConfirmPopover>
+                  </DangerConfirmPopover>
                 </td>
               </tr>
             ))}

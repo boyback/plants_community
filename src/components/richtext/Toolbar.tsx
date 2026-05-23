@@ -1,13 +1,23 @@
 "use client";
 
 import { Editor } from "@tiptap/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/Icon";
+import { MultiImageUploadGrid, type MultiImageUploadGridHandle } from "@/components/upload/MultiImageUploadGrid";
 import { useI18n } from "@/i18n/I18nContext";
 import { toast } from "@/components/ui/Toast";
-import { useChunkUpload } from "@/lib/hooks/useChunkUpload";
+
+const TEXT_COLOR_OPTIONS = [
+  { name: "默认", value: null, swatch: "#1f2937" },
+  { name: "绿色", value: "#2f7d52", swatch: "#2f7d52" },
+  { name: "红色", value: "#dc2626", swatch: "#dc2626" },
+  { name: "橙色", value: "#ea580c", swatch: "#ea580c" },
+  { name: "蓝色", value: "#2563eb", swatch: "#2563eb" },
+  { name: "紫色", value: "#7c3aed", swatch: "#7c3aed" },
+  { name: "灰色", value: "#64748b", swatch: "#64748b" },
+] as const;
 
 /**
  * 工具栏:统一在编辑器上方,Tailwind 样式与社区其它按钮一致。
@@ -122,6 +132,7 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
         >
           1.
         </ToolBtn>
+        <MarkerColorPicker editor={editor} />
         <ToolBtn
           title={t("editor.toolbar.blockquote")}
           active={editor.isActive("blockquote")}
@@ -145,21 +156,21 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
           active={editor.isActive({ textAlign: "left" })}
           onClick={() => editor.chain().focus().setTextAlign("left").run()}
         >
-          ≡
+          <AlignIcon align='left' />
         </ToolBtn>
         <ToolBtn
           title='居中'
           active={editor.isActive({ textAlign: "center" })}
           onClick={() => editor.chain().focus().setTextAlign("center").run()}
         >
-          ⊡
+          <AlignIcon align='center' />
         </ToolBtn>
         <ToolBtn
           title='右对齐'
           active={editor.isActive({ textAlign: "right" })}
           onClick={() => editor.chain().focus().setTextAlign("right").run()}
         >
-          ≡
+          <AlignIcon align='right' />
         </ToolBtn>
         <ToolBtn
           title='高亮'
@@ -168,24 +179,25 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
         >
           🖍
         </ToolBtn>
+        <TextColorPicker editor={editor} />
       </Group>
 
       <Divider />
 
       <Group>
-        <ToolBtn
+        <InsertToolBtn
           title={t("editor.toolbar.link")}
+          label='链接'
+          icon='link'
           active={editor.isActive("link")}
           onClick={() => setLinkOpen(true)}
-        >
-          🔗
-        </ToolBtn>
-        <ToolBtn
+        />
+        <InsertToolBtn
           title={t("editor.toolbar.image")}
+          label='图片'
+          icon='image'
           onClick={() => setImageOpen(true)}
-        >
-          🖼️
-        </ToolBtn>
+        />
       </Group>
 
       <Divider />
@@ -298,7 +310,236 @@ function ToolBtn({
   );
 }
 
-/* ----------- 图片对话框:上传 → 已上传 → 确认 ----------- */
+function InsertToolBtn({
+  title,
+  label,
+  icon,
+  active,
+  onClick,
+}: {
+  title: string;
+  label: string;
+  icon: "link" | "image";
+  active?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type='button'
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+      className={cn(
+        'inline-flex h-7 items-center gap-1 rounded border px-2 text-[12px] font-medium transition-colors',
+        active
+          ? 'border-leaf-300 bg-leaf-100 text-leaf-800'
+          : 'border-leaf-100 bg-white/70 text-ink-700 hover:border-leaf-300 hover:bg-white hover:text-leaf-800',
+      )}
+    >
+      <Icon name={icon} size={14} strokeWidth={1.9} />
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function AlignIcon({ align }: { align: "left" | "center" | "right" }) {
+  const lineClass =
+    align === "left"
+      ? "items-start"
+      : align === "right"
+        ? "items-end"
+        : "items-center";
+
+  return (
+    <span className={cn("flex w-4 flex-col gap-[3px]", lineClass)}>
+      <span className='h-px w-4 rounded bg-current' />
+      <span className='h-px w-3 rounded bg-current' />
+      <span className='h-px w-4 rounded bg-current' />
+    </span>
+  );
+}
+
+function TextColorPicker({ editor }: { editor: Editor }) {
+  const currentColor = (
+    editor.getAttributes("textStyle")?.color as string | undefined
+  )?.toLowerCase();
+  const customColorValue = /^#[0-9a-f]{6}$/i.test(currentColor ?? "")
+    ? currentColor!
+    : "#2f7d52";
+  const isPresetColor = TEXT_COLOR_OPTIONS.some(
+    (color) => color.value?.toLowerCase() === currentColor,
+  );
+  const isCustomColor = Boolean(currentColor && !isPresetColor);
+  const applyColor = (color: string | null) => {
+    const chain = editor.chain().focus();
+    if (color) {
+      chain.setColor(color);
+    } else {
+      chain.unsetColor();
+    }
+    chain.run();
+  };
+
+  return (
+    <div className='ml-0.5 flex h-7 items-center gap-0.5 rounded bg-white/60 px-1'>
+      <span className='mr-0.5 text-[11px] font-semibold text-ink-700' title='文字颜色'>
+        A
+      </span>
+      {TEXT_COLOR_OPTIONS.map((color) => {
+        const active = color.value
+          ? currentColor === color.value.toLowerCase()
+          : !currentColor;
+
+        return (
+          <button
+            key={color.name}
+            type='button'
+            title={`文字颜色：${color.name}`}
+            aria-label={`文字颜色：${color.name}`}
+            onClick={() => {
+              applyColor(color.value);
+            }}
+            className={cn(
+              'flex h-5 w-5 items-center justify-center rounded border transition-colors hover:border-leaf-500',
+              active ? 'border-leaf-600 bg-leaf-50' : 'border-leaf-100 bg-white',
+            )}
+          >
+            {color.value ? (
+              <span
+                className='h-3 w-3 rounded-sm'
+                style={{ backgroundColor: color.swatch }}
+              />
+            ) : (
+              <span className='relative h-3 w-3 rounded-sm border border-ink-300 bg-white'>
+                <span className='absolute left-[-1px] top-1/2 h-px w-[15px] -rotate-45 bg-rose-500' />
+              </span>
+            )}
+          </button>
+        );
+      })}
+      <label
+        title='自定义文字颜色'
+        aria-label='自定义文字颜色'
+        className={cn(
+          'relative flex h-5 w-5 cursor-pointer items-center justify-center overflow-hidden rounded border transition-colors hover:border-leaf-500',
+          isCustomColor ? 'border-leaf-600 bg-leaf-50' : 'border-leaf-100 bg-white',
+        )}
+      >
+        <input
+          type='color'
+          value={customColorValue}
+          onChange={(event) => {
+            applyColor(event.currentTarget.value);
+          }}
+          className='absolute inset-0 h-full w-full cursor-pointer opacity-0'
+        />
+        <span
+          className='h-3 w-3 rounded-sm'
+          style={{
+            background:
+              'conic-gradient(#dc2626, #ea580c, #facc15, #2f7d52, #2563eb, #7c3aed, #dc2626)',
+          }}
+        />
+      </label>
+    </div>
+  );
+}
+
+function MarkerColorPicker({ editor }: { editor: Editor }) {
+  const isListItem = editor.isActive("listItem");
+  const currentColor = (
+    editor.getAttributes("listItem")?.markerColor as string | undefined
+  )?.toLowerCase();
+  const customColorValue = /^#[0-9a-f]{6}$/i.test(currentColor ?? "")
+    ? currentColor!
+    : "#2f7d52";
+  const isPresetColor = TEXT_COLOR_OPTIONS.some(
+    (color) => color.value?.toLowerCase() === currentColor,
+  );
+  const isCustomColor = Boolean(currentColor && !isPresetColor);
+
+  const applyMarkerColor = (color: string | null) => {
+    if (!isListItem) {
+      toast.error("请先把光标放到列表项里");
+      return;
+    }
+    editor.chain().focus().updateAttributes("listItem", { markerColor: color }).run();
+  };
+
+  return (
+    <div
+      className={cn(
+        'ml-0.5 flex h-7 items-center gap-0.5 rounded bg-white/60 px-1',
+        !isListItem && 'opacity-50',
+      )}
+      title='列表标记颜色'
+    >
+      <span className='mr-0.5 text-[13px] font-semibold leading-none text-ink-700'>
+        •
+      </span>
+      {TEXT_COLOR_OPTIONS.map((color) => {
+        const active = color.value
+          ? currentColor === color.value.toLowerCase()
+          : !currentColor;
+
+        return (
+          <button
+            key={color.name}
+            type='button'
+            title={`列表标记颜色：${color.name}`}
+            aria-label={`列表标记颜色：${color.name}`}
+            onClick={() => applyMarkerColor(color.value)}
+            className={cn(
+              'flex h-5 w-5 items-center justify-center rounded border transition-colors hover:border-leaf-500',
+              active && isListItem ? 'border-leaf-600 bg-leaf-50' : 'border-leaf-100 bg-white',
+            )}
+          >
+            {color.value ? (
+              <span
+                className='h-3 w-3 rounded-sm'
+                style={{ backgroundColor: color.swatch }}
+              />
+            ) : (
+              <span className='relative h-3 w-3 rounded-sm border border-ink-300 bg-white'>
+                <span className='absolute left-[-1px] top-1/2 h-px w-[15px] -rotate-45 bg-rose-500' />
+              </span>
+            )}
+          </button>
+        );
+      })}
+      <label
+        title='自定义列表标记颜色'
+        aria-label='自定义列表标记颜色'
+        className={cn(
+          'relative flex h-5 w-5 cursor-pointer items-center justify-center overflow-hidden rounded border transition-colors hover:border-leaf-500',
+          isCustomColor && isListItem ? 'border-leaf-600 bg-leaf-50' : 'border-leaf-100 bg-white',
+        )}
+      >
+        <input
+          type='color'
+          value={customColorValue}
+          onClick={(event) => {
+            if (!isListItem) event.preventDefault();
+          }}
+          onChange={(event) => {
+            applyMarkerColor(event.currentTarget.value);
+          }}
+          className='absolute inset-0 h-full w-full cursor-pointer opacity-0'
+        />
+        <span
+          className='h-3 w-3 rounded-sm'
+          style={{
+            background:
+              'conic-gradient(#dc2626, #ea580c, #facc15, #2f7d52, #2563eb, #7c3aed, #dc2626)',
+          }}
+        />
+      </label>
+    </div>
+  );
+}
+
+const MAX_IMAGE_UPLOAD_COUNT = 20;
+
 function ImageDialog({
   onInsert,
   onCancel,
@@ -306,208 +547,115 @@ function ImageDialog({
   onInsert: (urls: Array<string>) => void;
   onCancel: () => void;
 }) {
-  const { t } = useI18n();
-  const { upload, progress, status, error, reset } = useChunkUpload();
   const [uploadedUrls, setUploadedUrls] = useState<Array<string>>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+  const uploadGridRef = useRef<MultiImageUploadGridHandle>(null);
+  const isInitialEmpty = uploadedUrls.length === 0 && !isUploading;
 
-  const isUploading = status === "uploading" || status === "hashing";
-
-  const handleFiles = async (files: FileList) => {
-  const uploadPromises = Array.from(files).map(async (file) => {
-        try {
-          const result = await upload(file, "image");
-          if (result?.url) {
-            reset();
-            return result.url;
-          }
-          return null;
-        } catch (error: any) {
-          toast.error(error.message || "上传失败");
-          return null;
-        }
-      });
-      const results = await Promise.all(uploadPromises);
-      const uploadedList = results.filter(Boolean) as string[];
-      console.log(uploadedList);
-      setUploadedUrls([...uploadedUrls, ...uploadedList]);
-  };
-  const handleFile = async (file: File) => {
-    const result = await upload(file, "image");
-    console.log(result);
-    if (result) {
-      setUploadedUrls([...uploadedUrls, result.url]);
-      reset();
-    } else if (error) {
-      toast.error(error);
-    }
-  };
-  const handleRemoveImage = (delIndex: number) => {
-    const newUploaderUrls = [...uploadedUrls];
-    newUploaderUrls.splice(delIndex, 1);
-    setUploadedUrls(newUploaderUrls);
-  };
   const handleInsertRich = () => {
+    if (uploadedUrls.length === 0) {
+      toast.error(isUploading ? "图片上传中" : "请先上传图片");
+      return;
+    }
     onInsert(uploadedUrls);
   };
+
+  const handleCancel = () => {
+    if (isUploading) {
+      setCloseConfirmOpen(true);
+      return;
+    }
+    onCancel();
+  };
+
   return (
     <div
       className='fixed inset-0 z-[60] grid place-items-center bg-ink-900/40 p-4'
-      onClick={onCancel}
+      onClick={handleCancel}
     >
       <div
-        className='card relative flex w-[500px] min-h-[400px] flex-col p-4'
+        className='card relative flex min-h-[400px] w-[500px] flex-col p-4'
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type='button'
-          onClick={onCancel}
-          className='absolute -top-1 -right-[5%] translate-x-[25px] flex h-10 w-10 items-center justify-center hover:opacity-80 transition-opacity'
+          onClick={handleCancel}
+          className='absolute -right-[5%] -top-1 flex h-10 w-10 translate-x-[25px] items-center justify-center transition-opacity hover:opacity-80'
         >
-          <Image
-            src='/icons/close-circle.svg'
-            alt='关闭'
-            width={25}
-            height={25}
-          />
+          <Image src='/icons/close-circle.svg' alt='关闭' width={25} height={25} />
         </button>
-        {isUploading || (uploadedUrls && uploadedUrls.length) ? (
-          <>
-            <div className='text-base font-semibold text-ink-800'>
-              已上传的图片
-            </div>
-            <button
-              type='button'
-              style={{
-                width: 90,
-                height: 30,
-                margin: "10px 0",
-                borderRadius: 2,
-                display: "inline-block",
-                backgroundColor: "#e7e7e7",
-                position: "relative",
-                border: "none",
-                padding: "10px 0",
-                cursor: "pointer",
-              }}
-            >
-              <input
-                type='file'
-                accept='image/jpeg,image/png,image/webp,image/gif,.heic,.heif'
-                id='up'
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  opacity: 0,
-                  cursor: "pointer",
-                  width: "100%",
-                  height: "100%",
-                }}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void handleFile(f);
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const f = e.dataTransfer.files[0];
-                  if (f && f.type.startsWith("image/")) void handleFile(f);
-                }}
-              />
-              <label htmlFor='up'>
-                <img
-                  src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAYpJREFUWEftlsFKw0AQhmcSkjfo2ZsHD558gAriG7TgxXcIpFN6soKk7OYZvHgpmDfwYl9AwYugN/HgUyQjKw1sl2zTbCpByZ6SXXb+j39nZweh44Ed68PfBhBCvCHiJxGduTrp7ICU8p6ZR4g/ITIiGrtAOAEocQAYGYJOEI0BLOIlS2OIRgC6ODNfI+KVUta/mx7HzgCm+HQ6nUspWQEQEQoh5iVQE4idAKrElbAOoP5dIGoBbOJVAC4QWwHSND1m5pfynJXteuabDpRruhOe553Ecfxku6JbAZIkGQRBcFsUxbMpbnNAhwCAQRiGN1EUfTkB1BUWmwN1+/T12hzYFqwH6B3oHejcgTRN79Q1nUwml03uvrUOrEvoAQA8ENHSNWjVPinlBQCcM/OHXlU3CpGU8hEAhup9ryq9bYC092FFRKdlrB7AdKBsNjNmfm1jubkXEY/WjexG32gCqE5XQfzmGBNRVpkDanKxWAx931cZe7hnivc8z5ez2Wy1t+d4H4Ct+oF/AfANT5jsIWrAMzQAAAAASUVORK5CYII='
-                  alt='上传'
-                  style={{
-                    width: 20,
-                    height: 20,
-                    objectFit: "contain",
-                    position: "absolute",
-                    left: "50%",
-                    top: "50%",
-                    transform: "translate(-50%, -50%)",
-                  }}
-                />
-              </label>
-            </button>
-            {uploadedUrls && uploadedUrls.length > 0 && (
-              <div className='grid grid-cols-5 gap-1'>
-                {uploadedUrls.map((url, delIndex) => (
-                  <div
-                    key={url}
-                    className='relative w-[90px] h-[90px]'
-                    style={{ border: "1px dashed #ccc" }}
-                  >
-                    <Image
-                      src={url}
-                      alt='已上传'
-                      fill
-                      className='object-cover'
-                    />
-                    <button
-                      type='button'
-                      onClick={() => handleRemoveImage(delIndex)}
-                      className='absolute top-0 right-0 flex items-center justify-center text-white bg-[#9f9486]'
-                      style={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: "50%",
-                        color: "#fff",
-                        background: "#9f9486",
-                        textAlign: "center",
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-                {isUploading && (
-                  <div
-                    className='relative w-[90px] h-[90px] flex justify-center items-center'
-                    style={{ border: "1px dashed #ccc" }}
-                  >
-                    <img
-                      src='https://minimax-algeng-chat-tts.oss-cn-wulanchabu.aliyuncs.com/ccv2%2F2026-05-21%2FMiniMax-M2.7%2F1983817541167882806%2F1f849e820d5d6c64434e895a8936309325e8f2ad6f3914667ff0a1fad1ebf962..gif?Expires=1779438767&OSSAccessKeyId=LTAI5tGLnRTkBjLuYPjNcKQ8&Signature=IICzkP9OkyQ5Mgsw3FYCsKCNMLE%3D'
-                      alt='上传中'
-                      className='w-[45px] h-[45px] object-contain'
-                    />
-                  </div>
-                )}
-              </div>
+
+        <div className='text-base font-semibold text-ink-800'>已上传的图片</div>
+        {isInitialEmpty && (
+          <EmptyImageUploadPrompt onClick={() => uploadGridRef.current?.openPicker()} />
+        )}
+        <div className={isInitialEmpty ? 'hidden' : 'mt-3 flex-1'}>
+          <MultiImageUploadGrid
+            ref={uploadGridRef}
+            value={uploadedUrls}
+            onChange={setUploadedUrls}
+            max={MAX_IMAGE_UPLOAD_COUNT}
+            onUploadingChange={setIsUploading}
+            showCount={false}
+            gridClassName='grid-cols-5 gap-1'
+            tileClassName='h-[90px] w-[90px]'
+            hideAddButton={isInitialEmpty}
+            showAddWhileUploading
+            squareTiles
+            squareAddButton
+            className='flex h-full flex-col'
+            helpTextClassName='!mt-auto pt-2'
+            helpText={
+              <>
+                <div>最多上传 20 张，单张不超过 10 MB，可一次选择多张</div>
+                <div>仅支持 jpg / png / webp / gif / heic</div>
+              </>
+            }
+          />
+        </div>
+
+        <div className='mt-auto flex justify-end pt-4'>
+          <button
+            type='button'
+            onClick={handleInsertRich}
+            disabled={uploadedUrls.length === 0}
+            className={cn(
+              'btn-primary',
+              uploadedUrls.length === 0 && 'cursor-not-allowed opacity-50',
             )}
-            <div className='mt-auto flex justify-end'>
-              <button
-                type='button'
-                onClick={handleInsertRich}
-                className='btn-primary'
-              >
-                确认
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className='flex flex-1 items-center justify-center'>
-            <div className='flex flex-col items-center gap-2'>
-              <label className='group flex h-[90px] w-[90px] cursor-pointer flex-col items-center justify-center gap-1 border-2 border-dashed text-xs transition-colors border-leaf-200 bg-leaf-50/30 hover:border-leaf-400 hover:bg-leaf-50/50'>
-                <Icon name='plus' size={16} className='text-leaf-600' />
-                <span className='text-[10px] text-leaf-700/70'>图片</span>
-                <input
-                  type='file'
-                  multiple
-                  accept='image/jpeg,image/png,image/webp,image/gif,.heic,.heif'
-                  className='hidden'
-                  onChange={(e) => {
-                    const files = e.target.files
-                      if (files) void handleFiles(files);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const f = e.dataTransfer.files[0];
-                    if (f && f.type.startsWith("image/")) void handleFile(f);
-                  }}
-                />
-              </label>
-              <div className='text-center text-[11px] text-leaf-700/50 space-y-0.5'>
-                <div>最多一次上传9张,单张不超过 10 MB</div>
-                <div>仅支持 jpg / png / webp / gif 等文件</div>
+          >
+            确认
+          </button>
+        </div>
+        {closeConfirmOpen && (
+          <div
+            className='fixed inset-0 z-[80] flex items-center justify-center bg-black/30 p-4'
+            onClick={() => setCloseConfirmOpen(false)}
+          >
+            <div
+              className='w-full max-w-sm bg-white p-5 shadow-xl'
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className='text-base font-semibold text-ink-800'>关闭上传弹窗？</div>
+              <p className='mt-2 text-sm leading-6 text-ink-600'>
+                当前还有图片正在上传，关闭后会取消未完成的上传。
+              </p>
+              <div className='mt-5 flex justify-end gap-2'>
+                <button
+                  type='button'
+                  onClick={() => setCloseConfirmOpen(false)}
+                  className='border border-ink-200 bg-white px-3 py-1.5 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-50'
+                >
+                  继续等待
+                </button>
+                <button
+                  type='button'
+                  onClick={onCancel}
+                  className='bg-rose-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-rose-600'
+                >
+                  关闭
+                </button>
               </div>
             </div>
           </div>
@@ -517,6 +665,26 @@ function ImageDialog({
   );
 }
 
+function EmptyImageUploadPrompt({ onClick }: { onClick: () => void }) {
+  return (
+    <div className='pointer-events-none absolute inset-0 flex items-center justify-center p-4'>
+      <div className='pointer-events-auto flex flex-col items-center gap-3 text-center'>
+        <button
+          type='button'
+          onClick={onClick}
+          className='flex h-[120px] w-[120px] flex-col items-center justify-center gap-1 border border-dashed border-leaf-200 bg-leaf-50/30 text-xs transition-colors hover:border-leaf-400 hover:bg-leaf-50/50'
+        >
+          <Icon name='plus' size={18} className='text-leaf-600' />
+          <span className='text-[10px] text-leaf-700/70'>图片</span>
+        </button>
+        <div className='space-y-0.5 text-[11px] text-leaf-700/50'>
+          <div>最多上传 20 张，单张不超过 10 MB，可一次选择多张</div>
+          <div>仅支持 jpg / png / webp / gif / heic</div>
+        </div>
+      </div>
+    </div>
+  );
+}
 function LinkDialog({
   initial,
   onInsert,

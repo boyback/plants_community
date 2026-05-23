@@ -209,6 +209,8 @@ function OrderRow({
         href={
           order.source === 'auction' && order.auctionId
             ? `/auction/${order.auctionId}`
+            : order.listing
+            ? `/market/${order.listing.id}`
             : order.product
             ? `/market/${order.product.id}`
             : '#'
@@ -217,8 +219,8 @@ function OrderRow({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={order.product?.cover ?? order.auctionCover ?? ''}
-          alt={order.product?.title ?? order.auctionTitle ?? ''}
+          src={order.product?.cover ?? order.listingItem?.cover ?? order.listing?.cover ?? order.auctionCover ?? ''}
+          alt={order.product?.title ?? order.listingItem?.title ?? order.listing?.title ?? order.auctionTitle ?? ''}
           className="h-16 w-16 shrink-0 rounded-lg object-cover"
         />
         <div className="min-w-0 flex-1">
@@ -227,7 +229,7 @@ function OrderRow({
               <span className="rounded bg-rose-100 px-1 text-[9px] text-rose-700">🔨 {t('orders.source.auction')}</span>
             )}
             <span className="line-clamp-1 text-sm">
-              {order.product?.title ?? order.auctionTitle ?? t('orders.source.product')}
+              {order.product?.title ?? order.listingItem?.title ?? order.listing?.title ?? order.auctionTitle ?? t('orders.source.product')}
             </span>
           </div>
           <div className="mt-0.5 text-[11px] text-leaf-700/70">

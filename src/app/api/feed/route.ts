@@ -19,6 +19,7 @@ import { personalize, type PostForRank } from '@/lib/feed/ranker';
 import { serializePost } from '@/lib/serializers';
 import { postInclude } from '@/lib/post-include';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
+import { sortPostsForPins } from '@/lib/post-pins';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,12 +92,12 @@ export const GET = handler(async (req) => {
     const hasMore = items.length > limit;
     const slice = items.slice(0, limit);
     return {
-      items: slice.map((p) => {
+      items: sortPostsForPins(slice.map((p) => {
         const vote = p.vote;
         const voted = vote ? (userVotedMap.get(vote.id) ?? false) : false;
         const votedOptionIds = vote ? (userVotedOptionIdsMap.get(vote.id) ?? []) : [];
-        return serializePost(p as any, voted, votedOptionIds);
-      }),
+        return serializePost(p as any, voted, votedOptionIds, me);
+      }), [{ scope: 'global', targetId: '' }]),
       nextCursor: hasMore ? encodeLatestCursor(slice[slice.length - 1].createdAt) : null,
     };
   }
@@ -119,12 +120,12 @@ export const GET = handler(async (req) => {
     const hasMore = items.length > limit;
     const slice = items.slice(0, limit);
     return {
-      items: slice.map((p) => {
+      items: sortPostsForPins(slice.map((p) => {
         const vote = p.vote;
         const voted = vote ? (userVotedMap.get(vote.id) ?? false) : false;
         const votedOptionIds = vote ? (userVotedOptionIdsMap.get(vote.id) ?? []) : [];
-        return serializePost(p as any, voted, votedOptionIds);
-      }),
+        return serializePost(p as any, voted, votedOptionIds, me);
+      }), [{ scope: 'global', targetId: '' }]),
       nextCursor: hasMore
         ? encodeHotCursor({ score: slice[slice.length - 1].hotScore, id: slice[slice.length - 1].id })
         : null,
@@ -166,12 +167,12 @@ export const GET = handler(async (req) => {
   const slice = ranked.slice(start, start + limit);
   const hasMore = start + limit < ranked.length;
   return {
-    items: slice.map((p) => {
+    items: sortPostsForPins(slice.map((p) => {
       const vote = p.vote;
       const voted = vote ? (userVotedMap.get(vote.id) ?? false) : false;
       const votedOptionIds = vote ? (userVotedOptionIdsMap.get(vote.id) ?? []) : [];
-      return serializePost(p as any, voted, votedOptionIds);
-    }),
+      return serializePost(p as any, voted, votedOptionIds, me);
+    }), [{ scope: 'global', targetId: '' }]),
     nextCursor: hasMore ? String(page + 1) : null,
   };
 });

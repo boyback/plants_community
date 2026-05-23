@@ -8,6 +8,7 @@ type IconName =
   | 'bell'
   | 'search'
   | 'plus'
+  | 'link'
   | 'heart'
   | 'comment'
   | 'share'
@@ -49,6 +50,7 @@ const paths: Record<IconName, string> = {
   bell: 'M6 8a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9Zm4 13a2 2 0 0 0 4 0',
   search: 'm21 21-4.35-4.35M17 10A7 7 0 1 1 3 10a7 7 0 0 1 14 0Z',
   plus: 'M12 5v14M5 12h14',
+  link: 'M10 13a5 5 0 0 0 7.07 0l2-2a5 5 0 0 0-7.07-7.07l-1.15 1.15M14 11a5 5 0 0 0-7.07 0l-2 2A5 5 0 0 0 12 20.07l1.15-1.15',
   heart:
     'M12 21s-7-4.35-7-10a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 19 11c0 5.65-7 10-7 10Z',
   comment: 'M21 12a8 8 0 1 1-3.3-6.5L21 4l-1 4.5A8 8 0 0 1 21 12Z',

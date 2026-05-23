@@ -81,6 +81,10 @@ export default async function TopicPage({
         createdAt: true,
         author: { select: { id: true, name: true, handle: true, avatar: true } },
         _count: { select: { likes: true, comments: true } },
+        pins: {
+          select: { id: true, scope: true, targetId: true, orderIdx: true, pinnedAt: true },
+          orderBy: [{ orderIdx: 'asc' }, { pinnedAt: 'desc' }],
+        },
       },
       orderBy: [{ hotScore: 'desc' }, { createdAt: 'desc' }],
       skip,
@@ -95,6 +99,7 @@ export default async function TopicPage({
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const sortedPosts = sortTopicPosts(posts, name);
 
   return (
     <Shell>
@@ -146,13 +151,13 @@ export default async function TopicPage({
       )}
 
       {/* 帖子列表 */}
-      {posts.length === 0 ? (
+      {sortedPosts.length === 0 ? (
         <div className="card p-12 text-center text-sm text-leaf-700/60">
           还没有「{name}」相关的帖子,快来发第一篇 🌱
         </div>
       ) : (
         <div className="space-y-3">
-          {posts.map((p) => (
+          {sortedPosts.map((p) => (
             <Link
               key={p.id}
               href={`/post/${p.id}`}
@@ -222,4 +227,35 @@ function fmtDate(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+function sortTopicPosts<T extends { createdAt: Date; pins?: Array<{ scope: string; targetId: string; orderIdx: number; pinnedAt: Date }> }>(
+  posts: T[],
+  topicName: string
+): T[] {
+  return [...posts].sort((a, b) => {
+    const ap = bestTopicPin(a, topicName);
+    const bp = bestTopicPin(b, topicName);
+    if (ap && !bp) return -1;
+    if (!ap && bp) return 1;
+    if (ap && bp) {
+      if (ap.orderIdx !== bp.orderIdx) return ap.orderIdx - bp.orderIdx;
+      const at = ap.pinnedAt.getTime();
+      const bt = bp.pinnedAt.getTime();
+      if (at !== bt) return bt - at;
+    }
+    return b.createdAt.getTime() - a.createdAt.getTime();
+  });
+}
+
+function bestTopicPin<T extends { pins?: Array<{ scope: string; targetId: string; orderIdx: number; pinnedAt: Date }> }>(
+  post: T,
+  topicName: string
+) {
+  return post.pins
+    ?.filter((pin) => pin.scope === 'topic' && pin.targetId === topicName)
+    .sort((a, b) => {
+      if (a.orderIdx !== b.orderIdx) return a.orderIdx - b.orderIdx;
+      return b.pinnedAt.getTime() - a.pinnedAt.getTime();
+    })[0];
 }

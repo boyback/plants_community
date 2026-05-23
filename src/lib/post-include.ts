@@ -2,6 +2,7 @@
  * @param withJournalEntries true 时下发完整事件列表(详情页用),否则下发前 5 条(feed 卡片预览用,前端负责截断)
  */
 export function postInclude(opts?: { withJournalEntries?: boolean }) {
+  const pinsOrderBy = [{ orderIdx: 'asc' as const }, { pinnedAt: 'desc' as const }];
   const journalEntriesInclude = opts?.withJournalEntries
     ? {
         entries: {
@@ -42,6 +43,7 @@ export function postInclude(opts?: { withJournalEntries?: boolean }) {
     vote: { include: { options: true } },
     event: { include: { _count: { select: { attendees: true } } } },
     journal: { include: journalEntriesInclude },
+    pins: { orderBy: pinsOrderBy },
     _count: { select: { comments: true, likes: true } },
   } as const;
 }

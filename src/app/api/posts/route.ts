@@ -10,6 +10,7 @@ import { emitEvent } from '@/lib/events';
 import { processRichInput } from '@/lib/richtext';
 import { postNeedsReview } from '@/lib/post-review';
 import { firePushToBaidu } from '@/lib/baidu-push';
+import { sortPostsForPins, type PinSortTarget } from '@/lib/post-pins';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://plantcommunity.cn';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
@@ -56,6 +57,12 @@ export const GET = handler(async (req) => {
       : sort === 'hot'
       ? [{ views: 'desc' as const }, { createdAt: 'desc' as const }]
       : [{ createdAt: 'desc' as const }];
+  const pinTargets = await resolvePinTargets({
+    categorySlug,
+    genusSlug,
+    speciesSlug,
+    legacyBoard,
+  });
 
   const list = await prisma.post.findMany({
     where,
@@ -90,8 +97,11 @@ export const GET = handler(async (req) => {
   );
 
   return {
-    items: postsWithVoteStatus.map(({ post, userVoted }) =>
-      serializePost(post as any, userVoted)
+    items: sortPostsForPins(
+      postsWithVoteStatus.map(({ post, userVoted }) =>
+        serializePost(post as any, userVoted, undefined, currentUser)
+      ),
+      pinTargets
     ),
     nextCursor,
   };
@@ -105,6 +115,56 @@ export const GET = handler(async (req) => {
  *   - boardSlug(向后兼容):按 legacy board / category 查找
  * 其中至少需提供一个。自动推导上级并写入 boardId/genusId/speciesId。
  */
+async function resolvePinTargets({
+  categorySlug,
+  genusSlug,
+  speciesSlug,
+  legacyBoard,
+}: {
+  categorySlug?: string;
+  genusSlug?: string;
+  speciesSlug?: string;
+  legacyBoard?: string;
+}): Promise<PinSortTarget[]> {
+  if (speciesSlug) {
+    const species = await prisma.species.findFirst({
+      where: { slug: speciesSlug },
+      select: { id: true },
+    });
+    return species ? [{ scope: 'species', targetId: species.id }] : [];
+  }
+
+  if (genusSlug) {
+    const genus = await prisma.genus.findFirst({
+      where: { slug: genusSlug },
+      select: { id: true },
+    });
+    return genus ? [{ scope: 'genus', targetId: genus.id }] : [];
+  }
+
+  if (categorySlug) {
+    const board = await prisma.board.findFirst({
+      where: { slug: categorySlug },
+      select: { id: true },
+    });
+    return board ? [{ scope: 'board', targetId: board.id }] : [];
+  }
+
+  if (!legacyBoard) return [];
+
+  const [species, genus, board] = await Promise.all([
+    prisma.species.findFirst({ where: { slug: legacyBoard }, select: { id: true } }),
+    prisma.genus.findFirst({ where: { slug: legacyBoard }, select: { id: true } }),
+    prisma.board.findFirst({ where: { slug: legacyBoard }, select: { id: true } }),
+  ]);
+
+  const targets: PinSortTarget[] = [];
+  if (species) targets.push({ scope: 'species', targetId: species.id });
+  if (genus) targets.push({ scope: 'genus', targetId: genus.id });
+  if (board) targets.push({ scope: 'board', targetId: board.id });
+  return targets;
+}
+
 const JournalEntryInput = z.object({
   entryDate: z.string(), // ISO
   stage: z
@@ -139,6 +199,7 @@ const CreateBody = z
     content: z.unknown().optional(),
     contentJson: z.unknown().optional(),
     tags: z.array(z.string()).max(10).default([]),
+    cover: z.string().url().nullable().optional(),
     images: z.array(z.string()).max(50).optional(),
     videoUrl: z.string().url().optional(),
     vote: z
@@ -255,7 +316,7 @@ export const POST = handler(async (req) => {
   if (!(await hasUserPermission(me, need))) {
     return fail(403, `当前等级不允许发布该类型帖子,开通大会员或升级即可解锁`);
   }
-  if (body.images && body.images.length > 0) {
+  if (body.cover || (body.images && body.images.length > 0)) {
     if (!(await hasUserPermission(me, 'post:image'))) {
       return fail(403, '需要 Lv.4 以上才能在帖子里附图,开通大会员可解锁');
     }
@@ -266,7 +327,7 @@ export const POST = handler(async (req) => {
   if (!resolved.ok) return fail(400, resolved.error);
   const { ids: resolvedIds } = resolved;
 
-  const cover = body.images?.[0] ?? null;
+  const cover = body.cover ?? null;
 
   const isRich = body.type === 'rich' || body.type === 'event';
   const stored = processRichInput({

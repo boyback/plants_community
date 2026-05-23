@@ -357,6 +357,38 @@ async function onOrderPaid(orderId: string) {
     }
   }
 
+  if (order.source === 'product' && order.listingItemId) {
+    const item = await prisma.marketListingItem.update({
+      where: { id: order.listingItemId },
+      data: {
+        stock: { decrement: order.quantity },
+        soldCount: { increment: order.quantity },
+      },
+    });
+
+    if (item.stock <= 0) {
+      await prisma.marketListingItem.update({
+        where: { id: item.id },
+        data: { status: 'sold_out' },
+      });
+    }
+
+    const activeCount = await prisma.marketListingItem.count({
+      where: {
+        listingId: item.listingId,
+        status: 'on_sale',
+        stock: { gt: 0 },
+      },
+    });
+
+    if (activeCount === 0) {
+      await prisma.marketListing.update({
+        where: { id: item.listingId },
+        data: { status: 'sold_out' },
+      });
+    }
+  }
+
   // 拍卖订单:把 Auction.result 标记为 paid
   if (order.source === 'auction' && order.auctionId) {
     await prisma.auction.update({

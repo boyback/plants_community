@@ -179,22 +179,24 @@ export default function CheckoutPage() {
   const expired = payment && payment.status === 'expired';
   const paid = payment && payment.status === 'paid';
   const remain = payment ? new Date(payment.expireAt).getTime() - now : 0;
+  const orderCover = order.product?.cover ?? order.listingItem?.cover ?? order.listing?.cover ?? order.auctionCover ?? '';
+  const orderTitle = order.product?.title ?? order.listingItem?.title ?? order.listing?.title ?? order.auctionTitle ?? t('checkout.orderLabel');
 
   return (
     <Shell>
       {/* 移动端:顶部一条简化摘要 + 黿底总额 */}
       <div className="mb-3 flex items-center gap-3 rounded-xl border border-leaf-100 bg-white px-3 py-2 lg:hidden">
-        {(order.product?.cover || order.auctionCover) && (
+        {orderCover && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={order.product?.cover ?? order.auctionCover ?? ''}
+            src={orderCover}
             alt=""
             className="h-10 w-10 shrink-0 rounded object-cover"
           />
         )}
         <div className="min-w-0 flex-1 text-xs">
           <div className="line-clamp-1 text-ink-800">
-            {order.product?.title ?? order.auctionTitle ?? t('checkout.orderLabel')}
+            {orderTitle}
           </div>
           <div className="text-[10px] text-leaf-700/70">
             × {order.quantity} · {order.shipName ?? '—'}
@@ -354,14 +356,14 @@ export default function CheckoutPage() {
                 <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-leaf-50">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={order.product?.cover ?? order.auctionCover ?? ''}
-                    alt={order.product?.title ?? order.auctionTitle ?? ''}
+                    src={orderCover}
+                    alt={orderTitle}
                     className="h-full w-full object-cover"
                   />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="line-clamp-2 text-xs text-ink-800">
-                    {order.product?.title ?? order.auctionTitle ?? t('checkout.orderLabel')}
+                    {orderTitle}
                   </div>
                   <div className="mt-1 text-[11px] text-leaf-700/70">
                     {t('checkout.quantity')} × {order.quantity}

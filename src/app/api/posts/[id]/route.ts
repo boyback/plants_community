@@ -1,25 +1,24 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
-import { handler, fail, stringifyJson } from '@/lib/api';
+import { fail, handler, stringifyJson } from '@/lib/api';
 import { requireUser, getCurrentUser } from '@/lib/auth';
 import { serializePost } from '@/lib/serializers';
 import { postInclude } from '@/lib/post-include';
 import { processRichInput } from '@/lib/richtext';
 import { postNeedsReview } from '@/lib/post-review';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
+import { ALL_STAGES, STAGE_META } from '@/lib/journal';
 
 export const dynamic = 'force-dynamic';
 
 export const GET = handler(async (req) => {
   const id = pickId(req);
 
-  // 阅读数 +1(不严格并发)
   await prisma.post.update({
     where: { id },
     data: { views: { increment: 1 } },
   }).catch(() => null);
 
-  // 获取当前用户（如果有登录）
   const currentUser = await getCurrentUser().catch(() => null);
 
   const post = await prisma.post.findUnique({
@@ -55,7 +54,6 @@ export const GET = handler(async (req) => {
 
   if (!post) return fail(200, 'NOT_FOUND', '帖子不存在');
 
-  // 如果是投票帖且用户已登录，查询是否已投票
   let userVoted = false;
   if (post.type === 'vote' && currentUser) {
     const vote = await prisma.vote.findUnique({ where: { postId: id } });
@@ -67,7 +65,7 @@ export const GET = handler(async (req) => {
     }
   }
 
-  return serializePost(post as any, userVoted);
+  return serializePost(post as any, userVoted, undefined, currentUser);
 });
 
 function pickId(req: Request): string {
@@ -75,13 +73,36 @@ function pickId(req: Request): string {
   return url.pathname.split('/').filter(Boolean).pop()!;
 }
 
-/**
- * 作者本人编辑帖子
- *  - type 锁定不可改
- *  - vote/event/journal/help 类型不可编辑(数据复杂,有报名/投票/时间线/悬赏数据,改坏全套)
- *  - 仅可改 title / content / contentJson / images / videoUrl / tags
- *  - 编辑后含外链 → 重置为 pending 送审
- */
+const VotePatch = z.object({
+  question: z.string().min(1),
+  options: z.array(z.string().min(1)).min(2).max(8),
+  multi: z.boolean().default(false),
+  deadline: z.string(),
+});
+
+const EventPatch = z.object({
+  location: z.string().min(1),
+  startAt: z.string(),
+  endAt: z.string().optional(),
+});
+
+const JournalPatch = z.object({
+  subjectName: z.string().min(1).max(50),
+  startDate: z.string(),
+  speciesId: z.string().optional(),
+  entries: z
+    .array(
+      z.object({
+        entryDate: z.string(),
+        stage: z.string().optional(),
+        note: z.string().max(2000).default(''),
+        images: z.array(z.string()).max(9).default([]),
+      })
+    )
+    .max(50)
+    .default([]),
+});
+
 const PatchBody = z.object({
   title: z.string().min(1).max(100).optional(),
   content: z.unknown().optional(),
@@ -93,6 +114,9 @@ const PatchBody = z.object({
   categorySlug: z.string().optional(),
   genusSlug: z.string().optional(),
   speciesSlug: z.string().optional(),
+  vote: VotePatch.optional(),
+  event: EventPatch.optional(),
+  journal: JournalPatch.optional(),
 });
 
 export const PATCH = handler(async (req) => {
@@ -100,12 +124,33 @@ export const PATCH = handler(async (req) => {
   const id = pickId(req);
   const body = PatchBody.parse(await req.json());
 
-  const post = await prisma.post.findUnique({ where: { id } });
+  const post = await prisma.post.findUnique({
+    where: { id },
+    include: {
+      vote: {
+        include: {
+          options: { orderBy: { orderIdx: 'asc' } },
+          _count: { select: { records: true } },
+        },
+      },
+      event: true,
+      journal: true,
+    },
+  });
+
   if (!post) return fail(404, '帖子不存在');
   if (post.deleted) return fail(400, '帖子已删除');
   if (post.authorId !== me.id) return fail(403, '只能编辑自己的帖子');
 
-  const isRich = post.type === 'rich';
+  if (post.type === 'vote' && body.vote && post.vote && post.vote._count.records > 0) {
+    const nextOptions = cleanVoteOptions(body.vote.options);
+    const currentOptions = post.vote.options.map((option) => option.label);
+    if (!sameVoteOptions(currentOptions, nextOptions)) {
+      return fail(400, '已有用户投票，不能修改投票选项');
+    }
+  }
+
+  const isRich = post.type === 'rich' || post.type === 'event';
   let stored: { html: string; json: string | null; text: string | null } | null = null;
   if (body.content !== undefined || body.contentJson !== undefined) {
     stored = processRichInput({
@@ -116,14 +161,10 @@ export const PATCH = handler(async (req) => {
     });
   }
 
-  // 计算最终各字段(用于送审判断)
   const finalImages = body.images ?? null;
-  const finalVideoUrl =
-    body.videoUrl !== undefined ? body.videoUrl : post.videoUrl;
-  // 优先使用 body.cover，其次从 images[0] 获取，都没有则保留原 cover
-  const finalCover = body.cover !== undefined
-    ? body.cover
-    : (finalImages ? finalImages[0] ?? null : post.cover);
+  const finalVideoUrl = body.videoUrl !== undefined ? body.videoUrl : post.videoUrl;
+  const finalCover =
+    body.cover !== undefined ? body.cover : finalImages ? finalImages[0] ?? null : post.cover;
   const finalContent = stored ? stored.html : post.content;
 
   const needsReview = postNeedsReview({
@@ -136,31 +177,113 @@ export const PATCH = handler(async (req) => {
   const boardIds = await resolveBoardIds(body);
   if (!boardIds.ok) return fail(400, boardIds.error);
 
-  await prisma.post.update({
-    where: { id },
-    data: {
-      ...(body.title !== undefined && { title: body.title }),
-      ...(stored && {
-        content: stored.html,
-        contentJson: stored.json,
-        contentText: stored.text,
-      }),
-      ...(body.tags !== undefined && { tags: stringifyJson(body.tags) }),
-      ...(body.images !== undefined && {
-        images: stringifyJson(body.images),
-        // images 变更时同步更新 cover（除非显式传了 cover）
-        ...(body.cover === undefined && { cover: body.images[0] ?? null }),
-      }),
-      // 显式传 cover 时直接更新
-      ...(body.cover !== undefined && { cover: body.cover }),
-      ...(body.videoUrl !== undefined && { videoUrl: body.videoUrl }),
-      ...(boardIds.ids && boardIds.ids),
-      ...(REVIEW_FILTER_ENABLED && {
-        reviewStatus: needsReview ? 'pending' : 'published',
-        reviewReason: needsReview ? '编辑后含外链,等待审核' : null,
-        reviewedAt: needsReview ? null : new Date(),
-      }),
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.post.update({
+      where: { id },
+      data: {
+        ...(body.title !== undefined && { title: body.title }),
+        ...(stored && {
+          content: stored.html,
+          contentJson: stored.json,
+          contentText: stored.text,
+        }),
+        ...(body.tags !== undefined && { tags: stringifyJson(body.tags) }),
+        ...(body.images !== undefined && {
+          images: stringifyJson(body.images),
+          ...(body.cover === undefined && { cover: body.images[0] ?? null }),
+        }),
+        ...(body.cover !== undefined && { cover: body.cover }),
+        ...(body.videoUrl !== undefined && { videoUrl: body.videoUrl }),
+        ...(boardIds.ids && boardIds.ids),
+        ...(REVIEW_FILTER_ENABLED && {
+          reviewStatus: needsReview ? 'pending' : 'published',
+          reviewReason: needsReview ? '编辑后含外链，等待审核' : null,
+          reviewedAt: needsReview ? null : new Date(),
+        }),
+      },
+    });
+
+    if (post.type === 'vote' && body.vote) {
+      const vote = post.vote
+        ? await tx.vote.update({
+            where: { id: post.vote.id },
+            data: {
+              question: body.vote.question,
+              multi: body.vote.multi,
+              deadline: new Date(body.vote.deadline),
+            },
+          })
+        : await tx.vote.create({
+            data: {
+              postId: id,
+              question: body.vote.question,
+              multi: body.vote.multi,
+              deadline: new Date(body.vote.deadline),
+            },
+          });
+
+      if (!post.vote || post.vote._count.records === 0) {
+        const options = cleanVoteOptions(body.vote.options);
+        await tx.voteOption.deleteMany({ where: { voteId: vote.id } });
+        await tx.voteOption.createMany({
+          data: options.map((label, orderIdx) => ({
+            voteId: vote.id,
+            label,
+            orderIdx,
+          })),
+        });
+      }
+    }
+
+    if (post.type === 'event' && body.event) {
+      await tx.event.upsert({
+        where: { postId: id },
+        create: {
+          postId: id,
+          location: body.event.location,
+          startAt: new Date(body.event.startAt),
+          endAt: new Date(body.event.endAt ?? body.event.startAt),
+        },
+        update: {
+          location: body.event.location,
+          startAt: new Date(body.event.startAt),
+          endAt: new Date(body.event.endAt ?? body.event.startAt),
+        },
+      });
+    }
+
+    if (post.type === 'journal' && body.journal) {
+      const speciesId = body.journal.speciesId ?? boardIds.ids?.speciesId ?? post.speciesId ?? null;
+      const journal = post.journal
+        ? await tx.journal.update({
+            where: { id: post.journal.id },
+            data: {
+              subjectName: body.journal.subjectName,
+              startDate: new Date(body.journal.startDate),
+              speciesId,
+            },
+          })
+        : await tx.journal.create({
+            data: {
+              postId: id,
+              subjectName: body.journal.subjectName,
+              startDate: new Date(body.journal.startDate),
+              speciesId,
+            },
+          });
+
+      await tx.journalEntry.deleteMany({ where: { journalId: journal.id } });
+      await tx.journalEntry.createMany({
+        data: body.journal.entries.map((entry, orderIdx) => ({
+          journalId: journal.id,
+          entryDate: new Date(entry.entryDate),
+          stage: normalizeJournalStage(entry.stage) as any,
+          note: entry.note,
+          images: stringifyJson(entry.images),
+          orderIdx,
+        })),
+      });
+    }
   });
 
   return { ok: true, needsReview };
@@ -220,4 +343,21 @@ async function resolveBoardIds(body: {
     };
   }
   return { ok: true, ids: null };
+}
+
+function cleanVoteOptions(options: string[]): string[] {
+  return options.map((option) => option.trim()).filter(Boolean);
+}
+
+function sameVoteOptions(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((value, index) => value === b[index]);
+}
+
+function normalizeJournalStage(value: string | undefined): string {
+  if (!value) return 'other';
+  if ((ALL_STAGES as string[]).includes(value)) return value;
+
+  const matched = ALL_STAGES.find((stage) => STAGE_META[stage].zh === value);
+  return matched ?? 'other';
 }

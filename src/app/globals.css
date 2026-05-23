@@ -838,6 +838,9 @@ img, video, svg {
 .prose-article ul {
   @apply list-disc;
 }
+.prose-article li::marker {
+  color: var(--rte-marker-color, currentColor);
+}
 .prose-article b,
 .prose-article strong {
   @apply font-semibold text-leaf-800;
@@ -853,10 +856,9 @@ img, video, svg {
 }
 .tiptap.prose-article img {
     max-width: 50%;
-    padding: 20px;
 }
 .prose-article{
-  font-size: 18px;
+  font-size: inherit;
 }
 .prose-article img{
     height: auto;

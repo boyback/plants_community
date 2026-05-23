@@ -10,11 +10,14 @@ export const dynamic = 'force-dynamic';
  * 支持查询参数:
  * - kind: 按板块类型过滤 (如 'family')
  * - withGenera: 是否包含属列表 (1 或 true)
+ * - withSpecies: 是否包含品种列表 (1 或 true)
  */
 export const GET = handler(async (req) => {
   const { searchParams } = new URL(req.url);
   const kind = searchParams.get('kind');
   const withGenera = searchParams.get('withGenera') === '1' || searchParams.get('withGenera') === 'true';
+  const withSpecies = searchParams.get('withSpecies') === '1' || searchParams.get('withSpecies') === 'true';
+  const includeGenera = withGenera || withSpecies;
 
   const list = await prisma.board.findMany({
     where: {
@@ -24,11 +27,17 @@ export const GET = handler(async (req) => {
     orderBy: [{ orderIdx: 'asc' }, { name: 'asc' }],
     include: {
       _count: { select: { posts: true, genera: true } },
-      ...(withGenera && {
+      ...(includeGenera && {
         genera: {
           orderBy: [{ orderIdx: 'asc' }, { name: 'asc' }],
           include: {
             _count: { select: { posts: true, species: true } },
+            ...(withSpecies && {
+              species: {
+                orderBy: [{ orderIdx: 'asc' }, { name: 'asc' }],
+                include: { _count: { select: { posts: true } } },
+              },
+            }),
           },
         },
       }),

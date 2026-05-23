@@ -13,7 +13,7 @@ import { STAGE_META } from '@/lib/journal';
 import { formatNumber, formatDateTime, timeAgo, cn, boardUrl } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/components/ui/Toast';
-import { PostAdminActions } from '@/components/post/PostAdminActions';
+import { PostAdminMenu } from '@/components/post/PostAdminMenu';
 
 /**
  * 推荐流/板块列表的帖子卡片
@@ -26,16 +26,37 @@ export function PostCard({
   layout = 'feed',
   className,
   onVoteUpdate,
+  onPostChanged,
+  onPostDeleted,
 }: {
   post: Post;
   layout?: 'feed' | 'compact';
   className?: string;
   onVoteUpdate?: (postId: string, options: { id: string; label: string; votes: number }[], total: number, voted: boolean, votedOptionIds: string[]) => void;
+  onPostChanged?: (post: Post) => void;
+  onPostDeleted?: (postId: string) => void;
 }) {
+  const [currentPost, setCurrentPost] = useState(post);
+  const [deleted, setDeleted] = useState(false);
+  useEffect(() => {
+    setCurrentPost(post);
+    setDeleted(false);
+  }, [post]);
+  const handlePostChanged = (updatedPost: Post) => {
+    setCurrentPost(updatedPost);
+    onPostChanged?.(updatedPost);
+  };
+  const handlePostDeleted = (postId: string) => {
+    if (postId === currentPost.id) setDeleted(true);
+    onPostDeleted?.(postId);
+  };
+
+  if (deleted) return null;
+
   if (layout === 'compact') {
-    return <CompactCard post={post} className={className} />;
+    return <CompactCard post={currentPost} className={className} />;
   }
-  return <FeedCard post={post} className={className} onVoteUpdate={onVoteUpdate} />;
+  return <FeedCard post={currentPost} className={className} onVoteUpdate={onVoteUpdate} onPostChanged={handlePostChanged} onPostDeleted={handlePostDeleted} />;
 }
 
 /**
@@ -49,48 +70,10 @@ export function PostCard({
  *
  * 嵌套 Link(作者头像、species chip)用 `stopPropagation` 让它们生效但不触发卡片跳转
  */
-function FeedCard({ post, className, onVoteUpdate }: { post: Post; className?: string; onVoteUpdate?: (postId: string, options: { id: string; label: string; votes: number }[], total: number, voted: boolean, votedOptionIds: string[]) => void }) {
+function FeedCard({ post, className, onVoteUpdate, onPostChanged, onPostDeleted }: { post: Post; className?: string; onVoteUpdate?: (postId: string, options: { id: string; label: string; votes: number }[], total: number, voted: boolean, votedOptionIds: string[]) => void; onPostChanged?: (post: Post) => void; onPostDeleted?: (postId: string) => void }) {
   const { user } = useAuth();
-  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
   const cover = post.cover ?? post.images?.[0];
-
-  // 管理员权限判断
-  const isAuthor = user?.id === post.author.id;
-  const isSuperAdmin = user?.isSuperAdmin === true;
-  const isModerator = user?.role === 'moderator';
-  const isAdmin = user?.role === 'admin';
-  const canEdit = isAuthor;
-  const canDelete = isAuthor || isModerator || isAdmin || isSuperAdmin;
-  const canMove = isModerator || isAdmin || isSuperAdmin;
-  const canPin = isModerator || isAdmin || isSuperAdmin;
-  const canLock = isModerator || isAdmin || isSuperAdmin;
-  const canBan = isSuperAdmin && !isAuthor;
-
-  const handlePin = async () => {
-    if (!confirm(post.pinned ? '确定取消置顶？' : '确定置顶？')) return;
-    const res = await fetch(`/api/posts/${post.id}/admin`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: post.pinned ? 'unpin' : 'pin' }),
-    });
-    if (res.ok) globalThis.location.reload();
-  };
-
-  const handleBanUser = async () => {
-    const reason = prompt('请输入封禁原因：');
-    if (!reason) return;
-    const days = prompt('封禁天数：', '7');
-    if (!days) return;
-    const res = await fetch(`/api/posts/${post.id}/admin`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'ban_user', userId: post.author.id, reason, duration: Number(days) }),
-    });
-    if (res.ok) globalThis.location.reload();
-  };
-
-  const showAdminMenu = canEdit || canDelete || canMove || canPin || canLock || canBan;
 
   return (
     <Link
@@ -108,194 +91,14 @@ function FeedCard({ post, className, onVoteUpdate }: { post: Post; className?: s
             showVideoIcon={post.type === 'video'}
             typeBadge={<PostTypeBadge type={post.type} />}
           />
-          {showAdminMenu && (
-            <div className="absolute top-2 right-2 z-10">
-              <div className="relative">
-                <button
-                  type="button"
-                  onMouseEnter={() => setAdminMenuOpen(true)}
-                  onMouseLeave={() => setAdminMenuOpen(false)}
-                  className="grid h-7 w-7 place-items-center rounded-none text-ink-400 hover:bg-ink-100 hover:text-ink-600 transition-colors"
-                  title="管理"
-                >
-                  <Icon name="settings" size={16} />
-                </button>
-                {adminMenuOpen && (
-                  <div
-                    role="menu"
-                    className="absolute right-0 top-full z-50 pt-2"
-                    onMouseEnter={() => setAdminMenuOpen(true)}
-                    onMouseLeave={() => setAdminMenuOpen(false)}
-                  >
-                    <div className="relative w-20 rounded-none border border-leaf-100 bg-white shadow-xl py-1">
-                      <div className="absolute right-2 -top-[5px] w-2.5 h-2.5 bg-white border-l border-t border-leaf-100 transform rotate-45" />
-                      {/* 作者：编辑 */}
-                      {canEdit && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            toast.error('该类型帖子不支持编辑\n投票/活动/成长日记/求助类型涉及报名、投票、记录、悬赏等数据,不允许后续修改。');
-                            if (['vote', 'event', 'journal', 'help'].includes(post.type)) {
-                              return;
-                            }
-                            // globalThis.location.href = `/post/${post.id}/edit`;
-                            setAdminMenuOpen(false);
-                          }}
-                          className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
-                        >
-                          编辑111111
-                        </button>
-                      )}
-                      {canMove && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            toast.error('移贴功能开发中');
-                            setAdminMenuOpen(false);
-                          }}
-                          className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
-                        >
-                          移贴
-                        </button>
-                      )}
-                      {canPin && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handlePin();
-                            setAdminMenuOpen(false);
-                          }}
-                          className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
-                        >
-                          {post.pinned ? '取消置顶' : '置顶'}
-                        </button>
-                      )}
-                      <PostAdminActions
-                        postId={post.id}
-                        postTitle={post.title}
-                        isLocked={post.locked}
-                        canLock={canLock}
-                        canDelete={canDelete}
-                      />
-                      {canBan && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleBanUser();
-                            setAdminMenuOpen(false);
-                          }}
-                          className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
-                        >
-                          封禁用户
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          <div className="absolute right-2 top-2 z-10">
+            <PostAdminMenu post={post} user={user} onPostChanged={onPostChanged} onPostDeleted={onPostDeleted} />
+          </div>
         </div>
       ) : (
         <div className="px-3 pt-3 flex items-center justify-between relative">
           <PostTypeBadge type={post.type} />
-          {showAdminMenu && (
-            <div className="relative">
-              <button
-                type="button"
-                onMouseEnter={() => setAdminMenuOpen(true)}
-                onMouseLeave={() => setAdminMenuOpen(false)}
-                className="grid h-7 w-7 place-items-center rounded-none text-ink-400 hover:bg-ink-100 hover:text-ink-600 transition-colors"
-                title="管理"
-              >
-                <Icon name="settings" size={16} />
-              </button>
-              {adminMenuOpen && (
-                <div
-                  role="menu"
-                  tabIndex={-1}
-                  className="absolute right-0 top-full z-50 pt-2"
-                  onMouseEnter={() => setAdminMenuOpen(true)}
-                  onMouseLeave={() => setAdminMenuOpen(false)}
-                >
-                  <div className="relative w-20 rounded-none border border-leaf-100 bg-white shadow-xl py-1">
-                    <div className="absolute right-2 -top-[5px] w-2.5 h-2.5 bg-white border-l border-t border-leaf-100 transform rotate-45" />
-                    {canEdit && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          globalThis.location.href = `/post/${post.id}/edit`;
-                          setAdminMenuOpen(false);
-                        }}
-                        className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
-                      >
-                        编辑22222
-                      </button>
-                    )}
-                    {canMove && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toast.error('移贴功能开发中');
-                          setAdminMenuOpen(false);
-                        }}
-                        className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
-                      >
-                        移贴
-                      </button>
-                    )}
-                    {canPin && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handlePin();
-                          setAdminMenuOpen(false);
-                        }}
-                        className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
-                      >
-                        {post.pinned ? '取消置顶' : '置顶'}
-                      </button>
-                    )}
-                    <PostAdminActions
-                      postId={post.id}
-                      postTitle={post.title}
-                      isLocked={post.locked}
-                      canLock={!!canLock}
-                      canDelete={!!canDelete}
-                    />
-                    {canBan && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleBanUser();
-                          setAdminMenuOpen(false);
-                        }}
-                        className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
-                      >
-                        封禁用户
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          <PostAdminMenu post={post} user={user} onPostChanged={onPostChanged} onPostDeleted={onPostDeleted} />
         </div>
       )}
 

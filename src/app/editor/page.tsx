@@ -1,26 +1,14 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useState } from 'react';
-import type { PostType, Board } from '@/lib/types';
-import { Shell } from '@/components/layout/Shell';
-import { TypePicker } from '@/components/post/TypePicker';
-import { UploadField } from '@/components/upload/UploadField';
-import { PostPreview } from '@/components/editor/PostPreview';
-import { Icon } from '@/components/ui/Icon';
-import { useAuth } from '@/context/AuthContext';
-import { useI18n } from '@/i18n/I18nContext';
-import { cn } from '@/lib/utils';
-import { api, ApiError } from '@/lib/client-api';
-import { toast } from '@/components/ui/Toast';
-import { RichTextEditor } from '@/components/richtext/RichTextEditor';
-import {
-  JournalEditor,
-  emptyJournalDraft,
-  type JournalDraft,
-} from '@/components/post/JournalEditor';
-import { TagSelector } from '@/components/editor/TagSelector';
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import type { PostType } from "@/lib/types";
+import { Shell } from "@/components/layout/Shell";
+import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/i18n/I18nContext";
+import { api } from "@/lib/client-api";
+import { PostComposer } from "@/components/editor/PostComposer";
 
 interface Draft {
   id: string;
@@ -33,330 +21,43 @@ interface Draft {
 export default function Page() {
   return (
     <Suspense fallback={null}>
-      <EditorInner />
+      <EditorPageInner />
     </Suspense>
   );
 }
 
-function EditorInner() {
-  const router = useRouter();
+function EditorPageInner() {
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const { t } = useI18n();
-
-  const [boards, setCategories] = useState<Board[]>([]);
-  const [generaList, setGeneraList] = useState<Board[]>([]);
-  const [speciesList, setSpeciesList] = useState<Board[]>([]);
-  const [type, setType] = useState<PostType>('rich');
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState(''); // 用于 short/video/vote 的纯文本说明
-  const [contentJson, setContentJson] = useState<unknown>(null); // 用于 rich/event 的 ProseMirror JSON
-  // 三级板块 slug(独立,提交时取最细粒度)
-  const [categorySlug, setCategorySlug] = useState(
-    searchParams.get('category') ?? searchParams.get('board') ?? ''
-  );
-  const [genusSlug, setGenusSlug] = useState(searchParams.get('genus') ?? '');
-  const [speciesSlug, setSpeciesSlug] = useState(searchParams.get('species') ?? '');
-  const [tags, setTags] = useState<string[]>([]);
-  const [videoUrl, setVideoUrl] = useState('');
-  const [cover, setCover] = useState('');
-  const [imageInput, setImageInput] = useState('');
-  const [voteOptions, setVoteOptions] = useState<string[]>(['', '']);
-  const [voteMulti, setVoteMulti] = useState(false);
-  const [voteDeadline, setVoteDeadline] = useState('');
-  const [eventLocation, setEventLocation] = useState('');
-  const [eventStartAt, setEventStartAt] = useState('');
-  const [journal, setJournal] = useState<JournalDraft>(() => emptyJournalDraft());
-
   const [drafts, setDrafts] = useState<Draft[]>([]);
-  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
 
-  // 拉一级(科)
-  useEffect(() => {
-    api
-      .get<Board[]>('/api/boards')
-      .then((list) => {
-        setCategories(list);
-        if (!categorySlug && list[0]) setCategorySlug(list[0].slug);
-      })
-      .catch(() => null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // 科变化 → 拉属列表
-  useEffect(() => {
-    if (!categorySlug) {
-      setGeneraList([]);
-      setGenusSlug('');
-      return;
-    }
-    api
-      .get<{ genera: Board[] }>(`/api/boards/${encodeURIComponent(categorySlug)}`)
-      .then((r) => setGeneraList(r.genera ?? []))
-      .catch(() => setGeneraList([]));
-  }, [categorySlug]);
-
-  // 属变化 → 拉品种列表
-  useEffect(() => {
-    if (!genusSlug) {
-      setSpeciesList([]);
-      setSpeciesSlug('');
-      return;
-    }
-    api
-      .get<{ species: Board[] }>(
-        `/api/genera/${encodeURIComponent(genusSlug)}?board=${encodeURIComponent(categorySlug)}`
-      )
-      .then((r) => setSpeciesList(r.species ?? []))
-      .catch(() => setSpeciesList([]));
-  }, [genusSlug, categorySlug]);
-
-  // 拉草稿
   const loadDrafts = async () => {
     if (!user) return;
     try {
-      const list = await api.get<Draft[]>('/api/drafts');
-      setDrafts(list);
+      setDrafts(await api.get<Draft[]>("/api/drafts"));
     } catch {
-      // ignore
+      // Drafts are optional; publishing should not depend on this request.
     }
   };
 
   useEffect(() => {
-    if (!authLoading && user) loadDrafts();
+    if (!authLoading && user) void loadDrafts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user]);
-
-  const buildPayload = () => ({
-    type,
-    title,
-    content,
-    contentJson,
-    categorySlug,
-    genusSlug,
-    speciesSlug,
-    tags,
-    videoUrl,
-    voteOptions,
-    voteMulti,
-    voteDeadline,
-    eventLocation,
-    eventStartAt,
-    journal,
-    cover,
-  });
-
-  // 根据当前类型判断"内容是否非空"
-  const hasContent = () => {
-    if (type === 'rich' || type === 'event') {
-      // 检查 ProseMirror JSON 是否含实际节点(非空段落)
-      const j = contentJson as { content?: unknown[] } | null;
-      if (!j || !Array.isArray(j.content) || j.content.length === 0) return false;
-      return true;
-    }
-    return !!content.trim();
-  };
-
-  const onSaveDraft = async () => {
-    if (!title.trim() && !hasContent()) {
-      toast.error(t('editor.errors.contentRequired'));
-      return;
-    }
-    try {
-      const res = await api.post<{ id: string; savedAt: string }>('/api/drafts', {
-        id: currentDraftId ?? undefined,
-        title: title || '(untitled)',
-        type,
-        payload: buildPayload(),
-      });
-      setCurrentDraftId(res.id);
-      await loadDrafts();
-      toast.success(t('editor.draftSaved') + ' 💾');
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : t('common.retry'));
-    }
-  };
-
-  const onLoadDraft = (d: Draft) => {
-    const p = (d.payload as any) ?? {};
-    setType((p.type as PostType) ?? d.type);
-    setTitle(p.title ?? d.title ?? '');
-    setContent(p.content ?? '');
-    setContentJson(p.contentJson ?? null);
-    setCategorySlug(p.categorySlug ?? p.boardSlug ?? categorySlug);
-    setGenusSlug(p.genusSlug ?? '');
-    setSpeciesSlug(p.speciesSlug ?? '');
-    setTags(p.tags ?? []);
-    setVideoUrl(p.videoUrl ?? '');
-    setVoteOptions(p.voteOptions ?? ['', '']);
-    setVoteMulti(!!p.voteMulti);
-    setVoteDeadline(p.voteDeadline ?? '');
-    setEventLocation(p.eventLocation ?? '');
-    setEventStartAt(p.eventStartAt ?? '');
-    if (p.journal) setJournal(p.journal as JournalDraft);
-    setCover(p.cover ?? '');
-    setCurrentDraftId(d.id);
-    toast.success(t('editor.draftSaved'));
-  };
-
-  const onDeleteDraft = async (id: string) => {
-    await api.delete(`/api/drafts/${id}`).catch(() => null);
-    if (currentDraftId === id) setCurrentDraftId(null);
-    await loadDrafts();
-  };
-
-  /** 从 contentJson 中提取所有图片 URL */
-  const extractImagesFromJson = (json: unknown): string[] => {
-    const images: string[] = [];
-    const traverse = (node: unknown) => {
-      if (!node || typeof node !== 'object') return;
-      const n = node as { type?: string; attrs?: { src?: string } | null; content?: unknown[] };
-      if (n.type === 'image' && typeof n.attrs?.src === 'string' && n.attrs.src) {
-        images.push(n.attrs.src);
-      }
-      if (Array.isArray(n.content)) {
-        n.content.forEach(traverse);
-      }
-    };
-    traverse(json);
-    return images;
-  };
-
-  const onPublish = async () => {
-    const errors = new Set<string>();
-
-    if (!title.trim()) {
-      errors.add('title');
-      toast.error(t('editor.errors.titleRequired'));
-    }
-    if (!genusSlug && !categorySlug) {
-      errors.add('board');
-      toast.error(t('editor.chooseBoard'));
-    }
-    if (type === 'short' && !content.trim()) {
-      errors.add('content');
-      toast.error(t('editor.errors.contentRequired'));
-    }
-    if (type === 'rich' && !hasContent()) {
-      errors.add('content');
-      toast.error(t('editor.errors.contentRequired'));
-    }
-    if (type === 'event' && !hasContent()) {
-      errors.add('content');
-      toast.error(t('editor.errors.contentRequired'));
-    }
-    if (type === 'video' && !videoUrl.trim()) {
-      errors.add('content');
-      toast.error(t('editor.errors.videoUrlRequired'));
-    }
-    if (type === 'vote' && voteOptions.filter((x) => x.trim()).length < 2) {
-      errors.add('content');
-      toast.error(t('editor.errors.voteOptionsMin'));
-    }
-    if (type === 'vote' && !voteDeadline) {
-      errors.add('content');
-      toast.error(t('editor.voteDeadline'));
-    }
-    if (type === 'event' && (!eventLocation.trim() || !eventStartAt)) {
-      errors.add('content');
-      toast.error(t('editor.event'));
-    }
-    if (type === 'journal') {
-      if (!journal.subjectName.trim()) { errors.add('content'); toast.error('请填写植物昵称'); }
-      if (!journal.startDate) { errors.add('content'); toast.error('请填写起始日期'); }
-      if (!journal.entries.length) { errors.add('content'); toast.error('至少需要一条记录'); }
-      const bad = journal.entries.find((e) => !e.entryDate);
-      if (bad) { errors.add('content'); toast.error('每条记录都要填日期'); }
-    }
-
-    setValidationErrors(errors);
-    if (errors.size > 0) return;
-
-    const isRich = type === 'rich' || type === 'event';
-
-    if (!categorySlug && !genusSlug && !speciesSlug) return toast.error(t('editor.chooseBoard'));
-
-    setSubmitting(true);
-    try {
-      // rich/event 类型从 contentJson 提取图片
-      const contentImages = isRich ? extractImagesFromJson(contentJson) : [];
-      const body: any = {
-        type,
-        // 优先传最细粒度的 slug
-        ...(speciesSlug
-          ? { speciesSlug }
-          : genusSlug
-          ? { genusSlug }
-          : { categorySlug }),
-        title,
-        // rich/event 用 contentJson 字段;short/video/vote 用纯文本
-        ...(isRich
-          ? { contentJson }
-          : { content }),
-        tags,
-        ...(cover && { cover }),
-        ...(contentImages.length > 0 && { images: contentImages }),
-        ...(type === 'video' && { videoUrl }),
-        ...(type === 'vote' && {
-          vote: {
-            question: title,
-            options: voteOptions.filter((x) => x.trim()),
-            multi: voteMulti,
-            deadline: new Date(voteDeadline).toISOString(),
-          },
-        }),
-        ...(type === 'event' && {
-          event: {
-            location: eventLocation,
-            startAt: new Date(eventStartAt).toISOString(),
-            endAt: new Date(eventStartAt).toISOString(),
-          },
-        }),
-        ...(type === 'journal' && {
-          journal: {
-            subjectName: journal.subjectName.trim(),
-            startDate: new Date(journal.startDate).toISOString(),
-            entries: journal.entries.map((e) => ({
-              entryDate: new Date(e.entryDate).toISOString(),
-              stage: e.stage,
-              note: e.note,
-              images: e.images,
-            })),
-          },
-        }),
-      };
-      const created = await api.post<{ id: string }>('/api/posts', body);
-
-      // 发布成功后删除草稿
-      if (currentDraftId) {
-        await api.delete(`/api/drafts/${currentDraftId}`).catch(() => null);
-      }
-      toast.success('🎉 ' + t('editor.submit'));
-      setTimeout(() => router.push(`/post/${created.id}`), 800);
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : t('error.generic'));
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   if (!authLoading && !user) {
     return (
       <Shell withSidebar={false}>
-        <div className="card mx-auto max-w-md p-10 text-center">
-          <div className="text-4xl">✍️</div>
-          <div className="mt-3 text-lg font-semibold">{t('error.unauthorized')}</div>
-          <p className="mt-1 text-sm text-leaf-700/70">
-            {t('editor.title')}
-          </p>
-          <div className="mt-5 flex justify-center gap-2">
-            <Link href="/login?redirect=/editor" className="btn-primary">
-              {t('nav.login')}
+        <div className='card mx-auto max-w-md p-10 text-center'>
+          <div className='text-lg font-semibold'>{t("error.unauthorized")}</div>
+          <p className='mt-1 text-sm text-leaf-700/70'>{t("editor.title")}</p>
+          <div className='mt-5 flex justify-center gap-2'>
+            <Link href='/login?redirect=/editor' className='btn-primary'>
+              {t("nav.login")}
             </Link>
-            <Link href="/register" className="btn-outline">
-              {t('nav.register')}
+            <Link href='/register' className='btn-outline'>
+              {t("nav.register")}
             </Link>
           </div>
         </div>
@@ -365,389 +66,29 @@ function EditorInner() {
   }
 
   return (
-    <Shell withSidebar={false}>
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_280px]">
-        <div className="min-w-0 space-y-5">
-          <div className="card p-6">
-            <h1 className="mb-4 text-xl font-semibold">{t('editor.title')}</h1>
-            <div className="mb-5">
-              <div className="mb-1.5 block text-sm font-semibold text-ink-800">
-                <span className="text-rose-500">*</span> {t('editor.pickType')}
-              </div>
-              <TypePicker value={type} onChange={setType} />
-            </div>
-
-            <div className="mb-5">
-              <div className="mb-1.5 block text-sm font-semibold text-ink-800">
-                <span className="text-rose-500">*</span> {t('editor.chooseBoard')}
-              </div>
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-                <select
-                  value={categorySlug}
-                  onChange={(e) => {
-                    setCategorySlug(e.target.value);
-                    setGenusSlug('');
-                    setSpeciesSlug('');
-                    setValidationErrors((prev) => { const n = new Set(prev); n.delete('board'); return n; });
-                  }}
-                  className={cn('input', validationErrors.has('board') && !categorySlug && 'border-rose-300 bg-rose-50/30')}
-                >
-                  <option value="">-- 选择科 --</option>
-                  {boards.map((c) => (
-                    <option key={c.id} value={c.slug}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={genusSlug}
-                  onChange={(e) => {
-                    setGenusSlug(e.target.value);
-                    setSpeciesSlug('');
-                  }}
-                  className="input"
-                  disabled={!categorySlug || generaList.length === 0}
-                >
-                  <option value="">
-                    {!categorySlug
-                      ? '请先选择科'
-                      : generaList.length === 0
-                      ? '暂无属'
-                      : '-- 选择属 --'}
-                  </option>
-                  {generaList.map((g) => (
-                    <option key={g.id} value={g.slug}>
-                      {g.name}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={speciesSlug}
-                  onChange={(e) => setSpeciesSlug(e.target.value)}
-                  className="input"
-                  disabled={!genusSlug || speciesList.length === 0}
-                >
-                  <option value="">
-                    {!genusSlug
-                      ? '请先选择属'
-                      : speciesList.length === 0
-                      ? '暂无品种'
-                      : '-- 选择品种（可选）--'}
-                  </option>
-                  {speciesList.map((s) => (
-                    <option key={s.id} value={s.slug}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <Row label={<><span className="text-rose-500">*</span> 帖子标题</>}>
-                <input
-                  className="input"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder={t('editor.placeholderTitle')}
-                  maxLength={60}
-                />
-                <div className="mt-1 text-xs text-leaf-700/60">
-                  {title.length} / 60
-                </div>
-              </Row>
-
-              {type === 'rich' && (
-                <Row label='帖子内容'>
-                  <RichTextEditor
-                    value={contentJson}
-                    onChange={setContentJson}
-                    placeholder={t('editor.placeholderRich')}
-                    minHeight={200}
-                    charLimit={20000}
-                  />
-                </Row>
-              )}
-
-              {type === 'short' && (
-                <Row label={t('editor.placeholderShort')}>
-                  <textarea
-                    className="input min-h-[140px]"
-                    placeholder={t('editor.placeholderShort')}
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    maxLength={500}
-                  />
-                  <div className="mt-1 text-xs text-leaf-700/60">
-                    {content.length} / 500
-                  </div>
-                </Row>
-              )}
-
-              {type === 'video' && (
-                <Row label={t('editor.video')}>
-                  <textarea
-                    className="input min-h-[100px]"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder={t('editor.placeholderShort')}
-                  />
-                </Row>
-              )}
-
-              {type === 'vote' && (
-                <>
-                  <Row label={t('editor.vote')}>
-                    <textarea
-                      className="input min-h-[80px]"
-                      value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                      placeholder={t('editor.voteQuestion')}
-                    />
-                  </Row>
-                  <Row label={t('editor.vote')}>
-                    <div className="space-y-2">
-                      {voteOptions.map((o, i) => (
-                        <div key={i} className="flex gap-2">
-                          <input
-                            className="input"
-                            value={o}
-                            onChange={(e) => {
-                              const next = [...voteOptions];
-                              next[i] = e.target.value;
-                              setVoteOptions(next);
-                            }}
-                            placeholder={`${t('editor.voteAddOption')} ${i + 1}`}
-                          />
-                          {voteOptions.length > 2 && (
-                            <button
-                              type="button"
-                              className="btn-outline !px-3"
-                              onClick={() =>
-                                setVoteOptions(voteOptions.filter((_, k) => k !== i))
-                              }
-                            >
-                              <Icon name="trash" size={14} />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                      {voteOptions.length < 8 && (
-                        <button
-                          type="button"
-                          className="btn-ghost !text-xs"
-                          onClick={() => setVoteOptions([...voteOptions, ''])}
-                        >
-                          <Icon name="plus" size={14} />
-                          {t('editor.voteAddOption')}
-                        </button>
-                      )}
-                    </div>
-                  </Row>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Row label={t('editor.voteMulti')}>
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={voteMulti}
-                          onChange={(e) => setVoteMulti(e.target.checked)}
-                          className="h-4 w-4 accent-leaf-500"
-                        />
-                        {t('editor.voteMulti')}
-                      </label>
-                    </Row>
-                    <Row label={t('editor.voteDeadline')}>
-                      <input
-                        type="datetime-local"
-                        className="input"
-                        value={voteDeadline}
-                        onChange={(e) => setVoteDeadline(e.target.value)}
-                      />
-                    </Row>
-                  </div>
-                </>
-              )}
-
-              {type === 'event' && (
-                <>
-                  <Row label={t('editor.event')}>
-                    <RichTextEditor
-                      value={contentJson}
-                      onChange={setContentJson}
-                      placeholder={t('editor.event')}
-                      minHeight={200}
-                      charLimit={5000}
-                    />
-                  </Row>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <Row label={t('editor.eventLocation')}>
-                      <input
-                        className="input"
-                        value={eventLocation}
-                        onChange={(e) => setEventLocation(e.target.value)}
-                        placeholder={t('editor.eventLocation')}
-                      />
-                    </Row>
-                    <Row label={t('editor.eventStartAt')}>
-                      <input
-                        type="datetime-local"
-                        className="input"
-                        value={eventStartAt}
-                        onChange={(e) => setEventStartAt(e.target.value)}
-                      />
-                    </Row>
-                  </div>
-                </>
-              )}
-
-              {type === 'journal' && (
-                <JournalEditor value={journal} onChange={setJournal} />
-              )}
-
-              {/* 视频帖独立的视频上传(替换 video URL 输入) */}
-              {type === 'video' && (
-                <Row label={t('editor.video')}>
-                  <UploadField
-                    kind="video"
-                    value={videoUrl ? [videoUrl] : []}
-                    onChange={(arr) => setVideoUrl(arr[0] ?? '')}
-                    max={1}
-                  />
-                </Row>
-              )}
-
-              <Row label={t('editor.cover')}>
-                <UploadField
-                  kind="image"
-                  value={cover ? [cover] : []}
-                  onChange={(arr) => setCover(arr[0] ?? '')}
-                  max={1}
-                />
-                <div className="mt-1 text-xs text-leaf-700/60">
-                  帖子封面图（可选）
-                </div>
-              </Row>
-
-              <Row label={t('editor.tags')}>
-                <TagSelector value={tags} onChange={setTags} max={6} />
-              </Row>
-            </div>
-
-            <div className="mt-6 flex items-center justify-between border-t border-leaf-100 pt-4">
-              <div className="text-xs text-leaf-700/70">
-                {currentDraftId ? t('editor.saveDraft') : t('editor.title')}
-              </div>
-              <div className="flex gap-2">
-                <button type="button" onClick={onSaveDraft} className="btn-outline">
-                  <Icon name="edit" size={14} />
-                  {t('editor.saveDraft')}
-                </button>
-                <button
-                  type="button"
-                  onClick={onPublish}
-                  disabled={submitting}
-                  className="btn-primary"
-                >
-                  <Icon name="check" size={14} />
-                  {submitting ? t('editor.submitting') : t('editor.submit')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          {/* 实时预览 */}
-          <PostPreview
-            type={type}
-            title={title}
-            content={content}
-            contentJson={contentJson}
-            images={extractImagesFromJson(contentJson)}
-            videoUrl={videoUrl}
-            tags={tags}
-            user={user}
-            voteOptions={voteOptions}
-            voteMulti={voteMulti}
-            voteDeadline={voteDeadline}
-            eventLocation={eventLocation}
-            eventStartAt={eventStartAt}
-            journal={journal}
-            cover={cover}
-          />
-
-          <div className="card p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="text-sm font-semibold text-ink-800">📦 {t('editor.saveDraft')}</div>
-              <span className="text-[11px] text-leaf-700/70">{drafts.length}</span>
-            </div>
-            {drafts.length === 0 ? (
-              <p className="text-center text-xs text-leaf-700/60 py-4">
-                {t('common.empty')}
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {drafts.map((d) => (
-                  <li
-                    key={d.id}
-                    className={cn(
-                      'group relative rounded-lg border p-2.5 transition-colors',
-                      currentDraftId === d.id
-                        ? 'border-leaf-300 bg-leaf-50'
-                        : 'border-leaf-100 hover:border-leaf-200'
-                    )}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => onLoadDraft(d)}
-                      className="block w-full text-left"
-                    >
-                      <div className="truncate text-sm font-medium text-ink-800">
-                        {d.title || t('common.empty')}
-                      </div>
-                      <div className="mt-0.5 text-[10px] text-leaf-700/70">
-                        {t(`post.types.${d.type}`)} · {new Date(d.savedAt).toLocaleString()}
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDeleteDraft(d.id)}
-                      className="absolute right-1.5 top-1.5 opacity-0 transition-opacity group-hover:opacity-100 text-leaf-600 hover:text-rose-500"
-                      aria-label={t('common.delete')}
-                    >
-                      <Icon name="trash" size={14} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="card p-4 text-xs text-leaf-700/80">
-            <div className="mb-2 font-semibold text-ink-800">{t('editor.tips.title')}</div>
-            <ul className="ml-4 list-disc space-y-1">
-              <li>{t('editor.tips.item1')}</li>
-              <li>{t('editor.tips.item2')}</li>
-              <li>{t('editor.tips.item3')}</li>
-              <li>{t('editor.tips.item4')}</li>
-            </ul>
-          </div>
-        </div>
-      </div>
+    <Shell>
+      <PostComposer
+        initialValue={{
+          categorySlug: searchParams.get("category") ?? searchParams.get("board") ?? "",
+          genusSlug: searchParams.get("genus") ?? "",
+          speciesSlug: searchParams.get("species") ?? "",
+        }}
+        drafts={drafts}
+        onSaveDraft={async (payload, title, type) => {
+          const res = await api.post<{ id: string; savedAt: string }>("/api/drafts", {
+            id: payload.id,
+            title,
+            type,
+            payload,
+          });
+          return res.id;
+        }}
+        onDeleteDraft={async (id) => {
+          await api.delete(`/api/drafts/${id}`).catch(() => null);
+          await loadDrafts();
+        }}
+        onDraftsChanged={loadDrafts}
+      />
     </Shell>
   );
-}
-
-function Row({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-sm font-semibold text-ink-800">{label}</label>
-      {children}
-    </div>
-  );
-}
-
-/** 不再用硬编码映射 — 改为在调用处用 t('post.types.<key>') */
-function typeLabel(postType: PostType) {
-  return postType; // fallback: 返回类型 key 本身,调用处再翻译
 }

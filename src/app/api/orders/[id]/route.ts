@@ -8,6 +8,8 @@ export const dynamic = 'force-dynamic';
 
 const include = {
   product: { include: productInclude() },
+  listing: { select: { id: true, title: true, cover: true, tradeMode: true } },
+  listingItem: { select: { id: true, listingId: true, title: true, cover: true, price: true } },
   auction: { select: { id: true, title: true, cover: true } },
   buyer:  { include: { _count: { select: { posts: true, followers: true, following: true } }, badges: { include: { badge: true } } } },
   seller: { include: { _count: { select: { posts: true, followers: true, following: true } }, badges: { include: { badge: true } } } },

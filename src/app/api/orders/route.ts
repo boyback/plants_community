@@ -30,6 +30,8 @@ export const GET = handler(async (req) => {
     take: 50,
     include: {
       product: { include: productInclude() },
+      listing: { select: { id: true, title: true, cover: true, tradeMode: true } },
+      listingItem: { select: { id: true, listingId: true, title: true, cover: true, price: true } },
       auction: { select: { id: true, title: true, cover: true } },
       buyer: userIncludeForOrder,
       seller: userIncludeForOrder,

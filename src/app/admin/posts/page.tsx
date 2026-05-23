@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
-import { PostAdminActions } from './PostAdminActions';
+import { AdminPostPinActions } from './AdminPostPinActions';
 import { cn } from '@/lib/utils';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
+import { parseJsonArray } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,9 +69,11 @@ export default async function AdminPostsPage({
         id: true,
         type: true,
         title: true,
+        tags: true,
         cover: true,
         views: true,
         deleted: true,
+        locked: true,
         deleteReason: true,
         ...(REVIEW_FILTER_ENABLED && {
           reviewStatus: true,
@@ -79,6 +82,13 @@ export default async function AdminPostsPage({
         createdAt: true,
         author: {
           select: { id: true, name: true, avatar: true, level: true },
+        },
+        board: { select: { id: true, name: true, slug: true } },
+        genus: { select: { id: true, name: true, slug: true } },
+        species: { select: { id: true, name: true, slug: true } },
+        pins: {
+          select: { id: true, scope: true, targetId: true },
+          orderBy: [{ orderIdx: 'asc' }, { pinnedAt: 'desc' }],
         },
         _count: { select: { comments: true, likes: true } },
       },
@@ -213,6 +223,7 @@ export default async function AdminPostsPage({
               <th className="px-3 py-2 text-left">发布时间</th>
               <th className="px-3 py-2 text-left">审核</th>
               <th className="px-3 py-2 text-left">状态</th>
+              <th className="px-3 py-2 text-left">置顶</th>
               <th className="px-3 py-2 text-right">操作</th>
             </tr>
           </thead>
@@ -286,18 +297,37 @@ export default async function AdminPostsPage({
                     </span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-right">
-                  <PostAdminActions
-                    postId={p.id}
-                    deleted={p.deleted}
-                    reviewStatus={REVIEW_FILTER_ENABLED ? p.reviewStatus : undefined}
-                  />
-                </td>
+                <AdminPostPinActions
+                  postId={p.id}
+                  postTitle={p.title}
+                  authorName={p.author.name}
+                  authorHref={`/user/${p.author.id}`}
+                  initialBoardSelection={buildBoardSelection({
+                    board: p.board,
+                    genus: p.genus,
+                    species: p.species,
+                  })}
+                  initialBoardLabel={formatBoardLabel({
+                    board: p.board,
+                    genus: p.genus,
+                    species: p.species,
+                  })}
+                  initialLocked={p.locked}
+                  deleted={p.deleted}
+                  reviewStatus={REVIEW_FILTER_ENABLED ? p.reviewStatus : undefined}
+                  initialPins={p.pins}
+                  targets={buildPinTargets({
+                    board: p.board,
+                    genus: p.genus,
+                    species: p.species,
+                    tags: parseJsonArray(p.tags),
+                  })}
+                />
               </tr>
             ))}
             {items.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-ink-500">
+                <td colSpan={9} className="px-3 py-10 text-center text-ink-500">
                   没有数据
                 </td>
               </tr>
@@ -352,4 +382,89 @@ function ReviewBadge({ status }: { status: string }) {
       ✅ 已发
     </span>
   );
+}
+
+function buildPinTargets({
+  board,
+  genus,
+  species,
+  tags,
+}: {
+  board: { id: string; name: string } | null;
+  genus: { id: string; name: string } | null;
+  species: { id: string; name: string } | null;
+  tags: string[];
+}) {
+  return [
+    {
+      key: 'global:',
+      scope: 'global' as const,
+      targetId: '',
+      label: '全局置顶',
+      description: '在首页和全站推荐列表优先展示',
+    },
+    board
+      ? {
+          key: `board:${board.id}`,
+          scope: 'board' as const,
+          targetId: board.id,
+          label: `板块置顶：${board.name}`,
+          description: '只在该板块列表优先展示',
+        }
+      : null,
+    genus
+      ? {
+          key: `genus:${genus.id}`,
+          scope: 'genus' as const,
+          targetId: genus.id,
+          label: `属置顶：${genus.name}`,
+          description: '只在该属列表优先展示',
+        }
+      : null,
+    species
+      ? {
+          key: `species:${species.id}`,
+          scope: 'species' as const,
+          targetId: species.id,
+          label: `品种置顶：${species.name}`,
+          description: '只在该品种列表优先展示',
+        }
+      : null,
+    ...tags.slice(0, 10).map((tag) => ({
+      key: `topic:${tag}`,
+      scope: 'topic' as const,
+      targetId: tag,
+      label: `话题置顶：#${tag}`,
+      description: '只在该话题页优先展示',
+    })),
+  ].filter((target): target is NonNullable<typeof target> => target !== null);
+}
+
+function buildBoardSelection({
+  board,
+  genus,
+  species,
+}: {
+  board: { slug: string; name: string } | null;
+  genus: { slug: string; name: string } | null;
+  species: { slug: string; name: string } | null;
+}) {
+  return {
+    categorySlug: board?.slug ?? '',
+    genusSlug: genus?.slug ?? '',
+    speciesSlug: species?.slug ?? '',
+    label: formatBoardLabel({ board, genus, species }),
+  };
+}
+
+function formatBoardLabel({
+  board,
+  genus,
+  species,
+}: {
+  board: { name: string } | null;
+  genus: { name: string } | null;
+  species: { name: string } | null;
+}) {
+  return [board?.name, genus?.name, species?.name].filter(Boolean).join(' / ') || '-';
 }

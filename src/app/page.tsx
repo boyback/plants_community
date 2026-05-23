@@ -9,11 +9,13 @@ import { serializePost, serializeUser } from '@/lib/serializers';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 import type { BannerItem } from '@/lib/types';
 import { jsonLdScript, websiteJsonLd, organizationJsonLd } from '@/lib/jsonld';
+import { getCurrentUser } from '@/lib/auth';
+import { sortPostsForPins } from '@/lib/post-pins';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const [postsRaw, bannersRaw, recommendUsersRaw] = await Promise.all([
+  const [postsRaw, bannersRaw, recommendUsersRaw, _quickDiscovery, me] = await Promise.all([
     prisma.post.findMany({
       where: {
         deleted: false,
@@ -36,9 +38,13 @@ export default async function HomePage() {
       },
     }),
     loadQuickDiscoveryData({ n: 12 }),
+    getCurrentUser().catch(() => null),
   ]);
 
-  const posts = postsRaw.map((p: any) => serializePost(p));
+  const posts = sortPostsForPins(
+    postsRaw.map((p: any) => serializePost(p, undefined, undefined, me)),
+    [{ scope: 'global', targetId: '' }]
+  );
   const banners: BannerItem[] = bannersRaw.map((b) => ({
     id: b.id,
     title: b.title,

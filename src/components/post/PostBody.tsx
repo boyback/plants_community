@@ -8,8 +8,7 @@ import { api, ApiError } from '@/lib/client-api';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { useRouter } from 'next/navigation';
-import { RichTextView } from '@/components/richtext/RichTextView';
-import { ImageGallery } from '@/components/ui/ImageGallery';
+import { PostContentView } from '@/components/post/PostContentView';
 import { toast } from '@/components/ui/Toast';
 
 /** 根据帖子类型渲染主体内容 */
@@ -25,11 +24,11 @@ export function PostBody({
 }) {
   switch (post.type) {
     case 'rich':
-      return <RichTextView json={post.contentJson} html={post.content} />;;
+      return <PostContentView json={post.contentJson} html={post.content} />;
     case 'short':
       return <ShortBody post={post} livePhotoMap={livePhotoMap} />;
     case 'video':
-      return <VideoBody post={post} />;
+      return <VideoBody post={post} livePhotoMap={livePhotoMap} />;
     case 'vote':
       return <VoteBody post={post} />;
     case 'event':
@@ -90,24 +89,17 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
     </div>
   );
 }
-function ShortBody({
+function ShortBody({ post, livePhotoMap }: { post: Post; livePhotoMap?: Record<string, string> }) {
+  return <PostContentView html={post.content} images={post.images} livePhotoMap={livePhotoMap} />;
+}
+
+function VideoBody({
   post,
   livePhotoMap,
 }: {
   post: Post;
   livePhotoMap?: Record<string, string>;
 }) {
-  return (
-    <div className="space-y-4">
-      <RichTextView html={post.content} />
-      {post.images && post.images.length > 0 && (
-        <ImageGallery images={post.images} livePhotoMap={livePhotoMap} />
-      )}
-    </div>
-  );
-}
-
-function VideoBody({ post }: { post: Post }) {
   return (
     <div className="space-y-4">
       {post.videoUrl && (
@@ -121,10 +113,7 @@ function VideoBody({ post }: { post: Post }) {
           </video>
         </div>
       )}
-      <RichTextView html={post.content} />
-      {post.images && post.images.length > 0 && (
-        <ImageGallery images={post.images} />
-      )}
+      <PostContentView html={post.content} images={post.images} livePhotoMap={livePhotoMap} />
     </div>
   );
 }
@@ -189,7 +178,7 @@ function VoteBody({ post }: { post: Post }) {
 
   return (
     <div className="space-y-4">
-      <RichTextView html={post.content} />
+      <PostContentView html={post.content} />
       <div className="space-y-2 rounded-none bg-leaf-50/60 p-2">
         {/* 问题 */}
         <div className="flex items-center gap-2">
@@ -355,7 +344,7 @@ function EventBody({ post, initialAttending }: { post: Post; initialAttending: b
         </div>
       </div>
 
-      <RichTextView json={post.contentJson} html={post.content} />
+      <PostContentView json={post.contentJson} html={post.content} />
     </div>
   );
 }

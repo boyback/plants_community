@@ -14,12 +14,39 @@ import Placeholder from '@tiptap/extension-placeholder';
 import CharacterCount from '@tiptap/extension-character-count';
 import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
+import Color from '@tiptap/extension-color';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Extension } from '@tiptap/core';
 import Gapcursor from '@tiptap/extension-gapcursor'
 /**
  * StarterKit 在 v3+ 已内置 link + underline 等。
  * 我们用 configure 关闭它内置的 link(因为我们要自定义 HTMLAttributes / rel),
  * 然后单独再注册一份 Link;underline 直接用 StarterKit 提供的。
  */
+
+const ListMarkerColor = Extension.create({
+  name: 'listMarkerColor',
+  addGlobalAttributes() {
+    return [
+      {
+        types: ['listItem'],
+        attributes: {
+          markerColor: {
+            default: null,
+            parseHTML: (element) =>
+              element.style.getPropertyValue('--rte-marker-color') || null,
+            renderHTML: (attributes) => {
+              if (!attributes.markerColor) return {};
+              return {
+                style: `--rte-marker-color: ${attributes.markerColor};`,
+              };
+            },
+          },
+        },
+      },
+    ];
+  },
+});
 
 const baseExtensions = [
   StarterKit.configure({
@@ -59,6 +86,11 @@ const baseExtensions = [
   TextAlign.configure({
     types: ['heading', 'paragraph'],
   }),
+  TextStyle,
+  Color.configure({
+    types: ['textStyle'],
+  }),
+  ListMarkerColor,
   Highlight.configure({
     multicolor: false,
   }),

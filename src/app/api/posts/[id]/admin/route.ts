@@ -1,9 +1,14 @@
-import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
+import { serializePost } from '@/lib/serializers';
+import { postInclude } from '@/lib/post-include';
 
 export const dynamic = 'force-dynamic';
+
+type PinScope = 'global' | 'board' | 'genus' | 'species' | 'topic';
+
+const PIN_SCOPES = new Set(['global', 'board', 'genus', 'species', 'topic']);
 
 function extractId(url: string): string {
   const parts = new URL(url).pathname.split('/').filter(Boolean);
@@ -42,6 +47,23 @@ async function checkPermission(userId: string, postId: string) {
   // const isBoardModerator = isModerator && await checkUserManagesBoard(userId, post.boardId || post.genusId || post.speciesId);
 
   return { user, post, isAuthor, isSuperAdmin, isModerator, isAdmin };
+}
+
+async function loadSerializedPost(postId: string, viewer: { id: string; role?: 'user' | 'moderator' | 'admin' | null; isSuperAdmin?: boolean | null }) {
+  const fresh = await prisma.post.findUnique({
+    where: { id: postId },
+    include: postInclude(),
+  });
+  if (!fresh) return null;
+  return serializePost(fresh as any, undefined, undefined, viewer);
+}
+
+function parsePinTarget(body: any): { scope: PinScope; targetId: string } | null {
+  const scope = String(body.scope ?? '');
+  if (!PIN_SCOPES.has(scope)) return null;
+  const targetId = scope === 'global' ? '' : String(body.targetId ?? '').trim();
+  if (scope !== 'global' && !targetId) return null;
+  return { scope: scope as PinScope, targetId };
 }
 
 // POST /api/posts/[id]/admin
@@ -110,67 +132,122 @@ export const POST = handler(async (req) => {
   // 执行操作
   switch (action) {
     case 'pin': {
-      await prisma.post.update({
-        where: { id: postId },
-        data: { pinned: true, pinnedAt: new Date(), pinnedBy: me.id },
+      const target = parsePinTarget(body);
+      if (!target) return fail(400, '请选择置顶范围');
+      if (target.scope === 'global' && !isSuperAdmin) return fail(403, '只有超级管理员可以全局置顶');
+      await prisma.postPin.upsert({
+        where: {
+          postId_scope_targetId: {
+            postId,
+            scope: target.scope,
+            targetId: target.targetId,
+          },
+        },
+        create: {
+          postId,
+          scope: target.scope,
+          targetId: target.targetId,
+          pinnedBy: me.id,
+        },
+        update: {
+          pinnedAt: new Date(),
+          pinnedBy: me.id,
+        },
       });
-      return { ok: true, action: 'pinned' };
+      const updated = await loadSerializedPost(postId, me);
+      if (!updated) return fail(404, '帖子不存在');
+      return updated;
     }
     case 'unpin': {
-      await prisma.post.update({
-        where: { id: postId },
-        data: { pinned: false, pinnedAt: null, pinnedBy: null },
+      const target = parsePinTarget(body);
+      if (!target) return fail(400, '请选择取消置顶范围');
+      if (target.scope === 'global' && !isSuperAdmin) return fail(403, '只有超级管理员可以取消全局置顶');
+      await prisma.postPin.deleteMany({
+        where: {
+          postId,
+          scope: target.scope,
+          targetId: target.targetId,
+        },
       });
-      return { ok: true, action: 'unpinned' };
+      const updated = await loadSerializedPost(postId, me);
+      if (!updated) return fail(404, '帖子不存在');
+      return updated;
     }
     case 'lock': {
       await prisma.post.update({
         where: { id: postId },
         data: { locked: true, lockedAt: new Date(), lockedBy: me.id },
       });
-      return { ok: true, action: 'locked' };
+      const updated = await loadSerializedPost(postId, me);
+      if (!updated) return fail(404, '帖子不存在');
+      return updated;
     }
     case 'unlock': {
       await prisma.post.update({
         where: { id: postId },
         data: { locked: false, lockedAt: null, lockedBy: null },
       });
-      return { ok: true, action: 'unlocked' };
+      const updated = await loadSerializedPost(postId, me);
+      if (!updated) return fail(404, '帖子不存在');
+      return updated;
     }
     case 'move': {
       const targetCategoryId = body.boardId as string | undefined;
       const targetGenusId = body.genusId as string | undefined;
       const targetSpeciesId = body.speciesId as string | undefined;
-      
+      const targetCategorySlug = body.categorySlug as string | undefined;
+      const targetGenusSlug = body.genusSlug as string | undefined;
+      const targetSpeciesSlug = body.speciesSlug as string | undefined;
+
       // 至少需要指定一个板块
-      if (!targetCategoryId && !targetGenusId && !targetSpeciesId) {
+      if (
+        !targetCategoryId &&
+        !targetGenusId &&
+        !targetSpeciesId &&
+        !targetCategorySlug &&
+        !targetGenusSlug &&
+        !targetSpeciesSlug
+      ) {
         return fail(400, '请选择目标板块');
       }
-      
-      // 根据优先级设置板块：species > genus > category
-      const updateData: any = {};
-      if (targetSpeciesId) {
-        updateData.speciesId = targetSpeciesId;
-        updateData.genusId = null;
-        updateData.boardId = null;
-        updateData.boardId = null;
-      } else if (targetGenusId) {
-        updateData.genusId = targetGenusId;
-        updateData.speciesId = null;
-        updateData.boardId = null;
-        updateData.boardId = null;
-      } else if (targetCategoryId) {
-        updateData.boardId = targetCategoryId;
-        updateData.genusId = null;
-        updateData.speciesId = null;
-        updateData.boardId = null;
+
+      const updateData: { boardId: string | null; genusId: string | null; speciesId: string | null } = {
+        boardId: null,
+        genusId: null,
+        speciesId: null,
+      };
+
+      if (targetSpeciesSlug || targetSpeciesId) {
+        const species = await prisma.species.findFirst({
+          where: targetSpeciesSlug ? { slug: targetSpeciesSlug } : { id: targetSpeciesId },
+          include: { genus: true },
+        });
+        if (!species) return fail(400, '指定的品种不存在');
+        updateData.boardId = species.genus.boardId;
+        updateData.genusId = species.genusId;
+        updateData.speciesId = species.id;
+      } else if (targetGenusSlug || targetGenusId) {
+        const genus = await prisma.genus.findFirst({
+          where: targetGenusSlug ? { slug: targetGenusSlug } : { id: targetGenusId },
+        });
+        if (!genus) return fail(400, '指定的属不存在');
+        updateData.boardId = genus.boardId;
+        updateData.genusId = genus.id;
+      } else if (targetCategorySlug || targetCategoryId) {
+        const board = await prisma.board.findFirst({
+          where: targetCategorySlug ? { slug: targetCategorySlug } : { id: targetCategoryId },
+        });
+        if (!board) return fail(400, '指定的板块不存在');
+        updateData.boardId = board.id;
       }
-      
+
       await prisma.post.update({
         where: { id: postId },
         data: updateData,
       });
-      return { ok: true, action: 'moved' };
+      const updated = await loadSerializedPost(postId, me);
+      if (!updated) return fail(404, '帖子不存在');
+      return updated;
     }
     case 'delete': {
       await prisma.post.update({
@@ -182,7 +259,7 @@ export const POST = handler(async (req) => {
           deleteReason: body.reason || '管理员删除',
         },
       });
-      return { ok: true, action: 'deleted' };
+      return { deletedId: postId };
     }
     case 'ban_user': {
       const userId = body.userId as string;

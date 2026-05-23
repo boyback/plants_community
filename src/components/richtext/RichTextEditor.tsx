@@ -45,7 +45,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          'prose-article rich-editor outline-none px-4 py-3 text-[15px] leading-7 text-ink-800',
+          'prose-article rich-editor outline-none px-4 py-3 text-base leading-7 text-ink-800',
           'focus:outline-none'
         ),
       },
@@ -80,7 +80,7 @@ export function RichTextEditor({
       <Toolbar editor={editor} />
       <EditorContent
         editor={editor}
-        style={{ minHeight }}
+        style={{ minHeight, maxHeight: 500 }}
         className="overflow-y-auto"
       />
       <div className="flex items-center justify-between border-t border-leaf-100 bg-leaf-50/30 px-3 py-1.5 text-[10px] text-leaf-700/60">

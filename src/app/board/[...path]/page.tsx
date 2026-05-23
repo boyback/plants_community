@@ -24,6 +24,8 @@ import { formatNumber } from '@/lib/utils';
 import type { Metadata } from 'next';
 import { parseJsonArray } from '@/lib/api';
 import { jsonLdScript, speciesJsonLd, breadcrumbJsonLd } from '@/lib/jsonld';
+import { getCurrentUser } from '@/lib/auth';
+import { sortPostsForPins } from '@/lib/post-pins';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://plantcommunity.cn';
 
@@ -222,7 +224,11 @@ async function CategoryView({ categorySlug }: { categorySlug: string }) {
   if (postsRaw.length > PAGE) {
     nextCursor = postsRaw.pop()!.id;
   }
-  const posts = postsRaw.map((p: any) => serializePost(p));
+  const me = await getCurrentUser().catch(() => null);
+  const posts = sortPostsForPins(
+    postsRaw.map((p: any) => serializePost(p, undefined, undefined, me)),
+    [{ scope: 'board', targetId: c.id }]
+  );
   const board = serializeCategory(c);
 
   return (
@@ -325,7 +331,11 @@ async function GenusView({
   if (postsRaw.length > PAGE) {
     nextCursor = postsRaw.pop()!.id;
   }
-  const posts = postsRaw.map((p: any) => serializePost(p));
+  const me = await getCurrentUser().catch(() => null);
+  const posts = sortPostsForPins(
+    postsRaw.map((p: any) => serializePost(p, undefined, undefined, me)),
+    [{ scope: 'genus', targetId: g.id }]
+  );
 
   const genus = serializeGenus(g);
 
@@ -484,7 +494,11 @@ async function SpeciesView({
   if (postsRaw.length > PAGE) {
     nextCursor = postsRaw.pop()!.id;
   }
-  const posts = postsRaw.map((p: any) => serializePost(p));
+  const me = await getCurrentUser().catch(() => null);
+  const posts = sortPostsForPins(
+    postsRaw.map((p: any) => serializePost(p, undefined, undefined, me)),
+    [{ scope: 'species', targetId: s.id }]
+  );
 
   const full = serializeSpeciesFull(s);
 

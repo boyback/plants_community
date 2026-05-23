@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/ui/Icon';
@@ -10,9 +10,9 @@ import { UploadField } from '@/components/upload/UploadField';
 import { PostPreview } from '@/components/editor/PostPreview';
 import { UserAccountCard } from '@/components/layout/UserAccountCard';
 import { toast } from '@/components/ui/Toast';
+import { BoardSelect } from '@/components/editor/BoardSelect';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from '@/lib/client-api';
-import type { Board } from '@/lib/types';
 
 type EditableType = 'rich' | 'short' | 'video';
 
@@ -53,44 +53,11 @@ export function PostEditor({ post }: { post: InitialPost }) {
   const [videoUrl, setVideoUrl] = useState(post.videoUrl);
   const [tags, setTags] = useState<string[]>(post.tags);
   const [tagInput, setTagInput] = useState('');
-  const [boards, setCategories] = useState<Board[]>([]);
-  const [generaList, setGeneraList] = useState<Board[]>([]);
-  const [speciesList, setSpeciesList] = useState<Board[]>([]);
   const [categorySlug, setCategorySlug] = useState(post.categorySlug);
   const [genusSlug, setGenusSlug] = useState(post.genusSlug);
   const [speciesSlug, setSpeciesSlug] = useState(post.speciesSlug);
 
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    api.get<Board[]>('/api/boards').then(setCategories).catch(() => null);
-  }, []);
-
-  useEffect(() => {
-    if (!categorySlug) {
-      setGeneraList([]);
-      setGenusSlug('');
-      return;
-    }
-    api
-      .get<{ genera: Board[] }>(`/api/boards/${encodeURIComponent(categorySlug)}`)
-      .then((r) => setGeneraList(r.genera ?? []))
-      .catch(() => setGeneraList([]));
-  }, [categorySlug]);
-
-  useEffect(() => {
-    if (!genusSlug) {
-      setSpeciesList([]);
-      setSpeciesSlug('');
-      return;
-    }
-    api
-      .get<{ species: Board[] }>(
-        `/api/genera/${encodeURIComponent(genusSlug)}?board=${encodeURIComponent(categorySlug)}`
-      )
-      .then((r) => setSpeciesList(r.species ?? []))
-      .catch(() => setSpeciesList([]));
-  }, [genusSlug, categorySlug]);
 
   const onAddTag = () => {
     const t = tagInput.trim();
@@ -133,8 +100,8 @@ export function PostEditor({ post }: { post: InitialPost }) {
     }
     if (post.type === 'video' && !videoUrl.trim())
       return toast.error('请上传视频或填写视频 URL');
-    if (!speciesSlug)
-      return toast.error('请选择完整的板块（科 → 属 → 品种）');
+    if (!categorySlug)
+      return toast.error('请选择板块');
 
     setSubmitting(true);
     try {
@@ -191,57 +158,15 @@ export function PostEditor({ post }: { post: InitialPost }) {
             </div>
 
             <Row label="板块">
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-                <select
-                  value={categorySlug}
-                  onChange={(e) => {
-                    setCategorySlug(e.target.value);
-                    setGenusSlug('');
-                    setSpeciesSlug('');
-                  }}
-                  className="input"
-                >
-                  <option value="">-- 选择科 --</option>
-                  {boards.map((c) => (
-                    <option key={c.id} value={c.slug}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={genusSlug}
-                  onChange={(e) => {
-                    setGenusSlug(e.target.value);
-                    setSpeciesSlug('');
-                  }}
-                  className="input"
-                  disabled={!categorySlug || generaList.length === 0}
-                >
-                  <option value="">
-                    {!categorySlug ? '请先选择科' : generaList.length === 0 ? '暂无属' : '-- 选择属 --'}
-                  </option>
-                  {generaList.map((g) => (
-                    <option key={g.id} value={g.slug}>
-                      {g.name}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={speciesSlug}
-                  onChange={(e) => setSpeciesSlug(e.target.value)}
-                  className="input"
-                  disabled={!genusSlug || speciesList.length === 0}
-                >
-                  <option value="">
-                    {!genusSlug ? '请先选择属' : speciesList.length === 0 ? '暂无品种' : '-- 选择品种 --'}
-                  </option>
-                  {speciesList.map((s) => (
-                    <option key={s.id} value={s.slug}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <BoardSelect
+                value={{ categorySlug, genusSlug, speciesSlug }}
+                onChange={(selection) => {
+                  setCategorySlug(selection.categorySlug);
+                  setGenusSlug(selection.genusSlug);
+                  setSpeciesSlug(selection.speciesSlug);
+                }}
+                placeholder="搜索并选择板块"
+              />
             </Row>
 
             <Row label={<><span className="text-rose-500">*</span> 标题</>}>

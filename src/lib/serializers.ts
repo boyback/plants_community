@@ -77,7 +77,7 @@ export function serializeUser(u: UserWithRelations): User {
 
 type BoardWithCount = DBBoard & {
   _count?: { posts?: number; genera?: number };
-  genera?: (DBGenus & { _count?: { posts?: number; species?: number } })[];
+  genera?: GenusWithRelations[];
 };
 
 export function serializeLegacyBoard(b: BoardWithCount): Board {
@@ -105,6 +105,7 @@ import type {
 type GenusWithRelations = DBGenus & {
   board?: DBBoard | null;
   _count?: { posts?: number; species?: number };
+  species?: (DBSpecies & { _count?: { posts?: number } })[];
 };
 type SpeciesWithRelations = DBSpecies & {
   genus?: (DBGenus & { board?: DBBoard | null }) | null;
@@ -129,13 +130,42 @@ export function serializeCategory(c: BoardWithCount): BoardFull & { genera?: any
     childrenCount: c._count?.genera ?? 0,
     genera: c.genera?.map((g) => ({
       id: g.id,
+      level: 'genus',
       slug: g.slug,
       name: g.name,
       latinName: g.latinName ?? null,
+      description: g.description,
+      cover: g.cover ?? c.cover,
+      icon: parseJsonArray(c.icons)?.[0] ?? '🌿',
+      members: 0,
+      posts: g._count?.posts ?? 0,
+      path: [
+        { level: 'category' as const, slug: c.slug, name: c.name },
+        { level: 'genus' as const, slug: g.slug, name: g.name },
+      ],
+      childrenCount: g._count?.species ?? 0,
       _count: {
         posts: g._count?.posts ?? 0,
         species: g._count?.species ?? 0,
       },
+      species: g.species?.map((s) => ({
+        id: s.id,
+        level: 'species',
+        slug: s.slug,
+        name: s.name,
+        latinName: s.latinName ?? null,
+        description: s.description,
+        cover: s.cover ?? g.cover ?? c.cover,
+        icon: parseJsonArray(c.icons)?.[0] ?? '🌿',
+        members: 0,
+        posts: s._count?.posts ?? 0,
+        path: [
+          { level: 'category' as const, slug: c.slug, name: c.name },
+          { level: 'genus' as const, slug: g.slug, name: g.name },
+          { level: 'species' as const, slug: s.slug, name: s.name },
+        ],
+        _count: { posts: s._count?.posts ?? 0 },
+      })),
     }) as any),
   };
 }
@@ -283,7 +313,70 @@ type PostWithRelations = DBPost & {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyPost = any;
 
-export function serializePost(p: AnyPost, userVoted?: boolean, userVotedOptionIds?: string[]): Post {
+type PostViewer = {
+  id: string;
+  role?: 'user' | 'moderator' | 'admin' | null;
+  isSuperAdmin?: boolean | null;
+} | null | undefined;
+
+const EDITABLE_POST_TYPES = new Set(['rich', 'short', 'video', 'vote', 'event', 'journal', 'help']);
+
+export function getPostAdminPermissions(p: { authorId?: string | null; author?: { id?: string | null } | null; type?: string }, viewer?: PostViewer) {
+  if (!viewer) {
+    return {
+      canManage: false,
+      canEdit: false,
+      canDelete: false,
+      canMove: false,
+      canPin: false,
+      canLock: false,
+      canBan: false,
+      canReview: false,
+    };
+  }
+
+  const authorId = p.authorId ?? p.author?.id ?? null;
+  const isAuthor = Boolean(authorId && viewer.id === authorId);
+  const isSuperAdmin = viewer.isSuperAdmin === true;
+  const isModerator = viewer.role === 'moderator';
+  const isAdmin = viewer.role === 'admin';
+  const canEdit = isAuthor && EDITABLE_POST_TYPES.has(String(p.type));
+  const canDelete = isAuthor || isModerator || isAdmin || isSuperAdmin;
+  const canMove = isModerator || isAdmin || isSuperAdmin;
+  const canPin = isModerator || isAdmin || isSuperAdmin;
+  const canLock = isModerator || isAdmin || isSuperAdmin;
+  const canBan = isSuperAdmin && !isAuthor;
+  const canReview = isSuperAdmin;
+  return {
+    canManage: canEdit || canDelete || canMove || canPin || canLock || canBan || canReview,
+    canEdit,
+    canDelete,
+    canMove,
+    canPin,
+    canLock,
+    canBan,
+    canReview,
+  };
+}
+
+export function serializePost(p: AnyPost, userVoted?: boolean, userVotedOptionIds?: string[], viewer?: PostViewer): Post {
+  const adminPermissions = getPostAdminPermissions(p, viewer);
+  const pins = Array.isArray(p.pins)
+    ? p.pins.map((pin: any) => ({
+        id: pin.id,
+        scope: pin.scope,
+        targetId: pin.targetId ?? '',
+        orderIdx: pin.orderIdx ?? 0,
+        pinnedAt: pin.pinnedAt?.toISOString?.() ?? String(pin.pinnedAt),
+        pinnedBy: pin.pinnedBy ?? null,
+      }))
+    : [];
+  const pinState = {
+    any: pins.length > 0,
+    global: pins.some((pin: any) => pin.scope === 'global'),
+    board: pins.some((pin: any) => ['board', 'genus', 'species'].includes(pin.scope)),
+    topic: pins.some((pin: any) => pin.scope === 'topic'),
+  };
   return {
     id: p.id,
     type: p.type as PostType,
@@ -307,8 +400,10 @@ export function serializePost(p: AnyPost, userVoted?: boolean, userVotedOptionId
     comments: p._count?.comments ?? 0,
     shares: p.shares,
     views: p.views,
-    pinned: p.pinned ?? false,
+    pins,
+    pinState,
     locked: p.locked ?? false,
+    adminPermissions,
     vote: p.vote
       ? {
           question: p.vote.question,
@@ -469,6 +564,8 @@ export function serializePlant(p: DBPlant): PlantSpecies {
 
 import type {
   Product as DBProduct,
+  MarketListing as DBMarketListing,
+  MarketListingItem as DBMarketListingItem,
   Order as DBOrder,
   Payment as DBPayment,
   SkinItem as DBSkinItem,
@@ -520,6 +617,8 @@ export function serializeProduct(p: ProductWithRelations): Product {
 
 type OrderWithRelations = DBOrder & {
   product?: ProductWithRelations | null;
+  listing?: Pick<DBMarketListing, 'id' | 'title' | 'cover' | 'tradeMode'> | null;
+  listingItem?: Pick<DBMarketListingItem, 'id' | 'listingId' | 'title' | 'cover' | 'price'> | null;
   auction?: { id: string; title: string; cover: string } | null;
   buyer: UserWithRelations;
   seller?: UserWithRelations | null;
@@ -531,6 +630,24 @@ export function serializeOrder(o: OrderWithRelations): Order {
     orderNo: o.orderNo,
     source: o.source as Order['source'],
     product: o.product ? serializeProduct(o.product) : undefined,
+    listing: o.listing
+      ? {
+          id: o.listing.id,
+          title: o.listing.title,
+          cover: o.listing.cover,
+          tradeMode: o.listing.tradeMode as NonNullable<Order['tradeMode']>,
+        }
+      : undefined,
+    listingItem: o.listingItem
+      ? {
+          id: o.listingItem.id,
+          listingId: o.listingItem.listingId,
+          title: o.listingItem.title,
+          cover: o.listingItem.cover,
+          price: o.listingItem.price,
+        }
+      : undefined,
+    tradeMode: o.tradeMode as Order['tradeMode'],
     auctionId: o.auctionId ?? undefined,
     auctionTitle: o.auction?.title,
     auctionCover: o.auction?.cover,
@@ -539,6 +656,8 @@ export function serializeOrder(o: OrderWithRelations): Order {
     quantity: o.quantity,
     unitPrice: o.unitPrice,
     totalPrice: o.totalPrice,
+    platformFee: o.platformFee,
+    sellerAmount: o.sellerAmount,
     depositPaid: o.depositPaid,
     pointsBackTotal: o.pointsBackTotal,
     status: o.status as Order['status'],

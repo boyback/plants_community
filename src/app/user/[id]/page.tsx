@@ -62,9 +62,9 @@ export default async function UserPage({ params }: { params: { id: string } }) {
         user={user}
         isMe={me?.id === user.id}
         initialFollowed={followed}
-        posts={postsRaw.map((p: any) => serializePost(p))}
-        likedPosts={likedPostsRaw.map((p: any) => serializePost(p))}
-        collectedPosts={collectedPostsRaw.map((p: any) => serializePost(p))}
+        posts={postsRaw.map((p: any) => serializePost(p, undefined, undefined, me))}
+        likedPosts={likedPostsRaw.map((p: any) => serializePost(p, undefined, undefined, me))}
+        collectedPosts={collectedPostsRaw.map((p: any) => serializePost(p, undefined, undefined, me))}
         exp={uRaw.exp}
         vip={{
           isVip,

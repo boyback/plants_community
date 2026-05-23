@@ -31,6 +31,9 @@ interface ListingItem {
   cover: string;
   images?: string[];
   price: number;
+  maxPrice?: number;
+  itemCount?: number;
+  tradeMode?: 'platform_escrow' | 'online_payment' | 'external';
   originalPrice?: number | null;
   createdAt: string;
   endAt?: string;
@@ -304,6 +307,16 @@ function DefaultCard({ item }: { item: ListingItem }) {
               🔨 拍卖
             </span>
           )}
+          {!isAuction && (
+            <span className="ml-2 rounded bg-leaf-100 px-2 py-0.5 text-[10px] font-medium text-leaf-700">
+              {item.itemCount && item.itemCount > 1 ? `${item.itemCount} 件商品` : '一口价'}
+            </span>
+          )}
+          {!isAuction && item.tradeMode && (
+            <span className="rounded bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+              {tradeModeLabel(item.tradeMode)}
+            </span>
+          )}
         </div>
       )}
 
@@ -330,6 +343,14 @@ function DefaultCard({ item }: { item: ListingItem }) {
               #{tag}
             </span>
           ))}
+        </div>
+      )}
+
+      {!isAuction && (
+        <div className="mb-3 text-lg font-bold text-rose-600">
+          {item.maxPrice && item.maxPrice !== item.price
+            ? `${formatPrice(item.price)} - ${formatPrice(item.maxPrice)}`
+            : formatPrice(item.price)}
         </div>
       )}
 
@@ -409,6 +430,12 @@ function formatDateTime(iso: string): string {
   const minutes = String(d.getMinutes()).padStart(2, '0');
   const seconds = String(d.getSeconds()).padStart(2, '0');
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+function tradeModeLabel(mode: NonNullable<ListingItem['tradeMode']>): string {
+  if (mode === 'platform_escrow') return '平台担保';
+  if (mode === 'online_payment') return '在线支付';
+  return '自行联系';
 }
 
 function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {

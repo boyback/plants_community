@@ -111,6 +111,7 @@ model User {
   taskProgress   TaskProgress[]
   rewardClaims   ActivityRewardClaim[]
   productsListed Product[]             @relation("ProductSeller")
+  marketListingsListed MarketListing[] @relation("MarketListingSeller")
   ordersAsBuyer  Order[]               @relation("OrderBuyer")
   ordersAsSeller Order[]               @relation("OrderSeller")
   payments       Payment[]
@@ -392,9 +393,6 @@ model Post {
   deletedBy    String? // 管理员 id
   deleteReason String?          @db.Text
   // 置顶 & 锁定
-  pinned       Boolean          @default(false)
-  pinnedAt     DateTime?
-  pinnedBy     String?
   locked       Boolean          @default(false)
   lockedAt     DateTime?
   lockedBy     String?
@@ -421,6 +419,7 @@ model Post {
   likes    PostLike[]
   collects PostCollect[]
   views_   PostView[]
+  pins     PostPin[]
 
   @@index([boardId, createdAt])
   @@index([genusId, createdAt])
@@ -429,6 +428,22 @@ model Post {
   // 推荐流按 hotScore 排序的高频查询索引
   @@index([deleted, hotScore])
   @@map("posts")
+}
+
+model PostPin {
+  id       String   @id @default(cuid())
+  postId   String
+  scope    String   // global | board | genus | species | topic
+  targetId String   @default("") // global 为空字符串; topic 存话题名; 其他存对应 id
+  orderIdx Int      @default(0)
+  pinnedAt DateTime @default(now())
+  pinnedBy String?
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, scope, targetId])
+  @@index([scope, targetId, orderIdx, pinnedAt])
+  @@map("post_pins")
 }
 
 model Vote {
@@ -731,6 +746,25 @@ enum ProductStatus {
   pending_review
 }
 
+enum MarketTradeMode {
+  platform_escrow
+  online_payment
+  external
+}
+
+enum MarketListingStatus {
+  on_sale
+  sold_out
+  off_shelf
+  pending_review
+}
+
+enum MarketItemStatus {
+  on_sale
+  sold_out
+  off_shelf
+}
+
 model Product {
   id              String        @id @default(cuid())
   source          ProductSource
@@ -764,6 +798,79 @@ model Product {
   @@map("products")
 }
 
+model MarketListing {
+  id          String              @id @default(cuid())
+  sellerId    String
+  title       String
+  category    String
+  genusId     String?
+  speciesId   String?
+  shipFrom    String
+  tags        String?             @db.Text
+  description String?             @db.Text
+  tradeMode   MarketTradeMode     @default(platform_escrow)
+  externalUrl String?             @db.Text
+  contactNote String?             @db.Text
+  cover       String
+  minPrice    Int
+  maxPrice    Int
+  itemCount   Int                 @default(0)
+  status      MarketListingStatus @default(on_sale)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  seller User                @relation("MarketListingSeller", fields: [sellerId], references: [id])
+  genus  Genus?              @relation("MarketListingGenus", fields: [genusId], references: [id])
+  species Species?           @relation(fields: [speciesId], references: [id])
+  items  MarketListingItem[]
+  taxons MarketListingTaxon[]
+  orders Order[]
+
+  @@index([sellerId, status, createdAt])
+  @@index([genusId])
+  @@index([speciesId])
+  @@index([tradeMode, status])
+  @@map("market_listings")
+}
+
+model MarketListingTaxon {
+  id           String @id @default(cuid())
+  listingId    String
+  categorySlug String
+  genusSlug    String?
+  speciesSlug  String?
+  label        String
+
+  listing MarketListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+  @@index([categorySlug])
+  @@index([genusSlug])
+  @@index([speciesSlug])
+  @@map("market_listing_taxons")
+}
+
+model MarketListingItem {
+  id          String           @id @default(cuid())
+  listingId   String
+  title       String
+  price       Int
+  stock       Int              @default(1)
+  soldCount   Int              @default(0)
+  cover       String
+  images      String           @db.Text
+  description String           @db.Text
+  status      MarketItemStatus @default(on_sale)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  listing MarketListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  orders  Order[]
+
+  @@index([listingId, status])
+  @@map("market_listing_items")
+}
+
 enum OrderStatus {
   pending_payment // 待付款
   pending_ship // 待发货(已支付)
@@ -785,11 +892,16 @@ model Order {
   source          OrderSource @default(product)
   productId       String? // 拍卖订单可能不指向 product(纯拍卖品独立存在)
   auctionId       String? // 当 source=auction 时指向 Auction.id
+  listingId       String?
+  listingItemId   String?
+  tradeMode       MarketTradeMode?
   buyerId         String
   sellerId        String? // 官方订单为 null
   quantity        Int         @default(1)
   unitPrice       Int
   totalPrice      Int // 单位:分
+  platformFee     Int         @default(0)
+  sellerAmount    Int         @default(0)
   depositPaid     Int         @default(0) // 已抵扣的保证金(仅 auction 订单)
   pointsBackTotal Int         @default(0)
   status          OrderStatus @default(pending_payment)
@@ -816,11 +928,15 @@ model Order {
 
   product Product? @relation(fields: [productId], references: [id])
   auction Auction? @relation(fields: [auctionId], references: [id])
+  listing MarketListing? @relation(fields: [listingId], references: [id])
+  listingItem MarketListingItem? @relation(fields: [listingItemId], references: [id])
   buyer   User     @relation("OrderBuyer", fields: [buyerId], references: [id])
   seller  User?    @relation("OrderSeller", fields: [sellerId], references: [id])
 
   @@index([buyerId, status, createdAt])
   @@index([sellerId, status])
+  @@index([listingId])
+  @@index([listingItemId])
   @@map("orders")
 }
 
@@ -1346,6 +1462,7 @@ model Genus {
   species  Species[]
   posts    Post[]
   products Product[] @relation("ProductGenus")
+  marketListings MarketListing[] @relation("MarketListingGenus")
   auctions Auction[] @relation("AuctionGenus")
 
   @@unique([boardId, slug])
@@ -1387,6 +1504,7 @@ model Species {
   ratings        SpeciesRating[]
   journals       Journal[]
   contestEntries ContestEntry[]
+  marketListings MarketListing[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

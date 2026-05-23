@@ -129,9 +129,8 @@ export default async function PostDetailPage({
     .update({ where: { id: params.id }, data: { views: { increment: 1 } } })
     .catch(() => null);
 
-  const post = serializePost(postRaw);
-
   const me = await getCurrentUser();
+  const post = serializePost(postRaw, undefined, undefined, me);
   let liked = false;
   let collected = false;
   let myVoteOptions: string[] = [];
@@ -198,11 +197,10 @@ export default async function PostDetailPage({
 
   // SEO: 帖子页 JSON-LD
   const postUrl = `${SITE_URL}/post/${post.id}`;
-  const firstImage = post.images?.[0];
-  const cover = firstImage
-    ? firstImage.startsWith("http")
-      ? firstImage
-      : `${SITE_URL}${firstImage}`
+  const cover = post.cover
+    ? post.cover.startsWith("http")
+      ? post.cover
+      : `${SITE_URL}${post.cover}`
     : undefined;
   const ld = postJsonLd({
     title: post.title || "帖子",
@@ -225,7 +223,7 @@ export default async function PostDetailPage({
   ]);
 
   return (
-    <Shell withSidebar={false}>
+    <Shell>
       {/* SEO: 帖子页 JSON-LD(DiscussionForumPosting + 面包屑) */}
       {jsonLdScript([ld, breadcrumb])}
 
@@ -261,7 +259,7 @@ export default async function PostDetailPage({
 
             <div className='mb-3 flex flex-wrap items-center gap-2'>
               <PostTypeBadge type={post.type} />
-              {post.pinned && (
+              {post.pinState?.any && (
                 <span className='inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700'>
                   <Icon name='pin' size={12} />
                   置顶
@@ -284,7 +282,7 @@ export default async function PostDetailPage({
               ))}
             </div>
 
-            <h1 className='mb-4 text-2xl font-bold leading-relaxed text-ink-800 md:text-3xl'>
+            <h1 className='mb-4 text-[22px] font-bold leading-snug text-ink-800 md:text-[26px]'>
               {post.title}
             </h1>
 
@@ -333,11 +331,7 @@ export default async function PostDetailPage({
                 </>
               )}
               {/* 管理员操作按钮（超管/管理员/版主可见） */}
-              {(me?.isSuperAdmin ||
-                me?.role === "admin" ||
-                me?.role === "moderator") && (
-                <PostAdminMenu post={post} user={me} />
-              )}
+              <PostAdminMenu post={post} user={me} buttonSize='md' />
             </div>
 
             {/* 审核状态提示(仅作者本人 · 启用审核功能时才显示) */}
@@ -389,7 +383,7 @@ export default async function PostDetailPage({
 
         {/* 右侧侧边栏 */}
         <aside className='hidden lg:block'>
-          <div className='sticky top-[60px] max-h-[calc(100vh-72px)] space-y-4 overflow-y-auto'>
+          <div className='sticky top-[60px] max-h-[calc(100vh-72px)] space-y-4'>
             {/* 作者信息卡片 */}
             <div className='card p-5'>
               <div className='flex items-center gap-3'>

@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Icon } from '@/components/ui/Icon';
 import { useI18n } from '@/i18n/I18nContext';
+import { isJsonDifferent, loadLocalJson, saveLocalJson } from '@/lib/local-json-cache';
 
 interface GenusLite {
   id: string;
@@ -50,22 +51,51 @@ interface BoardFull {
   genera: GenusLite[];
 }
 
+const STORAGE_KEY = 'rouyou.boards-tree.v1';
+let cachedData: BoardFull[] | null = null;
+let cachePromise: Promise<BoardFull[]> | null = null;
+
+function loadBoardsCache() {
+  return loadLocalJson<BoardFull[]>(STORAGE_KEY);
+}
+
+function syncBoardsTree() {
+  if (!cachePromise) {
+    cachePromise = api
+      .get<BoardFull[]>('/api/boards?kind=family&withGenera=1')
+      .then((list) => {
+        const fresh = list || [];
+        if (isJsonDifferent(cachedData, fresh)) {
+          cachedData = fresh;
+          saveLocalJson(STORAGE_KEY, fresh);
+        }
+        return cachedData ?? fresh;
+      })
+      .catch(() => cachedData ?? loadBoardsCache() ?? [])
+      .finally(() => {
+        cachePromise = null;
+      });
+  }
+  return cachePromise;
+}
+
 export function BoardMegaMenu() {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const [data, setData] = useState<BoardFull[] | null>(null);
+  const [data, setData] = useState<BoardFull[] | null>(() => {
+    if (cachedData) return cachedData;
+    const local = loadBoardsCache();
+    if (local) cachedData = local;
+    return local;
+  });
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 首次 hover 触发拉数据
   const ensureData = async () => {
-    if (data !== null) return;
-    try {
-      const list = await api.get<BoardFull[]>('/api/boards?kind=family&withGenera=1');
-      setData(list || []);
-      if (list && list.length > 0) setActiveCatId(list[0].id);
-    } catch {
-      setData([]);
+    const list = await syncBoardsTree();
+    setData((prev) => (isJsonDifferent(prev, list) ? list : prev));
+    if (list.length > 0) {
+      setActiveCatId((current) => current ?? list[0].id);
     }
   };
 

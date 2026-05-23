@@ -524,7 +524,7 @@ function DndList({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-        <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
+        <div className="rounded-xl border border-ink-100 bg-white">
           <table className="w-full text-xs">
             <thead className="bg-ink-50 text-ink-600">
               <tr>
@@ -1041,7 +1041,7 @@ function SpeciesCard({ species, onEdit, onRemove }: { species: SpeciesNode; onEd
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
 
   return (
-    <div ref={setNodeRef} style={style} className={cn("group relative rounded-lg border border-leaf-100 bg-white overflow-hidden hover:shadow-md transition-shadow", isDragging && "z-10 shadow-lg ring-2 ring-leaf-300")}>
+    <div ref={setNodeRef} style={style} className={cn("group relative rounded-lg border border-leaf-100 bg-white hover:shadow-md transition-shadow", isDragging && "z-10 shadow-lg ring-2 ring-leaf-300")}>
       {/* 拖拽手柄 */}
       <div {...attributes} {...listeners} className="absolute left-1 top-1 z-10 grid h-6 w-6 place-items-center rounded bg-white/80 backdrop-blur-sm cursor-grab text-ink-300 hover:text-ink-600 active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity touch-none">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">

@@ -170,6 +170,24 @@ export interface VoteOption {
   votes: number;
 }
 
+export type PostPinScope = 'global' | 'board' | 'genus' | 'species' | 'topic';
+
+export interface PostPinInfo {
+  id: string;
+  scope: PostPinScope;
+  targetId: string;
+  orderIdx: number;
+  pinnedAt: string;
+  pinnedBy?: string | null;
+}
+
+export interface PostPinState {
+  any: boolean;
+  global: boolean;
+  board: boolean;
+  topic: boolean;
+}
+
 export interface Post {
   id: string;
   type: PostType;
@@ -193,8 +211,10 @@ export interface Post {
   shares: number;
   views: number;
   // 置顶 & 锁定
-  pinned?: boolean;
+  pins?: PostPinInfo[];
+  pinState?: PostPinState;
   locked?: boolean;
+  adminPermissions?: PostAdminPermissions;
   // 投票贴
   vote?: {
     question: string;
@@ -225,6 +245,17 @@ export interface Post {
   /** 成长日记日志(type=journal 才有) */
   journal?: JournalInfo;
   commentList?: Comment[];
+}
+
+export interface PostAdminPermissions {
+  canManage: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  canMove: boolean;
+  canPin: boolean;
+  canLock: boolean;
+  canBan: boolean;
+  canReview: boolean;
 }
 
 export interface PlantSpecies {
@@ -286,6 +317,7 @@ export interface BannerItem {
 
 export type ProductSource = 'official' | 'c2c';
 export type ProductStatus = 'on_sale' | 'sold_out' | 'off_shelf' | 'pending_review';
+export type MarketTradeMode = 'platform_escrow' | 'online_payment' | 'external';
 
 export interface Product {
   id: string;
@@ -320,11 +352,29 @@ export type OrderStatus =
 
 export type OrderSource = 'product' | 'auction';
 
+export interface MarketOrderListing {
+  id: string;
+  title: string;
+  cover: string;
+  tradeMode: MarketTradeMode;
+}
+
+export interface MarketOrderItem {
+  id: string;
+  listingId: string;
+  title: string;
+  cover: string;
+  price: number;
+}
+
 export interface Order {
   id: string;
   orderNo: string;
   source: OrderSource;
   product?: Product;        // 拍卖订单可能没有 product
+  listing?: MarketOrderListing;
+  listingItem?: MarketOrderItem;
+  tradeMode?: MarketTradeMode;
   auctionId?: string;
   auctionTitle?: string;
   auctionCover?: string;
@@ -333,6 +383,8 @@ export interface Order {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  platformFee: number;
+  sellerAmount: number;
   depositPaid: number;       // 已抵扣保证金
   pointsBackTotal: number;
   status: OrderStatus;

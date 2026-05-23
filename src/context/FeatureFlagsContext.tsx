@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { api } from '@/lib/client-api';
+import { isJsonDifferent, loadLocalJson, saveLocalJson } from '@/lib/local-json-cache';
 
 interface SystemMenu {
   id: string;
@@ -28,22 +29,11 @@ interface FeatureFlags {
 const STORAGE_KEY = 'system-menus-cache';
 
 function loadFromCache(): SystemMenu[] {
-  try {
-    const cached = localStorage.getItem(STORAGE_KEY);
-    if (cached) return JSON.parse(cached);
-  } catch {}
-  return [];
+  return loadLocalJson<SystemMenu[]>(STORAGE_KEY) ?? [];
 }
 
 function saveToCache(menus: SystemMenu[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(menus));
-  } catch {}
-}
-
-function isCacheDifferent(cache: SystemMenu[], fresh: SystemMenu[]): boolean {
-  if (cache.length !== fresh.length) return true;
-  return fresh.some((f, i) => f.id !== cache[i]?.id || f.orderIdx !== cache[i]?.orderIdx || f.enabled !== cache[i]?.enabled);
+  saveLocalJson(STORAGE_KEY, menus);
 }
 
 const defaultFlags: FeatureFlags = {
@@ -72,19 +62,18 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
       api.get<SystemMenu[]>('/api/system-menus').catch(() => [] as SystemMenu[]),
     ]).then(([featureFlags, systemMenus]) => {
       const cached = loadFromCache();
+      const changed = isJsonDifferent(cached, systemMenus);
       // 有缓存且数据不同则更新本地缓存
-      if (cached.length > 0 && isCacheDifferent(cached, systemMenus)) {
+      if (changed) {
         saveToCache(systemMenus);
       }
       // 无缓存则保存
-      if (cached.length === 0) {
-        saveToCache(systemMenus);
-      }
+      const systemMenusFromCache = changed ? systemMenus : cached;
 
       setFlags({
         ...defaultFlags,
         ...featureFlags,
-        systemMenus: systemMenus,
+        systemMenus: systemMenusFromCache,
         _loaded: true,
       });
     }).catch((err) => {

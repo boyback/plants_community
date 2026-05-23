@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { api } from '@/lib/client-api';
 import { cn } from '@/lib/utils';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { isJsonDifferent, loadLocalJson, saveLocalJson } from '@/lib/local-json-cache';
 
 interface GenusLite {
   id: string;
@@ -26,8 +27,33 @@ interface BoardFull {
 }
 
 // 全局缓存，避免重复加载
+const STORAGE_KEY = 'rouyou.boards-tree.v1';
 let cachedData: BoardFull[] | null = null;
 let cachePromise: Promise<BoardFull[]> | null = null;
+
+function loadBoardsCache() {
+  return loadLocalJson<BoardFull[]>(STORAGE_KEY);
+}
+
+function syncBoardsTree() {
+  if (!cachePromise) {
+    cachePromise = api
+      .get<BoardFull[]>('/api/boards?kind=family&withGenera=1')
+      .then((list) => {
+        const fresh = list || [];
+        if (isJsonDifferent(cachedData, fresh)) {
+          cachedData = fresh;
+          saveLocalJson(STORAGE_KEY, fresh);
+        }
+        return cachedData ?? fresh;
+      })
+      .catch(() => cachedData ?? loadBoardsCache() ?? [])
+      .finally(() => {
+        cachePromise = null;
+      });
+  }
+  return cachePromise;
+}
 
 export function BoardsTreeMenu({
   onNavigate,
@@ -35,7 +61,13 @@ export function BoardsTreeMenu({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
-  const [data, setData] = useState<BoardFull[] | null>(cachedData);
+  const [data, setData] = useState<BoardFull[] | null>(() => {
+    if (cachedData) return cachedData;
+    const local = loadBoardsCache();
+    if (local) cachedData = local;
+    return local;
+  });
+  const [loaded, setLoaded] = useState(Boolean(data));
   const [openCatIds, setOpenCatIds] = useState<Set<string>>(new Set());
 
   // 解析当前路径，提取 categorySlug 和 genusSlug
@@ -46,28 +78,10 @@ export function BoardsTreeMenu({
 
   // 首次加载数据（使用全局缓存）
   useEffect(() => {
-    if (cachedData) {
-      setData(cachedData);
-      return;
-    }
-
-    if (!cachePromise) {
-      cachePromise = api
-        .get<BoardFull[]>('/api/boards?kind=family&withGenera=1')
-        .then((list) => {
-          cachedData = list || [];
-          return cachedData;
-        })
-        .catch(() => {
-          cachedData = [];
-          return [];
-        })
-        .finally(() => {
-          cachePromise = null;
-        });
-    }
-
-    cachePromise.then((list) => setData(list));
+    syncBoardsTree().then((list) => {
+      setData((prev) => (isJsonDifferent(prev, list) ? list : prev));
+      setLoaded(true);
+    });
   }, []);
 
   // 当路径变化时，自动展开对应的科（只在路径变化时执行，不依赖 openCatIds）
@@ -94,9 +108,9 @@ export function BoardsTreeMenu({
   };
 
   if (data === null) {
-    return <div className="px-3 py-2 text-[11px] text-leaf-700/50">加载中…</div>;
+    return null;
   }
-  if (data.length === 0) {
+  if (loaded && data.length === 0) {
     return <div className="px-3 py-2 text-[11px] text-leaf-700/50">暂无板块</div>;
   }
 

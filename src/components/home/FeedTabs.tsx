@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { cn, timeAgo, boardUrl } from '@/lib/utils';
@@ -9,6 +9,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
 import { PostCard } from '@/components/post/PostCard';
+import { PostAdminMenu } from '@/components/post/PostAdminMenu';
 import { PostCardSkeleton } from '@/components/post/PostCardSkeleton';
 import { TopicTag } from '@/components/ui/TopicTag';
 import { Tooltip } from '@/components/ui/Tooltip';
@@ -17,7 +18,6 @@ import { useI18n } from '@/i18n/I18nContext';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from '@/lib/client-api';
 import { usePullToRefresh, PullIndicator } from '@/lib/hooks/usePullToRefresh';
-import { ConfirmDialog, PromptDialog } from '@/components/ui/Dialog';
 import { toast } from '@/components/ui/Toast';
 import type { Post, PostType } from '@/lib/types';
 
@@ -163,6 +163,22 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
     );
     rerender();
   }, [tab]);
+
+  const onPostChanged = useCallback((updatedPost: Post) => {
+    (Object.keys(stateRef.current) as TabKey[]).forEach((key) => {
+      stateRef.current[key].items = stateRef.current[key].items.map((p) =>
+        p.id === updatedPost.id ? updatedPost : p
+      );
+    });
+    rerender();
+  }, []);
+
+  const onPostDeleted = useCallback((postId: string) => {
+    (Object.keys(stateRef.current) as TabKey[]).forEach((key) => {
+      stateRef.current[key].items = stateRef.current[key].items.filter((p) => p.id !== postId);
+    });
+    rerender();
+  }, []);
 
   // 哨兵:接近视口时自动拉下一页
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -313,7 +329,7 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
             <div className="mt-4 rounded-none border border-leaf-100 bg-white">
               {cur.items.map((p, i) => (
                 <div key={p.id}>
-                  <FeedListCard post={p} source={tabToSource(tab)} onVoteUpdate={onVoteUpdate} />
+                  <FeedListCard post={p} source={tabToSource(tab)} onVoteUpdate={onVoteUpdate} onPostChanged={onPostChanged} onPostDeleted={onPostDeleted} />
                   {i < cur.items.length - 1 && (
                     <div className="mx-4 border-t border-leaf-100" />
                   )}
@@ -335,7 +351,7 @@ export function FeedTabs({ initial }: { initial: Post[] }) {
               <div className={`feed-grid mt-4 ${mobileColClass} gap-3 sm:columns-2 ${desktopColClass} [column-fill:_balance]`}>
                 {cur.items.map((p) => (
                   <div key={p.id} className="mb-3 break-inside-avoid">
-                    <FeedCard post={p} source={tabToSource(tab)} onVoteUpdate={onVoteUpdate} />
+                    <FeedCard post={p} source={tabToSource(tab)} onVoteUpdate={onVoteUpdate} onPostChanged={onPostChanged} onPostDeleted={onPostDeleted} />
                   </div>
                 ))}
                 {/* 加载下一页时插入骨架屏占位 */}
@@ -398,10 +414,14 @@ function FeedCard({
   post,
   source,
   onVoteUpdate,
+  onPostChanged,
+  onPostDeleted,
 }: {
   post: Post;
   source: string;
   onVoteUpdate?: (postId: string, options: { id: string; label: string; votes: number }[], total: number, voted: boolean, votedOptionIds: string[]) => void;
+  onPostChanged?: (post: Post) => void;
+  onPostDeleted?: (postId: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const sentRef = useRef(false);
@@ -428,7 +448,7 @@ function FeedCard({
   }, [post.id, source]);
   return (
     <div ref={ref}>
-      <PostCard post={post} onVoteUpdate={onVoteUpdate} />
+      <PostCard post={post} onVoteUpdate={onVoteUpdate} onPostChanged={onPostChanged} onPostDeleted={onPostDeleted} />
     </div>
   );
 }
@@ -789,13 +809,16 @@ function FeedListCard({
   post,
   source,
   onVoteUpdate,
+  onPostChanged,
+  onPostDeleted,
 }: {
   post: Post;
   source: string;
   onVoteUpdate?: (postId: string, options: { id: string; label: string; votes: number }[], total: number, voted: boolean, votedOptionIds: string[]) => void;
+  onPostChanged?: (post: Post) => void;
+  onPostDeleted?: (postId: string) => void;
 }) {
   const { user } = useAuth();
-  const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
   const sentRef = useRef(false);
   useEffect(() => {
@@ -836,16 +859,6 @@ function FeedListCard({
     } catch {}
   };
 
-  const handleAdminAction = async (action: string, extra?: Record<string, unknown>) => {
-    try {
-      const result = await api.post(`/api/posts/${post.id}/admin`, { action, ...extra });
-      // 刷新页面或更新状态
-      window.location.reload();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : '操作失败');
-    }
-  };
-
   const handleFollow = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -853,70 +866,6 @@ function FeedListCard({
       await api.post(`/api/users/${post.author.id}/follow`);
     } catch {}
   };
-
-  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showBanPrompt, setShowBanPrompt] = useState(false);
-  const [banReason, setBanReason] = useState('');
-  const [banDays, setBanDays] = useState('7');
-
-  const handleAdminDelete = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setShowDeleteConfirm(true);
-  };
-
-  const confirmDelete = async () => {
-    setShowDeleteConfirm(false);
-    await handleAdminAction('delete');
-  };
-
-  const handlePin = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    await handleAdminAction(post.pinned ? 'unpin' : 'pin');
-  };
-
-  const handleLock = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    await handleAdminAction(post.locked ? 'unlock' : 'lock');
-  };
-
-  const handleBanUser = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setBanReason('');
-    setBanDays('7');
-    setShowBanPrompt(true);
-  };
-
-  const confirmBan = async () => {
-    if (!banReason.trim()) return;
-    setShowBanPrompt(false);
-    await handleAdminAction('ban_user', { 
-      userId: post.author.id, 
-      duration: Number(banDays), 
-      reason: banReason 
-    });
-  };
-
-  // 权限判断
-  const isAuthor = user?.id === post.author.id;
-  const isSuperAdmin = user?.isSuperAdmin === true;
-  const isModerator = user?.role === 'moderator';
-  const isAdmin = user?.role === 'admin';
-
-  // 发帖人：编辑、删除
-  // 板块管理员：删除、移贴、置顶、锁定（不能编辑他人帖子）
-  // 超级管理员：继承以上全部 + 封禁用户、审核
-  const canEdit = isAuthor; // 只有作者可编辑
-  const canDelete = isAuthor || isModerator || isAdmin || isSuperAdmin;
-  const canMove = isModerator || isAdmin || isSuperAdmin;
-  const canPin = isModerator || isAdmin || isSuperAdmin;
-  const canLock = isModerator || isAdmin || isSuperAdmin;
-  const canBan = isSuperAdmin;
-  const showMenu = canEdit || canDelete || canMove || canPin || canLock || canBan;
 
   return (
     <div ref={ref} className="p-4 transition-colors hover:bg-leaf-50/50">
@@ -929,9 +878,7 @@ function FeedListCard({
           <Avatar src={post.author.avatar} alt={post.author.name} size={28} />
           <span className="font-medium text-[13px] text-ink-800">{post.author.name}</span>
         </Link>
-        {post.type !== 'rich' && (
-          <PostTypeBadge type={post.type} />
-        )}
+        <PostTypeBadge type={post.type} />
         {user && user.id !== post.author.id && (
           <button
             type="button"
@@ -943,109 +890,13 @@ function FeedListCard({
         )}
         <div className="flex-1" />
         {/* 管理按钮 - 根据权限显示 */}
-        {user && showMenu && (
-          <div className="relative">
-            <button
-              type="button"
-              onMouseEnter={() => setAdminMenuOpen(true)}
-              onMouseLeave={() => setAdminMenuOpen(false)}
-              className="grid h-7 w-7 place-items-center rounded-none text-ink-400 hover:bg-ink-100 hover:text-ink-600 transition-colors"
-              title="管理"
-            >
-              <Icon name="settings" size={16} />
-            </button>
-            {adminMenuOpen && (
-              <div 
-                className="absolute right-1/2 translate-x-1/2 top-full z-50 pt-2"
-                onMouseEnter={() => setAdminMenuOpen(true)}
-                onMouseLeave={() => setAdminMenuOpen(false)}
-              >
-                <div className="relative w-16 rounded-none border border-leaf-100 bg-white shadow-xl py-1">
-                  <div className="absolute left-1/2 -translate-x-1/2 -top-[6px] w-3 h-3 bg-white border-l border-t border-leaf-100 transform rotate-45" />
-
-                  {/* 作者：编辑 */}
-                  {canEdit && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (['vote', 'event', 'journal', 'help'].includes(post.type)) {
-                          toast.error('该类型帖子不支持编辑\n投票/活动/成长日记/求助类型涉及报名、投票、记录、悬赏等数据,不允许后续修改。');
-                          return;
-                        }
-                        router.push(`/post/${post.id}/edit`);
-                      }}
-                      className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
-                    >
-                      编辑
-                    </button>
-                  )}
-
-                  {/* 管理员：移贴 */}
-                  {canMove && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toast.error('移贴功能开发中');
-                      }}
-                      className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
-                    >
-                      移贴
-                    </button>
-                  )}
-
-                  {/* 管理员：置顶 */}
-                  {canPin && (
-                    <button
-                      type="button"
-                      onClick={handlePin}
-                      className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
-                    >
-                      {post.pinned ? '取消置顶' : '置顶'}
-                    </button>
-                  )}
-
-                  {/* 管理员：锁定 */}
-                  {canLock && (
-                    <button
-                      type="button"
-                      onClick={handleLock}
-                      className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
-                    >
-                      {post.locked ? '解锁' : '锁定'}
-                    </button>
-                  )}
-
-                  {/* 超管：封禁用户（不能封禁自己） */}
-                  {canBan && !isAuthor && (
-                    <button
-                      type="button"
-                      onClick={handleBanUser}
-                      className="w-full px-2 py-1.5 text-[11px] text-ink-700 hover:bg-leaf-50 text-center"
-                    >
-                      封禁用户
-                    </button>
-                  )}
-
-                  {/* 分割线 */}
-                  {canDelete && <div className="border-t border-leaf-50 my-0.5" />}
-
-                  {/* 发帖人 + 管理员：删除 */}
-                  {canDelete && (
-                    <button
-                      type="button"
-                      onClick={handleAdminDelete}
-                      className="w-full px-2 py-1.5 text-[11px] text-rose-600 hover:bg-rose-50 text-center"
-                    >
-                      删除
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        <PostAdminMenu
+          post={post}
+          user={user}
+          align="center"
+          onPostChanged={onPostChanged}
+          onPostDeleted={onPostDeleted}
+        />
       </div>
 
       {/* 第二行：标题 + 置顶/锁定标识 */}
@@ -1055,7 +906,7 @@ function FeedListCard({
             {post.title}
           </h3>
           <div className="flex items-center gap-1 shrink-0">
-            {post.pinned && (
+            {post.pinState?.any && (
               <span className="inline-flex items-center gap-0.5 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
                 <Icon name="pin" size={10} />
                 置顶
@@ -1167,69 +1018,6 @@ function FeedListCard({
           </Link>
         </div>
       </div>
-
-      {/* 删除确认对话框 */}
-      <ConfirmDialog
-        open={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={confirmDelete}
-        title="确认删除"
-        message="确定要删除这篇帖子吗？此操作无法撤销。"
-        confirmText="确认删除"
-        danger={true}
-      />
-
-      {/* 封禁用户对话框 */}
-      {showBanPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-none p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-ink-800 mb-4">封禁用户</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-ink-700 mb-1">
-                  封禁原因
-                </label>
-                <input
-                  type="text"
-                  value={banReason}
-                  onChange={(e) => setBanReason(e.target.value)}
-                  className="w-full px-3 py-2 border border-leaf-200 rounded-none focus:outline-none focus:ring-2 focus:ring-leaf-500"
-                  placeholder="请输入封禁原因"
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-ink-700 mb-1">
-                  封禁天数
-                </label>
-                <input
-                  type="number"
-                  value={banDays}
-                  onChange={(e) => setBanDays(e.target.value)}
-                  className="w-full px-3 py-2 border border-leaf-200 rounded-none focus:outline-none focus:ring-2 focus:ring-leaf-500"
-                  placeholder="7"
-                  min="1"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => setShowBanPrompt(false)}
-                className="px-4 py-2 text-sm text-ink-600 hover:bg-ink-50 rounded-none transition-colors"
-              >
-                取消
-              </button>
-              <button
-                onClick={confirmBan}
-                disabled={!banReason.trim()}
-                className="px-4 py-2 text-sm bg-rose-500 text-white hover:bg-rose-600 rounded-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                确认封禁
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

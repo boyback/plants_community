@@ -1,12 +1,11 @@
 'use client';
 
 import { Icon } from '@/components/ui/Icon';
-import { UploadField } from '@/components/upload/UploadField';
+import { Textarea } from '@/components/ui/Textarea';
+import { MultiImageUploadGrid } from '@/components/upload/MultiImageUploadGrid';
 import { ALL_STAGES, STAGE_META } from '@/lib/journal';
 import type { JournalStage } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { useRef, useState } from 'react';
-import { ImageGallery } from '@/components/ui/ImageGallery';
 
 export interface JournalDraftEntry {
   entryDate: string; // yyyy-MM-dd
@@ -60,10 +59,12 @@ export function JournalEditor({ value, onChange, validationErrors }: Props) {
   };
 
   return (
-    <div className="space-y-5">
-      {/* 基础信息 */}
-      <div className="rounded-none border border-leaf-100 bg-leaf-50/40 p-4">
-        <div className="mb-3 text-sm font-medium text-leaf-700">📖 基础信息</div>
+    <div className="space-y-4">
+      <div className="rounded-lg border border-leaf-100 bg-leaf-50/30 p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="text-sm font-semibold text-ink-900">基础信息</div>
+          <div className="text-xs text-leaf-700/70">记录对象和起始时间</div>
+        </div>
         <div className="grid gap-3 md:grid-cols-2">
           <label className="block">
             <div className="mb-1 text-xs text-leaf-700/80">
@@ -97,13 +98,15 @@ export function JournalEditor({ value, onChange, validationErrors }: Props) {
         </div>
       </div>
 
-      {/* 记录列表 */}
       <div>
-        <div className="mb-2 flex items-center justify-between">
-          <div className="text-sm font-medium text-leaf-700">
-            <span className="text-rose-500">*</span> 🌿 成长记录({value.entries.length})
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-semibold text-ink-900">
+              <span className="text-rose-500">*</span> 成长记录
+            </div>
+            <div className="mt-0.5 text-xs text-leaf-700/65">按时间追加状态、操作和配图，共 {value.entries.length} 条</div>
           </div>
-          <button type="button" className="btn-ghost !text-xs" onClick={addEntry}>
+          <button type="button" className="btn-outline h-8 !px-3 !text-xs" onClick={addEntry}>
             <Icon name="plus" size={14} />
             添加记录
           </button>
@@ -115,12 +118,21 @@ export function JournalEditor({ value, onChange, validationErrors }: Props) {
               key={i}
               entry={entry}
               index={i}
+              isLast={i === value.entries.length - 1}
               canDelete={value.entries.length > 1}
               onPatch={(p) => patchEntry(i, p)}
               onRemove={() => removeEntry(i)}
             />
           ))}
         </div>
+        <button
+          type="button"
+          className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-leaf-200 bg-leaf-50/30 text-xs font-medium text-leaf-700 transition hover:border-leaf-300 hover:bg-leaf-50"
+          onClick={addEntry}
+        >
+          <Icon name="plus" size={14} />
+          继续添加一条成长记录
+        </button>
         {validationErrors?.has('journalEntries') && (
           <div className="mt-2 text-xs text-rose-500">至少需要一条有效的成长记录（包含日期和内容或图片）</div>
         )}
@@ -132,204 +144,132 @@ export function JournalEditor({ value, onChange, validationErrors }: Props) {
 function EntryCard({
   entry,
   index,
+  isLast,
   canDelete,
   onPatch,
   onRemove,
 }: {
   entry: JournalDraftEntry;
   index: number;
+  isLast: boolean;
   canDelete: boolean;
   onPatch: (p: Partial<JournalDraftEntry>) => void;
   onRemove: () => void;
 }) {
+  const currentStage = isKnownJournalStage(entry.stage) ? STAGE_META[entry.stage] : null;
+
   return (
-    <div className="rounded-none border border-leaf-100 bg-white p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs text-leaf-700/70">记录 #{index + 1}</span>
-        {canDelete && (
-          <button
-            type="button"
-            className="text-xs text-rose-600 hover:underline"
-            onClick={onRemove}
-          >
-            删除
-          </button>
-        )}
+    <div className="relative pl-8">
+      {!isLast && <div className="absolute left-[11px] top-8 h-[calc(100%+12px)] w-px bg-leaf-100" />}
+      <div className="absolute left-0 top-4 grid h-6 w-6 place-items-center rounded-full border border-leaf-200 bg-white text-[13px] shadow-sm">
+        {currentStage?.emoji ?? index + 1}
       </div>
 
-      <div className="grid gap-2 md:grid-cols-2">
-        <label className="block">
-          <div className="mb-1 text-[11px] text-leaf-700/80">日期</div>
-          <input
-            type="date"
-            className="input"
-            value={entry.entryDate}
-            onChange={(e) => onPatch({ entryDate: e.target.value })}
-          />
-        </label>
-        <label className="block">
-          <div className="mb-1 text-[11px] text-leaf-700/80">阶段</div>
-          <input
-            type="text"
-            list={`stage-suggestions-${index}`}
-            className="input"
-            placeholder="例如: 发芽、开花、换盆等"
-            value={entry.stage}
-            onChange={(e) => onPatch({ stage: e.target.value as JournalStage })}
-            maxLength={20}
-          />
-          <datalist id={`stage-suggestions-${index}`}>
-            {ALL_STAGES.map((s) => (
-              <option key={s} value={STAGE_META[s].zh} />
-            ))}
-          </datalist>
-        </label>
-      </div>
-
-      <div className="mt-2">
-        <div className="mb-1 text-[11px] text-leaf-700/80">心得</div>
-        <textarea
-          className="input min-h-[70px]"
-          placeholder="今天的状态、操作、心得…"
-          value={entry.note}
-          onChange={(e) => onPatch({ note: e.target.value })}
-          maxLength={2000}
-        />
-        <div className="mt-0.5 text-right text-[10px] text-leaf-700/60">
-          {entry.note.length} / 2000
+      <div className="rounded-lg border border-leaf-100 bg-white p-3 shadow-sm">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="text-xs font-semibold text-ink-900">记录 #{index + 1}</span>
+            {currentStage && (
+              <span className={cn('rounded-full border px-2 py-0.5 text-[11px] font-medium', currentStage.color)}>
+                {currentStage.zh}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 text-[11px] text-leaf-700/75">
+              日期
+              <input
+                type="date"
+                className="input h-8 w-[145px] !text-xs"
+                value={entry.entryDate}
+                onChange={(e) => onPatch({ entryDate: e.target.value })}
+              />
+            </label>
+            {canDelete && (
+              <button
+                type="button"
+                className="grid h-8 w-8 place-items-center rounded-lg border border-rose-100 text-rose-500 transition hover:bg-rose-50"
+                onClick={onRemove}
+                title="删除记录"
+              >
+                <Icon name="trash" size={14} />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
 
-      <div className="mt-2">
-        <div className="mb-1 text-[11px] text-leaf-700/80">配图(选填,最多 9 张)</div>
-        <SimpleImageGrid
-          images={entry.images}
-          onChange={(imgs) => onPatch({ images: imgs })}
-          max={9}
+        <StagePicker
+          value={isKnownJournalStage(entry.stage) ? entry.stage : ''}
+          onChange={(stage) => onPatch({ stage })}
         />
+
+        <div className="mt-3">
+          <div className="mb-1 text-[11px] text-leaf-700/80">心得</div>
+          <Textarea
+            className="min-h-[82px]"
+            placeholder="今天的状态、操作、心得…"
+            value={entry.note}
+            onChange={(e) => onPatch({ note: e.target.value })}
+            maxLength={200}
+            showCount
+            countClassName="mt-0.5 text-[10px]"
+          />
+        </div>
+
+        <div className="mt-3">
+          <div className="mb-1 flex items-center justify-between gap-2 text-[11px] text-leaf-700/80">
+            <span>配图</span>
+            <span>{entry.images.length}/9</span>
+          </div>
+          <MultiImageUploadGrid
+            value={entry.images}
+            onChange={(images) => onPatch({ images })}
+            max={9}
+            showCount={false}
+            gridClassName="grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 rounded-lg bg-leaf-50/30 p-2"
+            tileClassName="aspect-square h-auto w-auto"
+          />
+        </div>
       </div>
     </div>
   );
 }
 
-// 简化的图片网格组件 - 只显示文件上传网格，不显示模式切换
-function SimpleImageGrid({
-  images,
+function StagePicker({
+  value,
   onChange,
-  max,
 }: {
-  images: string[];
-  onChange: (imgs: string[]) => void;
-  max: number;
+  value: JournalStage | '';
+  onChange: (stage: JournalStage | '') => void;
 }) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-
-  const remaining = Math.max(0, max - images.length);
-
-  const handleFiles = async (files: FileList) => {
-    const list = Array.from(files).filter((f) => f.type.startsWith('image/'));
-    if (list.length === 0) return;
-
-    setUploading(true);
-    try {
-      for (const file of list) {
-        if (images.length >= max) break;
-
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const resp = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (resp.ok) {
-          const data = await resp.json();
-          const url = data.url || data.data?.url;
-          if (url) {
-            onChange([...images, url]);
-          }
-        }
-      }
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const removeAt = (i: number) => onChange(images.filter((_, k) => k !== i));
-
   return (
-    <div className="space-y-2">
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        multiple
-        className="hidden"
-        disabled={uploading || remaining === 0}
-        onChange={(e) => {
-          if (e.target.files) void handleFiles(e.target.files);
-          e.target.value = '';
-        }}
-      />
+    <div>
+      <div className="mb-1 text-[11px] text-leaf-700/80">阶段</div>
+      <div className="flex flex-wrap gap-1.5">
+        {ALL_STAGES.map((stage) => {
+          const meta = STAGE_META[stage];
+          const selected = value === stage;
 
-      {/* 图片数量提示 */}
-      <div className="text-xs text-leaf-700/60 text-right">
-        {images.length}/{max}
-      </div>
-
-      {/* 网格布局 */}
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 rounded-none p-2 bg-leaf-50/30">
-        {/* 已上传的图片 */}
-        {images.map((url, i) => (
-          <div key={i} className="group relative aspect-square overflow-hidden rounded-none">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={url}
-              alt=""
-              className="h-full w-full cursor-pointer object-cover hover:opacity-90 transition-opacity"
-              onClick={() => {
-                // 触发 ImageGallery 预览
-                const event = new CustomEvent('previewImage', { detail: { images, index: i } });
-                window.dispatchEvent(event);
-              }}
-            />
+          return (
             <button
+              key={stage}
               type="button"
-              onClick={() => removeAt(i)}
-              className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-[11px] text-white opacity-0 group-hover:opacity-100 transition-opacity"
-              title="移除"
+              className={cn(
+                'rounded-full border px-2.5 py-1 text-xs font-medium transition',
+                selected ? meta.color : 'border-leaf-100 bg-white text-leaf-700/75 hover:border-leaf-200 hover:bg-leaf-50'
+              )}
+              onClick={() => onChange(selected ? '' : stage)}
             >
-              ×
+              <span className="mr-1">{meta.emoji}</span>
+              {meta.zh}
             </button>
-          </div>
-        ))}
-
-        {/* 上传按钮 - 在最后 */}
-        {remaining > 0 && (
-          <button
-            type="button"
-            disabled={uploading}
-            onClick={() => fileRef.current?.click()}
-            className={cn(
-              'flex aspect-square flex-col items-center justify-center gap-1 rounded-none border-2 border-dashed text-xs transition-colors',
-              'border-leaf-200 bg-leaf-50/30 hover:border-leaf-400 hover:bg-leaf-50/50',
-              uploading && 'opacity-40 cursor-not-allowed'
-            )}
-          >
-            <Icon name="plus" size={16} className="text-leaf-600" />
-            <span className="text-[10px] text-leaf-700/70">
-              {uploading ? '上传中' : '图片'}
-            </span>
-          </button>
-        )}
+          );
+        })}
       </div>
-
-      {/* ImageGallery */}
-      {images.length > 0 && (
-        <ImageGallery images={images} />
-      )}
     </div>
   );
+}
+
+function isKnownJournalStage(value: string | undefined): value is JournalStage {
+  return (ALL_STAGES as string[]).includes(value ?? '');
 }

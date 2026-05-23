@@ -1,12 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/style.css';
-
-interface ImageSize {
-  width: number;
-  height: number;
-}
+import { registerPhotoSwipeGalleryUi } from '@/lib/photoswipe-ui';
 
 export function RichTextView({
   json,
@@ -14,57 +10,88 @@ export function RichTextView({
   text,
   className,
   size = 'md',
+  withImageGalleryControls = false,
 }: {
   json?: unknown;
   html?: string;
   text?: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
+  withImageGalleryControls?: boolean;
 }) {
   const sizeCls =
     size === 'sm'
       ? 'text-sm leading-6'
-      : size === 'lg'
+    : size === 'lg'
       ? 'text-base leading-8'
-      : 'text-[15px] leading-7';
+      : 'text-base leading-7';
 
   const containerRef = useRef<HTMLDivElement>(null);
   const pswpRef = useRef<PhotoSwipe | null>(null);
-  const openPhotoSwipe = useCallback((index: number, images: { src: string }[]) => {
-    if (pswpRef.current) {
-      pswpRef.current.destroy();
-    }
+  const openPhotoSwipe = useCallback(
+    (index: number, images: Array<{ src: string; msrc: string; thumbnail: string; width: number; height: number }>) => {
+      if (pswpRef.current) {
+        pswpRef.current.destroy();
+      }
 
-    pswpRef.current = new PhotoSwipe({
-      dataSource: images,
-      index,
-      showHideAnimationType: 'fade',
-    } as any);
-    pswpRef.current.init();
-  }, []);
+      pswpRef.current = new PhotoSwipe({
+        dataSource: images,
+        index,
+        showHideAnimationType: 'fade',
+      } as any);
+      if (withImageGalleryControls) {
+        registerPhotoSwipeGalleryUi(pswpRef.current);
+      }
+      pswpRef.current.init();
+    },
+    [withImageGalleryControls],
+  );
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     const container = containerRef.current;
-    const imgs = container.querySelectorAll('img');
-    const images: { src: string }[] = [];
+    const getImages = () => {
+      return Array.from(container.querySelectorAll<HTMLImageElement>('img'))
+        .map((img) => {
+          const src = img.currentSrc || img.getAttribute('src') || '';
+          if (!src) return null;
+          return {
+            src,
+            msrc: src,
+            thumbnail: src,
+            width: img.naturalWidth || Number(img.getAttribute('width')) || 1600,
+            height: img.naturalHeight || Number(img.getAttribute('height')) || 1066,
+          };
+        })
+        .filter((item): item is { src: string; msrc: string; thumbnail: string; width: number; height: number } =>
+          Boolean(item),
+        );
+    };
 
-    imgs.forEach((img, i) => {
-      const src = img.getAttribute('src');
-      if (src) {
-        images.push({ src });
-        // if (img.naturalWidth && img.naturalHeight) {
-        //   setImageSizes((prev) => ({
-        //     ...prev,
-        //     [src]: { width: img.naturalWidth, height: img.naturalHeight },
-        //   }));
-        // }
-        img.style.cursor = 'pointer';
-        img.addEventListener('click', () => openPhotoSwipe(i, images));
-      }
+    const imgs = Array.from(container.querySelectorAll<HTMLImageElement>('img'));
+    imgs.forEach((img) => {
+      img.style.cursor = 'pointer';
     });
-  }, [html, openPhotoSwipe]);
+
+    const handleClick = (event: MouseEvent) => {
+      const img = (event.target as HTMLElement | null)?.closest('img');
+      if (!img || !container.contains(img)) return;
+      const currentImages = getImages();
+      const src = (img as HTMLImageElement).currentSrc || img.getAttribute('src') || '';
+      const index = currentImages.findIndex((item) => item.src === src);
+      if (index >= 0) {
+        event.preventDefault();
+        event.stopPropagation();
+        openPhotoSwipe(index, currentImages);
+      }
+    };
+
+    container.addEventListener('click', handleClick);
+    return () => {
+      container.removeEventListener('click', handleClick);
+    };
+  }, [html, json, text, openPhotoSwipe]);
 
   useEffect(() => {
     return () => {
