@@ -104,19 +104,19 @@ model User {
   events            EventAttendee[]
 
   // 新增关系
-  pointsLedger   PointsLedger[]
-  expLedger      ExpLedger[]
-  activityLedger ActivityLedger[]
-  monthlyStats   MonthlyActivity[]
-  taskProgress   TaskProgress[]
-  rewardClaims   ActivityRewardClaim[]
-  productsListed Product[]             @relation("ProductSeller")
-  marketListingsListed MarketListing[] @relation("MarketListingSeller")
-  ordersAsBuyer  Order[]               @relation("OrderBuyer")
-  ordersAsSeller Order[]               @relation("OrderSeller")
-  payments       Payment[]
-  ownedSkins     UserSkin[]
-  vipOrders      VipOrder[]
+  pointsLedger         PointsLedger[]
+  expLedger            ExpLedger[]
+  activityLedger       ActivityLedger[]
+  monthlyStats         MonthlyActivity[]
+  taskProgress         TaskProgress[]
+  rewardClaims         ActivityRewardClaim[]
+  productsListed       Product[]             @relation("ProductSeller")
+  marketListingsListed MarketListing[]       @relation("MarketListingSeller")
+  ordersAsBuyer        Order[]               @relation("OrderBuyer")
+  ordersAsSeller       Order[]               @relation("OrderSeller")
+  payments             Payment[]
+  ownedSkins           UserSkin[]
+  vipOrders            VipOrder[]
 
   // 拍卖 / 地址簿
   addresses           Address[]
@@ -433,7 +433,7 @@ model Post {
 model PostPin {
   id       String   @id @default(cuid())
   postId   String
-  scope    String   // global | board | genus | species | topic
+  scope    String // global | board | genus | species | topic
   targetId String   @default("") // global 为空字符串; topic 存话题名; 其他存对应 id
   orderIdx Int      @default(0)
   pinnedAt DateTime @default(now())
@@ -819,12 +819,12 @@ model MarketListing {
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
 
-  seller User                @relation("MarketListingSeller", fields: [sellerId], references: [id])
-  genus  Genus?              @relation("MarketListingGenus", fields: [genusId], references: [id])
-  species Species?           @relation(fields: [speciesId], references: [id])
-  items  MarketListingItem[]
-  taxons MarketListingTaxon[]
-  orders Order[]
+  seller  User                 @relation("MarketListingSeller", fields: [sellerId], references: [id])
+  genus   Genus?               @relation("MarketListingGenus", fields: [genusId], references: [id])
+  species Species?             @relation(fields: [speciesId], references: [id])
+  items   MarketListingItem[]
+  taxons  MarketListingTaxon[]
+  orders  Order[]
 
   @@index([sellerId, status, createdAt])
   @@index([genusId])
@@ -834,7 +834,7 @@ model MarketListing {
 }
 
 model MarketListingTaxon {
-  id           String @id @default(cuid())
+  id           String  @id @default(cuid())
   listingId    String
   categorySlug String
   genusSlug    String?
@@ -887,9 +887,9 @@ enum OrderSource {
 }
 
 model Order {
-  id              String      @id @default(cuid())
-  orderNo         String      @unique // 类似 RY20260429xxx
-  source          OrderSource @default(product)
+  id              String           @id @default(cuid())
+  orderNo         String           @unique // 类似 RY20260429xxx
+  source          OrderSource      @default(product)
   productId       String? // 拍卖订单可能不指向 product(纯拍卖品独立存在)
   auctionId       String? // 当 source=auction 时指向 Auction.id
   listingId       String?
@@ -897,14 +897,14 @@ model Order {
   tradeMode       MarketTradeMode?
   buyerId         String
   sellerId        String? // 官方订单为 null
-  quantity        Int         @default(1)
+  quantity        Int              @default(1)
   unitPrice       Int
   totalPrice      Int // 单位:分
-  platformFee     Int         @default(0)
-  sellerAmount    Int         @default(0)
-  depositPaid     Int         @default(0) // 已抵扣的保证金(仅 auction 订单)
-  pointsBackTotal Int         @default(0)
-  status          OrderStatus @default(pending_payment)
+  platformFee     Int              @default(0)
+  sellerAmount    Int              @default(0)
+  depositPaid     Int              @default(0) // 已抵扣的保证金(仅 auction 订单)
+  pointsBackTotal Int              @default(0)
+  status          OrderStatus      @default(pending_payment)
 
   shipName    String?
   shipPhone   String?
@@ -926,12 +926,12 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  product Product? @relation(fields: [productId], references: [id])
-  auction Auction? @relation(fields: [auctionId], references: [id])
-  listing MarketListing? @relation(fields: [listingId], references: [id])
+  product     Product?           @relation(fields: [productId], references: [id])
+  auction     Auction?           @relation(fields: [auctionId], references: [id])
+  listing     MarketListing?     @relation(fields: [listingId], references: [id])
   listingItem MarketListingItem? @relation(fields: [listingItemId], references: [id])
-  buyer   User     @relation("OrderBuyer", fields: [buyerId], references: [id])
-  seller  User?    @relation("OrderSeller", fields: [sellerId], references: [id])
+  buyer       User               @relation("OrderBuyer", fields: [buyerId], references: [id])
+  seller      User?              @relation("OrderSeller", fields: [sellerId], references: [id])
 
   @@index([buyerId, status, createdAt])
   @@index([sellerId, status])
@@ -1458,12 +1458,12 @@ model Genus {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  board    Board?    @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  species  Species[]
-  posts    Post[]
-  products Product[] @relation("ProductGenus")
+  board          Board?          @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  species        Species[]
+  posts          Post[]
+  products       Product[]       @relation("ProductGenus")
   marketListings MarketListing[] @relation("MarketListingGenus")
-  auctions Auction[] @relation("AuctionGenus")
+  auctions       Auction[]       @relation("AuctionGenus")
 
   @@unique([boardId, slug])
   @@index([slug])
