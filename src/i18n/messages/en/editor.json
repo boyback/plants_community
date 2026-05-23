@@ -81,7 +81,7 @@
       },
       "linkDialog": {
         "title": "Insert link",
-        
+        "urlLabel": "Link URL",
         "remove": "Remove link",
         "confirm": "OK"
       }

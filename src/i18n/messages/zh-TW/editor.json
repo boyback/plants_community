@@ -81,7 +81,7 @@
       },
       "linkDialog": {
         "title": "插入連結",
-        
+        "urlLabel": "連結地址",
         "remove": "移除連結",
         "confirm": "確定"
       }

@@ -81,7 +81,7 @@
       },
       "linkDialog": {
         "title": "링크 삽입",
-        
+        "urlLabel": "링크 주소",
         "remove": "링크 제거",
         "confirm": "확인"
       }

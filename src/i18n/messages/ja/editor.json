@@ -81,7 +81,7 @@
       },
       "linkDialog": {
         "title": "リンクを挿入",
-        
+        "urlLabel": "リンクURL",
         "remove": "リンクを削除",
         "confirm": "OK"
       }
