@@ -7,7 +7,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { UserName } from '@/components/ui/UserName';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
-import { formatPrice, timeAgo } from '@/lib/utils';
+import { formatPrice } from '@/lib/utils';
 import { ListingDetailClient, type MarketListingDetail } from './ListingDetailClient';
 
 export const dynamic = 'force-dynamic';
@@ -26,6 +26,19 @@ export default async function MarketListingPage({ params }: { params: { id: stri
       genus: { select: { slug: true, name: true, cover: true } },
       species: { select: { slug: true, name: true } },
       taxons: { orderBy: { id: 'asc' } },
+      comments: {
+        where: { deleted: false },
+        orderBy: { createdAt: 'asc' },
+        take: 50,
+        include: {
+          author: {
+            include: {
+              _count: { select: { posts: true, followers: true, following: true } },
+              badges: { include: { badge: true } },
+            },
+          },
+        },
+      },
       items: {
         where: { status: { not: 'off_shelf' } },
         orderBy: { createdAt: 'asc' },
@@ -34,6 +47,11 @@ export default async function MarketListingPage({ params }: { params: { id: stri
   });
 
   if (!raw) notFound();
+  await prisma.marketListing.update({
+    where: { id: raw.id },
+    data: { viewCount: { increment: 1 } },
+  });
+  const tradeModes = await loadListingTradeModes(raw.id, raw.tradeMode);
 
   const listing: MarketListingDetail = {
     id: raw.id,
@@ -43,12 +61,15 @@ export default async function MarketListingPage({ params }: { params: { id: stri
     tags: parseJsonArray(raw.tags),
     description: raw.description ?? '',
     tradeMode: raw.tradeMode,
+    tradeModes,
     externalUrl: raw.externalUrl ?? undefined,
     contactNote: raw.contactNote ?? undefined,
     cover: raw.cover,
     minPrice: raw.minPrice,
     maxPrice: raw.maxPrice,
     itemCount: raw.itemCount,
+    viewCount: raw.viewCount + 1,
+    commentCount: raw.commentCount,
     status: raw.status,
     createdAt: raw.createdAt.toISOString(),
     seller: {
@@ -86,6 +107,24 @@ export default async function MarketListingPage({ params }: { params: { id: stri
       description: item.description,
       status: item.status,
     })),
+    comments: raw.comments.map((comment) => ({
+      id: comment.id,
+      content: comment.content,
+      createdAt: comment.createdAt.toISOString(),
+      author: {
+        id: comment.author.id,
+        name: comment.author.name,
+        avatar: comment.author.avatar,
+        level: comment.author.level,
+        role: comment.author.role,
+        vipExpireAt: comment.author.vipExpireAt?.toISOString(),
+        vipLifetime: comment.author.vipLifetime,
+        badges: [],
+        postsCount: comment.author._count.posts,
+        followersCount: comment.author._count.followers,
+        followingCount: comment.author._count.following,
+      },
+    })),
   };
 
   const others = await prisma.marketListing.findMany({
@@ -103,13 +142,10 @@ export default async function MarketListingPage({ params }: { params: { id: stri
     select: { id: true, title: true, cover: true, minPrice: true, maxPrice: true },
   });
 
-  const price = listing.maxPrice !== listing.minPrice
-    ? `${formatPrice(listing.minPrice)} - ${formatPrice(listing.maxPrice)}`
-    : formatPrice(listing.minPrice);
   const isMine = me?.id === raw.sellerId;
 
   return (
-    <Shell>
+    <Shell withSidebar={false}>
       <div className="mb-4 flex items-center gap-1.5 text-xs text-leaf-700/70">
         <Link href="/" className="hover:text-leaf-700">首页</Link>
         <Icon name="arrow-right" size={12} />
@@ -120,70 +156,52 @@ export default async function MarketListingPage({ params }: { params: { id: stri
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
         <main className="space-y-4">
-          <section className="card overflow-hidden">
-            <div className="relative aspect-[16/10] bg-leaf-50">
-              <Image src={listing.cover} alt={listing.title} fill className="object-cover" unoptimized />
-              <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-                <span className="rounded-full bg-leaf-600 px-2 py-0.5 text-xs text-white">
-                  {tradeModeLabel(listing.tradeMode)}
-                </span>
-                {listing.itemCount > 1 && (
-                  <span className="rounded-full bg-white/90 px-2 py-0.5 text-xs text-ink-700">
-                    {listing.itemCount} 件商品
-                  </span>
-                )}
-              </div>
+          <section className="card p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <h1 className="text-xl font-bold text-ink-800 md:text-2xl">{listing.title}</h1>
+              {isMine && (
+                <Link href={`/market/${listing.id}/edit`} className="btn-outline !px-3 !py-1.5 !text-xs">
+                  <Icon name="edit" size={13} />
+                  编辑
+                </Link>
+              )}
             </div>
-            <div className="p-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <h1 className="text-xl font-bold text-ink-800 md:text-2xl">{listing.title}</h1>
-                {isMine && (
-                  <Link href={`/market/${listing.id}/edit`} className="btn-outline !px-3 !py-1.5 !text-xs">
-                    <Icon name="edit" size={13} />
-                    编辑
-                  </Link>
+
+            <div className="mt-4 space-y-3 text-sm">
+              <InfoRow label="板块品种">
+                {listing.taxons.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {listing.taxons.map((taxon) => (
+                      <span
+                        key={`${taxon.categorySlug}:${taxon.genusSlug ?? ''}:${taxon.speciesSlug ?? ''}`}
+                        className="rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-700"
+                      >
+                        {taxon.label}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-ink-500">未设置</span>
                 )}
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <span className="text-3xl font-bold text-rose-600">{price}</span>
-                <span className="text-xs text-leaf-700/70">{timeAgo(listing.createdAt)}</span>
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-3 rounded-xl bg-leaf-50/50 p-3 text-xs">
-                <Stat label="发货地" value={listing.shipFrom} />
-                <Stat label="商品数" value={listing.itemCount} />
-                <Stat label="交易方式" value={tradeModeLabel(listing.tradeMode)} />
-              </div>
-              {listing.tags.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {listing.tags.map((tag) => (
-                    <span key={tag} className="chip text-[11px]">#{tag}</span>
-                  ))}
+              </InfoRow>
+              <InfoRow label="发货地">
+                <span className="text-ink-800">{listing.shipFrom}</span>
+              </InfoRow>
+              <InfoRow label="说明">
+                <div className="whitespace-pre-wrap leading-7 text-ink-700">
+                  {listing.description || '无'}
                 </div>
-              )}
-              {listing.taxons.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {listing.taxons.map((taxon) => (
-                    <span
-                      key={`${taxon.categorySlug}:${taxon.genusSlug ?? ''}:${taxon.speciesSlug ?? ''}`}
-                      className="rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-700"
-                    >
-                      {taxon.label}
-                    </span>
-                  ))}
-                </div>
-              )}
+              </InfoRow>
+              <InfoRow label="交易方式">
+                <span className="rounded-full bg-leaf-100 px-2 py-0.5 text-xs font-medium text-leaf-700">
+                  {listing.tradeModes.map(tradeModeLabel).join(' / ')}
+                </span>
+              </InfoRow>
             </div>
           </section>
 
-          {listing.description && (
-            <section className="card p-5">
-              <h2 className="mb-3 text-base font-semibold text-ink-800">交易说明</h2>
-              <div className="whitespace-pre-wrap text-sm leading-7 text-ink-700">{listing.description}</div>
-            </section>
-          )}
-
           <section className="card p-5">
-            <h2 className="mb-4 text-base font-semibold text-ink-800">商品清单</h2>
+            <h2 className="mb-4 text-base font-semibold text-ink-800">商品信息</h2>
             <ListingDetailClient listing={listing} />
           </section>
         </main>
@@ -259,17 +277,32 @@ function parseJsonArray(raw: string | null | undefined): string[] {
   }
 }
 
+async function loadListingTradeModes(id: string, fallback: MarketListingDetail['tradeMode']) {
+  try {
+    const rows = await prisma.$queryRaw<Array<{ tradeModes: string | null }>>`
+      SELECT tradeModes FROM market_listings WHERE id = ${id}
+    `;
+    const modes = parseJsonArray(rows[0]?.tradeModes).filter(
+      (mode): mode is MarketListingDetail['tradeMode'] =>
+        mode === 'platform_escrow' || mode === 'online_payment' || mode === 'external',
+    );
+    return modes.length ? modes : [fallback];
+  } catch {
+    return [fallback];
+  }
+}
+
 function tradeModeLabel(mode: MarketListingDetail['tradeMode']) {
   if (mode === 'platform_escrow') return '平台担保';
   if (mode === 'online_payment') return '在线支付';
   return '自行联系';
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="text-center">
-      <div className="text-[10px] text-leaf-700/70">{label}</div>
-      <div className="mt-0.5 truncate text-sm font-semibold text-ink-800">{value}</div>
+    <div className="grid gap-2 border-b border-leaf-100 pb-3 last:border-0 last:pb-0 sm:grid-cols-[72px_1fr]">
+      <div className="text-xs text-leaf-700/70">{label}</div>
+      <div className="min-w-0">{children}</div>
     </div>
   );
 }

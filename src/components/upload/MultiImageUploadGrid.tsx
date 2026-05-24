@@ -1,7 +1,9 @@
 'use client';
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { ReactNode, SyntheticEvent } from 'react';
+import PhotoSwipe from 'photoswipe';
+import 'photoswipe/style.css';
 import {
   closestCenter,
   DndContext,
@@ -18,6 +20,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Icon } from '@/components/ui/Icon';
+import { registerPhotoSwipeGalleryUi } from '@/lib/photoswipe-ui';
 import { cn } from '@/lib/utils';
 import { useConcurrentUpload } from './useConcurrentUpload';
 import type { ConcurrentUploadingItem } from './useConcurrentUpload';
@@ -55,6 +58,11 @@ const uploadedKey = (url: string) => `uploaded:${url}`;
 const uploadingKey = (id: string) => `uploading:${id}`;
 const keyToUploadedUrl = (key: string) => key.slice('uploaded:'.length);
 
+interface ImageSize {
+  width: number;
+  height: number;
+}
+
 export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props>(function MultiImageUploadGrid({
   value,
   onChange,
@@ -78,7 +86,9 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
   const inputRef = useRef<HTMLInputElement>(null);
   const valueRef = useRef(value);
   const orderKeysRef = useRef<string[]>([]);
+  const pswpRef = useRef<PhotoSwipe | null>(null);
   const [orderKeys, setOrderKeys] = useState<string[]>([]);
+  const [imageSizes, setImageSizes] = useState<Record<string, ImageSize>>({});
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
@@ -86,6 +96,57 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
   useEffect(() => {
     valueRef.current = value;
   }, [value]);
+
+  const previewSlides = useMemo(
+    () =>
+      value.map((src) => {
+        const size = imageSizes[src] || { width: 1600, height: 1066 };
+        return {
+          src,
+          msrc: src,
+          thumbnail: src,
+          width: size.width,
+          height: size.height,
+        };
+      }),
+    [imageSizes, value],
+  );
+
+  const handleImageLoad = useCallback((src: string, event: SyntheticEvent<HTMLImageElement>) => {
+    const img = event.currentTarget;
+    if (img.naturalWidth && img.naturalHeight) {
+      setImageSizes((prev) => ({
+        ...prev,
+        [src]: { width: img.naturalWidth, height: img.naturalHeight },
+      }));
+    }
+  }, []);
+
+  const openPreview = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= previewSlides.length) return;
+      pswpRef.current?.destroy();
+      pswpRef.current = new PhotoSwipe({
+        dataSource: previewSlides,
+        index,
+        showHideAnimationType: 'fade',
+        imageClickAction: false,
+        tapAction: false,
+        doubleTapAction: false,
+        zoom: false,
+        closeOnVerticalDrag: false,
+      } as any);
+      registerPhotoSwipeGalleryUi(pswpRef.current);
+      pswpRef.current.init();
+    },
+    [previewSlides],
+  );
+
+  useEffect(() => {
+    return () => {
+      pswpRef.current?.destroy();
+    };
+  }, []);
 
   const applyOrderedKeys = useCallback(
     (nextKeys: string[]) => {
@@ -247,7 +308,7 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
         }}
       />
 
-      <div className={cn('grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5', gridClassName)}>
+      <div className={cn('grid', gridClassName ?? 'grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5')}>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={entries.map((entry) => entry.key)} strategy={rectSortingStrategy}>
             {entries.map((entry, index) => {
@@ -272,6 +333,9 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
                   onRemoveUploaded={handleRemoveUploaded}
                   onRemoveUploading={removeUploadingItem}
                   onRetryUpload={retryUpload}
+                  previewIndex={entry.type === 'uploaded' ? value.indexOf(entry.url) : -1}
+                  onPreview={openPreview}
+                  onImageLoad={handleImageLoad}
                 />
               );
             })}
@@ -317,6 +381,9 @@ interface SortableUploadTileProps {
   onRemoveUploaded: (url: string) => void;
   onRemoveUploading: (id: string) => void;
   onRetryUpload: (item: ConcurrentUploadingItem) => void;
+  previewIndex: number;
+  onPreview: (index: number) => void;
+  onImageLoad: (src: string, event: SyntheticEvent<HTMLImageElement>) => void;
 }
 
 function SortableUploadTile({
@@ -332,6 +399,9 @@ function SortableUploadTile({
   onRemoveUploaded,
   onRemoveUploading,
   onRetryUpload,
+  previewIndex,
+  onPreview,
+  onImageLoad,
 }: SortableUploadTileProps) {
   const {
     attributes,
@@ -351,6 +421,11 @@ function SortableUploadTile({
       }}
       {...attributes}
       {...listeners}
+      onClick={(event) => {
+        if (entry.type !== 'uploaded') return;
+        if ((event.target as HTMLElement).closest('button')) return;
+        onPreview(previewIndex);
+      }}
       className={cn(
         'group relative flex touch-none cursor-grab items-center justify-center overflow-hidden border bg-leaf-50/30 active:cursor-grabbing',
         entry.type === 'uploading' ? 'border-dashed border-leaf-200' : 'border-leaf-100',
@@ -369,6 +444,7 @@ function SortableUploadTile({
           item?.status === 'uploading' ? 'opacity-40' : 'opacity-100',
           tileImageClassName,
         )}
+        onLoad={(event) => onImageLoad(url, event)}
       />
       {entry.type === 'uploaded' ? (
         <>

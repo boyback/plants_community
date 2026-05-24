@@ -5,8 +5,10 @@ import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import { Empty } from '@/components/ui/Empty';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { cn, formatPrice } from '@/lib/utils';
-import { api } from '@/lib/client-api';
+import { useAuth } from '@/context/AuthContext';
+import { api, ApiError } from '@/lib/client-api';
 
 interface CategoryFamily {
   id: string;
@@ -34,13 +36,31 @@ interface ListingItem {
   maxPrice?: number;
   itemCount?: number;
   tradeMode?: 'platform_escrow' | 'online_payment' | 'external';
+  tradeModes?: Array<'platform_escrow' | 'online_payment' | 'external'>;
   originalPrice?: number | null;
   createdAt: string;
   endAt?: string;
   url: string;
   shipFrom?: string | null;
-  seller?: { id: string; name: string; avatar: string } | null;
+  seller?: { id: string; name: string; avatar: string; followed?: boolean } | null;
   tags?: string[];
+  taxons?: {
+    categorySlug: string;
+    genusSlug: string | null;
+    speciesSlug: string | null;
+    label: string;
+  }[];
+  products?: {
+    id: string;
+    title: string;
+    description: string;
+    price: number;
+    stock: number;
+    collectCount?: number;
+    collected?: boolean;
+    cover: string;
+    images: string[];
+  }[];
   genus?: { slug: string; name: string; cover?: string | null } | null;
   views?: number;
   comments?: number;
@@ -68,6 +88,7 @@ const TYPE_OPTIONS = [
 ];
 
 type LayoutMode = 'default';
+type TradeMode = NonNullable<ListingItem['tradeMode']>;
 
 export function MarketIndexClient() {
   const [families, setFamilies] = useState<CategoryFamily[]>([]);
@@ -278,15 +299,159 @@ export function MarketIndexClient() {
 // 默认卡片（详细信息模式）
 // ============================================================
 function DefaultCard({ item }: { item: ListingItem }) {
+  const { user } = useAuth();
   const isAuction = item.type === 'auction';
+  const isMine = Boolean(!isAuction && item.seller?.id && user?.id === item.seller.id);
   const images = item.images?.length ? item.images : [item.cover];
   const displayImages = images.slice(0, 4);
+  const products = item.products?.length
+    ? item.products
+    : [{
+        id: item.id,
+        title: item.title,
+        description: item.description ?? '',
+        price: item.price,
+        stock: item.itemCount ?? 1,
+        cover: item.cover,
+        images,
+      }];
+  const taxonLabels = item.taxons?.length
+    ? item.taxons.map((taxon) => taxon.label).filter(Boolean)
+    : item.genus?.name
+      ? [item.genus.name]
+      : [];
+  const tradeModes = normalizeTradeModes(item.tradeModes, item.tradeMode);
+
+  if (!isAuction) {
+    return (
+      <article className="rounded-xl border border-leaf-100 bg-white p-4 transition-colors hover:border-leaf-300 hover:shadow-sm">
+        {item.seller && (
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-ink-500">
+            {item.seller.avatar ? (
+              <img
+                src={item.seller.avatar}
+                alt={item.seller.name}
+                className="h-7 w-7 rounded-full object-cover ring-2 ring-leaf-100"
+              />
+            ) : (
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-leaf-100 text-xs text-leaf-600">
+                {item.seller.name[0]}
+              </div>
+            )}
+            <span className="font-medium text-ink-800">{item.seller.name}</span>
+            <FollowSellerButton sellerId={item.seller.id} initialFollowed={!!item.seller.followed} />
+            {isMine && (
+              <Link
+                href={`/market/${item.id}/edit`}
+                className="ml-auto flex items-center gap-1 rounded-md px-2 py-1 text-leaf-700 hover:bg-leaf-50"
+                title="编辑"
+              >
+                <Icon name="edit" size={14} />
+                编辑
+              </Link>
+            )}
+          </div>
+        )}
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <Link
+              href={item.url}
+              className="line-clamp-2 text-base font-semibold text-ink-800 transition-colors hover:text-leaf-700"
+            >
+              {item.title}
+            </Link>
+            {item.description && (
+              <p className="mt-1 line-clamp-2 text-sm leading-6 text-ink-600">
+                {stripHtml(item.description)}
+              </p>
+            )}
+          </div>
+          {tradeModes.length > 0 && (
+            <span className="shrink-0 rounded bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+              {tradeModes.map(tradeModeLabel).join(' / ')}
+            </span>
+          )}
+        </div>
+
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-leaf-700/70">
+          {item.shipFrom && <span>发货地 {item.shipFrom}</span>}
+          {taxonLabels.length > 0 && (
+            <>
+              <span className="text-leaf-700/30">/</span>
+              <span>所属板块/品种</span>
+              {taxonLabels.slice(0, 6).map((label) => (
+                <span key={label} className="rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-700">
+                  {label}
+                </span>
+              ))}
+            </>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+          {products.map((product) => {
+            const image = product.images[0] || product.cover;
+            const extraImageCount = Math.max(0, product.images.length - 1);
+            return (
+              <div key={product.id} className="rounded-lg border border-leaf-100 bg-leaf-50/30">
+                <div className="relative aspect-square overflow-hidden rounded-t-lg bg-leaf-50">
+                  <Link href={item.url} className="block h-full">
+                    <Image src={image} alt={product.title} fill className="object-cover" unoptimized />
+                  </Link>
+                  {extraImageCount > 0 && (
+                    <div className="absolute bottom-2 right-2 rounded-full bg-ink-900/70 px-2 py-0.5 text-[11px] font-medium text-white">
+                      +{extraImageCount}
+                    </div>
+                  )}
+                  <ProductCollectButton
+                    listingId={item.id}
+                    itemId={product.id}
+                    initialCollected={!!product.collected}
+                  />
+                </div>
+                <Link href={item.url} className="block">
+                  <div className="space-y-1 p-2">
+                    <div className="line-clamp-1 text-xs font-medium leading-4 text-ink-800">
+                      {product.title}
+                    </div>
+                    {product.description && (
+                      <Tooltip content={product.description} className="text-left">
+                        <span className="block max-h-8 overflow-hidden text-[11px] leading-4 text-leaf-700/70 [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]">
+                          {product.description}
+                        </span>
+                      </Tooltip>
+                    )}
+                    <div className="flex items-end justify-between gap-1 pt-0.5">
+                      <span className="text-sm font-bold text-rose-600">{formatPrice(product.price)}</span>
+                      <span className="shrink-0 text-[11px] text-leaf-700/70">数量 {product.stock}</span>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-3 flex items-center justify-between text-xs text-ink-500">
+          <span>{item.itemCount ?? products.length} 件商品</span>
+          <div className="ml-auto flex items-center gap-3">
+            <Link href={item.url} className="flex items-center gap-1 hover:text-leaf-700" title="查看">
+              <Icon name="eye" size={14} />
+              {item.views ?? 0}
+            </Link>
+            <Link href={`${item.url}#comments`} className="flex items-center gap-1 hover:text-leaf-700" title="评论">
+              <Icon name="message" size={14} />
+              {item.comments ?? 0}
+            </Link>
+            <span className="text-ink-400">{formatDateTime(item.createdAt)}</span>
+          </div>
+        </div>
+      </article>
+    );
+  }
 
   return (
-    <Link
-      href={item.url}
-      className="block rounded-xl border border-leaf-100 bg-white p-4 transition-colors hover:border-leaf-300 hover:shadow-sm"
-    >
+    <article className="rounded-xl border border-leaf-100 bg-white p-4 transition-colors hover:border-leaf-300 hover:shadow-sm">
       {/* 第一行：用户头像 + 昵称 */}
       {item.seller && (
         <div className="flex items-center gap-2 mb-3">
@@ -302,6 +467,7 @@ function DefaultCard({ item }: { item: ListingItem }) {
             </div>
           )}
           <span className="font-medium text-ink-800">{item.seller.name}</span>
+          <FollowSellerButton sellerId={item.seller.id} initialFollowed={!!item.seller.followed} />
           {isAuction && (
             <span className="ml-2 rounded bg-rose-500/95 px-2 py-0.5 text-[10px] font-medium text-white">
               🔨 拍卖
@@ -312,18 +478,21 @@ function DefaultCard({ item }: { item: ListingItem }) {
               {item.itemCount && item.itemCount > 1 ? `${item.itemCount} 件商品` : '一口价'}
             </span>
           )}
-          {!isAuction && item.tradeMode && (
+          {!isAuction && tradeModes.length > 0 && (
             <span className="rounded bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
-              {tradeModeLabel(item.tradeMode)}
+              {tradeModes.map(tradeModeLabel).join(' / ')}
             </span>
           )}
         </div>
       )}
 
       {/* 第二行：标题 */}
-      <h3 className="text-base font-semibold text-ink-800 mb-2 hover:text-leaf-700 transition-colors">
+      <Link
+        href={item.url}
+        className="mb-2 block text-base font-semibold text-ink-800 transition-colors hover:text-leaf-700"
+      >
         {item.title}
-      </h3>
+      </Link>
 
       {/* 第三行：描述 */}
       {item.description && (
@@ -355,7 +524,7 @@ function DefaultCard({ item }: { item: ListingItem }) {
       )}
 
       {/* 第五行：图片 */}
-      <div className="flex gap-2 mb-3">
+      <Link href={item.url} className="mb-3 flex gap-2">
         {displayImages.map((img, i) => (
           <div
             key={i}
@@ -364,7 +533,7 @@ function DefaultCard({ item }: { item: ListingItem }) {
             <Image src={img} alt="" fill className="object-cover" unoptimized />
           </div>
         ))}
-      </div>
+      </Link>
 
       {/* 最后一行：板块(属) + 时间 + 查看数 + 评论数 */}
       <div className="flex items-center justify-between text-xs">
@@ -384,12 +553,11 @@ function DefaultCard({ item }: { item: ListingItem }) {
           </div>
         )}
 
-        {/* 右侧：时间 + 查看数 + 评论数 */}
+        {/* 右侧：查看数 + 评论数 + 时间 */}
         <div className={cn(
           "flex items-center gap-3 text-ink-500",
           !item.genus && "ml-auto"
         )}>
-          <span className="text-ink-400">{formatDateTime(item.createdAt)}</span>
           {item.views !== undefined && (
             <span className="flex items-center gap-1">
               <Icon name="eye" size={14} />
@@ -402,9 +570,10 @@ function DefaultCard({ item }: { item: ListingItem }) {
               {item.comments}
             </span>
           )}
+          <span className="text-ink-400">{formatDateTime(item.createdAt)}</span>
         </div>
       </div>
-    </Link>
+    </article>
   );
 }
 
@@ -432,10 +601,101 @@ function formatDateTime(iso: string): string {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
-function tradeModeLabel(mode: NonNullable<ListingItem['tradeMode']>): string {
+function normalizeTradeModes(modes: TradeMode[] | undefined, fallback: ListingItem['tradeMode']): TradeMode[] {
+  const allowed: TradeMode[] = ['platform_escrow', 'online_payment', 'external'];
+  const selected = modes?.length ? modes : fallback ? [fallback] : [];
+  return Array.from(new Set(selected.filter((mode) => allowed.includes(mode))));
+}
+
+function tradeModeLabel(mode: TradeMode): string {
   if (mode === 'platform_escrow') return '平台担保';
   if (mode === 'online_payment') return '在线支付';
   return '自行联系';
+}
+
+function FollowSellerButton({ sellerId, initialFollowed }: { sellerId: string; initialFollowed: boolean }) {
+  const { user } = useAuth();
+  const [followed, setFollowed] = useState(initialFollowed);
+  const [busy, setBusy] = useState(false);
+
+  if (user?.id === sellerId) return null;
+
+  const toggleFollow = async () => {
+    setBusy(true);
+    try {
+      const res = await api.post<{ followed: boolean }>(`/api/users/${sellerId}/follow`);
+      setFollowed(res.followed);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        window.location.href = `/login?redirect=${encodeURIComponent('/market')}`;
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={toggleFollow}
+      disabled={busy}
+      className={cn(
+        'rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors',
+        followed
+          ? 'bg-leaf-100 text-leaf-700 hover:bg-leaf-200'
+          : 'bg-leaf-600 text-white hover:bg-leaf-700',
+        busy && 'opacity-60',
+      )}
+    >
+      {followed ? '已关注' : '关注'}
+    </button>
+  );
+}
+
+function ProductCollectButton({
+  listingId,
+  itemId,
+  initialCollected,
+}: {
+  listingId: string;
+  itemId: string;
+  initialCollected: boolean;
+}) {
+  const [collected, setCollected] = useState(initialCollected);
+  const [busy, setBusy] = useState(false);
+
+  const toggleCollect = async () => {
+    setBusy(true);
+    try {
+      const res = await api.post<{ collected: boolean }>(
+        `/api/market/listings/${listingId}/items/${itemId}/collect`,
+      );
+      setCollected(res.collected);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        window.location.href = `/login?redirect=${encodeURIComponent('/market')}`;
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={toggleCollect}
+      disabled={busy}
+      className={cn(
+        'absolute right-2 top-2 z-10 grid h-7 w-7 place-items-center rounded-full bg-white/90 shadow-sm transition-colors hover:bg-white',
+        collected ? 'text-rose-600' : 'text-leaf-700 hover:text-rose-600',
+        busy && 'opacity-60',
+      )}
+      aria-label={collected ? '取消收藏商品' : '收藏商品'}
+      title={collected ? '取消收藏商品' : '收藏商品'}
+    >
+      <Icon name="heart" size={15} fill={collected ? 'currentColor' : 'none'} />
+    </button>
+  );
 }
 
 function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {

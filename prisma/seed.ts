@@ -72,6 +72,7 @@ const systemMenus = [
   { id: 'seed-home', slug: 'home', name: '首页', description: '返回社区首页', icon: '["🏠"]', path: '/', location: 'header', cardKey: null, type: 'button', orderIdx: 0 },
   { id: 'seed-shaitu', slug: 'shaitu', name: '晒图广场', description: '用户晒图分享', icon: '[]', path: '/shaitu', location: 'header', cardKey: null, type: 'button', orderIdx: 1 },
   { id: 'seed-tujian', slug: 'tujian', name: '品种图鉴', description: '品种图鉴', icon: '[]', path: '/plants', location: 'header', cardKey: null, type: 'button', orderIdx: 2 },
+  { id: 'seed-ranking', slug: 'ranking', name: '排行榜', description: '社区排行榜', icon: '["🏆"]', path: '/ranking', location: 'header', cardKey: null, type: 'button', orderIdx: 3 },
   { id: 'seed-card-boards', slug: 'card-boards', name: '植物板块', description: null, icon: '[]', path: null, location: 'sidebar_left', cardKey: 'card:boards', type: 'card', orderIdx: 3 },
   { id: 'seed-card-system-boards', slug: 'card-system-boards', name: '系统板块', description: null, icon: '[]', path: null, location: 'sidebar_left', cardKey: 'card:system_boards', type: 'card', orderIdx: 4 },
   { id: 'seed-card-hot-species', slug: 'card-hot-species', name: '热门品种', description: null, icon: '[]', path: null, location: 'sidebar_left', cardKey: 'card:hot_species', type: 'card', orderIdx: 5 },

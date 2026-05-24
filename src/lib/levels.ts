@@ -77,8 +77,12 @@ export const ALL_PERMISSIONS: Permission[] = [
 
 /** 由累计 EXP 计算应有等级 */
 export function levelByExp(exp: number): number {
+  return levelByExpFromDefs(exp, LEVELS);
+}
+
+export function levelByExpFromDefs(exp: number, levels: Pick<LevelDef, 'level' | 'expRequired'>[]): number {
   let lv = 1;
-  for (const def of LEVELS) {
+  for (const def of [...levels].sort((a, b) => a.level - b.level)) {
     if (exp >= def.expRequired) lv = def.level;
     else break;
   }
@@ -118,8 +122,13 @@ export function hasPermission(
 
 /** 距离下一级所需 EXP */
 export function expProgress(exp: number) {
-  const current = levelByExp(exp);
-  const next = LEVELS.find((l) => l.level === current + 1);
+  return expProgressFromDefs(exp, LEVELS);
+}
+
+export function expProgressFromDefs(exp: number, levels: Pick<LevelDef, 'level' | 'name' | 'expRequired'>[]) {
+  const ordered = [...levels].sort((a, b) => a.level - b.level);
+  const current = levelByExpFromDefs(exp, ordered);
+  const next = ordered.find((l) => l.level === current + 1);
   if (!next) {
     return {
       level: current,
@@ -130,7 +139,7 @@ export function expProgress(exp: number) {
       isMax: true,
     };
   }
-  const currentDef = LEVELS.find((l) => l.level === current)!;
+  const currentDef = ordered.find((l) => l.level === current)!;
   const start = currentDef.expRequired;
   const end = next.expRequired;
   const percent = Math.min(100, Math.round(((exp - start) / (end - start)) * 100));

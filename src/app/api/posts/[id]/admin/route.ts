@@ -20,7 +20,12 @@ function extractId(url: string): string {
 async function checkPermission(userId: string, postId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, role: true, isSuperAdmin: true },
+    select: {
+      id: true,
+      role: true,
+      isSuperAdmin: true,
+      moderatorScopes: { select: { type: true, targetId: true } },
+    },
   });
   if (!user) return null;
 
@@ -38,7 +43,13 @@ async function checkPermission(userId: string, postId: string) {
 
   const isAuthor = user.id === post.authorId;
   const isSuperAdmin = user.isSuperAdmin;
-  const isModerator = user.role === 'moderator';
+  const isModerator =
+    user.role === 'moderator' &&
+    user.moderatorScopes.some((scope) => {
+      if (scope.type === 'board') return Boolean(post.boardId && scope.targetId === post.boardId);
+      if (scope.type === 'genus') return Boolean(post.genusId && scope.targetId === post.genusId);
+      return Boolean(post.speciesId && scope.targetId === post.speciesId);
+    });
   const isAdmin = user.role === 'admin';
 
   // TODO: 板块管理员需要验证板块归属

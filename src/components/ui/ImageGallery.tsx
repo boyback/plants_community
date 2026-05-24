@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { Gallery, Item } from "react-photoswipe-gallery";
-import "photoswipe/dist/photoswipe.css";
-import type { DataSourceArray } from "photoswipe";
+import PhotoSwipe from "photoswipe";
+import "photoswipe/style.css";
+import { registerPhotoSwipeGalleryUi } from "@/lib/photoswipe-ui";
 import { cn } from "@/lib/utils";
 
 interface ImageGalleryProps {
@@ -17,22 +17,13 @@ interface ImageSize {
   height: number;
 }
 
-/**
- * 基于 react-photoswipe-gallery 的图片画廊组件
- * - 动态计算图片尺寸用于精确的缩放动画
- * - 支持下载、Caption 和底部缩略图条
- * - 支持侧边栏模式（用于帖子详情页）
- */
-export function ImageGallery({
-  images,
-  livePhotoMap,
-}: ImageGalleryProps) {
+export function ImageGallery({ images, livePhotoMap }: ImageGalleryProps) {
   const [imageSizes, setImageSizes] = useState<Record<string, ImageSize>>({});
+  const pswpRef = useRef<PhotoSwipe | null>(null);
 
-  // 处理图片加载，获取实际尺寸
   const handleImageLoad = useCallback(
-    (src: string, e: React.SyntheticEvent<HTMLImageElement>) => {
-      const img = e.currentTarget;
+    (src: string, event: React.SyntheticEvent<HTMLImageElement>) => {
+      const img = event.currentTarget;
       if (img.naturalWidth && img.naturalHeight) {
         setImageSizes((prev) => ({
           ...prev,
@@ -43,9 +34,47 @@ export function ImageGallery({
     [],
   );
 
-  // 布局策略
-  const n = images.length;
+  const slides = useMemo(
+    () =>
+      images.map((src) => {
+        const size = imageSizes[src] || { width: 1600, height: 1066 };
+        return {
+          src,
+          msrc: src,
+          thumbnail: src,
+          width: size.width,
+          height: size.height,
+        };
+      }),
+    [imageSizes, images],
+  );
 
+  const openPhotoSwipe = useCallback(
+    (index: number) => {
+      pswpRef.current?.destroy();
+      pswpRef.current = new PhotoSwipe({
+        dataSource: slides,
+        index,
+        showHideAnimationType: "fade",
+        imageClickAction: false,
+        tapAction: false,
+        doubleTapAction: false,
+        zoom: false,
+        closeOnVerticalDrag: false,
+      } as any);
+      registerPhotoSwipeGalleryUi(pswpRef.current);
+      pswpRef.current.init();
+    },
+    [slides],
+  );
+
+  useEffect(() => {
+    return () => {
+      pswpRef.current?.destroy();
+    };
+  }, []);
+
+  const n = images.length;
   let layoutClass = "";
   let cellClass = (_i: number) => "aspect-square";
 
@@ -54,139 +83,51 @@ export function ImageGallery({
     cellClass = () => "aspect-[16/10]";
   } else if (n === 2) {
     layoutClass = "grid-cols-2";
-    cellClass = () => "aspect-square";
   } else if (n === 3) {
     layoutClass = "grid-cols-3 grid-rows-2";
     cellClass = (i: number) => (i === 0 ? "col-span-2 row-span-2" : "");
   } else {
     layoutClass = "grid-cols-2";
-    cellClass = () => "aspect-square";
   }
 
-  // 底部缩略图条 UI 元素
-  const thumbnailUiElement = {
-    name: "thumbnails-indicator",
-    order: 9,
-    isButton: false,
-    appendTo: "wrapper" as const,
-    onInit: (el: HTMLElement, pswpInstance: any) => {
-      let prevIndex = -1;
-      const thumbnails: HTMLElement[] = [];
-
-      el.style.position = "absolute";
-      el.style.bottom = "20px";
-      el.style.left = "10px";
-      el.style.right = "0";
-      el.style.display = "grid";
-      el.style.gap = "10px";
-      el.style.gridTemplateColumns = "repeat(auto-fit, 40px)";
-      el.style.gridTemplateRows = "repeat(auto-fit, 40px)";
-      el.style.justifyContent = "center";
-
-      const dataSource = pswpInstance.options.dataSource as DataSourceArray;
-
-      for (let i = 0; i < dataSource.length; i++) {
-        const slideData = dataSource[i];
-
-        const thumbnail = document.createElement("div");
-        thumbnail.style.transition =
-          "transform 0.15s ease-in, opacity 0.15s ease-in";
-        thumbnail.style.opacity = "0.6";
-        thumbnail.style.cursor = "pointer";
-        thumbnail.style.borderRadius = "4px";
-        thumbnail.style.overflow = "hidden";
-        thumbnail.onclick = (e: MouseEvent) => {
-          const target = e.target as HTMLElement;
-          const thumbnailEl =
-            target.tagName === "IMG" ? target.parentElement : target;
-          if (thumbnailEl) {
-            pswpInstance.goTo(thumbnails.indexOf(thumbnailEl));
-          }
-        };
-
-        const thumbnailImage = document.createElement("img");
-        const thumbSrc = slideData.thumbnail || slideData.msrc || "";
-        thumbnailImage.setAttribute("src", thumbSrc);
-        thumbnailImage.style.width = "100%";
-        thumbnailImage.style.height = "100%";
-        thumbnailImage.style.objectFit = "cover";
-
-        thumbnail.appendChild(thumbnailImage);
-        el.appendChild(thumbnail);
-        thumbnails.push(thumbnail);
-      }
-
-      pswpInstance.on("change", () => {
-        if (prevIndex >= 0 && thumbnails[prevIndex]) {
-          const prevThumbnail = thumbnails[prevIndex];
-          prevThumbnail.style.opacity = "0.6";
-          prevThumbnail.style.transform = "scale(1)";
-        }
-
-        if (thumbnails[pswpInstance.currIndex]) {
-          const currentThumbnail = thumbnails[pswpInstance.currIndex];
-          currentThumbnail.style.opacity = "1";
-          currentThumbnail.style.transform = "scale(1.1)";
-        }
-
-        prevIndex = pswpInstance.currIndex;
-      });
-    },
-  };
+  if (!images.length) return null;
 
   return (
-    <div className='relative'>
-      <Gallery
-        withDownloadButton
-        uiElements={[thumbnailUiElement]}
-      >
-        <div
-          className={cn("grid gap-2 overflow-hidden rounded-none", layoutClass)}
-        >
-          {images.map((src, i) => {
-            const isLive = !!livePhotoMap?.[src];
-            const size = imageSizes[src] || { width: 1600, height: 1066 };
+    <div className="relative">
+      <div className={cn("grid gap-2 overflow-hidden rounded-none", layoutClass)}>
+        {images.map((src, index) => {
+          const isLive = Boolean(livePhotoMap?.[src]);
 
-            return (
-              <Item
-                key={src}
-                original={src}
-                thumbnail={src}
-                width={size.width}
-                height={size.height}
-                alt={`图片 ${i + 1}`}
-              >
-                {({ ref, open }) => (
-                  <div
-                    ref={ref as React.RefCallback<HTMLDivElement>}
-                    onClick={open}
-                    className={cn(
-                      "relative overflow-hidden bg-leaf-50 cursor-pointer",
-                      cellClass(i),
-                    )}
-                  >
-                    <Image
-                      src={src}
-                      alt={`图片 ${i + 1}`}
-                      fill
-                      sizes='(max-width:768px) 50vw, 400px'
-                      className='object-cover transition-transform hover:scale-105'
-                      unoptimized
-                      onLoad={(e) => handleImageLoad(src, e)}
-                    />
-                    {isLive && (
-                      <span className='pointer-events-none absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white shadow'>
-                        <span className='h-1.5 w-1.5 rounded-full bg-white' />
-                        LIVE
-                      </span>
-                    )}
-                  </div>
-                )}
-              </Item>
-            );
-          })}
-        </div>
-      </Gallery>
+          return (
+            <button
+              key={`${src}-${index}`}
+              type="button"
+              onClick={() => openPhotoSwipe(index)}
+              className={cn(
+                "relative cursor-pointer overflow-hidden bg-leaf-50 text-left",
+                cellClass(index),
+              )}
+              aria-label={`预览图片 ${index + 1}`}
+            >
+              <Image
+                src={src}
+                alt={`图片 ${index + 1}`}
+                fill
+                sizes="(max-width:768px) 50vw, 400px"
+                className="object-cover transition-transform hover:scale-105"
+                unoptimized
+                onLoad={(event) => handleImageLoad(src, event)}
+              />
+              {isLive && (
+                <span className="pointer-events-none absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white shadow">
+                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                  LIVE
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -4,7 +4,11 @@ import { startEmailBroadcastWorker } from '@/lib/email-broadcast-worker';
 
 // 启动后台 worker(单进程,layout 模块加载即跑;幂等)
 // build 期(NEXT_PHASE=phase-production-build)跳过,避免预渲染时启动 worker 反复查 DB
-if (process.env.NEXT_PHASE !== 'phase-production-build' && process.env.DATABASE_URL) {
+if (
+  process.env.NEXT_PHASE !== 'phase-production-build' &&
+  process.env.DATABASE_URL &&
+  (process.env.NODE_ENV === 'production' || process.env.ENABLE_EMAIL_WORKER === '1')
+) {
   startEmailBroadcastWorker();
 }
 import { cookies, headers } from 'next/headers';
@@ -24,7 +28,7 @@ import { loadLocaleMessagesServer } from '@/i18n/server-loader';
 import { getCurrentUser, isVipActive } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { serializeUser, serializeEquip } from '@/lib/serializers';
-import { expProgress } from '@/lib/levels';
+import { expProgressConfigured } from '@/lib/permissions';
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? 'https://plantcommunity.cn';
@@ -127,7 +131,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   let signInStreak = 0;
   let signedInToday = false;
   let initialExp = 0;
-  let initialExpProgress = null as ReturnType<typeof expProgress> | null;
+  let initialExpProgress = null as Awaited<ReturnType<typeof expProgressConfigured>> | null;
   let initialPointsBalance = 0;
   let initialVip = { isVip: false, lifetime: false, expireAt: null as string | null };
   let initialEquip = {};
@@ -155,7 +159,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         last.getMonth() === now.getMonth() &&
         last.getDate() === now.getDate();
       initialExp = full.exp;
-      initialExpProgress = expProgress(full.exp);
+      initialExpProgress = await expProgressConfigured(full.exp);
       initialPointsBalance = full.pointsBalance;
       initialVip = {
         isVip: isVipActive(full),

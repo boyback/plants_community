@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler, fail, stringifyJson } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
+import { type MarketTradeMode } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +32,7 @@ const UpdateBody = z.object({
   tags: z.array(z.string().min(1).max(20)).max(8).optional(),
   description: z.string().max(2000).optional(),
   tradeMode: z.enum(['platform_escrow', 'online_payment', 'external']).default('platform_escrow'),
+  tradeModes: z.array(z.enum(['platform_escrow', 'online_payment', 'external'])).min(1).max(3).optional(),
   externalUrl: z.string().url().optional().or(z.literal('')),
   contactNote: z.string().max(500).optional(),
   items: z.array(ItemBody).min(1).max(20),
@@ -40,6 +42,7 @@ export const PATCH = handler(async (req) => {
   const me = await requireUser();
   const id = pickListingId(req);
   const body = UpdateBody.parse(await req.json());
+  const tradeModes = normalizeTradeModes(body.tradeModes, body.tradeMode);
   const taxons = normalizeTaxons(body);
   if (taxons.length === 0) return fail(400, '请选择至少一个板块或品种');
 
@@ -84,8 +87,8 @@ export const PATCH = handler(async (req) => {
         shipFrom: body.shipFrom.trim(),
         tags: stringifyJson(body.tags ?? []),
         description: body.description?.trim() || null,
-        tradeMode: body.tradeMode,
-        externalUrl: body.tradeMode === 'external' ? body.externalUrl || null : null,
+        tradeMode: tradeModes[0],
+        externalUrl: tradeModes.includes('external') ? body.externalUrl || null : null,
         contactNote: body.contactNote?.trim() || null,
         cover,
         minPrice: Math.min(...itemPrices),
@@ -93,6 +96,11 @@ export const PATCH = handler(async (req) => {
         itemCount: body.items.length,
       },
     });
+    await tx.$executeRaw`
+      UPDATE market_listings
+      SET tradeModes = ${stringifyJson(tradeModes)}
+      WHERE id = ${id}
+    `;
 
     await tx.marketListingTaxon.deleteMany({ where: { listingId: id } });
     await tx.marketListingTaxon.createMany({
@@ -153,6 +161,12 @@ export const PATCH = handler(async (req) => {
 function pickListingId(req: Request) {
   const parts = new URL(req.url).pathname.split('/').filter(Boolean);
   return parts[parts.length - 1];
+}
+
+function normalizeTradeModes(modes: MarketTradeMode[] | undefined, fallback: MarketTradeMode): MarketTradeMode[] {
+  const allowed: MarketTradeMode[] = ['platform_escrow', 'online_payment', 'external'];
+  const result = Array.from(new Set((modes?.length ? modes : [fallback]).filter((mode) => allowed.includes(mode))));
+  return result.length ? result : [fallback];
 }
 
 function normalizeTaxons(body: z.infer<typeof UpdateBody>) {

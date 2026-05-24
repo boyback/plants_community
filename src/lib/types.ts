@@ -67,6 +67,7 @@ export interface User {
   isSuperAdmin?: boolean;
   grantedPermissions?: string[];
   revokedPermissions?: string[];
+  permissionLevels?: Record<string, number | null>;
 }
 
 export interface Badge {

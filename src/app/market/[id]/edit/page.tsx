@@ -22,6 +22,7 @@ export default async function MarketListingEditPage({ params }: { params: { id: 
   });
 
   if (!listing) notFound();
+  const tradeModes = await loadListingTradeModes(listing.id, listing.tradeMode);
 
   if (listing.sellerId !== me.id) {
     return (
@@ -46,6 +47,7 @@ export default async function MarketListingEditPage({ params }: { params: { id: 
     shipFrom: listing.shipFrom,
     description: listing.description ?? '',
     tradeMode: listing.tradeMode,
+    tradeModes,
     externalUrl: listing.externalUrl ?? '',
     contactNote: listing.contactNote ?? '',
     tags: parseJsonArray(listing.tags),
@@ -73,5 +75,23 @@ function parseJsonArray(raw: string | null | undefined): string[] {
     return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
   } catch {
     return [];
+  }
+}
+
+async function loadListingTradeModes(
+  id: string,
+  fallback: MarketListingFormValue['tradeMode'],
+): Promise<MarketListingFormValue['tradeModes']> {
+  try {
+    const rows = await prisma.$queryRaw<Array<{ tradeModes: string | null }>>`
+      SELECT tradeModes FROM market_listings WHERE id = ${id}
+    `;
+    const modes = parseJsonArray(rows[0]?.tradeModes).filter(
+      (mode): mode is MarketListingFormValue['tradeMode'] =>
+        mode === 'platform_escrow' || mode === 'online_payment' || mode === 'external',
+    );
+    return modes.length ? modes : [fallback];
+  } catch {
+    return [fallback];
   }
 }

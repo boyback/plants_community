@@ -112,6 +112,8 @@ model User {
   rewardClaims         ActivityRewardClaim[]
   productsListed       Product[]             @relation("ProductSeller")
   marketListingsListed MarketListing[]       @relation("MarketListingSeller")
+  marketListingComments MarketListingComment[]
+  marketListingItemCollects MarketListingItemCollect[]
   ordersAsBuyer        Order[]               @relation("OrderBuyer")
   ordersAsSeller       Order[]               @relation("OrderSeller")
   payments             Payment[]
@@ -127,7 +129,8 @@ model User {
 
   // 关注板块(可跨三级:科/属/品种)
   boardFollows        BoardFollow[]
-  // 管理员对单个用户的功能权限覆盖(额外授予 / 显式收回)
+  moderatorScopes     ModeratorScope[]
+  // 历史字段:管理员曾可对单个用户覆盖功能权限;新逻辑使用 RolePermissionOverride.
   permissionOverrides UserPermissionOverride[]
 
   // 相册
@@ -809,12 +812,15 @@ model MarketListing {
   tags        String?             @db.Text
   description String?             @db.Text
   tradeMode   MarketTradeMode     @default(platform_escrow)
+  tradeModes  String?             @db.Text // JSON array, allowed trade modes
   externalUrl String?             @db.Text
   contactNote String?             @db.Text
   cover       String
   minPrice    Int
   maxPrice    Int
   itemCount   Int                 @default(0)
+  viewCount   Int                 @default(0)
+  commentCount Int                @default(0)
   status      MarketListingStatus @default(on_sale)
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
@@ -824,6 +830,7 @@ model MarketListing {
   species Species?             @relation(fields: [speciesId], references: [id])
   items   MarketListingItem[]
   taxons  MarketListingTaxon[]
+  comments MarketListingComment[]
   orders  Order[]
 
   @@index([sellerId, status, createdAt])
@@ -831,6 +838,23 @@ model MarketListing {
   @@index([speciesId])
   @@index([tradeMode, status])
   @@map("market_listings")
+}
+
+model MarketListingComment {
+  id        String   @id @default(cuid())
+  listingId String
+  authorId  String
+  content   String   @db.Text
+  deleted   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  listing MarketListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  author  User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, createdAt])
+  @@index([authorId, createdAt])
+  @@map("market_listing_comments")
 }
 
 model MarketListingTaxon {
@@ -857,6 +881,7 @@ model MarketListingItem {
   price       Int
   stock       Int              @default(1)
   soldCount   Int              @default(0)
+  collectCount Int             @default(0)
   cover       String
   images      String           @db.Text
   description String           @db.Text
@@ -866,9 +891,23 @@ model MarketListingItem {
 
   listing MarketListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
   orders  Order[]
+  collects MarketListingItemCollect[]
 
   @@index([listingId, status])
   @@map("market_listing_items")
+}
+
+model MarketListingItemCollect {
+  userId    String
+  itemId    String
+  createdAt DateTime @default(now())
+
+  user User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item MarketListingItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([userId, itemId])
+  @@index([itemId, createdAt])
+  @@map("market_listing_item_collects")
 }
 
 enum OrderStatus {
@@ -1445,6 +1484,50 @@ model UserPermissionOverride {
   @@map("user_permission_overrides")
 }
 
+model RolePermissionOverride {
+  id         String           @id @default(cuid())
+  /// user / moderator / admin / super_admin
+  roleKey    String
+  permission String
+  effect     PermissionEffect
+  note       String?          @db.Text
+  createdBy  String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([roleKey, permission])
+  @@index([permission, effect])
+  @@map("role_permission_overrides")
+}
+
+model LevelPermissionConfig {
+  id         String   @id @default(cuid())
+  permission String   @unique
+  /// 1-10 表示该功能从这个等级开始默认解锁;null 表示不通过等级默认解锁.
+  level      Int?
+  note       String?  @db.Text
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([level])
+  @@map("level_permission_configs")
+}
+
+model LevelExpConfig {
+  id          String   @id @default(cuid())
+  level       Int      @unique
+  name        String
+  expRequired Int
+  note        String?  @db.Text
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([expRequired])
+  @@map("level_exp_configs")
+}
+
 model Genus {
   id          String   @id @default(cuid())
   boardId     String?
@@ -1612,6 +1695,24 @@ model BoardFollow {
   @@index([userId, createdAt])
   @@index([type, targetId])
   @@map("board_follows")
+}
+
+model ModeratorScope {
+  id         String          @id @default(cuid())
+  userId     String
+  type       BoardFollowType
+  targetId   String // 对应 Board.id / Genus.id / Species.id
+  targetName String
+  targetPath String          @db.VarChar(500)
+  createdBy  String?
+  createdAt  DateTime        @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, targetId])
+  @@index([userId, createdAt])
+  @@index([type, targetId])
+  @@map("moderator_scopes")
 }
 
 enum UserRole {

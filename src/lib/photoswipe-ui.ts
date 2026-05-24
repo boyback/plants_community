@@ -7,6 +7,25 @@ type SlideLike = {
   thumbnail?: string;
 };
 
+function ensurePhotoSwipeCursorStyle() {
+  if (typeof document === 'undefined' || document.getElementById('rouyou-pswp-cursor-style')) return;
+
+  const style = document.createElement('style');
+  style.id = 'rouyou-pswp-cursor-style';
+  style.textContent = `
+    .pswp .pswp__img,
+    .pswp .pswp__img:active,
+    .pswp.pswp--click-to-zoom.pswp--zoom-allowed .pswp__img,
+    .pswp.pswp--click-to-zoom.pswp--zoomed-in .pswp__img,
+    .pswp.pswp--click-to-zoom.pswp--zoomed-in .pswp__img:active,
+    .pswp.pswp--no-mouse-drag.pswp--zoomed-in .pswp__img,
+    .pswp.pswp--no-mouse-drag.pswp--zoomed-in .pswp__img:active {
+      cursor: pointer !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 export function createThumbnailUiElement() {
   return {
     name: 'thumbnails-indicator',
@@ -23,8 +42,8 @@ export function createThumbnailUiElement() {
       el.style.right = '0';
       el.style.display = 'grid';
       el.style.gap = '10px';
-      el.style.gridTemplateColumns = 'repeat(auto-fit, 40px)';
-      el.style.gridTemplateRows = 'repeat(auto-fit, 40px)';
+      el.style.gridTemplateColumns = 'repeat(auto-fit, 60px)';
+      el.style.gridTemplateRows = 'repeat(auto-fit, 60px)';
       el.style.justifyContent = 'center';
 
       const dataSource = pswpInstance.options.dataSource as DataSourceArray;
@@ -78,8 +97,196 @@ export function createThumbnailUiElement() {
   };
 }
 
+export function createZoomControlsUiElement() {
+  return {
+    name: 'zoom-percent-controls',
+    order: 19,
+    isButton: false,
+    appendTo: 'bar' as const,
+    onInit: (el: HTMLElement, pswpInstance: PhotoSwipe) => {
+      const minPercent = 50;
+      const maxPercent = 150;
+      const step = 5;
+      const wheelStep = 10;
+      let percent = 100;
+
+      el.style.display = 'inline-flex';
+      el.style.alignItems = 'center';
+      el.style.height = '44px';
+      el.style.padding = '0 4px';
+      el.style.marginTop = '10px';
+
+      const wrap = document.createElement('div');
+      wrap.style.display = 'inline-flex';
+      wrap.style.alignItems = 'center';
+      wrap.style.gap = '6px';
+      wrap.style.height = '36px';
+      wrap.style.borderRadius = '999px';
+      wrap.style.background = 'rgba(255,255,255,0.12)';
+      wrap.style.padding = '4px';
+      wrap.style.color = '#fff';
+      wrap.style.fontSize = '12px';
+      wrap.style.fontWeight = '600';
+      wrap.style.backdropFilter = 'blur(10px)';
+
+      const label = document.createElement('span');
+      label.style.minWidth = '46px';
+      label.style.textAlign = 'center';
+      label.style.fontVariantNumeric = 'tabular-nums';
+
+      const createButton = (text: string, ariaLabel: string) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = text;
+        button.setAttribute('aria-label', ariaLabel);
+        button.style.display = 'grid';
+        button.style.width = '28px';
+        button.style.height = '28px';
+        button.style.placeItems = 'center';
+        button.style.border = '0';
+        button.style.borderRadius = '999px';
+        button.style.background = 'rgba(255,255,255,0.14)';
+        button.style.color = '#fff';
+        button.style.cursor = 'pointer';
+        button.style.fontSize = '16px';
+        button.style.lineHeight = '1';
+        return button;
+      };
+
+      const minus = createButton('-', 'Zoom out');
+      const plus = createButton('+', 'Zoom in');
+      let lastWheelAt = 0;
+
+      const updateUi = () => {
+        label.textContent = `${percent}%`;
+        minus.disabled = percent <= minPercent;
+        plus.disabled = percent >= maxPercent;
+        minus.style.opacity = minus.disabled ? '0.42' : '1';
+        plus.style.opacity = plus.disabled ? '0.42' : '1';
+        minus.style.cursor = minus.disabled ? 'default' : 'pointer';
+        plus.style.cursor = plus.disabled ? 'default' : 'pointer';
+      };
+
+      const applyZoom = (nextPercent: number) => {
+        const slide = pswpInstance.currSlide;
+        if (!slide) return;
+
+        percent = Math.max(minPercent, Math.min(maxPercent, nextPercent));
+        const baseZoom = slide.zoomLevels.initial || slide.currZoomLevel || 1;
+        const center = {
+          x: pswpInstance.viewportSize.x / 2,
+          y: pswpInstance.viewportSize.y / 2,
+        };
+        slide.zoomTo(baseZoom * (percent / 100), center, 180, true);
+        updateUi();
+      };
+
+      minus.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        applyZoom(percent - step);
+      });
+      plus.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        applyZoom(percent + step);
+      });
+
+      wrap.append(minus, label, plus);
+      el.appendChild(wrap);
+      updateUi();
+
+      pswpInstance.on('change', () => {
+        percent = 100;
+        updateUi();
+      });
+      pswpInstance.on('wheel', (event) => {
+        event.preventDefault();
+        event.originalEvent.preventDefault();
+        const now = Date.now();
+        if (now - lastWheelAt < 60) return;
+        lastWheelAt = now;
+        applyZoom(percent + (event.originalEvent.deltaY < 0 ? wheelStep : -wheelStep));
+      });
+    },
+  };
+}
+
+export function registerVerticalDragNavigation(pswp: PhotoSwipe) {
+  let startX = 0;
+  let startY = 0;
+  let currentX = 0;
+  let currentY = 0;
+  let tracking = false;
+  const threshold = 80;
+
+  pswp.on('pointerDown', (event) => {
+    const target = event.originalEvent.target as HTMLElement | null;
+    if (target?.closest('.pswp__top-bar')) {
+      tracking = false;
+      return;
+    }
+    startX = event.originalEvent.clientX;
+    startY = event.originalEvent.clientY;
+    currentX = startX;
+    currentY = startY;
+    tracking = true;
+  });
+
+  pswp.on('pointerMove', (event) => {
+    if (!tracking) return;
+    currentX = event.originalEvent.clientX;
+    currentY = event.originalEvent.clientY;
+  });
+
+  pswp.on('pointerUp', () => {
+    if (!tracking) return;
+    tracking = false;
+
+    const slide = pswp.currSlide;
+    if (slide && slide.currZoomLevel > slide.zoomLevels.initial * 1.02) return;
+
+    const dx = currentX - startX;
+    const dy = currentY - startY;
+    if (Math.abs(dy) < threshold || Math.abs(dy) <= Math.abs(dx)) return;
+
+    if (dy < 0) {
+      pswp.next();
+    } else {
+      pswp.prev();
+    }
+  });
+
+  pswp.on('verticalDrag', (event) => {
+    event.preventDefault();
+  });
+}
+
+export function registerPhotoSwipeCursorUi(pswp: PhotoSwipe) {
+  const updateCursor = () => {
+    pswp.element?.style.setProperty('--pswp-cursor', 'default');
+    pswp.element?.style.setProperty('--pswp-cursor-zoom-in', 'default');
+    pswp.element?.style.setProperty('--pswp-cursor-zoom-out', 'default');
+    pswp.container?.style.setProperty('cursor', 'default', 'important');
+    pswp.element?.querySelectorAll<HTMLElement>('.pswp__img').forEach((img) => {
+      img.style.setProperty('cursor', 'pointer', 'important');
+    });
+  };
+
+  pswp.on('afterInit', updateCursor);
+  pswp.on('change', updateCursor);
+  pswp.on('zoomPanUpdate', updateCursor);
+  pswp.on('contentAppendImage', updateCursor);
+}
+
 export function registerPhotoSwipeGalleryUi(pswp: PhotoSwipe) {
+  ensurePhotoSwipeCursorStyle();
+  registerVerticalDragNavigation(pswp);
+  registerPhotoSwipeCursorUi(pswp);
+
   pswp.on('uiRegister', () => {
+    pswp.ui?.registerElement(createZoomControlsUiElement());
+
     pswp.ui?.registerElement({
       name: 'download-button',
       ariaLabel: 'Download',

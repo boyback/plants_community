@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
+import { levelByConfiguredExp } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,7 +96,7 @@ export const POST = handler(async (req) => {
       const u = await tx.user.update({
         where: { id: me.id },
         data: { exp: { increment: task.rewardExp } },
-        select: { exp: true },
+        select: { exp: true, level: true },
       });
       await tx.expLedger.create({
         data: {
@@ -107,6 +108,13 @@ export const POST = handler(async (req) => {
           refId: task.id,
         },
       });
+      const computedLevel = await levelByConfiguredExp(u.exp);
+      if (computedLevel > u.level) {
+        await tx.user.update({
+          where: { id: me.id },
+          data: { level: computedLevel },
+        });
+      }
     }
   });
 

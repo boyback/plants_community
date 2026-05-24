@@ -46,16 +46,24 @@ export function PermissionGate({
     return (
       <div className="card p-6 text-center">
         <div className="text-3xl">🔒</div>
-        <div className="mt-2 text-sm font-medium">{t('common.permission.loginToUse')}</div>
+        <div className="mt-2 text-sm font-medium">{t('permission.loginToUse')}</div>
         <Link href="/login" className="btn-primary mt-4 inline-flex">
-          {t('common.permission.goLogin')}
+          {t('permission.goLogin')}
         </Link>
       </div>
     );
   }
 
   const levelInfo = PERMISSION_LEVEL(perm);
-  const hint = levelInfo
+  const configuredLevel = user.permissionLevels?.[perm];
+  const hint = typeof configuredLevel === 'number'
+    ? t('levels.hint.needLevel', {
+        level: configuredLevel,
+        name: t(`levels.name.${configuredLevel}`),
+      })
+    : configuredLevel === null
+    ? t('levels.hint.notEnough')
+    : levelInfo
     ? t('levels.hint.needLevel', {
         level: levelInfo.level,
         name: t(`levels.name.${levelInfo.level}`),
@@ -66,15 +74,15 @@ export function PermissionGate({
     <div className="card p-6 text-center">
       <div className="text-3xl">🌱</div>
       <div className="mt-2 text-sm font-medium text-ink-800">
-        {t('common.permission.noPermissionPrefix')}{t(`levels.permission.${perm}`)}
+        {t('permission.noPermissionPrefix')}{t(`levels.permission.${perm}`)}
       </div>
       <div className="mt-1 text-xs text-leaf-700/70">{hint}</div>
       <div className="mt-4 flex justify-center gap-2">
         <Link href="/tasks" className="btn-outline !text-xs">
-          {t('common.permission.doTasksToLevel')}
+          {t('permission.doTasksToLevel')}
         </Link>
         <Link href="/vip" className="btn-primary !text-xs">
-          {t('common.permission.openVip')}
+          {t('permission.openVip')}
         </Link>
       </div>
     </div>

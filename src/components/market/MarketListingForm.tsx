@@ -34,6 +34,7 @@ export interface MarketListingFormValue {
   shipFrom: string;
   description: string;
   tradeMode: TradeMode;
+  tradeModes?: TradeMode[];
   externalUrl: string;
   contactNote: string;
   tags: string[];
@@ -108,7 +109,9 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   const [taxons, setTaxons] = useState<BoardSelection[]>(initialValue?.taxons ?? []);
   const [shipFrom, setShipFrom] = useState(initialValue?.shipFrom ?? '');
   const [description, setDescription] = useState(initialValue?.description ?? '');
-  const [tradeMode, setTradeMode] = useState<TradeMode>(initialValue?.tradeMode ?? 'platform_escrow');
+  const [tradeModes, setTradeModes] = useState<TradeMode[]>(
+    initialValue?.tradeModes?.length ? initialValue.tradeModes : [initialValue?.tradeMode ?? 'platform_escrow'],
+  );
   const [externalUrl, setExternalUrl] = useState(initialValue?.externalUrl ?? '');
   const [contactNote, setContactNote] = useState(initialValue?.contactNote ?? '');
   const [tags, setTags] = useState<string[]>(initialValue?.tags ?? []);
@@ -146,6 +149,15 @@ export function MarketListingForm({ mode, initialValue }: Props) {
     setProducts((prev) => prev.filter((item) => item.clientId !== clientId));
   };
 
+  const toggleTradeMode = (mode: TradeMode) => {
+    setTradeModes((prev) => {
+      if (prev.includes(mode)) {
+        return prev.length > 1 ? prev.filter((item) => item !== mode) : prev;
+      }
+      return [...prev, mode];
+    });
+  };
+
   const addTag = () => {
     const value = tagInput.trim().replace(/^#/, '');
     if (!value || tags.includes(value) || tags.length >= 8) return;
@@ -157,7 +169,8 @@ export function MarketListingForm({ mode, initialValue }: Props) {
     if (!title.trim()) return '请输入交易帖标题';
     if (taxons.length === 0) return '请选择至少一个板块或品种';
     if (!shipFrom.trim()) return '请输入发货地';
-    if (tradeMode === 'external' && !externalUrl.trim() && !contactNote.trim()) {
+    if (tradeModes.length === 0) return '请至少选择一种交易方式';
+    if (tradeModes.includes('external') && !externalUrl.trim() && !contactNote.trim()) {
       return '自行联系/三方平台交易请填写联系方式或外部链接';
     }
 
@@ -184,7 +197,8 @@ export function MarketListingForm({ mode, initialValue }: Props) {
     taxons,
     shipFrom: shipFrom.trim(),
     description: description.trim() || undefined,
-    tradeMode,
+    tradeMode: tradeModes[0] ?? 'platform_escrow',
+    tradeModes,
     externalUrl: externalUrl.trim() || undefined,
     contactNote: contactNote.trim() || undefined,
     tags,
@@ -294,15 +308,25 @@ export function MarketListingForm({ mode, initialValue }: Props) {
             <button
               key={modeItem.key}
               type="button"
-              onClick={() => setTradeMode(modeItem.key)}
+              onClick={() => toggleTradeMode(modeItem.key)}
               className={[
                 'rounded-lg border p-4 text-left transition-colors',
-                tradeMode === modeItem.key
+                tradeModes.includes(modeItem.key)
                   ? 'border-leaf-400 bg-leaf-50 ring-2 ring-leaf-100'
                   : 'border-leaf-100 bg-white hover:border-leaf-300',
               ].join(' ')}
             >
               <div className="flex items-center gap-2">
+                <span
+                  className={[
+                    'grid h-4 w-4 place-items-center rounded border text-[10px]',
+                    tradeModes.includes(modeItem.key)
+                      ? 'border-leaf-600 bg-leaf-600 text-white'
+                      : 'border-leaf-200 bg-white text-transparent',
+                  ].join(' ')}
+                >
+                  ✓
+                </span>
                 <span className="font-semibold text-ink-800">{modeItem.title}</span>
                 {modeItem.badge && (
                   <span className="rounded-full bg-leaf-600 px-1.5 py-0.5 text-[10px] text-white">
@@ -315,7 +339,7 @@ export function MarketListingForm({ mode, initialValue }: Props) {
           ))}
         </div>
 
-        {tradeMode === 'external' && (
+        {tradeModes.includes('external') && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field label="外部链接">
               <Input
@@ -388,7 +412,7 @@ export function MarketListingForm({ mode, initialValue }: Props) {
               onChange={(images) => updateProduct(product.clientId, { images })}
               max={9}
               showCount={false}
-              gridClassName="grid-cols-[repeat(auto-fill,80px)] gap-2"
+              gridClassName="grid-cols-[repeat(auto-fill,80px)] justify-start gap-2"
               tileClassName="h-20 w-20 bg-white"
               tileImageClassName="object-cover"
               firstItemLabel="封面"

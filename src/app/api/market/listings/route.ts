@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler, fail, stringifyJson } from '@/lib/api';
-import { requireUser } from '@/lib/auth';
+import { getCurrentUser, requireUser } from '@/lib/auth';
 import { hasUserPermission } from '@/lib/permissions';
-import type { AuctionStatus, MarketListingStatus, MarketTradeMode } from '@prisma/client';
+import { Prisma, type AuctionStatus, type MarketListingStatus, type MarketTradeMode } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +40,7 @@ const CreateListingBody = z.object({
   tags: z.array(z.string().min(1).max(20)).max(8).optional(),
   description: z.string().max(2000).optional(),
   tradeMode: z.enum(['platform_escrow', 'online_payment', 'external']).default('platform_escrow'),
+  tradeModes: z.array(z.enum(['platform_escrow', 'online_payment', 'external'])).min(1).max(3).optional(),
   externalUrl: z.string().url().optional().or(z.literal('')),
   contactNote: z.string().max(500).optional(),
   items: z.array(CreateItemBody).min(1).max(20),
@@ -47,6 +48,7 @@ const CreateListingBody = z.object({
 
 export async function GET(req: Request) {
   try {
+    const me = await getCurrentUser().catch(() => null);
     const url = new URL(req.url);
     const q = url.searchParams.get('q')?.trim() || '';
     const family = url.searchParams.get('family')?.trim() || '';
@@ -157,6 +159,8 @@ export async function GET(req: Request) {
           minPrice: true,
           maxPrice: true,
           itemCount: true,
+          viewCount: true,
+          commentCount: true,
           tradeMode: true,
           createdAt: true,
           shipFrom: true,
@@ -166,12 +170,16 @@ export async function GET(req: Request) {
           items: {
             where: { status: { not: 'off_shelf' } },
             orderBy: { createdAt: 'asc' },
-            take: 4,
-            select: { cover: true, images: true },
+            select: { id: true, title: true, description: true, price: true, stock: true, cover: true, images: true },
+          },
+          taxons: {
+            orderBy: { id: 'asc' },
+            select: { categorySlug: true, genusSlug: true, speciesSlug: true, label: true },
           },
         },
       });
 
+      const tradeModesMap = await loadListingTradeModes(list.map((item) => item.id));
       products = list.map((p) => ({
         type: 'product',
         id: p.id,
@@ -182,13 +190,26 @@ export async function GET(req: Request) {
         price: p.minPrice,
         maxPrice: p.maxPrice,
         itemCount: p.itemCount,
+        views: p.viewCount,
+        comments: p.commentCount,
         tradeMode: p.tradeMode,
+        tradeModes: tradeModesMap[p.id] ?? [p.tradeMode],
         createdAt: p.createdAt.toISOString(),
         url: `/market/${p.id}`,
         shipFrom: p.shipFrom,
         seller: p.seller,
         tags: parseJsonArray(p.tags),
         genus: p.genus || undefined,
+        taxons: p.taxons,
+        products: p.items.map((item) => ({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          price: item.price,
+          stock: item.stock,
+          cover: item.cover,
+          images: parseJsonArray(item.images),
+        })),
       }));
     }
 
@@ -256,6 +277,41 @@ export async function GET(req: Request) {
     }
 
     const merged = [...products, ...auctions];
+    if (me) {
+      const productIds = merged.flatMap((item) => item.products?.map((product) => product.id) ?? []);
+      if (productIds.length) {
+        const rows = await prisma.$queryRaw<Array<{ itemId: string }>>`
+          SELECT itemId FROM market_listing_item_collects
+          WHERE userId = ${me.id} AND itemId IN (${Prisma.join(productIds)})
+        `;
+        const collectedIds = new Set(rows.map((row) => row.itemId));
+        for (const item of merged) {
+          if (item.products) {
+            item.products = item.products.map((product) => ({
+              ...product,
+              collected: collectedIds.has(product.id),
+            }));
+          }
+        }
+      }
+      const sellerIds = Array.from(new Set(
+        merged
+          .map((item) => item.seller?.id)
+          .filter((id): id is string => !!id && id !== me.id),
+      ));
+      if (sellerIds.length) {
+        const follows = await prisma.follow.findMany({
+          where: { followerId: me.id, followeeId: { in: sellerIds } },
+          select: { followeeId: true },
+        });
+        const followedSellerIds = new Set(follows.map((item) => item.followeeId));
+        for (const item of merged) {
+          if (item.seller) {
+            item.seller = { ...item.seller, followed: followedSellerIds.has(item.seller.id) };
+          }
+        }
+      }
+    }
     merged.sort((x, y) => {
       if (sort === 'price_asc') return x.price - y.price;
       if (sort === 'price_desc') return y.price - x.price;
@@ -280,6 +336,7 @@ export const POST = handler(async (req) => {
   }
 
   const body = CreateListingBody.parse(await req.json());
+  const tradeModes = normalizeTradeModes(body.tradeModes, body.tradeMode);
   const itemPrices = body.items.map((item) => item.price);
   const cover = body.items[0]?.images[0];
   if (!cover) return fail(400, '请至少上传一张商品图');
@@ -325,8 +382,8 @@ export const POST = handler(async (req) => {
       shipFrom: body.shipFrom.trim(),
       tags: stringifyJson(body.tags ?? []),
       description: body.description?.trim() || null,
-      tradeMode: body.tradeMode,
-      externalUrl: body.tradeMode === 'external' ? body.externalUrl || null : null,
+      tradeMode: tradeModes[0],
+      externalUrl: tradeModes.includes('external') ? body.externalUrl || null : null,
       contactNote: body.contactNote?.trim() || null,
       cover,
       minPrice: Math.min(...itemPrices),
@@ -356,6 +413,12 @@ export const POST = handler(async (req) => {
     select: { id: true },
   });
 
+  await prisma.$executeRaw`
+    UPDATE market_listings
+    SET tradeModes = ${stringifyJson(tradeModes)}
+    WHERE id = ${listing.id}
+  `;
+
   return { id: listing.id };
 });
 
@@ -370,6 +433,7 @@ interface ListingItem {
   maxPrice?: number;
   itemCount?: number;
   tradeMode?: MarketTradeMode;
+  tradeModes?: MarketTradeMode[];
   originalPrice?: number | null;
   createdAt: string;
   endAt?: string;
@@ -379,8 +443,26 @@ interface ListingItem {
     id: string;
     name: string;
     avatar: string;
+    followed?: boolean;
   } | null;
   tags?: string[];
+  taxons?: {
+    categorySlug: string;
+    genusSlug: string | null;
+    speciesSlug: string | null;
+    label: string;
+  }[];
+  products?: {
+    id: string;
+    title: string;
+    description: string;
+    price: number;
+    stock: number;
+    collectCount?: number;
+    collected?: boolean;
+    cover: string;
+    images: string[];
+  }[];
   genus?: {
     slug: string;
     name: string;
@@ -397,6 +479,27 @@ function parseJsonArray(raw: string | null | undefined): string[] {
     return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
   } catch {
     return [];
+  }
+}
+
+function normalizeTradeModes(modes: MarketTradeMode[] | undefined, fallback: MarketTradeMode): MarketTradeMode[] {
+  const allowed: MarketTradeMode[] = ['platform_escrow', 'online_payment', 'external'];
+  const result = Array.from(new Set((modes?.length ? modes : [fallback]).filter((mode) => allowed.includes(mode))));
+  return result.length ? result : [fallback];
+}
+
+async function loadListingTradeModes(ids: string[]) {
+  if (!ids.length) return {} as Record<string, MarketTradeMode[]>;
+  try {
+    const rows = await prisma.$queryRaw<Array<{ id: string; tradeMode: MarketTradeMode; tradeModes: string | null }>>`
+      SELECT id, tradeMode, tradeModes FROM market_listings WHERE id IN (${Prisma.join(ids)})
+    `;
+    return rows.reduce<Record<string, MarketTradeMode[]>>((map, row) => {
+      map[row.id] = normalizeTradeModes(parseJsonArray(row.tradeModes) as MarketTradeMode[], row.tradeMode);
+      return map;
+    }, {});
+  } catch {
+    return {};
   }
 }
 

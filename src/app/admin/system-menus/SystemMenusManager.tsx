@@ -491,6 +491,7 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
     { name: '晒图广场', slug: 'shaitu', path: '/shaitu', description: '用户晒图分享', location: 'header' as const },
     { name: '交易中心', slug: 'market', path: '/market', description: '二手交易市场', location: 'header' as const },
     { name: '品种图鉴', slug: 'plants', path: '/plants', description: '多肉品种图鉴', location: 'header' as const },
+    { name: '排行榜', slug: 'ranking', path: '/ranking', description: '社区排行榜', location: 'header' as const },
     { name: '摄影大赛', slug: 'contests', path: '/contests', description: '摄影比赛活动', location: 'header' as const },
     { name: '养殖交流', slug: 'forum', path: '/forum', description: '养殖经验交流', location: 'header' as const },
     { name: '新手村', slug: 'beginner', path: '/beginner', description: '新手入门指导', location: 'sidebar_left' as const },

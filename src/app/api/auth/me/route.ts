@@ -2,7 +2,12 @@ import { prisma } from '@/lib/db';
 import { handler } from '@/lib/api';
 import { getCurrentUser, isVipActive } from '@/lib/auth';
 import { serializeUser, serializeEquip } from '@/lib/serializers';
-import { expProgress } from '@/lib/levels';
+import {
+  expProgressConfigured,
+  getLevelPermissionConfigs,
+  getPermissionsForUserLevel,
+  permissionRoleKey,
+} from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,10 +20,22 @@ export const GET = handler(async () => {
     include: {
       _count: { select: { posts: true, followers: true, following: true } },
       badges: { include: { badge: true } },
-      permissionOverrides: { select: { permission: true, effect: true } },
     },
   });
   if (!full) return null;
+
+  const [rolePermissionOverrides, levelPermissions, levelPermissionConfigs] = await Promise.all([
+    (prisma as any).rolePermissionOverride.findMany({
+      where: { roleKey: permissionRoleKey(full) },
+      select: { permission: true, effect: true },
+    }),
+    getPermissionsForUserLevel(full.level),
+    getLevelPermissionConfigs(),
+  ]);
+  const permissionOverrides = [
+    ...levelPermissions.map((permission) => ({ permission, effect: 'grant' as const })),
+    ...rolePermissionOverrides,
+  ];
 
   // 装扮
   const ids = [
@@ -47,12 +64,17 @@ export const GET = handler(async () => {
   });
 
   return {
-    user: serializeUser(full),
+    user: {
+      ...serializeUser({ ...full, permissionOverrides }),
+      permissionLevels: Object.fromEntries(
+        levelPermissionConfigs.map((item) => [item.permission, item.level])
+      ),
+    },
     signInStreak: full.signInStreak,
     signedInToday: isToday(full.lastSignInAt),
     todaySignedCount,
     exp: full.exp,
-    expProgress: expProgress(full.exp),
+    expProgress: await expProgressConfigured(full.exp),
     pointsBalance: full.pointsBalance,
     privacy: {
       showFollowing: full.privacyShowFollowing,

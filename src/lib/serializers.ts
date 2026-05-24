@@ -317,11 +317,35 @@ type PostViewer = {
   id: string;
   role?: 'user' | 'moderator' | 'admin' | null;
   isSuperAdmin?: boolean | null;
+  moderatorScopes?: { type: 'board' | 'genus' | 'species'; targetId: string }[] | null;
 } | null | undefined;
 
 const EDITABLE_POST_TYPES = new Set(['rich', 'short', 'video', 'vote', 'event', 'journal', 'help']);
 
-export function getPostAdminPermissions(p: { authorId?: string | null; author?: { id?: string | null } | null; type?: string }, viewer?: PostViewer) {
+function moderatorCanManagePost(
+  p: { boardId?: string | null; genusId?: string | null; speciesId?: string | null },
+  viewer: NonNullable<PostViewer>
+) {
+  if (viewer.role !== 'moderator') return false;
+  const scopes = Array.isArray(viewer.moderatorScopes) ? viewer.moderatorScopes : [];
+  return scopes.some((scope) => {
+    if (scope.type === 'board') return Boolean(p.boardId && scope.targetId === p.boardId);
+    if (scope.type === 'genus') return Boolean(p.genusId && scope.targetId === p.genusId);
+    return Boolean(p.speciesId && scope.targetId === p.speciesId);
+  });
+}
+
+export function getPostAdminPermissions(
+  p: {
+    authorId?: string | null;
+    author?: { id?: string | null } | null;
+    type?: string;
+    boardId?: string | null;
+    genusId?: string | null;
+    speciesId?: string | null;
+  },
+  viewer?: PostViewer
+) {
   if (!viewer) {
     return {
       canManage: false,
@@ -338,7 +362,7 @@ export function getPostAdminPermissions(p: { authorId?: string | null; author?: 
   const authorId = p.authorId ?? p.author?.id ?? null;
   const isAuthor = Boolean(authorId && viewer.id === authorId);
   const isSuperAdmin = viewer.isSuperAdmin === true;
-  const isModerator = viewer.role === 'moderator';
+  const isModerator = moderatorCanManagePost(p, viewer);
   const isAdmin = viewer.role === 'admin';
   const canEdit = isAuthor && EDITABLE_POST_TYPES.has(String(p.type));
   const canDelete = isAuthor || isModerator || isAdmin || isSuperAdmin;

@@ -24,7 +24,7 @@ const NAV: { section: string; items: { href: string; label: string; minRole: Rol
   {
     section: '用户 / 社区',
     items: [
-      { href: '/admin/users', label: '用户与权限', minRole: 'admin' },
+      { href: '/admin/users', label: '👥 用户权限', minRole: 'admin' },
       { href: '/admin/permissions', label: '🔐 权限管理', minRole: 'admin' },
       { href: '/admin/badges', label: '🏅 徽章发放', minRole: 'admin' },
       { href: '/admin/points', label: '💎 积分调整', minRole: 'admin' },

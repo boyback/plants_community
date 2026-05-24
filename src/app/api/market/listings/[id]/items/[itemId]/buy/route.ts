@@ -4,11 +4,13 @@ import { handler, fail } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
 import { hasUserPermission } from '@/lib/permissions';
 import { genOrderNo } from '@/lib/auction';
+import type { MarketTradeMode } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
 const Body = z.object({
   quantity: z.number().int().min(1).max(9999).default(1),
+  tradeMode: z.enum(['platform_escrow', 'online_payment', 'external']).optional(),
   addressId: z.string().optional(),
   shipName: z.string().min(1).max(40).optional(),
   shipPhone: z.string().min(1).max(20).optional(),
@@ -36,7 +38,10 @@ export const POST = handler(async (req) => {
 
   if (!item || item.listingId !== listingId) return fail(404, '商品不存在');
   if (item.listing.status !== 'on_sale') return fail(400, '交易帖当前不可购买');
-  if (item.listing.tradeMode === 'external') return fail(400, '该商品为自行联系/三方平台交易，不能在线下单');
+  const allowedTradeModes = await loadListingTradeModes(item.listingId, item.listing.tradeMode);
+  const selectedTradeMode = body.tradeMode ?? allowedTradeModes.find((mode) => mode !== 'external') ?? allowedTradeModes[0];
+  if (!allowedTradeModes.includes(selectedTradeMode)) return fail(400, '请选择卖家支持的交易方式');
+  if (selectedTradeMode === 'external') return fail(400, '该交易方式为自行联系/三方平台交易，不能在线下单');
   if (item.status !== 'on_sale') return fail(400, '商品当前不可购买');
   if (item.stock < body.quantity) return fail(400, '库存不足');
   if (item.listing.sellerId === me.id) return fail(400, '不能购买自己的商品');
@@ -45,7 +50,7 @@ export const POST = handler(async (req) => {
   if ('error' in address) return fail(address.status, address.error);
 
   const totalPrice = item.price * body.quantity;
-  const platformFee = item.listing.tradeMode === 'online_payment'
+  const platformFee = selectedTradeMode === 'online_payment'
     ? Math.ceil(totalPrice * 0.01)
     : 0;
   const sellerAmount = totalPrice - platformFee;
@@ -56,7 +61,7 @@ export const POST = handler(async (req) => {
       source: 'product',
       listingId: item.listingId,
       listingItemId: item.id,
-      tradeMode: item.listing.tradeMode,
+      tradeMode: selectedTradeMode,
       buyerId: me.id,
       sellerId: item.listing.sellerId,
       quantity: body.quantity,
@@ -74,6 +79,33 @@ export const POST = handler(async (req) => {
 
   return { orderId: order.id, orderNo: order.orderNo, totalPrice };
 });
+
+async function loadListingTradeModes(id: string, fallback: MarketTradeMode): Promise<MarketTradeMode[]> {
+  try {
+    const rows = await prisma.$queryRaw<Array<{ tradeModes: string | null }>>`
+      SELECT tradeModes FROM market_listings WHERE id = ${id}
+    `;
+    return normalizeTradeModes(parseJsonArray(rows[0]?.tradeModes) as MarketTradeMode[], fallback);
+  } catch {
+    return [fallback];
+  }
+}
+
+function normalizeTradeModes(modes: MarketTradeMode[] | undefined, fallback: MarketTradeMode): MarketTradeMode[] {
+  const allowed: MarketTradeMode[] = ['platform_escrow', 'online_payment', 'external'];
+  const result = Array.from(new Set((modes?.length ? modes : [fallback]).filter((mode) => allowed.includes(mode))));
+  return result.length ? result : [fallback];
+}
+
+function parseJsonArray(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const value = JSON.parse(raw);
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+  } catch {
+    return [];
+  }
+}
 
 function pickParams(req: Request) {
   const parts = new URL(req.url).pathname.split('/').filter(Boolean);

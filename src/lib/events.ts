@@ -10,7 +10,8 @@
 
 import { prisma } from './db';
 import type { Prisma } from '@prisma/client';
-import { LEVELS, levelByExp } from './levels';
+import { LEVELS } from './levels';
+import { levelByConfiguredExp } from './permissions';
 
 // 事件统一类型
 export type AppEvent =
@@ -29,7 +30,7 @@ const REWARD_CONFIG: Record<
   AppEvent['kind'],
   { points: number; exp: number; activity: number }
 > = {
-  signin:         { points: 5,  exp: 5,  activity: 1 },
+  signin:         { points: 10, exp: 5,  activity: 1 },
   post_create:    { points: 20, exp: 20, activity: 5 },
   post_liked:     { points: 1,  exp: 1,  activity: 1 },
   post_collected: { points: 2,  exp: 2,  activity: 3 },
@@ -76,6 +77,7 @@ export async function emitEvent(ev: AppEvent): Promise<{
   let pts = baseCfg.points * multiplier;
   let exp = baseCfg.exp * multiplier;
   let act = baseCfg.activity * multiplier;
+  const computedLevelForExp = exp !== 0 ? await levelByConfiguredExp : null;
 
   // 特殊情况:purchase 的 points 来自商品的 pointsBack
   if (ev.kind === 'purchase_paid') pts = ev.pointsBack * multiplier;
@@ -135,7 +137,7 @@ export async function emitEvent(ev: AppEvent): Promise<{
       });
       expAdded = exp;
 
-      const computedLevel = levelByExp(u.exp);
+      const computedLevel = computedLevelForExp ? await computedLevelForExp(u.exp) : u.level;
       if (computedLevel > u.level) {
         await tx.user.update({
           where: { id: ev.userId },

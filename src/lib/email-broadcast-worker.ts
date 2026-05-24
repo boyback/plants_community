@@ -21,15 +21,16 @@ import { makeUnsubscribeUrl } from './email-unsubscribe';
 const UNSUB_PLACEHOLDER = 'https://__UNSUBSCRIBE_URL__/';
 
 const POLL_INTERVAL_MS = 5000; // 5s 检查一次有没有 sending 任务
-let workerStarted = false;
+const globalForWorker = globalThis as unknown as {
+  emailBroadcastWorkerTimer?: ReturnType<typeof setInterval>;
+};
 
 /** 应用启动时调用一次,启动后台 polling */
 export function startEmailBroadcastWorker() {
-  if (workerStarted) return;
-  workerStarted = true;
+  if (globalForWorker.emailBroadcastWorkerTimer) return;
   // eslint-disable-next-line no-console
   console.log('[email-broadcast] worker started, polling every 5s');
-  setInterval(tick, POLL_INTERVAL_MS);
+  globalForWorker.emailBroadcastWorkerTimer = setInterval(tick, POLL_INTERVAL_MS);
 }
 
 /** 每个 tick 执行一次 — 找一个 sending 任务,发一条 */

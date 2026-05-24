@@ -38,6 +38,11 @@ export function RichTextView({
         dataSource: images,
         index,
         showHideAnimationType: 'fade',
+        imageClickAction: false,
+        tapAction: false,
+        doubleTapAction: false,
+        zoom: false,
+        closeOnVerticalDrag: false,
       } as any);
       if (withImageGalleryControls) {
         registerPhotoSwipeGalleryUi(pswpRef.current);
