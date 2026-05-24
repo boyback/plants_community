@@ -12,6 +12,18 @@ function pickPostId(req: Request) {
   return parts[parts.length - 2];
 }
 
+export const GET = handler(async (req) => {
+  const me = await requireUser();
+  const postId = pickPostId(req);
+  const [collected, total] = await Promise.all([
+    prisma.postCollect.findUnique({
+      where: { userId_postId: { userId: me.id, postId } },
+    }),
+    prisma.postCollect.count({ where: { postId } }),
+  ]);
+  return { collected: !!collected, total };
+});
+
 export const POST = handler(async (req) => {
   const me = await requireUser();
   if (!(await hasUserPermission(me, 'post:collect'))) {

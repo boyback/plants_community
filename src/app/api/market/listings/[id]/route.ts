@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
-import { handler, fail, stringifyJson } from '@/lib/api';
+import { handler, fail, parseJsonArray, stringifyJson } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
 import { type MarketTradeMode } from '@prisma/client';
 
@@ -36,6 +36,114 @@ const UpdateBody = z.object({
   externalUrl: z.string().url().optional().or(z.literal('')),
   contactNote: z.string().max(500).optional(),
   items: z.array(ItemBody).min(1).max(20),
+});
+
+export const GET = handler(async (req) => {
+  const id = pickListingId(req);
+  const raw = await prisma.marketListing.findUnique({
+    where: { id },
+    include: {
+      seller: {
+        include: {
+          _count: { select: { posts: true, followers: true, following: true } },
+        },
+      },
+      genus: { select: { slug: true, name: true, cover: true } },
+      species: { select: { slug: true, name: true } },
+      taxons: { orderBy: { id: 'asc' } },
+      comments: {
+        where: { deleted: false },
+        orderBy: { createdAt: 'asc' },
+        take: 50,
+        include: {
+          author: {
+            include: {
+              _count: { select: { posts: true, followers: true, following: true } },
+            },
+          },
+        },
+      },
+      items: {
+        where: { status: { not: 'off_shelf' } },
+        orderBy: { createdAt: 'asc' },
+      },
+    },
+  });
+
+  if (!raw) return fail(404, '交易帖不存在');
+
+  await prisma.marketListing.update({
+    where: { id: raw.id },
+    data: { viewCount: { increment: 1 } },
+  }).catch(() => null);
+
+  const tradeModes = await loadListingTradeModes(raw.id, raw.tradeMode);
+
+  return {
+    id: raw.id,
+    title: raw.title,
+    category: raw.category,
+    shipFrom: raw.shipFrom,
+    tags: parseJsonArray(raw.tags),
+    description: raw.description ?? '',
+    tradeMode: raw.tradeMode,
+    tradeModes,
+    externalUrl: raw.externalUrl ?? undefined,
+    contactNote: raw.contactNote ?? undefined,
+    cover: raw.cover,
+    minPrice: raw.minPrice,
+    maxPrice: raw.maxPrice,
+    itemCount: raw.itemCount,
+    viewCount: raw.viewCount + 1,
+    commentCount: raw.commentCount,
+    status: raw.status,
+    createdAt: raw.createdAt.toISOString(),
+    seller: {
+      id: raw.seller.id,
+      name: raw.seller.name,
+      avatar: raw.seller.avatar,
+      bio: raw.seller.bio ?? undefined,
+      level: raw.seller.level,
+      exp: raw.seller.exp,
+      joinedAt: raw.seller.joinedAt.toISOString(),
+      postsCount: raw.seller._count.posts,
+      followersCount: raw.seller._count.followers,
+      followingCount: raw.seller._count.following,
+    },
+    genus: raw.genus ?? undefined,
+    species: raw.species ?? undefined,
+    taxons: raw.taxons.map((item) => ({
+      categorySlug: item.categorySlug,
+      genusSlug: item.genusSlug,
+      speciesSlug: item.speciesSlug,
+      label: item.label,
+    })),
+    items: raw.items.map((item) => ({
+      id: item.id,
+      title: item.title,
+      price: item.price,
+      stock: item.stock,
+      soldCount: item.soldCount,
+      cover: item.cover,
+      images: parseJsonArray(item.images),
+      description: item.description,
+      status: item.status,
+    })),
+    comments: raw.comments.map((comment) => ({
+      id: comment.id,
+      content: comment.content,
+      createdAt: comment.createdAt.toISOString(),
+      author: {
+        id: comment.author.id,
+        name: comment.author.name,
+        avatar: comment.author.avatar,
+        level: comment.author.level,
+        postsCount: comment.author._count.posts,
+        followersCount: comment.author._count.followers,
+        followingCount: comment.author._count.following,
+      },
+    })),
+  };
 });
 
 export const PATCH = handler(async (req) => {
@@ -167,6 +275,17 @@ function normalizeTradeModes(modes: MarketTradeMode[] | undefined, fallback: Mar
   const allowed: MarketTradeMode[] = ['platform_escrow', 'online_payment', 'external'];
   const result = Array.from(new Set((modes?.length ? modes : [fallback]).filter((mode) => allowed.includes(mode))));
   return result.length ? result : [fallback];
+}
+
+async function loadListingTradeModes(id: string, fallback: MarketTradeMode): Promise<MarketTradeMode[]> {
+  try {
+    const rows = await prisma.$queryRaw<Array<{ tradeModes: string | null }>>`
+      SELECT tradeModes FROM market_listings WHERE id = ${id}
+    `;
+    return normalizeTradeModes(parseJsonArray(rows[0]?.tradeModes) as MarketTradeMode[], fallback);
+  } catch {
+    return [fallback];
+  }
 }
 
 function normalizeTaxons(body: z.infer<typeof UpdateBody>) {

@@ -13,6 +13,28 @@ function pickParams(req: Request) {
   };
 }
 
+export const GET = handler(async (req) => {
+  const me = await requireUser();
+  const { listingId, itemId } = pickParams(req);
+  const item = await prisma.marketListingItem.findFirst({
+    where: { id: itemId, listingId },
+    select: { id: true },
+  });
+  if (!item) return fail(404, '商品不存在');
+
+  const [existing, totalRows] = await Promise.all([
+    prisma.$queryRaw<Array<{ userId: string }>>`
+      SELECT userId FROM market_listing_item_collects
+      WHERE userId = ${me.id} AND itemId = ${itemId}
+      LIMIT 1
+    `,
+    prisma.$queryRaw<Array<{ total: bigint }>>`
+      SELECT COUNT(*) AS total FROM market_listing_item_collects WHERE itemId = ${itemId}
+    `,
+  ]);
+  return { collected: existing.length > 0, total: Number(totalRows[0]?.total ?? 0) };
+});
+
 export const POST = handler(async (req) => {
   const me = await requireUser();
   if (!(await hasUserPermission(me, 'post:collect'))) {

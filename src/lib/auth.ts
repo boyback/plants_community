@@ -5,8 +5,8 @@ import { prisma } from './db';
 import type { User as DBUser } from '@prisma/client';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
-const COOKIE_NAME = process.env.AUTH_COOKIE_NAME || 'rouyou_token';
-const COOKIE_MAX_AGE = Number(process.env.AUTH_COOKIE_MAX_AGE || 60 * 60 * 24 * 30);
+export const COOKIE_NAME = process.env.AUTH_COOKIE_NAME || 'rouyou_token';
+export const COOKIE_MAX_AGE = Number(process.env.AUTH_COOKIE_MAX_AGE || 60 * 60 * 24 * 30);
 
 const encoder = new TextEncoder();
 
