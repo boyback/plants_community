@@ -4,7 +4,7 @@ import { FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Tex
 
 import { ErrorView, LoadingView } from '../../components/StateView';
 import { absoluteAssetUrl, apiGet, type BoardDetailResponse, type PostSummary } from '../../lib/api';
-import { colors, spacing } from '../../lib/theme';
+import { colors, radii, shadows, spacing } from '../../lib/theme';
 
 type Item =
   | { kind: 'child'; id: string; title: string; desc?: string | null; cover?: string | null; meta: string; path: string }
@@ -69,7 +69,7 @@ export default function BoardDetailScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: data.detail.name }} />
+      <Stack.Screen options={{ title: data.detail.name, headerStyle: { backgroundColor: colors.background } }} />
       <FlatList
         data={items}
         keyExtractor={(item) => `${item.kind}-${item.id}`}
@@ -200,7 +200,7 @@ function PostCard({ post, onPress }: { post: PostSummary; onPress: () => void })
 const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
-    paddingBottom: spacing.xl,
+    paddingBottom: 118,
   },
   separator: {
     height: spacing.md,
@@ -212,19 +212,20 @@ const styles = StyleSheet.create({
   heroImage: {
     height: 220,
     width: '100%',
-    borderRadius: 20,
-    backgroundColor: colors.leafSoft,
+    borderRadius: radii.lg,
+    backgroundColor: colors.backgroundSoft,
   },
   heroFallback: {
     height: 220,
     width: '100%',
-    borderRadius: 20,
-    backgroundColor: colors.leafSoft,
+    borderRadius: radii.lg,
+    backgroundColor: colors.backgroundSoft,
   },
   headerCard: {
+    ...shadows.card,
     gap: spacing.sm,
-    borderRadius: 20,
-    borderWidth: 1,
+    borderRadius: radii.lg,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     padding: spacing.md,
@@ -257,7 +258,7 @@ const styles = StyleSheet.create({
   fact: {
     minWidth: '30%',
     flexGrow: 1,
-    borderRadius: 14,
+    borderRadius: radii.md,
     backgroundColor: colors.leafSoft,
     padding: spacing.sm,
   },
@@ -286,27 +287,27 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   card: {
-    flexDirection: 'row',
+    ...shadows.card,
     overflow: 'hidden',
-    borderRadius: 18,
-    borderWidth: 1,
+    borderRadius: radii.lg,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
   cover: {
-    height: 116,
-    width: 116,
-    backgroundColor: colors.leafSoft,
+    aspectRatio: 1.35,
+    width: '100%',
+    backgroundColor: colors.backgroundSoft,
   },
   coverFallback: {
-    height: 116,
-    width: 116,
-    backgroundColor: colors.leafSoft,
+    aspectRatio: 1.35,
+    width: '100%',
+    backgroundColor: colors.backgroundSoft,
   },
   cardBody: {
     flex: 1,
     gap: spacing.xs,
-    padding: spacing.md,
+    padding: spacing.lg,
   },
   cardTitle: {
     color: colors.ink,
@@ -326,9 +327,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   empty: {
+    ...shadows.card,
     alignItems: 'center',
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: radii.lg,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     padding: spacing.lg,

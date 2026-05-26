@@ -25,7 +25,7 @@ import {
   type PostDetail,
 } from '../../lib/api';
 import { stripHtml } from '../../lib/format';
-import { colors, spacing } from '../../lib/theme';
+import { colors, radii, shadows, spacing } from '../../lib/theme';
 
 export default function PostDetailScreen() {
   const router = useRouter();
@@ -174,9 +174,56 @@ export default function PostDetailScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.page}
     >
-      <Stack.Screen options={{ title: '帖子详情' }} />
+      <Stack.Screen options={{ headerShown: false }} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <View style={styles.detailTopbar}>
+          <Pressable accessibilityRole="button" accessibilityLabel="返回" onPress={() => router.back()} style={styles.topIconButton}>
+            <Text style={styles.topIconText}>‹</Text>
+          </Pressable>
+          <View style={styles.detailLogo}>
+            <View style={styles.logoLeafTall} />
+            <View style={styles.logoLeafSmall} />
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={collected ? '取消收藏' : '收藏'}
+            onPress={toggleCollect}
+            disabled={acting !== null}
+            style={styles.topIconButton}
+          >
+            <Text style={[styles.topIconText, collected && styles.topIconActive]}>
+              {collected ? '♥' : '♡'}
+            </Text>
+          </Pressable>
+        </View>
+
         <View style={styles.card}>
+          {images.length > 0 ? (
+            <View style={styles.galleryBlock}>
+              <Pressable onPress={() => setPreviewIndex(0)} style={styles.heroImageWrap}>
+                <Image source={{ uri: images[0] }} style={styles.heroImage} />
+              </Pressable>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.thumbStrip}
+              >
+                {images.slice(0, 8).map((image, index) => (
+                  <Pressable
+                    key={`${image}-${index}`}
+                    onPress={() => setPreviewIndex(index)}
+                    style={[styles.thumbButton, index === 0 && styles.thumbActive]}
+                  >
+                    <Image source={{ uri: image }} style={styles.thumbImage} />
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
+
+          <Text style={styles.title}>{post.title}</Text>
+          {post.contentText ? <Text style={styles.contentText}>{post.contentText}</Text> : null}
+
           <View style={styles.authorRow}>
             <Pressable
               disabled={!post.author?.id}
@@ -201,19 +248,6 @@ export default function PostDetailScreen() {
               </View>
             ) : null}
           </View>
-
-          <Text style={styles.title}>{post.title}</Text>
-          {post.contentText ? <Text style={styles.contentText}>{post.contentText}</Text> : null}
-
-          {images.length > 0 ? (
-            <View style={styles.imageList}>
-              {images.map((image, index) => (
-                <Pressable key={`${image}-${index}`} onPress={() => setPreviewIndex(index)} style={styles.imageWrap}>
-                  <Image source={{ uri: image }} style={styles.image} />
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
 
           {post.tags?.length ? (
             <View style={styles.tags}>
@@ -327,21 +361,74 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    gap: spacing.md,
+    gap: spacing.lg,
     padding: spacing.lg,
-    paddingBottom: 96,
+    paddingTop: 64,
+    paddingBottom: 118,
+  },
+  detailTopbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 54,
+  },
+  topIconButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    width: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surface,
+  },
+  topIconText: {
+    color: colors.ink,
+    fontSize: 28,
+    fontWeight: '500',
+    lineHeight: 30,
+  },
+  topIconActive: {
+    color: colors.leafDeep,
+  },
+  detailLogo: {
+    position: 'relative',
+    height: 34,
+    width: 34,
+  },
+  logoLeafTall: {
+    position: 'absolute',
+    left: 8,
+    top: 2,
+    height: 28,
+    width: 11,
+    borderTopLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    backgroundColor: colors.leaf,
+    transform: [{ rotate: '-14deg' }],
+  },
+  logoLeafSmall: {
+    position: 'absolute',
+    right: 6,
+    bottom: 3,
+    height: 22,
+    width: 10,
+    borderTopRightRadius: 10,
+    borderBottomLeftRadius: 10,
+    backgroundColor: colors.ink,
+    transform: [{ rotate: '28deg' }],
   },
   card: {
-    borderRadius: 18,
-    borderWidth: 1,
+    ...shadows.card,
+    borderRadius: radii.lg,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    padding: spacing.md,
+    padding: spacing.lg,
   },
   authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    marginTop: spacing.lg,
   },
   authorInfo: {
     flex: 1,
@@ -351,7 +438,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   adminButton: {
-    borderRadius: 999,
+    borderRadius: radii.pill,
     backgroundColor: colors.leafSoft,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -362,7 +449,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   deleteButton: {
-    borderRadius: 999,
+    borderRadius: radii.pill,
     backgroundColor: '#fee2e2',
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -382,12 +469,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   avatar: {
-    backgroundColor: colors.leafSoft,
+    backgroundColor: colors.sand,
   },
   avatarFallback: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.leafSoft,
+    backgroundColor: colors.sand,
   },
   avatarText: {
     color: colors.leaf,
@@ -395,11 +482,11 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   title: {
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
     color: colors.ink,
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: '900',
-    lineHeight: 29,
+    lineHeight: 28,
   },
   contentText: {
     marginTop: spacing.sm,
@@ -407,17 +494,37 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 24,
   },
-  imageList: {
+  galleryBlock: {
     gap: spacing.sm,
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
   },
-  imageWrap: {
+  heroImageWrap: {
     overflow: 'hidden',
-    borderRadius: 14,
-    backgroundColor: colors.leafSoft,
+    borderRadius: radii.md,
+    backgroundColor: colors.sand,
   },
-  image: {
-    aspectRatio: 1,
+  heroImage: {
+    aspectRatio: 1.22,
+    width: '100%',
+  },
+  thumbStrip: {
+    gap: spacing.sm,
+    paddingVertical: 2,
+  },
+  thumbButton: {
+    overflow: 'hidden',
+    height: 58,
+    width: 76,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    backgroundColor: colors.sand,
+  },
+  thumbActive: {
+    borderColor: colors.leafDeep,
+  },
+  thumbImage: {
+    height: '100%',
     width: '100%',
   },
   tags: {
@@ -428,7 +535,7 @@ const styles = StyleSheet.create({
   },
   tag: {
     overflow: 'hidden',
-    borderRadius: 999,
+    borderRadius: radii.pill,
     backgroundColor: colors.leafSoft,
     color: colors.leaf,
     fontSize: 12,
@@ -465,10 +572,11 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   commentCard: {
+    ...shadows.card,
     flexDirection: 'row',
     gap: spacing.sm,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: radii.md,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     padding: spacing.md,
@@ -494,23 +602,24 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   empty: {
+    ...shadows.card,
     alignItems: 'center',
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: radii.md,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     padding: spacing.lg,
   },
   actionBar: {
     position: 'absolute',
-    right: 0,
-    bottom: 0,
-    left: 0,
+    right: spacing.md,
+    bottom: spacing.md,
+    left: spacing.md,
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    ...shadows.floating,
+    borderRadius: radii.lg,
     backgroundColor: colors.surface,
     padding: spacing.sm,
   },
@@ -519,7 +628,7 @@ const styles = StyleSheet.create({
     maxHeight: 86,
     minHeight: 42,
     borderRadius: 21,
-    backgroundColor: colors.background,
+    backgroundColor: colors.backgroundSoft,
     color: colors.ink,
     fontSize: 14,
     paddingHorizontal: spacing.md,

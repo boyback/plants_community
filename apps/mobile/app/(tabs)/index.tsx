@@ -13,7 +13,7 @@ import {
 import { ErrorView, LoadingView } from '../../components/StateView';
 import { absoluteAssetUrl, apiGet, type MarketListingSummary, type PostSummary } from '../../lib/api';
 import { formatPrice, stripHtml } from '../../lib/format';
-import { colors, spacing } from '../../lib/theme';
+import { colors, radii, shadows, spacing } from '../../lib/theme';
 
 type FeedMode = 'recommend' | 'latest' | 'market';
 
@@ -122,6 +122,7 @@ export default function HomeScreen() {
 
   return (
     <FlatList
+      style={styles.listSurface}
       data={feed}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.content}
@@ -171,18 +172,30 @@ function HomeHeader({
   return (
     <View style={styles.header}>
       <View style={styles.topbar}>
-        <View>
-          <Text style={styles.brand}>肉友社</Text>
-          <Text style={styles.subtitle}>今天看看肉友们的新状态</Text>
+        <View style={styles.brandRow}>
+          <View style={styles.logoMark}>
+            <View style={styles.logoLeafTall} />
+            <View style={styles.logoLeafSmall} />
+          </View>
+          <View>
+            <Text style={styles.brand}>肉友社</Text>
+            <Text style={styles.subtitle}>今天看看肉友们的新状态</Text>
+          </View>
         </View>
         <View style={styles.topActions}>
-          <Pressable style={styles.iconButton} onPress={onSearch}>
+          <Pressable accessibilityRole="button" accessibilityLabel="搜索" style={styles.iconButton} onPress={onSearch}>
             <Text style={styles.iconText}>搜</Text>
           </Pressable>
-          <Pressable style={styles.iconButton} onPress={onNotifications}>
+          <Pressable accessibilityRole="button" accessibilityLabel="消息" style={styles.iconButton} onPress={onNotifications}>
             <Text style={styles.iconText}>信</Text>
           </Pressable>
         </View>
+      </View>
+
+      <View style={styles.homeIntro}>
+        <Text style={styles.homeKicker}>COMMUNITY</Text>
+        <Text style={styles.homeTitle}>今日推荐</Text>
+        <Text style={styles.homeText}>新的养护记录、图鉴分享和交易动态。</Text>
       </View>
 
       <FlatList
@@ -192,7 +205,7 @@ function HomeHeader({
         keyExtractor={(item) => item.key}
         contentContainerStyle={styles.quickList}
         renderItem={({ item }) => (
-          <Pressable style={styles.quickAction} onPress={() => onQuickAction(item.key)}>
+          <Pressable accessibilityRole="button" style={styles.quickAction} onPress={() => onQuickAction(item.key)}>
             <Text style={styles.quickText}>{item.label}</Text>
           </Pressable>
         )}
@@ -201,6 +214,7 @@ function HomeHeader({
       <View style={styles.segmented}>
         {modes.map((item) => (
           <Pressable
+            accessibilityRole="button"
             key={item.key}
             onPress={() => onSelectMode(item.key)}
             style={[styles.segment, activeMode === item.key && styles.segmentActive]}
@@ -224,6 +238,19 @@ function PostCard({ post, onPress }: { post: PostSummary; onPress: () => void })
     .slice(0, 4);
   return (
     <Pressable style={styles.card} onPress={onPress}>
+      {images.length > 0 ? (
+        <View style={styles.feedGallery}>
+          <Image source={{ uri: images[0] }} style={styles.feedHeroImage} />
+          {images.length > 1 ? (
+            <View style={styles.feedThumbRow}>
+              {images.slice(1, 4).map((image, index) => (
+                <Image key={`${image}-${index}`} source={{ uri: image }} style={styles.feedThumbImage} />
+              ))}
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+
       <View style={styles.authorRow}>
         <Avatar uri={post.author?.avatar} name={post.author?.name ?? '肉友'} />
         <View style={styles.authorInfo}>
@@ -234,18 +261,6 @@ function PostCard({ post, onPress }: { post: PostSummary; onPress: () => void })
 
       <Text numberOfLines={2} style={styles.postTitle}>{post.title}</Text>
       {post.contentText ? <Text numberOfLines={3} style={styles.postText}>{post.contentText}</Text> : null}
-
-      {images.length > 0 ? (
-        <View style={images.length === 1 ? styles.singleImageWrap : styles.imageGrid}>
-          {images.map((image, index) => (
-            <Image
-              key={`${image}-${index}`}
-              source={{ uri: image }}
-              style={images.length === 1 ? styles.singleImage : styles.gridImage}
-            />
-          ))}
-        </View>
-      ) : null}
 
       <View style={styles.stats}>
         <Text style={styles.stat}>看 {post.views ?? 0}</Text>
@@ -291,16 +306,20 @@ function Avatar({ uri, name }: { uri?: string | null; name: string }) {
 }
 
 const styles = StyleSheet.create({
+  listSurface: {
+    backgroundColor: colors.background,
+  },
   content: {
     padding: spacing.lg,
-    paddingBottom: spacing.xl,
+    paddingTop: 64,
+    paddingBottom: 118,
   },
   separator: {
     height: spacing.md,
   },
   header: {
     gap: spacing.md,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   topbar: {
     flexDirection: 'row',
@@ -310,8 +329,40 @@ const styles = StyleSheet.create({
   },
   brand: {
     color: colors.ink,
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '900',
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  logoMark: {
+    position: 'relative',
+    height: 34,
+    width: 32,
+  },
+  logoLeafTall: {
+    position: 'absolute',
+    left: 6,
+    top: 1,
+    height: 29,
+    width: 12,
+    borderTopLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    backgroundColor: colors.leaf,
+    transform: [{ rotate: '-14deg' }],
+  },
+  logoLeafSmall: {
+    position: 'absolute',
+    right: 4,
+    bottom: 2,
+    height: 22,
+    width: 10,
+    borderTopRightRadius: 10,
+    borderBottomLeftRadius: 10,
+    backgroundColor: colors.ink,
+    transform: [{ rotate: '28deg' }],
   },
   subtitle: {
     marginTop: 2,
@@ -325,9 +376,9 @@ const styles = StyleSheet.create({
   iconButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 38,
-    width: 38,
-    borderRadius: 19,
+    height: 44,
+    width: 44,
+    borderRadius: 22,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -337,11 +388,32 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
   },
+  homeIntro: {
+    gap: spacing.xs,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs,
+  },
+  homeKicker: {
+    color: colors.leafDeep,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  homeTitle: {
+    color: colors.ink,
+    fontSize: 27,
+    fontWeight: '900',
+    lineHeight: 33,
+  },
+  homeText: {
+    color: colors.muted,
+    fontSize: 14,
+    lineHeight: 20,
+  },
   quickList: {
     gap: spacing.sm,
   },
   quickAction: {
-    borderRadius: 999,
+    borderRadius: radii.pill,
     backgroundColor: colors.leafSoft,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -353,8 +425,8 @@ const styles = StyleSheet.create({
   },
   segmented: {
     flexDirection: 'row',
-    borderRadius: 14,
-    backgroundColor: '#eaf1e7',
+    borderRadius: radii.md,
+    backgroundColor: colors.backgroundSoft,
     padding: 4,
   },
   segment: {
@@ -365,6 +437,7 @@ const styles = StyleSheet.create({
   },
   segmentActive: {
     backgroundColor: colors.surface,
+    ...shadows.card,
   },
   segmentText: {
     color: colors.muted,
@@ -379,12 +452,33 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   card: {
+    ...shadows.card,
     overflow: 'hidden',
-    borderRadius: 18,
-    borderWidth: 1,
+    borderRadius: radii.md,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    padding: spacing.md,
+    padding: spacing.lg,
+  },
+  feedGallery: {
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  feedHeroImage: {
+    aspectRatio: 1.22,
+    width: '100%',
+    borderRadius: radii.md,
+    backgroundColor: colors.sand,
+  },
+  feedThumbRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  feedThumbImage: {
+    height: 54,
+    width: 72,
+    borderRadius: radii.sm,
+    backgroundColor: colors.sand,
   },
   authorRow: {
     flexDirection: 'row',
@@ -395,7 +489,7 @@ const styles = StyleSheet.create({
     height: 38,
     width: 38,
     borderRadius: 19,
-    backgroundColor: colors.leafSoft,
+    backgroundColor: colors.sand,
   },
   avatarFallback: {
     alignItems: 'center',
@@ -403,7 +497,7 @@ const styles = StyleSheet.create({
     height: 38,
     width: 38,
     borderRadius: 19,
-    backgroundColor: colors.leafSoft,
+    backgroundColor: colors.sand,
   },
   avatarText: {
     color: colors.leaf,
@@ -435,28 +529,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
   },
-  singleImageWrap: {
-    marginTop: spacing.md,
-    overflow: 'hidden',
-    borderRadius: 14,
-  },
-  singleImage: {
-    aspectRatio: 1.2,
-    width: '100%',
-    backgroundColor: colors.leafSoft,
-  },
-  imageGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    marginTop: spacing.md,
-  },
-  gridImage: {
-    aspectRatio: 1,
-    width: '49%',
-    borderRadius: 10,
-    backgroundColor: colors.leafSoft,
-  },
   stats: {
     flexDirection: 'row',
     gap: spacing.lg,
@@ -468,12 +540,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   marketCard: {
-    backgroundColor: '#fffdfa',
+    backgroundColor: colors.surfaceWarm,
   },
   marketBadge: {
     alignSelf: 'flex-start',
-    borderRadius: 999,
-    backgroundColor: '#fef3c7',
+    borderRadius: radii.pill,
+    backgroundColor: colors.amberSoft,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
   },

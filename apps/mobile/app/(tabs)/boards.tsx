@@ -4,7 +4,7 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 
 import { ErrorView, LoadingView } from '../../components/StateView';
 import { absoluteAssetUrl, apiGet, type BoardSummary } from '../../lib/api';
-import { colors, spacing } from '../../lib/theme';
+import { colors, radii, shadows, spacing } from '../../lib/theme';
 
 export default function BoardsScreen() {
   const router = useRouter();
@@ -34,22 +34,21 @@ export default function BoardsScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <View>
+      <View style={styles.header}>
+        <Text style={styles.kicker}>PLANT ALBUM</Text>
         <Text style={styles.title}>图鉴</Text>
-        <Text style={styles.description}>按科属品种浏览多肉内容，后续接入关注和品种详情。</Text>
+        <Text style={styles.description}>按科属品种浏览多肉内容。</Text>
       </View>
 
       <View style={styles.list}>
         {boards.map((board) => {
           const cover = absoluteAssetUrl(board.cover);
-          const textIcon = board.icon && !board.icon.startsWith('http') ? board.icon : '';
           return (
             <Pressable key={board.id} style={styles.card} onPress={() => router.push(`/board/${board.slug}`)}>
               {cover ? <Image source={{ uri: cover }} style={styles.cover} /> : <View style={styles.coverFallback} />}
               <View style={styles.cardBody}>
                 <View style={styles.cardHeader}>
                   <Text numberOfLines={1} style={styles.cardTitle}>
-                    {textIcon ? `${textIcon} ` : ''}
                     {board.name}
                   </Text>
                   <Text style={styles.count}>{board.childrenCount ?? 0} 属</Text>
@@ -70,13 +69,24 @@ export default function BoardsScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    gap: spacing.md,
+    gap: spacing.lg,
     padding: spacing.lg,
+    paddingTop: 64,
+    paddingBottom: 118,
+  },
+  header: {
+    gap: spacing.xs,
+  },
+  kicker: {
+    color: colors.leafDeep,
+    fontSize: 12,
+    fontWeight: '800',
   },
   title: {
     color: colors.ink,
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: 32,
+    fontWeight: '900',
+    lineHeight: 38,
   },
   description: {
     marginTop: spacing.xs,
@@ -88,27 +98,27 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   card: {
-    flexDirection: 'row',
+    ...shadows.card,
     overflow: 'hidden',
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: radii.lg,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
   cover: {
-    height: 104,
-    width: 104,
-    backgroundColor: colors.leafSoft,
+    aspectRatio: 1.42,
+    width: '100%',
+    backgroundColor: colors.backgroundSoft,
   },
   coverFallback: {
-    height: 104,
-    width: 104,
-    backgroundColor: colors.leafSoft,
+    aspectRatio: 1.42,
+    width: '100%',
+    backgroundColor: colors.backgroundSoft,
   },
   cardBody: {
     flex: 1,
-    gap: 4,
-    padding: spacing.md,
+    gap: spacing.xs,
+    padding: spacing.lg,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -118,13 +128,17 @@ const styles = StyleSheet.create({
   cardTitle: {
     flex: 1,
     color: colors.ink,
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: '900',
   },
   count: {
     color: colors.leaf,
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '900',
+    borderRadius: radii.pill,
+    backgroundColor: colors.leafSoft,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
   },
   latin: {
     color: colors.muted,
@@ -137,8 +151,8 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   meta: {
-    color: colors.leaf,
+    color: colors.muted,
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
   },
 });

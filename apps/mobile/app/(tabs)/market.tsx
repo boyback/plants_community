@@ -5,7 +5,7 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { ErrorView, LoadingView } from '../../components/StateView';
 import { absoluteAssetUrl, apiGet, type MarketListingSummary } from '../../lib/api';
 import { formatPrice, stripHtml } from '../../lib/format';
-import { colors, spacing } from '../../lib/theme';
+import { colors, radii, shadows, spacing } from '../../lib/theme';
 
 export default function MarketScreen() {
   const router = useRouter();
@@ -39,6 +39,7 @@ export default function MarketScreen() {
     <ScrollView contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <View style={styles.headerText}>
+          <Text style={styles.kicker}>MARKET</Text>
           <Text style={styles.title}>交易中心</Text>
           <Text style={styles.description}>最新交易帖，按商品卡浏览。</Text>
         </View>
@@ -89,8 +90,10 @@ export default function MarketScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    gap: spacing.md,
+    gap: spacing.lg,
     padding: spacing.lg,
+    paddingTop: 64,
+    paddingBottom: 118,
   },
   header: {
     flexDirection: 'row',
@@ -107,7 +110,13 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.ink,
-    fontSize: 22,
+    fontSize: 32,
+    fontWeight: '900',
+    lineHeight: 38,
+  },
+  kicker: {
+    color: colors.leafDeep,
+    fontSize: 12,
     fontWeight: '800',
   },
   description: {
@@ -117,13 +126,13 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   sellButton: {
-    borderRadius: 999,
+    borderRadius: radii.pill,
     backgroundColor: colors.leaf,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   secondaryHeaderButton: {
-    borderRadius: 999,
+    borderRadius: radii.pill,
     backgroundColor: colors.leafSoft,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -142,25 +151,26 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   card: {
+    ...shadows.card,
     overflow: 'hidden',
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: radii.lg,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
   cover: {
-    aspectRatio: 1.4,
+    aspectRatio: 1.22,
     width: '100%',
-    backgroundColor: colors.leafSoft,
+    backgroundColor: colors.backgroundSoft,
   },
   coverFallback: {
-    aspectRatio: 1.4,
+    aspectRatio: 1.22,
     width: '100%',
-    backgroundColor: colors.leafSoft,
+    backgroundColor: colors.backgroundSoft,
   },
   cardBody: {
     gap: spacing.xs,
-    padding: spacing.md,
+    padding: spacing.lg,
   },
   sellerRow: {
     flexDirection: 'row',
@@ -174,15 +184,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   shipFrom: {
-    color: colors.leaf,
+    color: colors.leafDeep,
     fontSize: 12,
     fontWeight: '700',
   },
   cardTitle: {
     color: colors.ink,
-    fontSize: 17,
-    fontWeight: '800',
-    lineHeight: 23,
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 26,
   },
   cardDesc: {
     color: colors.muted,
@@ -197,7 +207,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xs,
   },
   price: {
-    color: '#dc2626',
+    color: colors.leafDeep,
     fontSize: 18,
     fontWeight: '900',
   },

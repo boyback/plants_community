@@ -11,7 +11,7 @@ import {
   type PostSummary,
   type UserProfileResponse,
 } from '../../lib/api';
-import { colors, spacing } from '../../lib/theme';
+import { colors, radii, shadows, spacing } from '../../lib/theme';
 
 export default function UserProfileScreen() {
   const router = useRouter();
@@ -74,7 +74,7 @@ export default function UserProfileScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: profile.user.name }} />
+      <Stack.Screen options={{ title: profile.user.name, headerStyle: { backgroundColor: colors.background } }} />
       <FlatList
         data={profile.posts}
         keyExtractor={(item) => item.id}
@@ -205,7 +205,7 @@ function PostCard({ post, onPress }: { post: PostSummary; onPress: () => void })
 const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
-    paddingBottom: spacing.xl,
+    paddingBottom: 118,
   },
   separator: {
     height: spacing.md,
@@ -216,14 +216,15 @@ const styles = StyleSheet.create({
   },
   cover: {
     height: 110,
-    borderRadius: 20,
-    backgroundColor: colors.leaf,
+    borderRadius: radii.lg,
+    backgroundColor: colors.backgroundSoft,
   },
   profileCard: {
+    ...shadows.card,
     gap: spacing.md,
     marginTop: -42,
-    borderRadius: 20,
-    borderWidth: 1,
+    borderRadius: radii.lg,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     padding: spacing.md,
@@ -272,16 +273,16 @@ const styles = StyleSheet.create({
   },
   vip: {
     overflow: 'hidden',
-    borderRadius: 999,
-    backgroundColor: '#fef3c7',
-    color: '#92400e',
+    borderRadius: radii.pill,
+    backgroundColor: colors.leafSoft,
+    color: colors.leafDeep,
     fontSize: 11,
     fontWeight: '900',
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
   },
   followButton: {
-    borderRadius: 999,
+    borderRadius: radii.pill,
     backgroundColor: colors.leaf,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -332,7 +333,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: 38,
     width: 38,
-    borderRadius: 12,
+    borderRadius: radii.sm,
     backgroundColor: colors.leafSoft,
   },
   badgeIcon: {
@@ -348,27 +349,27 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   postCard: {
-    flexDirection: 'row',
+    ...shadows.card,
     overflow: 'hidden',
-    borderRadius: 18,
-    borderWidth: 1,
+    borderRadius: radii.lg,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
   postCover: {
-    height: 116,
-    width: 116,
-    backgroundColor: colors.leafSoft,
+    aspectRatio: 1.35,
+    width: '100%',
+    backgroundColor: colors.backgroundSoft,
   },
   postCoverFallback: {
-    height: 116,
-    width: 116,
-    backgroundColor: colors.leafSoft,
+    aspectRatio: 1.35,
+    width: '100%',
+    backgroundColor: colors.backgroundSoft,
   },
   postBody: {
     flex: 1,
     gap: spacing.xs,
-    padding: spacing.md,
+    padding: spacing.lg,
   },
   postTitle: {
     color: colors.ink,
@@ -387,9 +388,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   empty: {
+    ...shadows.card,
     alignItems: 'center',
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: radii.lg,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     padding: spacing.lg,

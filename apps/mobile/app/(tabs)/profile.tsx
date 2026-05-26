@@ -4,7 +4,7 @@ import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } 
 
 import { ErrorView, LoadingView } from '../../components/StateView';
 import { absoluteAssetUrl, apiGet, apiPost, clearMobileAuth, type AuthMe } from '../../lib/api';
-import { colors, spacing } from '../../lib/theme';
+import { colors, radii, shadows, spacing } from '../../lib/theme';
 
 type ProfileMenuItem = {
   label: string;
@@ -111,6 +111,11 @@ export default function ProfileScreen() {
         />
       }
     >
+      <View style={styles.header}>
+        <Text style={styles.kicker}>PROFILE</Text>
+        <Text style={styles.screenTitle}>我的</Text>
+      </View>
+
       {user ? (
         <View style={styles.profileCard}>
           <View style={styles.userRow}>
@@ -196,17 +201,33 @@ function Stat({ label, value }: { label: string; value: number }) {
 
 const styles = StyleSheet.create({
   content: {
-    gap: spacing.md,
+    gap: spacing.lg,
     padding: spacing.lg,
-    paddingBottom: spacing.xl,
+    paddingTop: 64,
+    paddingBottom: 118,
+  },
+  header: {
+    gap: spacing.xs,
+  },
+  kicker: {
+    color: colors.leafDeep,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  screenTitle: {
+    color: colors.ink,
+    fontSize: 32,
+    fontWeight: '900',
+    lineHeight: 38,
   },
   profileCard: {
+    ...shadows.card,
     gap: spacing.md,
-    borderRadius: 18,
-    borderWidth: 1,
+    borderRadius: radii.lg,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    padding: spacing.md,
+    padding: spacing.lg,
   },
   userRow: {
     flexDirection: 'row',
@@ -245,7 +266,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   logoutButton: {
-    borderRadius: 999,
+    borderRadius: radii.pill,
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: spacing.md,
@@ -278,7 +299,7 @@ const styles = StyleSheet.create({
   },
   pointsCard: {
     gap: 4,
-    borderRadius: 14,
+    borderRadius: radii.md,
     backgroundColor: colors.leafSoft,
     padding: spacing.md,
   },
@@ -298,7 +319,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   signButton: {
-    borderRadius: 999,
+    borderRadius: radii.pill,
     backgroundColor: colors.leaf,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -324,9 +345,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   loginCard: {
+    ...shadows.card,
     gap: spacing.md,
-    borderRadius: 18,
-    borderWidth: 1,
+    borderRadius: radii.lg,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     padding: spacing.lg,
@@ -343,7 +365,7 @@ const styles = StyleSheet.create({
   },
   button: {
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: radii.pill,
     backgroundColor: colors.leaf,
     paddingHorizontal: spacing.md,
     paddingVertical: 12,
@@ -354,9 +376,10 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   menu: {
+    ...shadows.card,
     overflow: 'hidden',
-    borderRadius: 18,
-    borderWidth: 1,
+    borderRadius: radii.lg,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },

@@ -832,6 +832,7 @@ export interface UploadImageResponse {
 
 export function absoluteAssetUrl(url: string | null | undefined): string | null {
   if (!url) return null;
+  if (url.toLowerCase().endsWith('.svg')) return null;
   if (url.startsWith('http')) return url;
   return `${API_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;
 }
