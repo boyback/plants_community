@@ -14,7 +14,7 @@ const tabs = [
 export default function TabsLayout() {
   return (
     <Tabs
-      tabBar={() => <PlantumTabBar />}
+      // tabBar={() => <PlantumTabBar />}
       screenOptions={{
         headerShown: false,
         headerStyle: { backgroundColor: colors.background },
@@ -23,13 +23,20 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: '首页' }} />
-      <Tabs.Screen name="boards" options={{ title: '图鉴' }} />
+      <Tabs.Screen
+        name="boards"
+        options={{
+          title: '图鉴',
+          tabBarStyle: { display: 'none' }
+        }}
+      />
       <Tabs.Screen name="market" options={{ title: '交易' }} />
       <Tabs.Screen name="profile" options={{ title: '我的' }} />
     </Tabs>
   );
 }
 
+/*
 function PlantumTabBar() {
   const router = useRouter();
   const pathname = usePathname();
@@ -64,6 +71,7 @@ function PlantumTabBar() {
     </View>
   );
 }
+*/
 
 function LineIcon({
   name,
@@ -152,7 +160,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: 30,
     width: 30,
-    borderRadius: radii.pill,
+    borderRadius: 4,
   },
   iconShellActive: {
     backgroundColor: colors.leafSoft,

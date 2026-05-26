@@ -1,6 +1,8 @@
 import * as SecureStore from 'expo-secure-store';
 
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://plantcommunity.cn';
+const DEFAULT_API_BASE_URL = __DEV__ ? 'http://localhost:3000' : 'https://plantcommunity.cn';
+
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL;
 
 const AUTH_TOKEN_KEY = 'rouyou.auth.token';
 const AUTH_COOKIE_NAME_KEY = 'rouyou.auth.cookieName';
@@ -233,6 +235,7 @@ export interface BoardSummary {
   posts?: number;
   childrenCount?: number;
   genera?: BoardSummary[];
+  species?: BoardSummary[];
 }
 
 export interface MarketListingSummary {
@@ -663,14 +666,6 @@ export interface SearchResponse {
   }[];
 }
 
-export interface HotSearchResponse {
-  hot: {
-    q: string;
-    kind: 'species' | 'topic';
-    count?: number;
-  }[];
-}
-
 export type RankingKind = 'activity' | 'points' | 'posts' | 'comments' | 'level' | 'followers';
 
 export interface RankingResponse {
@@ -828,6 +823,58 @@ export interface UploadImageResponse {
   size: number;
   originalMime?: string;
   converted?: boolean;
+}
+
+export interface BannerItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  image: string;
+  link: string;
+  tint?: string;
+  durationMs?: number;
+}
+
+export interface HotTopic {
+  q: string;
+  kind: 'species' | 'topic';
+  count?: number;
+  participants?: {
+    id: string;
+    name: string;
+    avatar: string | null;
+  }[];
+}
+
+export interface HotSearchResponse {
+  hot: HotTopic[];
+}
+
+export interface Post {
+  id: string;
+  type: string;
+  title: string;
+  content?: string;
+  contentText?: string;
+  cover?: string;
+  images?: string[];
+  tags: string[];
+  createdAt: string;
+  likes: number;
+  comments: number;
+  views: number;
+  author: PostAuthorSummary;
+  board: {
+    id: string;
+    slug: string;
+    name: string;
+    icon?: string;
+  };
+}
+
+export interface FeedResponse {
+  items: Post[];
+  nextCursor: string | null;
 }
 
 export function absoluteAssetUrl(url: string | null | undefined): string | null {

@@ -1,598 +1,924 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import {
+  Dimensions,
   FlatList,
   Image,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 
 import { ErrorView, LoadingView } from '../../components/StateView';
-import { absoluteAssetUrl, apiGet, type MarketListingSummary, type PostSummary } from '../../lib/api';
-import { formatPrice, stripHtml } from '../../lib/format';
+import {
+  absoluteAssetUrl,
+  apiGet,
+  type BannerItem,
+  type BoardSummary,
+  type FeedResponse,
+  type HotSearchResponse,
+  type HotTopic,
+  type Post,
+} from '../../lib/api';
 import { colors, radii, shadows, spacing } from '../../lib/theme';
 
-type FeedMode = 'recommend' | 'latest' | 'market';
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type FeedItem =
-  | { kind: 'post'; id: string; post: PostSummary }
-  | { kind: 'market'; id: string; listing: MarketListingSummary };
+type TabKey = 'recommend' | 'following' | 'latest';
 
-type QuickActionKey = 'signin' | 'compose' | 'boards' | 'market' | 'rankings' | 'tasks';
-
-const quickActions: { key: QuickActionKey; label: string }[] = [
-  { key: 'signin', label: '签到' },
-  { key: 'compose', label: '发布' },
-  { key: 'boards', label: '图鉴' },
-  { key: 'market', label: '交易' },
-  { key: 'rankings', label: '排行榜' },
-  { key: 'tasks', label: '任务' },
-];
-const modes: { key: FeedMode; label: string }[] = [
+const TABS: { key: TabKey; label: string }[] = [
   { key: 'recommend', label: '推荐' },
+  { key: 'following', label: '关注' },
   { key: 'latest', label: '最新' },
-  { key: 'market', label: '交易' },
 ];
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [mode, setMode] = useState<FeedMode>('recommend');
-  const [posts, setPosts] = useState<PostSummary[]>([]);
-  const [marketItems, setMarketItems] = useState<MarketListingSummary[]>([]);
+  const [banners, setBanners] = useState<BannerItem[]>([]);
+  const [topics, setTopics] = useState<HotTopic[]>([]);
+  const [boards, setBoards] = useState<BoardSummary[]>([]);
+  const [activeTab, setActiveTab] = useState<TabKey>('recommend');
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (nextMode = mode, refresh = false) => {
-    if (refresh) setRefreshing(true);
-    else setLoading(true);
-    setError(null);
+  const loadInitialData = useCallback(async () => {
     try {
-      const postSort = nextMode === 'latest' ? 'latest' : 'recommend';
-      const [postData, marketData] = await Promise.all([
-        nextMode === 'market'
-          ? Promise.resolve({ items: [] as PostSummary[] })
-          : apiGet<{ items: PostSummary[] }>(`/api/posts?sort=${postSort}&limit=18`),
-        apiGet<{ items: MarketListingSummary[] }>(
-          `/api/market/listings?type=product&sort=latest&limit=${nextMode === 'market' ? 20 : 4}`,
-        ),
+      const [bannersData, topicsData, boardsData] = await Promise.all([
+        apiGet<BannerItem[]>('/api/banners'),
+        apiGet<HotSearchResponse>('/api/search/hot?shuffle=1'),
+        apiGet<BoardSummary[]>('/api/boards?kind=family'),
       ]);
-      setPosts(postData.items);
-      setMarketItems(marketData.items);
+      setBanners(bannersData);
+      setTopics(topicsData.hot.slice(0, 6));
+      setBoards(boardsData.slice(0, 10));
     } catch (err) {
-      setError(err instanceof Error ? err.message : '首页加载失败');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+      console.error('加载首页数据失败:', err);
     }
-  }, [mode]);
+  }, []);
+
+  const loadFeed = useCallback(
+    async (tab: TabKey, refresh = false) => {
+      if (refresh) {
+        setRefreshing(true);
+      } else if (cursor) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      try {
+        const url = `/api/feed?tab=${tab}${!refresh && cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
+        const data = await apiGet<FeedResponse>(url);
+
+        if (refresh) {
+          setPosts(data.items);
+        } else {
+          setPosts((prev) => (cursor ? [...prev, ...data.items] : data.items));
+        }
+        setCursor(data.nextCursor);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '加载失败');
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+        setRefreshing(false);
+      }
+    },
+    [cursor],
+  );
 
   useEffect(() => {
-    void load(mode);
-  }, [load, mode]);
+    void loadInitialData();
+  }, [loadInitialData]);
 
-  const feed = useMemo<FeedItem[]>(() => {
-    if (mode === 'market') {
-      return marketItems.map((listing) => ({ kind: 'market', id: `market-${listing.id}`, listing }));
-    }
-    const items: FeedItem[] = posts.map((post) => ({ kind: 'post', id: `post-${post.id}`, post }));
-    marketItems.slice(0, 2).forEach((listing, index) => {
-      items.splice(Math.min(2 + index * 4, items.length), 0, {
-        kind: 'market',
-        id: `market-${listing.id}`,
-        listing,
-      });
-    });
-    return items;
-  }, [marketItems, mode, posts]);
+  useEffect(() => {
+    setCursor(null);
+    setPosts([]);
+    void loadFeed(activeTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
-  const onSelectMode = (nextMode: FeedMode) => {
-    setMode(nextMode);
-  };
+  const handleRefresh = useCallback(() => {
+    setCursor(null);
+    void Promise.all([loadInitialData(), loadFeed(activeTab, true)]);
+  }, [activeTab, loadFeed, loadInitialData]);
 
-  const onQuickAction = (key: QuickActionKey) => {
-    if (key === 'compose') {
-      router.push('/compose');
-      return;
+  const handleLoadMore = useCallback(() => {
+    if (!loadingMore && cursor) {
+      void loadFeed(activeTab);
     }
-    if (key === 'boards') {
-      router.push('/(tabs)/boards');
-      return;
-    }
-    if (key === 'market') {
-      router.push('/(tabs)/market');
-      return;
-    }
-    if (key === 'tasks') {
-      router.push('/growth');
-      return;
-    }
-    if (key === 'rankings') {
-      router.push('/ranking');
-      return;
-    }
-    router.push('/(tabs)/profile');
-  };
+  }, [activeTab, cursor, loadFeed, loadingMore]);
 
-  if (loading && feed.length === 0) return <LoadingView label="正在加载首页..." />;
-  if (error && feed.length === 0) return <ErrorView message={error} onRetry={() => load(mode)} />;
+  if (loading && posts.length === 0) return <LoadingView label="正在加载首页..." />;
+  if (error && posts.length === 0) return <ErrorView message={error} onRetry={handleRefresh} />;
 
   return (
     <FlatList
-      style={styles.listSurface}
-      data={feed}
+      style={styles.container}
+      data={posts}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.content}
       refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={() => load(mode, true)}
-          tintColor={colors.leaf}
-          colors={[colors.leaf]}
-        />
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.leaf} colors={[colors.leaf]} />
       }
       ListHeaderComponent={
-        <HomeHeader
-          activeMode={mode}
-          onSelectMode={onSelectMode}
-          onQuickAction={onQuickAction}
-          onSearch={() => router.push('/search')}
-          onNotifications={() => router.push('/notifications')}
-          error={error}
-        />
+        <>
+          {/* 顶部导航 */}
+          <View style={styles.header}>
+            <View style={styles.logoRow}>
+              <View style={styles.logoMark}>
+                <View style={styles.logoLeafTall} />
+                <View style={styles.logoLeafSmall} />
+              </View>
+              <Text style={styles.brandText}>肉友社区</Text>
+            </View>
+            <View style={styles.headerActions}>
+              <Pressable style={styles.headerButton} onPress={() => router.push('/search')}>
+                <Image source={require('../../assets/images/search.png')} style={styles.headerIcon} />
+              </Pressable>
+              <Pressable style={styles.headerButton} onPress={() => router.push('/notifications')}>
+                <Image source={require('../../assets/images/menu.png')} style={styles.headerIcon} />
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Banner 轮播 */}
+          {banners.length > 0 && <BannerCarousel items={banners} />}
+
+          {/* 热门话题 */}
+          {topics.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>热门话题</Text>
+                <Pressable onPress={() => router.push('/search')}>
+                  <Text style={styles.sectionMore}>查看更多 →</Text>
+                </Pressable>
+              </View>
+              <View style={styles.topicsGrid}>
+                {topics.slice(0, 4).map((topic, index) => {
+                  const isTop = index < 2;
+                  const gradientColors = [
+                    ['#ff6b9d', '#ff8c5a'], // 粉红到橙
+                    ['#ffd93d', '#ff9a3d'], // 黄到橙
+                    ['#fff5e6', '#ffe6cc'], // 浅米色
+                    ['#fff5e6', '#ffe6cc'], // 浅米色
+                  ];
+                  const bgColor = gradientColors[index];
+
+                  // 图标资源
+                  const iconMap = [
+                    require('../../assets/images/topic_icon_one.png'),
+                    require('../../assets/images/topic_icon_two.png'),
+                    null,
+                    null,
+                  ];
+                  const hashIconMap = [
+                    require('../../assets/images/topic_icon_white.png'),
+                    require('../../assets/images/topic_icon_white.png'),
+                    require('../../assets/images/topic_icon_yellow.png'),
+                    require('../../assets/images/topic_icon_yellow.png'),
+                  ];
+
+                  return (
+                    <View key={`${topic.q}-${index}`} style={styles.topicCardWrapper}>
+                      <Pressable
+                        style={[
+                          styles.topicCard,
+                          { backgroundColor: bgColor[0] },
+                          !iconMap[index] && styles.topicCardNoIcon,
+                        ]}
+                        onPress={() => {
+                          if (topic.kind === 'topic') {
+                            router.push(`/topic/${encodeURIComponent(topic.q)}`);
+                          } else {
+                            router.push(`/search?q=${encodeURIComponent(topic.q)}`);
+                          }
+                        }}
+                      >
+                        <View style={styles.topicCardContent}>
+                          {iconMap[index] && (
+                            <>
+                              <Image source={iconMap[index]} style={styles.topicNumberIcon} />
+                              <View style={styles.topicNumberIconPlaceholder} />
+                            </>
+                          )}
+                          <Image source={hashIconMap[index]} style={styles.topicHashIcon} />
+                          <Text style={[styles.topicCardTitle, isTop && styles.topicCardTitleTop]} numberOfLines={1}>
+                            {topic.q}
+                          </Text>
+                        </View>
+                      </Pressable>
+                      {typeof topic.count === 'number' && (
+                        <TopicInfoRow topic={topic} />
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* 热门板块 */}
+          {boards.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>🌿 热门板块</Text>
+                <Pressable onPress={() => router.push('/(tabs)/boards')}>
+                  <Text style={styles.sectionMore}>查看全部 →</Text>
+                </Pressable>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.boardsScroll}>
+                {boards.map((board) => {
+                  const cover = absoluteAssetUrl(board.cover);
+                  return (
+                    <Pressable
+                      key={board.id}
+                      style={styles.boardCard}
+                      onPress={() => router.push(`/board/${board.slug}`)}
+                    >
+                      {cover ? (
+                        <Image source={{ uri: cover }} style={styles.boardImage} />
+                      ) : (
+                        <View style={styles.boardImageFallback}>
+                          <Text style={styles.boardEmoji}>🌱</Text>
+                        </View>
+                      )}
+                      <Text style={styles.boardName} numberOfLines={1}>
+                        {board.name}
+                      </Text>
+                      <Text style={styles.boardCount}>{board.childrenCount ?? 0} 种</Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Feed Tab 切换 */}
+          <View style={styles.feedTabs}>
+            {TABS.map((tab) => (
+              <Pressable
+                key={tab.key}
+                style={[styles.feedTab, activeTab === tab.key && styles.feedTabActive]}
+                onPress={() => setActiveTab(tab.key)}
+              >
+                <Text style={[styles.feedTabText, activeTab === tab.key && styles.feedTabTextActive]}>{tab.label}</Text>
+                {activeTab === tab.key && <View style={styles.feedTabIndicator} />}
+              </Pressable>
+            ))}
+          </View>
+        </>
       }
-      renderItem={({ item }) =>
-        item.kind === 'post'
-          ? <PostCard post={item.post} onPress={() => router.push(`/post/${item.post.id}`)} />
-          : <MarketInlineCard listing={item.listing} onPress={() => router.push(`/market/${item.listing.id}`)} />
+      renderItem={({ item }) => <PostCard post={item} onPress={() => router.push(`/post/${item.id}`)} />}
+      ItemSeparatorComponent={() => <View style={styles.postSeparator} />}
+      onEndReached={handleLoadMore}
+      onEndReachedThreshold={0.5}
+      ListFooterComponent={
+        loadingMore ? (
+          <View style={styles.loadingMore}>
+            <Text style={styles.loadingMoreText}>加载中...</Text>
+          </View>
+        ) : !cursor && posts.length > 0 ? (
+          <View style={styles.loadingMore}>
+            <Text style={styles.loadingMoreText}>— 没有更多了 —</Text>
+          </View>
+        ) : null
       }
-      ItemSeparatorComponent={() => <View style={styles.separator} />}
     />
   );
 }
 
-function HomeHeader({
-  activeMode,
-  onSelectMode,
-  onQuickAction,
-  onSearch,
-  onNotifications,
-  error,
-}: {
-  activeMode: FeedMode;
-  onSelectMode: (mode: FeedMode) => void;
-  onQuickAction: (key: QuickActionKey) => void;
-  onSearch: () => void;
-  onNotifications: () => void;
-  error: string | null;
-}) {
+function TopicInfoRow({ topic }: { topic: HotTopic }) {
+  const count = topic.count ?? 0;
   return (
-    <View style={styles.header}>
-      <View style={styles.topbar}>
-        <View style={styles.brandRow}>
-          <View style={styles.logoMark}>
-            <View style={styles.logoLeafTall} />
-            <View style={styles.logoLeafSmall} />
-          </View>
-          <View>
-            <Text style={styles.brand}>肉友社</Text>
-            <Text style={styles.subtitle}>今天看看肉友们的新状态</Text>
-          </View>
-        </View>
-        <View style={styles.topActions}>
-          <Pressable accessibilityRole="button" accessibilityLabel="搜索" style={styles.iconButton} onPress={onSearch}>
-            <Text style={styles.iconText}>搜</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="消息" style={styles.iconButton} onPress={onNotifications}>
-            <Text style={styles.iconText}>信</Text>
-          </Pressable>
-        </View>
+    <View style={styles.topicInfoRow}>
+      <View style={styles.topicAvatars}>
+        {topic.participants?.slice(0, 3).map((participant, pIndex) => {
+          const avatar = absoluteAssetUrl(participant.avatar);
+          return (
+            <View
+              key={participant.id}
+              style={[
+                styles.topicAvatar,
+                { zIndex: 3 - pIndex, marginLeft: pIndex > 0 ? -8 : 0 },
+              ]}
+            >
+              {avatar ? (
+                <Image source={{ uri: avatar }} style={styles.topicAvatarImage} />
+              ) : (
+                <View style={styles.topicAvatarPlaceholder}>
+                  <Text style={styles.topicAvatarText}>{participant.name.slice(0, 1)}</Text>
+                </View>
+              )}
+            </View>
+          );
+        })}
       </View>
-
-      <View style={styles.homeIntro}>
-        <Text style={styles.homeKicker}>COMMUNITY</Text>
-        <Text style={styles.homeTitle}>今日推荐</Text>
-        <Text style={styles.homeText}>新的养护记录、图鉴分享和交易动态。</Text>
-      </View>
-
-      <FlatList
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        data={quickActions}
-        keyExtractor={(item) => item.key}
-        contentContainerStyle={styles.quickList}
-        renderItem={({ item }) => (
-          <Pressable accessibilityRole="button" style={styles.quickAction} onPress={() => onQuickAction(item.key)}>
-            <Text style={styles.quickText}>{item.label}</Text>
-          </Pressable>
-        )}
-      />
-
-      <View style={styles.segmented}>
-        {modes.map((item) => (
-          <Pressable
-            accessibilityRole="button"
-            key={item.key}
-            onPress={() => onSelectMode(item.key)}
-            style={[styles.segment, activeMode === item.key && styles.segmentActive]}
-          >
-            <Text style={[styles.segmentText, activeMode === item.key && styles.segmentTextActive]}>
-              {item.label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      {error ? <Text style={styles.inlineError}>{error}</Text> : null}
+      <Text style={styles.topicParticipants}>{formatTopicCount(count)} 人参与</Text>
     </View>
   );
 }
 
-function PostCard({ post, onPress }: { post: PostSummary; onPress: () => void }) {
+function formatTopicCount(count: number) {
+  if (count <= 999) return String(count);
+  return count.toLocaleString('en-US').replace(/,/g, '，');
+}
+
+function BannerCarousel({ items }: { items: BannerItem[] }) {
+  const router = useRouter();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const bannerWidth = SCREEN_WIDTH - spacing.md * 2;
+
+  const startAutoPlay = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setActiveIndex((prev) => {
+        const next = (prev + 1) % items.length;
+        scrollViewRef.current?.scrollTo({ x: next * bannerWidth, animated: true });
+        return next;
+      });
+    }, 3000);
+  }, [items.length, bannerWidth]);
+
+  useEffect(() => {
+    if (items.length > 1) {
+      startAutoPlay();
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [items.length, startAutoPlay]);
+
+  const handleScroll = (event: any) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / bannerWidth);
+    setActiveIndex(index);
+  };
+
+  return (
+    <View style={styles.bannerContainer}>
+      <ScrollView
+        ref={scrollViewRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        onTouchStart={() => timerRef.current && clearInterval(timerRef.current)}
+        onTouchEnd={startAutoPlay}
+      >
+        {items.map((item) => (
+          <Pressable key={item.id} onPress={() => router.push(item.link)} style={styles.bannerSlide}>
+            <Image source={{ uri: item.image }} style={styles.bannerImage} />
+            <View style={styles.bannerOverlay}>
+              <View style={styles.bannerTextContainer}>
+                <Text style={styles.bannerTitle}>{item.title}</Text>
+                {item.subtitle && <Text style={styles.bannerSubtitle}>{item.subtitle}</Text>}
+              </View>
+            </View>
+          </Pressable>
+        ))}
+      </ScrollView>
+      {items.length > 1 && (
+        <View style={styles.bannerDots}>
+          {items.map((_, index) => (
+            <View key={index} style={[styles.bannerDot, index === activeIndex && styles.bannerDotActive]} />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function PostCard({ post, onPress }: { post: Post; onPress: () => void }) {
   const images = (post.images?.length ? post.images : post.cover ? [post.cover] : [])
     .map(absoluteAssetUrl)
     .filter((item): item is string => !!item)
-    .slice(0, 4);
+    .slice(0, 3);
+
   return (
-    <Pressable style={styles.card} onPress={onPress}>
-      {images.length > 0 ? (
-        <View style={styles.feedGallery}>
-          <Image source={{ uri: images[0] }} style={styles.feedHeroImage} />
-          {images.length > 1 ? (
-            <View style={styles.feedThumbRow}>
-              {images.slice(1, 4).map((image, index) => (
-                <Image key={`${image}-${index}`} source={{ uri: image }} style={styles.feedThumbImage} />
-              ))}
+    <Pressable style={styles.postCard} onPress={onPress}>
+      <View style={styles.postHeader}>
+        <View style={styles.postAuthorRow}>
+          {post.author.avatar ? (
+            <Image source={{ uri: absoluteAssetUrl(post.author.avatar) ?? undefined }} style={styles.postAvatar} />
+          ) : (
+            <View style={styles.postAvatarFallback}>
+              <Text style={styles.postAvatarText}>{post.author.name[0]}</Text>
             </View>
-          ) : null}
-        </View>
-      ) : null}
-
-      <View style={styles.authorRow}>
-        <Avatar uri={post.author?.avatar} name={post.author?.name ?? '肉友'} />
-        <View style={styles.authorInfo}>
-          <Text style={styles.authorName}>{post.author?.name ?? '肉友'}</Text>
-          <Text style={styles.cardMeta}>{post.board?.name ?? '社区'} · Lv.{post.author?.level ?? 1}</Text>
-        </View>
-      </View>
-
-      <Text numberOfLines={2} style={styles.postTitle}>{post.title}</Text>
-      {post.contentText ? <Text numberOfLines={3} style={styles.postText}>{post.contentText}</Text> : null}
-
-      <View style={styles.stats}>
-        <Text style={styles.stat}>看 {post.views ?? 0}</Text>
-        <Text style={styles.stat}>评 {post.comments ?? 0}</Text>
-        <Text style={styles.stat}>赞 {post.likes ?? 0}</Text>
-      </View>
-    </Pressable>
-  );
-}
-
-function MarketInlineCard({ listing, onPress }: { listing: MarketListingSummary; onPress: () => void }) {
-  const product = listing.products?.[0];
-  const image = absoluteAssetUrl(product?.cover || listing.cover);
-  const desc = stripHtml(product?.description || listing.description);
-  return (
-    <Pressable style={[styles.card, styles.marketCard]} onPress={onPress}>
-      <View style={styles.marketBadge}>
-        <Text style={styles.marketBadgeText}>交易</Text>
-      </View>
-      <View style={styles.marketRow}>
-        {image ? <Image source={{ uri: image }} style={styles.marketImage} /> : <View style={styles.marketFallback} />}
-        <View style={styles.marketBody}>
-          <Text numberOfLines={2} style={styles.marketTitle}>{listing.title}</Text>
-          {desc ? <Text numberOfLines={2} style={styles.marketDesc}>{desc}</Text> : null}
-          <View style={styles.marketBottom}>
-            <Text style={styles.price}>{formatPrice(product?.price ?? listing.price)}</Text>
-            <Text style={styles.cardMeta}>{listing.shipFrom ?? '发货地未填'}</Text>
+          )}
+          <View style={styles.postAuthorInfo}>
+            <Text style={styles.postAuthorName}>{post.author.name}</Text>
+            <Text style={styles.postMeta}>
+              {post.board.name} · Lv.{post.author.level ?? 1}
+            </Text>
           </View>
         </View>
       </View>
-    </Pressable>
-  );
-}
 
-function Avatar({ uri, name }: { uri?: string | null; name: string }) {
-  const source = absoluteAssetUrl(uri);
-  if (source) return <Image source={{ uri: source }} style={styles.avatar} />;
-  return (
-    <View style={styles.avatarFallback}>
-      <Text style={styles.avatarText}>{name.slice(0, 1)}</Text>
-    </View>
+      <Text style={styles.postTitle} numberOfLines={2}>
+        {post.title}
+      </Text>
+
+      {post.contentText && (
+        <Text style={styles.postContent} numberOfLines={3}>
+          {post.contentText}
+        </Text>
+      )}
+
+      {images.length > 0 && (
+        <View style={styles.postImages}>
+          {images.map((image, index) => (
+            <Image key={`${image}-${index}`} source={{ uri: image }} style={styles.postImage} />
+          ))}
+        </View>
+      )}
+
+      {post.tags.length > 0 && (
+        <View style={styles.postTags}>
+          {post.tags.slice(0, 3).map((tag, index) => (
+            <Text key={index} style={styles.postTag}>
+              #{tag}
+            </Text>
+          ))}
+        </View>
+      )}
+
+      <View style={styles.postStats}>
+        <Text style={styles.postStat}>👁 {post.views}</Text>
+        <Text style={styles.postStat}>💬 {post.comments}</Text>
+        <Text style={styles.postStat}>❤️ {post.likes}</Text>
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  listSurface: {
+  container: {
+    flex: 1,
     backgroundColor: colors.background,
   },
   content: {
-    padding: spacing.lg,
-    paddingTop: 64,
-    paddingBottom: 118,
-  },
-  separator: {
-    height: spacing.md,
+    paddingBottom: 100,
   },
   header: {
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  topbar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingTop: 50,
+    paddingBottom: spacing.sm,
+    backgroundColor: colors.background,
   },
-  brand: {
-    color: colors.ink,
-    fontSize: 26,
-    fontWeight: '900',
-  },
-  brandRow: {
+  logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   logoMark: {
     position: 'relative',
-    height: 34,
-    width: 32,
+    height: 28,
+    width: 24,
   },
   logoLeafTall: {
     position: 'absolute',
-    left: 6,
-    top: 1,
-    height: 29,
-    width: 12,
-    borderTopLeftRadius: 12,
-    borderBottomRightRadius: 12,
+    left: 3,
+    top: 0,
+    height: 22,
+    width: 9,
+    borderTopLeftRadius: 9,
+    borderBottomRightRadius: 9,
     backgroundColor: colors.leaf,
-    transform: [{ rotate: '-14deg' }],
+    transform: [{ rotate: '-12deg' }],
   },
   logoLeafSmall: {
     position: 'absolute',
-    right: 4,
-    bottom: 2,
-    height: 22,
-    width: 10,
-    borderTopRightRadius: 10,
-    borderBottomLeftRadius: 10,
+    right: 2,
+    bottom: 1,
+    height: 17,
+    width: 8,
+    borderTopRightRadius: 8,
+    borderBottomLeftRadius: 8,
     backgroundColor: colors.ink,
-    transform: [{ rotate: '28deg' }],
+    transform: [{ rotate: '25deg' }],
   },
-  subtitle: {
-    marginTop: 2,
-    color: colors.muted,
-    fontSize: 13,
+  brandText: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: colors.ink,
   },
-  topActions: {
+  headerActions: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
-  iconButton: {
+  headerButton: {
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 44,
-    width: 44,
-    borderRadius: 22,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: 18,
+    backgroundColor: colors.backgroundSoft,
   },
-  iconText: {
-    color: colors.leaf,
-    fontSize: 13,
-    fontWeight: '800',
+  headerIcon: {
+    width: 20,
+    height: 20,
   },
-  homeIntro: {
-    gap: spacing.xs,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xs,
+  headerButtonText: {
+    fontSize: 18,
   },
-  homeKicker: {
-    color: colors.leafDeep,
-    fontSize: 12,
-    fontWeight: '800',
+  bannerContainer: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    borderRadius: radii.sm,
+    overflow: 'hidden',
   },
-  homeTitle: {
-    color: colors.ink,
-    fontSize: 27,
-    fontWeight: '900',
-    lineHeight: 33,
+  bannerSlide: {
+    width: SCREEN_WIDTH - spacing.md * 2,
+    height: (SCREEN_WIDTH - spacing.md * 2) * 0.45,
   },
-  homeText: {
-    color: colors.muted,
-    fontSize: 14,
-    lineHeight: 20,
+  bannerImage: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: colors.backgroundSoft,
   },
-  quickList: {
-    gap: spacing.sm,
+  bannerOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: spacing.md,
+    paddingBottom: spacing.lg,
   },
-  quickAction: {
-    borderRadius: radii.pill,
-    backgroundColor: colors.leafSoft,
+  bannerTextContainer: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+    borderRadius: radii.sm,
+    alignSelf: 'flex-start',
   },
-  quickText: {
-    color: colors.leaf,
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  segmented: {
-    flexDirection: 'row',
-    borderRadius: radii.md,
-    backgroundColor: colors.backgroundSoft,
-    padding: 4,
-  },
-  segment: {
-    flex: 1,
-    alignItems: 'center',
-    borderRadius: 11,
-    paddingVertical: 9,
-  },
-  segmentActive: {
-    backgroundColor: colors.surface,
-    ...shadows.card,
-  },
-  segmentText: {
-    color: colors.muted,
+  bannerTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '800',
+    color: '#ffffff',
   },
-  segmentTextActive: {
-    color: colors.leaf,
+  bannerSubtitle: {
+    fontSize: 11,
+    color: '#ffffff',
+    opacity: 0.9,
+    marginTop: 2,
   },
-  inlineError: {
-    color: '#b91c1c',
-    fontSize: 12,
+  bannerDots: {
+    position: 'absolute',
+    bottom: spacing.sm,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 4,
   },
-  card: {
-    ...shadows.card,
-    overflow: 'hidden',
-    borderRadius: radii.md,
-    borderWidth: 0,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    padding: spacing.lg,
+  bannerDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: 'rgba(255,255,255,0.5)',
   },
-  feedGallery: {
-    gap: spacing.sm,
+  bannerDotActive: {
+    width: 16,
+    backgroundColor: '#ffffff',
+  },
+  section: {
+    paddingHorizontal: spacing.md,
     marginBottom: spacing.md,
   },
-  feedHeroImage: {
-    aspectRatio: 1.22,
-    width: '100%',
-    borderRadius: radii.md,
-    backgroundColor: colors.sand,
-  },
-  feedThumbRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  feedThumbImage: {
-    height: 54,
-    width: 72,
-    borderRadius: radii.sm,
-    backgroundColor: colors.sand,
-  },
-  authorRow: {
+  sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
   },
-  avatar: {
-    height: 38,
-    width: 38,
-    borderRadius: 19,
-    backgroundColor: colors.sand,
-  },
-  avatarFallback: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 38,
-    width: 38,
-    borderRadius: 19,
-    backgroundColor: colors.sand,
-  },
-  avatarText: {
-    color: colors.leaf,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  authorInfo: {
-    flex: 1,
-  },
-  authorName: {
-    color: colors.ink,
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  cardMeta: {
-    color: colors.muted,
-    fontSize: 12,
-  },
-  postTitle: {
-    marginTop: spacing.md,
-    color: colors.ink,
-    fontSize: 18,
-    fontWeight: '900',
-    lineHeight: 24,
-  },
-  postText: {
-    marginTop: spacing.xs,
-    color: colors.muted,
-    fontSize: 14,
-    lineHeight: 21,
-  },
-  stats: {
-    flexDirection: 'row',
-    gap: spacing.lg,
-    marginTop: spacing.md,
-  },
-  stat: {
-    color: colors.muted,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  marketCard: {
-    backgroundColor: colors.surfaceWarm,
-  },
-  marketBadge: {
-    alignSelf: 'flex-start',
-    borderRadius: radii.pill,
-    backgroundColor: colors.amberSoft,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-  },
-  marketBadgeText: {
-    color: '#92400e',
-    fontSize: 11,
-    fontWeight: '900',
-  },
-  marketRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.sm,
-  },
-  marketImage: {
-    height: 112,
-    width: 112,
-    borderRadius: 14,
-    backgroundColor: colors.leafSoft,
-  },
-  marketFallback: {
-    height: 112,
-    width: 112,
-    borderRadius: 14,
-    backgroundColor: colors.leafSoft,
-  },
-  marketBody: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  marketTitle: {
-    color: colors.ink,
+  sectionTitle: {
     fontSize: 16,
     fontWeight: '900',
-    lineHeight: 22,
+    color: colors.ink,
   },
-  marketDesc: {
-    color: colors.muted,
-    fontSize: 13,
-    lineHeight: 18,
+  sectionMore: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.leaf,
   },
-  marketBottom: {
-    marginTop: 'auto',
-    gap: 2,
+  topicsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
   },
-  price: {
-    color: '#dc2626',
-    fontSize: 18,
+  topicCardWrapper: {
+    width: '48%',
+  },
+  topicCard: {
+    width: '100%',
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    height: 26,
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'visible',
+  },
+  topicCardNoIcon: {
+    paddingHorizontal: 22,
+  },
+  topicCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 26,
+  },
+  topicNumberIcon: {
+    width: 26,
+    height: 26,
+    position: 'absolute',
+    top: -8,
+    left: 0,
+    marginRight: 7,
+  },
+  topicNumberIconPlaceholder: {
+    width: 20,
+    height: 20,
+    marginRight: 7,
+  },
+  topicHashIcon: {
+    width: 12,
+    height: 12,
+  },
+  topicCardTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#8b5a3c',
+  },
+  topicCardTitleTop: {
+    color: '#ffffff',
+  },
+  topicInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+    minHeight: 28,
+  },
+  topicAvatars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  topicAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: colors.surface,
+  },
+  topicAvatarImage: {
+    width: 28,
+    height: 28,
+  },
+  topicAvatarPlaceholder: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#e0e0e0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topicAvatarText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#ffffff',
+  },
+  topicParticipants: {
+    flexShrink: 1,
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.ink,
+    marginLeft: 8,
+  },
+  topicItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: colors.backgroundSoft,
+    minWidth: '48%',
+    maxWidth: '48%',
+  },
+  topicRank: {
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 4,
+    backgroundColor: colors.leafSoft,
+  },
+  topicRankHot: {
+    backgroundColor: colors.leaf,
+  },
+  topicRankText: {
+    fontSize: 11,
     fontWeight: '900',
+    color: colors.leaf,
+  },
+  topicRankTextHot: {
+    color: '#ffffff',
+  },
+  topicTag: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.ink,
+  },
+  topicCount: {
+    fontSize: 11,
+    color: colors.muted,
+  },
+  boardsScroll: {
+    gap: spacing.sm,
+    paddingRight: spacing.md,
+  },
+  boardCard: {
+    width: 90,
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  boardImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: colors.backgroundSoft,
+  },
+  boardImageFallback: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: colors.leafSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  boardEmoji: {
+    fontSize: 28,
+  },
+  boardName: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.ink,
+    textAlign: 'center',
+  },
+  boardCount: {
+    fontSize: 10,
+    color: colors.muted,
+  },
+  feedTabs: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
+  },
+  feedTab: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    position: 'relative',
+  },
+  feedTabActive: {},
+  feedTabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.muted,
+  },
+  feedTabTextActive: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.leaf,
+  },
+  feedTabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: colors.leaf,
+    borderRadius: 1,
+  },
+  postCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.sm,
+    padding: spacing.md,
+    marginHorizontal: spacing.md,
+    ...shadows.card,
+  },
+  postHeader: {
+    marginBottom: spacing.sm,
+  },
+  postAuthorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  postAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.backgroundSoft,
+  },
+  postAvatarFallback: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.leafSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  postAvatarText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.leaf,
+  },
+  postAuthorInfo: {
+    flex: 1,
+  },
+  postAuthorName: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.ink,
+  },
+  postMeta: {
+    fontSize: 10,
+    color: colors.muted,
+  },
+  postTitle: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: colors.ink,
+    lineHeight: 20,
+    marginBottom: spacing.xs,
+  },
+  postContent: {
+    fontSize: 13,
+    color: colors.muted,
+    lineHeight: 18,
+    marginBottom: spacing.sm,
+  },
+  postImages: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  postImage: {
+    flex: 1,
+    aspectRatio: 1,
+    borderRadius: radii.sm,
+    backgroundColor: colors.backgroundSoft,
+  },
+  postTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  postTag: {
+    fontSize: 11,
+    color: colors.leaf,
+    backgroundColor: colors.leafSoft,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+  postStats: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  postStat: {
+    fontSize: 11,
+    color: colors.muted,
+  },
+  postSeparator: {
+    height: spacing.sm,
+  },
+  loadingMore: {
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+  },
+  loadingMoreText: {
+    fontSize: 12,
+    color: colors.muted,
   },
 });

@@ -1,14 +1,19 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  FlatList,
+  Image,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import { ErrorView, LoadingView } from '../../components/StateView';
-import { absoluteAssetUrl, apiGet, type BoardDetailResponse, type PostSummary } from '../../lib/api';
+import { absoluteAssetUrl, apiGet, type BoardDetailResponse } from '../../lib/api';
 import { colors, radii, shadows, spacing } from '../../lib/theme';
-
-type Item =
-  | { kind: 'child'; id: string; title: string; desc?: string | null; cover?: string | null; meta: string; path: string }
-  | { kind: 'post'; id: string; post: PostSummary };
 
 export default function BoardDetailScreen() {
   const router = useRouter();
@@ -23,6 +28,8 @@ export default function BoardDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
   const load = useCallback(async (refresh = false) => {
     if (!apiPath) return;
@@ -30,7 +37,8 @@ export default function BoardDetailScreen() {
     else setLoading(true);
     setError(null);
     try {
-      const result = await apiGet<BoardDetailResponse>(`/api/mobile/boards/${apiPath}`);
+      // 添加 withSpecies 参数来获取三级数据
+      const result = await apiGet<BoardDetailResponse>(`/api/mobile/boards/${apiPath}?withSpecies=1`);
       setData(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : '图鉴详情加载失败');
@@ -44,35 +52,41 @@ export default function BoardDetailScreen() {
     void load();
   }, [load]);
 
-  const items = useMemo<Item[]>(() => {
-    if (!data) return [];
-    const childItems = (data.type === 'species' ? data.related : data.children).map((item) => ({
-      kind: 'child' as const,
-      id: item.id,
-      title: item.name,
-      desc: item.latinName,
-      cover: item.cover,
-      meta:
-        data.type === 'category'
-          ? `${'speciesCount' in item ? item.speciesCount ?? 0 : 0} 个品种 · ${item.posts ?? 0} 帖`
-          : `${item.posts ?? 0} 帖`,
-      path: item.path,
-    }));
-    return [
-      ...childItems,
-      ...data.posts.map((post) => ({ kind: 'post' as const, id: post.id, post })),
-    ];
+  const images = useMemo(() => {
+    if (!data?.detail) return [];
+    const gallery = data.detail.gallery || [];
+    const cover = data.detail.cover;
+    if (cover && !gallery.includes(cover)) {
+      return [cover, ...gallery].map(absoluteAssetUrl).filter((url): url is string => !!url);
+    }
+    return gallery.map(absoluteAssetUrl).filter((url): url is string => !!url);
   }, [data]);
 
   if (loading) return <LoadingView label="正在加载图鉴..." />;
   if (!data) return <ErrorView message={error ?? '图鉴不存在'} onRetry={() => load()} />;
 
+  const isSpecies = data.type === 'species';
+
   return (
     <>
-      <Stack.Screen options={{ title: data.detail.name, headerStyle: { backgroundColor: colors.background } }} />
-      <FlatList
-        data={items}
-        keyExtractor={(item) => `${item.kind}-${item.id}`}
+      <Stack.Screen
+        options={{
+          title: data.detail.name,
+          headerStyle: { backgroundColor: colors.background },
+          headerRight: () => (
+            <View style={styles.headerActions}>
+              <Pressable style={styles.headerButton}>
+                <Text style={styles.headerIcon}>♡</Text>
+              </Pressable>
+              <Pressable style={styles.headerButton}>
+                <Text style={styles.headerIcon}>⤴</Text>
+              </Pressable>
+            </View>
+          ),
+        }}
+      />
+      <ScrollView
+        style={styles.container}
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
@@ -82,257 +96,608 @@ export default function BoardDetailScreen() {
             colors={[colors.leaf]}
           />
         }
-        ListHeaderComponent={<Header data={data} />}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.meta}>暂无内容</Text>
+      >
+        {/* 图片轮播区域 */}
+        {images.length > 0 && (
+          <View style={styles.gallerySection}>
+            <Image source={{ uri: images[activeImageIndex] }} style={styles.heroImage} />
+            {images.length > 1 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbScroll}>
+                <View style={styles.thumbRow}>
+                  {images.map((img, idx) => (
+                    <Pressable key={idx} onPress={() => setActiveImageIndex(idx)}>
+                      <Image
+                        source={{ uri: img }}
+                        style={[styles.thumbImage, activeImageIndex === idx && styles.thumbImageActive]}
+                      />
+                    </Pressable>
+                  ))}
+                </View>
+              </ScrollView>
+            )}
           </View>
-        }
-        renderItem={({ item }) =>
-          item.kind === 'child' ? (
-            <ChildCard item={item} onPress={() => router.push(item.path)} />
-          ) : (
-            <PostCard post={item.post} onPress={() => router.push(`/post/${item.post.id}`)} />
-          )
-        }
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
+        )}
+
+        {/* 基本信息 */}
+        <View style={styles.infoCard}>
+          <View style={styles.titleRow}>
+            <View style={styles.plantIcon}>
+              <Text style={styles.plantIconText}>🌿</Text>
+            </View>
+            <Text style={styles.plantName}>{data.detail.name}</Text>
+          </View>
+          {data.detail.latinName && <Text style={styles.latinName}>{data.detail.latinName}</Text>}
+
+          {/* 养护标签 */}
+          {isSpecies && (
+            <View style={styles.tagRow}>
+              {data.detail.watering === '少' && <Tag label="耐旱" />}
+              {data.detail.light === '半阴' && <Tag label="喜阴" />}
+              {data.detail.hardiness && <Tag label="喜凉爽" />}
+              {data.detail.growthType === '慢' && <Tag label="生长缓慢" />}
+            </View>
+          )}
+
+          {/* 植物简介 */}
+          {data.detail.description && (
+            <View style={styles.descSection}>
+              <Text style={styles.sectionTitle}>植物简介</Text>
+              <Text style={styles.descText}>{data.detail.description}</Text>
+            </View>
+          )}
+
+          {/* 养护要点 - 图标化 */}
+          {isSpecies && (
+            <View style={styles.careSection}>
+              <Text style={styles.sectionTitle}>养护要点</Text>
+              <View style={styles.careGrid}>
+                <CareItem icon="☀️" label="光照" value={data.detail.light || '充足光照'} />
+                <CareItem icon="💧" label="浇水" value={data.detail.watering || '见干见湿'} />
+                <CareItem icon="🌡️" label="温度" value="15-25℃" />
+                <CareItem icon="💨" label="湿度" value="40-60%" />
+                <CareItem icon="🌱" label="土壤" value="疏松透气" />
+                <CareItem icon="🌿" label="施肥" value="春秋施肥" />
+              </View>
+            </View>
+          )}
+
+          {/* 植物信息 */}
+          {isSpecies && (
+            <View style={styles.infoSection}>
+              <Text style={styles.sectionTitle}>植物信息</Text>
+              <View style={styles.infoTable}>
+                {data.detail.originRegion && <InfoRow label="产地" value={data.detail.originRegion} />}
+                <InfoRow label="生长习性" value="喜光耐旱，适合室内养护" />
+                <InfoRow label="适宜温度" value="15 ~ 25℃" />
+                {data.detail.hardiness && <InfoRow label="耐寒性" value={data.detail.hardiness} />}
+                <InfoRow label="耐热性" value="不耐高温 35℃" />
+                <InfoRow label="浇水频率" value={data.detail.watering || '春秋 7-10 天一次'} />
+                <InfoRow label="宜繁殖方式" value="叶插、扦插、播种" />
+                {data.detail.growthType && <InfoRow label="生长周期" value={data.detail.growthType} />}
+              </View>
+            </View>
+          )}
+
+          {/* 生长周期时间轴 */}
+          {isSpecies && (
+            <View style={styles.timelineSection}>
+              <Text style={styles.sectionTitle}>生长周期</Text>
+              <View style={styles.timeline}>
+                <TimelineItem season="春季" period="(3-5月)" status="active" description="生长旺盛期，需充足光照和水分" />
+                <TimelineItem season="夏季" period="(6-8月)" status="active" description="注意遮阴，减少浇水" />
+                <TimelineItem season="秋季" period="(9-11月)" status="active" description="生长期，适合繁殖" />
+                <TimelineItem season="冬季" period="(12-2月)" status="dormant" description="休眠期，控水保温" />
+              </View>
+            </View>
+          )}
+
+          {/* 常见问题 FAQ */}
+          {isSpecies && (
+            <View style={styles.faqSection}>
+              <Text style={styles.sectionTitle}>常见问题</Text>
+              <View style={styles.faqList}>
+                <FaqItem
+                  question="吉娃莲叶片变软怎么办？"
+                  answer="可能是缺水或根系问题。检查土壤湿度，如果干燥需要浇水；如果土壤湿润，可能是根系腐烂，需要检查根部。"
+                  expanded={expandedFaq === 0}
+                  onToggle={() => setExpandedFaq(expandedFaq === 0 ? null : 0)}
+                />
+                <FaqItem
+                  question="叶片为什么会掉？"
+                  answer="正常的新陈代谢会导致底部老叶脱落。如果大量掉叶，可能是浇水过多、光照不足或温度过低。"
+                  expanded={expandedFaq === 1}
+                  onToggle={() => setExpandedFaq(expandedFaq === 1 ? null : 1)}
+                />
+                <FaqItem
+                  question="如何让叶片更鲜艳？"
+                  answer="增加光照时间，适当控水，温差大的环境有助于上色。春秋季节是最佳上色期。"
+                  expanded={expandedFaq === 2}
+                  onToggle={() => setExpandedFaq(expandedFaq === 2 ? null : 2)}
+                />
+                <FaqItem
+                  question="为什么这么慢？"
+                  answer="多肉植物生长速度较慢是正常现象。保证充足光照、适量浇水和施肥可以促进生长。"
+                  expanded={expandedFaq === 3}
+                  onToggle={() => setExpandedFaq(expandedFaq === 3 ? null : 3)}
+                />
+                <FaqItem
+                  question="吉娃莲可以淋雨吗？"
+                  answer="不建议淋雨。雨水可能导致叶片积水腐烂，尤其是夏季高温时期。如果淋雨后要及时吹干叶心积水。"
+                  expanded={expandedFaq === 4}
+                  onToggle={() => setExpandedFaq(expandedFaq === 4 ? null : 4)}
+                />
+              </View>
+            </View>
+          )}
+
+          {/* 相关品种推荐 */}
+          {data.related.length > 0 && (
+            <View style={styles.relatedSection}>
+              <Text style={styles.sectionTitle}>相关品种</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={styles.relatedRow}>
+                  {data.related.slice(0, 6).map((item) => {
+                    const cover = absoluteAssetUrl(item.cover);
+                    return (
+                      <Pressable
+                        key={item.id}
+                        style={styles.relatedCard}
+                        onPress={() => router.push(item.path)}
+                      >
+                        {cover ? (
+                          <Image source={{ uri: cover }} style={styles.relatedImage} />
+                        ) : (
+                          <View style={styles.relatedImageFallback} />
+                        )}
+                        <Text numberOfLines={1} style={styles.relatedName}>
+                          {item.name}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+
+      {/* 底部固定操作按钮 */}
+      <View style={styles.bottomBar}>
+        <Pressable style={styles.collectButton}>
+          <Text style={styles.collectButtonText}>1G 收藏在图鉴</Text>
+        </Pressable>
+        <Pressable style={styles.similarButton}>
+          <Text style={styles.similarButtonText}>💚 查看相似花卉 →</Text>
+        </Pressable>
+      </View>
     </>
   );
 }
 
-function Header({ data }: { data: BoardDetailResponse }) {
-  const cover = absoluteAssetUrl(data.detail.cover || data.detail.gallery?.[0]);
+function Tag({ label }: { label: string }) {
   return (
-    <View style={styles.header}>
-      {cover ? <Image source={{ uri: cover }} style={styles.heroImage} /> : <View style={styles.heroFallback} />}
-      <View style={styles.headerCard}>
-        <Text style={styles.crumbs}>{data.path.map((item) => item.label).join(' / ')}</Text>
-        <Text style={styles.title}>{data.detail.name}</Text>
-        {data.detail.latinName ? <Text style={styles.latin}>{data.detail.latinName}</Text> : null}
-        {data.detail.description ? <Text style={styles.desc}>{data.detail.description}</Text> : null}
-
-        {data.type === 'species' ? <SpeciesFacts data={data} /> : <GroupFacts data={data} />}
-
-        {data.detail.tips?.length ? (
-          <View style={styles.tips}>
-            {data.detail.tips.slice(0, 5).map((tip) => (
-              <Text key={tip} style={styles.tip}>{tip}</Text>
-            ))}
-          </View>
-        ) : null}
-      </View>
-
-      {(data.type === 'species' ? data.related.length : data.children.length) > 0 ? (
-        <Text style={styles.sectionTitle}>{data.type === 'species' ? '同属品种' : '下级图鉴'}</Text>
-      ) : null}
-      {data.posts.length > 0 ? <Text style={styles.sectionTitle}>相关帖子</Text> : null}
+    <View style={styles.tag}>
+      <Text style={styles.tagText}>{label}</Text>
     </View>
   );
 }
 
-function SpeciesFacts({ data }: { data: BoardDetailResponse }) {
+function CareItem({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
-    <View style={styles.facts}>
-      <Fact label="难度" value={`${data.detail.avgDifficulty?.toFixed(1) ?? data.detail.difficulty ?? '-'} / 5`} />
-      <Fact label="光照" value={data.detail.light ?? '-'} />
-      <Fact label="浇水" value={data.detail.watering ?? '-'} />
-      <Fact label="耐寒" value={data.detail.hardiness ?? '-'} />
-      {data.detail.growthType ? <Fact label="生长型" value={data.detail.growthType} /> : null}
-      {data.detail.originRegion ? <Fact label="原产地" value={data.detail.originRegion} /> : null}
+    <View style={styles.careItem}>
+      <Text style={styles.careIcon}>{icon}</Text>
+      <Text style={styles.careLabel}>{label}</Text>
+      <Text style={styles.careValue}>{value}</Text>
     </View>
   );
 }
 
-function GroupFacts({ data }: { data: BoardDetailResponse }) {
+function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <View style={styles.facts}>
-      <Fact label="帖子" value={String(data.detail.posts ?? 0)} />
-      {data.type === 'category' ? <Fact label="属" value={String(data.detail.generaCount ?? 0)} /> : null}
-      {data.type === 'genus' ? <Fact label="品种" value={String(data.detail.speciesCount ?? 0)} /> : null}
+    <View style={styles.infoRow}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
     </View>
   );
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.fact}>
-      <Text style={styles.factValue}>{value}</Text>
-      <Text style={styles.factLabel}>{label}</Text>
-    </View>
-  );
-}
-
-function ChildCard({
-  item,
-  onPress,
+function TimelineItem({
+  season,
+  period,
+  status,
+  description,
 }: {
-  item: Extract<Item, { kind: 'child' }>;
-  onPress: () => void;
+  season: string;
+  period: string;
+  status: 'active' | 'dormant';
+  description: string;
 }) {
-  const image = absoluteAssetUrl(item.cover);
   return (
-    <Pressable style={styles.card} onPress={onPress}>
-      {image ? <Image source={{ uri: image }} style={styles.cover} /> : <View style={styles.coverFallback} />}
-      <View style={styles.cardBody}>
-        <Text numberOfLines={1} style={styles.cardTitle}>{item.title}</Text>
-        {item.desc ? <Text numberOfLines={1} style={styles.cardDesc}>{item.desc}</Text> : null}
-        <Text style={styles.meta}>{item.meta}</Text>
+    <View style={styles.timelineItem}>
+      <View style={styles.timelineLeft}>
+        <View style={[styles.timelineDot, status === 'active' && styles.timelineDotActive]} />
+        <View style={styles.timelineLine} />
       </View>
-    </Pressable>
+      <View style={styles.timelineContent}>
+        <View style={styles.timelineHeader}>
+          <Text style={styles.timelineSeason}>{season}</Text>
+          <Text style={styles.timelinePeriod}>{period}</Text>
+        </View>
+        <Text style={styles.timelineDesc}>{description}</Text>
+      </View>
+    </View>
   );
 }
 
-function PostCard({ post, onPress }: { post: PostSummary; onPress: () => void }) {
-  const image = absoluteAssetUrl(post.cover || post.images?.[0]);
+function FaqItem({
+  question,
+  answer,
+  expanded,
+  onToggle,
+}: {
+  question: string;
+  answer: string;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
   return (
-    <Pressable style={styles.card} onPress={onPress}>
-      {image ? <Image source={{ uri: image }} style={styles.cover} /> : <View style={styles.coverFallback} />}
-      <View style={styles.cardBody}>
-        <Text numberOfLines={2} style={styles.cardTitle}>{post.title}</Text>
-        {post.contentText ? <Text numberOfLines={2} style={styles.cardDesc}>{post.contentText}</Text> : null}
-        <Text style={styles.meta}>看 {post.views ?? 0} · 评 {post.comments ?? 0} · 赞 {post.likes ?? 0}</Text>
-      </View>
-    </Pressable>
+    <View style={styles.faqItem}>
+      <Pressable style={styles.faqQuestion} onPress={onToggle}>
+        <Text style={styles.faqQuestionIcon}>Q</Text>
+        <Text style={styles.faqQuestionText}>{question}</Text>
+        <Text style={styles.faqToggle}>{expanded ? '▼' : '▶'}</Text>
+      </Pressable>
+      {expanded && (
+        <View style={styles.faqAnswer}>
+          <Text style={styles.faqAnswerText}>{answer}</Text>
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   content: {
-    padding: spacing.lg,
-    paddingBottom: 118,
+    paddingBottom: 100,
   },
-  separator: {
-    height: spacing.md,
+  headerActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
-  header: {
+  headerButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerIcon: {
+    fontSize: 20,
+    color: colors.ink,
+  },
+  gallerySection: {
     gap: spacing.md,
-    marginBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
   },
   heroImage: {
-    height: 220,
     width: '100%',
+    aspectRatio: 1.2,
     borderRadius: radii.lg,
     backgroundColor: colors.backgroundSoft,
   },
-  heroFallback: {
-    height: 220,
-    width: '100%',
-    borderRadius: radii.lg,
-    backgroundColor: colors.backgroundSoft,
+  thumbScroll: {
+    marginHorizontal: -spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
-  headerCard: {
-    ...shadows.card,
+  thumbRow: {
+    flexDirection: 'row',
     gap: spacing.sm,
-    borderRadius: radii.lg,
-    borderWidth: 0,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    padding: spacing.md,
   },
-  crumbs: {
-    color: colors.leaf,
-    fontSize: 12,
-    fontWeight: '900',
+  thumbImage: {
+    width: 72,
+    height: 72,
+    borderRadius: radii.md,
+    backgroundColor: colors.backgroundSoft,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
-  title: {
-    color: colors.ink,
+  thumbImageActive: {
+    borderColor: colors.leaf,
+  },
+  infoCard: {
+    gap: spacing.lg,
+    padding: spacing.lg,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  plantIcon: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: colors.leafSoft,
+  },
+  plantIconText: {
+    fontSize: 20,
+  },
+  plantName: {
+    flex: 1,
     fontSize: 24,
     fontWeight: '900',
+    color: colors.ink,
   },
-  latin: {
-    color: colors.muted,
+  latinName: {
     fontSize: 14,
     fontStyle: 'italic',
+    color: colors.muted,
+    marginTop: -spacing.sm,
   },
-  desc: {
-    color: colors.ink,
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  facts: {
+  tagRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  fact: {
-    minWidth: '30%',
-    flexGrow: 1,
-    borderRadius: radii.md,
+  tag: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radii.pill,
     backgroundColor: colors.leafSoft,
-    padding: spacing.sm,
   },
-  factValue: {
-    color: colors.leaf,
-    fontSize: 14,
-    fontWeight: '900',
-  },
-  factLabel: {
-    marginTop: 2,
-    color: colors.muted,
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  tips: {
-    gap: spacing.xs,
-  },
-  tip: {
-    color: colors.muted,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  sectionTitle: {
-    color: colors.ink,
-    fontSize: 18,
-    fontWeight: '900',
-  },
-  card: {
-    ...shadows.card,
-    overflow: 'hidden',
-    borderRadius: radii.lg,
-    borderWidth: 0,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  cover: {
-    aspectRatio: 1.35,
-    width: '100%',
-    backgroundColor: colors.backgroundSoft,
-  },
-  coverFallback: {
-    aspectRatio: 1.35,
-    width: '100%',
-    backgroundColor: colors.backgroundSoft,
-  },
-  cardBody: {
-    flex: 1,
-    gap: spacing.xs,
-    padding: spacing.lg,
-  },
-  cardTitle: {
-    color: colors.ink,
-    fontSize: 16,
-    fontWeight: '900',
-    lineHeight: 22,
-  },
-  cardDesc: {
-    color: colors.muted,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  meta: {
-    marginTop: 'auto',
-    color: colors.muted,
+  tagText: {
     fontSize: 12,
     fontWeight: '700',
+    color: colors.leaf,
   },
-  empty: {
-    ...shadows.card,
+  descSection: {
+    gap: spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: colors.ink,
+  },
+  descText: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: colors.muted,
+  },
+  careSection: {
+    gap: spacing.md,
+  },
+  careGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+  },
+  careItem: {
+    width: '30%',
+    minWidth: 100,
     alignItems: 'center',
-    borderRadius: radii.lg,
-    borderWidth: 0,
-    borderColor: colors.border,
+    gap: spacing.xs,
+  },
+  careIcon: {
+    fontSize: 32,
+  },
+  careLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.ink,
+  },
+  careValue: {
+    fontSize: 11,
+    color: colors.muted,
+    textAlign: 'center',
+  },
+  infoSection: {
+    gap: spacing.md,
+  },
+  infoTable: {
+    gap: spacing.sm,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: colors.muted,
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.ink,
+    textAlign: 'right',
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+  timelineSection: {
+    gap: spacing.md,
+  },
+  timeline: {
+    gap: spacing.md,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  timelineLeft: {
+    alignItems: 'center',
+    width: 20,
+  },
+  timelineDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.border,
+    borderWidth: 2,
+    borderColor: colors.background,
+  },
+  timelineDotActive: {
+    backgroundColor: colors.leaf,
+  },
+  timelineLine: {
+    flex: 1,
+    width: 2,
+    backgroundColor: colors.border,
+    marginTop: 4,
+  },
+  timelineContent: {
+    flex: 1,
+    paddingBottom: spacing.sm,
+  },
+  timelineHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  timelineSeason: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.ink,
+  },
+  timelinePeriod: {
+    fontSize: 12,
+    color: colors.muted,
+  },
+  timelineDesc: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: colors.muted,
+  },
+  faqSection: {
+    gap: spacing.md,
+  },
+  faqList: {
+    gap: spacing.sm,
+  },
+  faqItem: {
+    borderRadius: radii.md,
     backgroundColor: colors.surface,
+    overflow: 'hidden',
+  },
+  faqQuestion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+  },
+  faqQuestionIcon: {
+    width: 24,
+    height: 24,
+    lineHeight: 24,
+    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '900',
+    color: colors.leaf,
+    backgroundColor: colors.leafSoft,
+    borderRadius: 12,
+  },
+  faqQuestionText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.ink,
+  },
+  faqToggle: {
+    fontSize: 10,
+    color: colors.muted,
+  },
+  faqAnswer: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+    paddingLeft: 52,
+  },
+  faqAnswerText: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: colors.muted,
+  },
+  relatedSection: {
+    gap: spacing.md,
+  },
+  relatedRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    paddingRight: spacing.lg,
+  },
+  relatedCard: {
+    width: 100,
+    gap: spacing.xs,
+  },
+  relatedImage: {
+    width: 100,
+    height: 100,
+    borderRadius: radii.md,
+    backgroundColor: colors.backgroundSoft,
+  },
+  relatedImageFallback: {
+    width: 100,
+    height: 100,
+    borderRadius: radii.md,
+    backgroundColor: colors.backgroundSoft,
+  },
+  relatedName: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.ink,
+    textAlign: 'center',
+  },
+  bottomSpacer: {
+    height: 20,
+  },
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    gap: spacing.sm,
     padding: spacing.lg,
+    backgroundColor: colors.background,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  collectButton: {
+    flex: 1,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.leaf,
+    backgroundColor: colors.surface,
+  },
+  collectButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.leaf,
+  },
+  similarButton: {
+    flex: 2,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.md,
+    backgroundColor: colors.leaf,
+  },
+  similarButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#ffffff',
   },
 });
