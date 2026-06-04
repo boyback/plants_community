@@ -13,7 +13,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
-import { requireUser, isVipActive } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
+import { isVipActive } from '@/lib/vip';
 import {
   ALLOWED_IMAGE_MIME,
   ALLOWED_VIDEO_MIME,

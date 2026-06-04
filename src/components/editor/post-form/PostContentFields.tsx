@@ -57,13 +57,14 @@ export function PostContentFields({
 }: Props) {
   if (type === 'rich') {
     return (
-      <FieldRow label='帖子内容'>
+      <FieldRow label={<><span className="text-rose-500">*</span> 正文内容</>}>
         <RichTextEditor
           value={contentJson}
           onChange={onContentJsonChange}
           placeholder={t('editor.placeholderRich')}
-          minHeight={200}
+          minHeight={460}
           charLimit={20000}
+          className="rounded-xl"
         />
       </FieldRow>
     );
@@ -203,13 +204,14 @@ export function PostContentFields({
   if (type === 'event') {
     return (
       <>
-        <FieldRow label={t('editor.event')}>
+        <FieldRow label={<><span className="text-rose-500">*</span> 正文内容</>}>
           <RichTextEditor
             value={contentJson}
             onChange={onContentJsonChange}
             placeholder={t('editor.event')}
-            minHeight={200}
+            minHeight={460}
             charLimit={5000}
+            className="rounded-xl"
           />
         </FieldRow>
         <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { postInclude } from '@/lib/post-include';
 import { serializePost } from '@/lib/serializers';
 import { getCurrentUser } from '@/lib/auth';
+import { parseSpeciesGallery } from '@/lib/species-gallery';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +30,7 @@ export const GET = handler(async (req) => {
       },
     });
     if (!species) return fail(404, '品种不存在');
+    const galleryData = parseSpeciesGallery(species.gallery);
 
     const [posts, related] = await Promise.all([
       prisma.post.findMany({
@@ -60,7 +62,9 @@ export const GET = handler(async (req) => {
         alias: parseJsonArray(species.alias),
         description: species.description,
         cover: species.cover,
-        gallery: parseJsonArray(species.gallery),
+        gallery: galleryData.items.map((item) => item.url),
+        galleryItems: galleryData.items,
+        coverPosition: galleryData.coverPosition,
         difficulty: species.difficulty,
         light: species.light,
         watering: species.watering,

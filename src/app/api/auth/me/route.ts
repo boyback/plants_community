@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { handler } from '@/lib/api';
-import { getCurrentUser, isVipActive } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
+import { isVipActive } from '@/lib/vip';
 import { serializeUser, serializeEquip } from '@/lib/serializers';
 import {
   expProgressConfigured,

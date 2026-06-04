@@ -104,11 +104,12 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   const router = useRouter();
   const { user, loading } = useAuth();
   const isEdit = mode === 'edit';
+  const firstInitialProduct = initialValue?.items?.[0];
 
-  const [title, setTitle] = useState(initialValue?.title ?? '');
+  const title = initialValue?.title ?? firstInitialProduct?.title ?? '';
   const [taxons, setTaxons] = useState<BoardSelection[]>(initialValue?.taxons ?? []);
   const [shipFrom, setShipFrom] = useState(initialValue?.shipFrom ?? '');
-  const [description, setDescription] = useState(initialValue?.description ?? '');
+  const description = initialValue?.description ?? firstInitialProduct?.description ?? '';
   const [tradeModes, setTradeModes] = useState<TradeMode[]>(
     initialValue?.tradeModes?.length ? initialValue.tradeModes : [initialValue?.tradeMode ?? 'platform_escrow'],
   );
@@ -166,7 +167,6 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   };
 
   const validate = () => {
-    if (!title.trim()) return '请输入交易帖标题';
     if (taxons.length === 0) return '请选择至少一个板块或品种';
     if (!shipFrom.trim()) return '请输入发货地';
     if (tradeModes.length === 0) return '请至少选择一种交易方式';
@@ -190,13 +190,13 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   };
 
   const buildPayload = () => ({
-    title: title.trim(),
+    title: products[0]?.title.trim() || title.trim(),
     category: taxons[0].categorySlug,
     genus: taxons[0].genusSlug || undefined,
     species: taxons[0].speciesSlug || undefined,
     taxons,
     shipFrom: shipFrom.trim(),
-    description: description.trim() || undefined,
+    description: products[0]?.description.trim() || description.trim() || undefined,
     tradeMode: tradeModes[0] ?? 'platform_escrow',
     tradeModes,
     externalUrl: externalUrl.trim() || undefined,
@@ -243,7 +243,7 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   if (!user) {
     return (
       <div className="card mx-auto max-w-md p-10 text-center">
-        <div className="text-lg font-semibold">登录后才能{isEdit ? '编辑交易帖' : '发布商品'}</div>
+        <div className="text-lg font-semibold">登录后才能{isEdit ? '编辑商品' : '发布商品'}</div>
         <Link href={`/login?redirect=${encodeURIComponent(isEdit && initialValue?.id ? `/market/${initialValue.id}/edit` : '/market/sell')}`} className="btn-primary mt-4 inline-flex">
           去登录
         </Link>
@@ -253,54 +253,6 @@ export function MarketListingForm({ mode, initialValue }: Props) {
 
   const form = (
     <div className="space-y-4">
-      <section className="card space-y-4 p-5">
-        <SectionTitle title="基本信息" desc="这些信息作用于整个交易帖。" />
-        <Field label="交易帖标题">
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            maxLength={60}
-            showCount
-            placeholder="例如：春季出几棵状态不错的拟石莲"
-          />
-        </Field>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_180px]">
-          <Field label="板块 / 属 / 品种">
-            <BoardSelect
-              multiple
-              values={taxons}
-              onValuesChange={setTaxons}
-              apiPath="/api/boards?kind=family&withSpecies=1"
-              placeholder="搜索并选择一个或多个品种"
-              max={12}
-            />
-            <div className="mt-1 text-[11px] text-leaf-700/60">
-              可多选，适合一个交易帖下包含多个品种；第一个选择会作为列表筛选主分类。
-            </div>
-          </Field>
-          <Field label="发货地">
-            <Input
-              value={shipFrom}
-              onChange={(e) => setShipFrom(e.target.value)}
-              maxLength={40}
-              placeholder="如：广东广州"
-            />
-          </Field>
-        </div>
-
-        <Field label="交易帖说明">
-          <Textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            maxLength={2000}
-            showCount
-            className="min-h-[96px]"
-            placeholder="可补充打包规则、发货时间、售后说明等。"
-          />
-        </Field>
-      </section>
-
       <section className="card space-y-4 p-5">
         <SectionTitle title="交易方式" desc="官方推荐平台担保，也允许用户自行联系。" />
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -365,7 +317,7 @@ export function MarketListingForm({ mode, initialValue }: Props) {
           <div className="flex items-center justify-between gap-3">
             <SectionTitle
               title={`商品 ${idx + 1}`}
-              desc={idx === 0 ? '第一张图会作为交易帖封面。' : undefined}
+              desc={idx === 0 ? '第一张图会作为商品封面。' : undefined}
             />
             {products.length > 1 && (
               <button
@@ -406,6 +358,32 @@ export function MarketListingForm({ mode, initialValue }: Props) {
             </Field>
           </div>
 
+          {idx === 0 && (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_180px]">
+              <Field label="板块 / 属 / 品种">
+                <BoardSelect
+                  multiple
+                  values={taxons}
+                  onValuesChange={setTaxons}
+                  apiPath="/api/boards?kind=family&withSpecies=1"
+                  placeholder="搜索并选择一个或多个品种"
+                  max={12}
+                />
+                <div className="mt-1 text-[11px] text-leaf-700/60">
+                  可多选，第一个选择会作为列表筛选主分类。
+                </div>
+              </Field>
+              <Field label="发货地">
+                <Input
+                  value={shipFrom}
+                  onChange={(e) => setShipFrom(e.target.value)}
+                  maxLength={40}
+                  placeholder="如：广东广州"
+                />
+              </Field>
+            </div>
+          )}
+
           <Field label="商品图片">
             <MultiImageUploadGrid
               value={product.images}
@@ -433,6 +411,44 @@ export function MarketListingForm({ mode, initialValue }: Props) {
               placeholder="描述尺寸、状态、瑕疵、养护环境、是否带盆土等。"
             />
           </Field>
+
+          {idx === 0 && (
+            <Field label="标签">
+              <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-leaf-200 bg-white p-2">
+                {tags.map((tag) => (
+                  <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-leaf-100 px-2 py-0.5 text-xs text-leaf-700">
+                    #{tag}
+                    <button
+                      type="button"
+                      onClick={() => setTags((prev) => prev.filter((item) => item !== tag))}
+                      className="text-leaf-600 hover:text-leaf-900"
+                    >
+                      x
+                    </button>
+                  </span>
+                ))}
+                <input
+                  className="min-w-[140px] flex-1 bg-transparent px-1 text-sm outline-none"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                      e.preventDefault();
+                      addTag();
+                    }
+                  }}
+                  placeholder={tags.length >= 8 ? '最多 8 个标签' : '输入标签后按回车'}
+                  disabled={tags.length >= 8}
+                />
+                <button type="button" onClick={addTag} className="btn-outline !px-2.5 !py-1 !text-xs">
+                  添加
+                </button>
+              </div>
+              <div className="mt-1 text-[11px] text-leaf-700/60">
+                用于交易中心搜索和推荐，最多 8 个。
+              </div>
+            </Field>
+          )}
         </section>
       ))}
 
@@ -446,40 +462,6 @@ export function MarketListingForm({ mode, initialValue }: Props) {
           添加商品
         </button>
       )}
-
-      <section className="card space-y-4 p-5">
-        <SectionTitle title="标签" desc="用于交易中心搜索和推荐。" />
-        <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-leaf-200 bg-white p-2">
-          {tags.map((tag) => (
-            <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-leaf-100 px-2 py-0.5 text-xs text-leaf-700">
-              #{tag}
-              <button
-                type="button"
-                onClick={() => setTags((prev) => prev.filter((item) => item !== tag))}
-                className="text-leaf-600 hover:text-leaf-900"
-              >
-                x
-              </button>
-            </span>
-          ))}
-          <input
-            className="min-w-[140px] flex-1 bg-transparent px-1 text-sm outline-none"
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ',') {
-                e.preventDefault();
-                addTag();
-              }
-            }}
-            placeholder={tags.length >= 8 ? '最多 8 个标签' : '输入标签后按回车'}
-            disabled={tags.length >= 8}
-          />
-          <button type="button" onClick={addTag} className="btn-outline !px-2.5 !py-1 !text-xs">
-            添加
-          </button>
-        </div>
-      </section>
 
       {err && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{err}</div>}
 
@@ -495,7 +477,7 @@ export function MarketListingForm({ mode, initialValue }: Props) {
             </Link>
             <button type="button" onClick={submit} disabled={submitting} className="btn-primary">
               <Icon name="check" size={14} />
-              {submitting ? (isEdit ? '保存中...' : '发布中...') : (isEdit ? '保存修改' : '发布交易帖')}
+              {submitting ? (isEdit ? '保存中...' : '发布中...') : (isEdit ? '保存修改' : '发布商品')}
             </button>
           </div>
         </div>
@@ -508,13 +490,13 @@ export function MarketListingForm({ mode, initialValue }: Props) {
       <main className="min-w-0">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-ink-800">{isEdit ? '编辑交易帖' : '发布交易帖'}</h1>
+            <h1 className="text-2xl font-bold text-ink-800">{isEdit ? '编辑商品' : '发布商品'}</h1>
             <p className="mt-1 text-sm text-leaf-700/70">
-              一个交易帖可以放多个商品，后续会统一进入交易中心展示。
+              填写商品信息、品种分类、发货地和交易方式后即可发布。
             </p>
           </div>
           <Link href={isEdit && initialValue?.id ? `/market/${initialValue.id}` : '/market'} className="btn-outline">
-            {isEdit ? '返回交易帖' : '返回交易中心'}
+            {isEdit ? '返回商品' : '返回交易中心'}
           </Link>
         </div>
 

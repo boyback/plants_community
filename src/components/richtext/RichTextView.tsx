@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { generateHTML } from '@tiptap/html';
 import { cn } from '@/lib/utils';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/style.css';
 import { registerPhotoSwipeGalleryUi } from '@/lib/photoswipe-ui';
+import { getServerExtensions } from '@/lib/tiptap-extensions';
 
 export function RichTextView({
   json,
@@ -110,7 +112,11 @@ export function RichTextView({
   } else if (text) {
     content = `<p>${escape(text).replace(/\n/g, '<br>')}</p>`;
   } else if (json) {
-    content = '<p class="text-leaf-700/50">(暂无可显示内容)</p>';
+    try {
+      content = generateHTML(json as never, getServerExtensions());
+    } catch {
+      content = '<p class="text-leaf-700/50">(暂无可显示内容)</p>';
+    }
   }
 
   if (!content) return null;

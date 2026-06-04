@@ -3,7 +3,8 @@ import { Shell } from '@/components/layout/Shell';
 import { prisma } from '@/lib/db';
 import { serializeUser, serializePost } from '@/lib/serializers';
 import { postInclude } from '@/lib/post-include';
-import { getCurrentUser, isVipActive } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
+import { isVipActive } from '@/lib/vip';
 import { UserPageClient } from './UserPageClient';
 
 export const dynamic = 'force-dynamic';

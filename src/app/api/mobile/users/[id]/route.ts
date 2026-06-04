@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { fail, handler } from '@/lib/api';
-import { getCurrentUser, isVipActive } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
+import { isVipActive } from '@/lib/vip';
 import { serializePost, serializeUser } from '@/lib/serializers';
 import { postInclude } from '@/lib/post-include';
 

@@ -25,7 +25,8 @@ import {
 } from '@/context/ColorThemeContext';
 import { COOKIE_LOCALE, defaultLocale, negotiateLocale, type Locale } from '@/i18n/config';
 import { loadLocaleMessagesServer } from '@/i18n/server-loader';
-import { getCurrentUser, isVipActive } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
+import { isVipActive } from '@/lib/vip';
 import { prisma } from '@/lib/db';
 import { serializeUser, serializeEquip } from '@/lib/serializers';
 import { expProgressConfigured } from '@/lib/permissions';

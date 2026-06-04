@@ -9,6 +9,7 @@
  */
 
 export type ColorThemeKey =
+  | 'plantnet'
   | 'ocean'
   | 'forest'
   | 'vintage'
@@ -45,6 +46,14 @@ export interface ColorThemeMeta {
 }
 
 export const COLOR_THEMES: ColorThemeMeta[] = [
+  {
+    key: 'plantnet',
+    name: 'PlantNet 绿',
+    desc: '清爽自然 · 默认',
+    logoEmoji: '🌿',
+    swatch: { primary: '#4f8b43', bg: '#f7f8f5' },
+    vibe: '自然',
+  },
   {
     key: 'ocean',
     name: '海洋蓝',
@@ -215,5 +224,5 @@ export function getThemeMeta(key: ColorThemeKey): ColorThemeMeta {
 
 export const COLOR_THEME_STORAGE_KEY = 'rouyou.colorTheme';
 export const COLOR_THEME_MODE_STORAGE_KEY = 'rouyou.colorMode';
-export const DEFAULT_COLOR_THEME: ColorThemeKey = 'ocean';
+export const DEFAULT_COLOR_THEME: ColorThemeKey = 'plantnet';
 export const DEFAULT_COLOR_MODE: ColorThemeMode = 'light';

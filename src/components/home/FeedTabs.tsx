@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { cn, timeAgo, boardUrl } from '@/lib/utils';
-import { Avatar } from '@/components/ui/Avatar';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Icon } from '@/components/ui/Icon';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
 import { PostCard } from '@/components/post/PostCard';
@@ -875,8 +875,15 @@ function FeedListCard({
           href={`/user/${post.author.id}`}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
         >
-          <Avatar src={post.author.avatar} alt={post.author.name} size={28} />
+          <UserAvatar
+            src={post.author.avatar}
+            alt={post.author.name}
+            size={30}
+            pendant={post.author.equip?.pendant ?? null}
+            showFestival={false}
+          />
           <span className="font-medium text-[13px] text-ink-800">{post.author.name}</span>
+          <AuthorBadgeIcons post={post} />
         </Link>
         <PostTypeBadge type={post.type} />
         {user && user.id !== post.author.id && (
@@ -1040,6 +1047,25 @@ function FeedSkeleton({
 }
 
 /** 列表模式骨架屏 */
+function AuthorBadgeIcons({ post }: { post: Post }) {
+  const badges = post.author.badges.filter((badge) => badge.obtained).slice(0, 2);
+  if (badges.length === 0) return null;
+
+  return (
+    <span className="inline-flex shrink-0 items-center gap-0.5">
+      {badges.map((badge) => (
+        <span
+          key={badge.id}
+          title={badge.name}
+          className="inline-grid h-4 w-4 place-items-center rounded-full border border-leaf-100 bg-white text-[9px] shadow-sm"
+        >
+          {badge.icon}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function ListFeedSkeleton() {
   return (
     <div className="mt-4 rounded-none border border-leaf-100 bg-white overflow-hidden">

@@ -18,7 +18,7 @@ const Body = z.object({
   alias: z.string().max(2000).default('[]'), // JSON array
   description: z.string().max(2000),
   cover: z.string().url(),
-  gallery: z.string().max(4000).default('[]'), // JSON array
+  gallery: z.string().max(12000).default('[]'), // JSON array or structured gallery object
   difficulty: z.number().int().min(1).max(5).default(2),
   light: z.string().max(60),
   watering: z.string().max(60),
@@ -27,6 +27,15 @@ const Body = z.object({
   blooming: z.string().max(60).nullable().optional(),
   originRegion: z.string().max(60).nullable().optional(),
   growthType: z.string().max(60).nullable().optional(),
+  growthSpeed: z.string().max(60).nullable().optional(),
+  summerDormancy: z.string().max(60).nullable().optional(),
+  lightRequirement: z.string().max(80).nullable().optional(),
+  idealTemperature: z.string().max(60).nullable().optional(),
+  minTemperature: z.string().max(60).nullable().optional(),
+  maxTemperature: z.string().max(60).nullable().optional(),
+  humidity: z.string().max(60).nullable().optional(),
+  soil: z.string().max(120).nullable().optional(),
+  riskTips: z.string().max(4000).nullable().optional(),
 });
 
 export const POST = handler(async (req) => {

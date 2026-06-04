@@ -3,9 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import type { Comment, Post, SkinItem } from '@/lib/types';
-import { Avatar } from '@/components/ui/Avatar';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { UserName } from '@/components/ui/UserName';
 import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
@@ -17,17 +15,22 @@ import { RichTextView } from '@/components/richtext/RichTextView';
 
 type SortKey = 'new' | 'hot';
 
-export function CommentSection({ post }: { post: Post }) {
+export function CommentSection({
+  post,
+  authorPendants = {},
+}: {
+  post: Post;
+  authorPendants?: Record<string, SkinItem>;
+}) {
   const { user, equip, vip } = useAuth();
   const { t } = useI18n();
   const [contentJson, setContentJson] = useState<unknown>(null);
-  const [draftKey, setDraftKey] = useState(0); // 用 key 重置编辑器
+  const [draftKey, setDraftKey] = useState(0);
   const [sort, setSort] = useState<SortKey>('new');
   const [comments, setComments] = useState<Comment[]>(post.commentList ?? []);
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  // 当前用户的气泡(自己评论自己用 — 仅装饰)
   const myBubble = equip.bubble ?? null;
 
   const sorted = useMemo(() => {
@@ -46,8 +49,7 @@ export function CommentSection({ post }: { post: Post }) {
   };
 
   const submit = async () => {
-    if (!user) return;
-    if (isContentEmpty()) return;
+    if (!user || isContentEmpty()) return;
     setSubmitting(true);
     setErr(null);
     try {
@@ -65,26 +67,28 @@ export function CommentSection({ post }: { post: Post }) {
   };
 
   return (
-    <div id="comments" className="card overflow-hidden scroll-mt-20">
-      <div className="flex items-center justify-between border-b border-leaf-100 px-5 py-3">
-        <div className="text-sm font-semibold">
-          {t('detail.post.commentsAll')} <span className="ml-1 text-leaf-700/70">{comments.length}</span>
+    <div id="comments" className="scroll-mt-20 overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-sm">
+      <div className="flex items-center justify-between border-b border-leaf-100 px-5 py-4">
+        <div className="text-base font-bold text-ink-950">
+          {t('detail.post.commentsAll')} <span className="ml-1 text-leaf-700/70">({comments.length})</span>
         </div>
-        <div className="flex items-center gap-1 text-xs">
+        <div className="flex items-center gap-1 rounded-full bg-leaf-50 p-1 text-xs">
           <button
+            type="button"
             onClick={() => setSort('hot')}
             className={cn(
-              'rounded-full px-2.5 py-1',
-              sort === 'hot' ? 'bg-leaf-100 text-leaf-800' : 'text-ink-700/70 hover:bg-leaf-50'
+              'rounded-full px-3 py-1 font-medium transition',
+              sort === 'hot' ? 'bg-white text-leaf-800 shadow-sm' : 'text-ink-500 hover:text-leaf-800'
             )}
           >
             {t('detail.post.commentsHot')}
           </button>
           <button
+            type="button"
             onClick={() => setSort('new')}
             className={cn(
-              'rounded-full px-2.5 py-1',
-              sort === 'new' ? 'bg-leaf-100 text-leaf-800' : 'text-ink-700/70 hover:bg-leaf-50'
+              'rounded-full px-3 py-1 font-medium transition',
+              sort === 'new' ? 'bg-white text-leaf-800 shadow-sm' : 'text-ink-500 hover:text-leaf-800'
             )}
           >
             {t('detail.post.commentsLatest')}
@@ -92,12 +96,17 @@ export function CommentSection({ post }: { post: Post }) {
         </div>
       </div>
 
-      {/* 评论输入 */}
-      <div className="border-b border-leaf-100 p-5">
+      <div className="border-b border-leaf-100 bg-leaf-50/30 p-5">
         {user ? (
           <div className="flex gap-3">
-            <Avatar src={user.avatar} alt={user.name} size={36} />
-            <div className="flex-1 min-w-0">
+            <UserAvatar
+              src={user.avatar}
+              alt={user.name}
+              size={42}
+              pendant={equip.pendant ?? null}
+              isVip={vip.isVip}
+            />
+            <div className="min-w-0 flex-1">
               <RichTextEditor
                 key={draftKey}
                 value={contentJson ?? undefined}
@@ -106,7 +115,7 @@ export function CommentSection({ post }: { post: Post }) {
                 minHeight={80}
                 charLimit={2000}
               />
-              <div className="mt-2 flex items-center justify-between">
+              <div className="mt-2 flex items-center justify-between gap-3">
                 <div className="text-[11px] text-leaf-700/60">
                   {err ? <span className="text-rose-500">{err}</span> : t('detail.post.commentEtiquette')}
                 </div>
@@ -122,7 +131,7 @@ export function CommentSection({ post }: { post: Post }) {
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-between rounded-none bg-leaf-50 px-4 py-3 text-sm">
+          <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3 text-sm">
             <span className="text-leaf-700">{t('detail.post.commentLoginCta')}</span>
             <Link href="/login" className="btn-primary h-8 !px-3 !text-xs">
               {t('nav.login')}
@@ -133,17 +142,19 @@ export function CommentSection({ post }: { post: Post }) {
 
       <div className="divide-y divide-leaf-100">
         {sorted.length === 0 ? (
-          <div className="p-6">
-            <Empty icon="💬" title={t('detail.post.commentsEmpty')} />
+          <div className="p-8">
+            <Empty title={t('detail.post.commentsEmpty')} />
           </div>
         ) : (
-          sorted.map((c) => (
+          sorted.map((c, index) => (
             <CommentItem
               key={c.id}
               comment={c}
+              floor={index + 1}
               liked={!!likedMap[c.id]}
               onLike={() => setLikedMap((m) => ({ ...m, [c.id]: !m[c.id] }))}
               myBubble={user?.id === c.author.id ? myBubble : null}
+              authorPendants={authorPendants}
             />
           ))
         )}
@@ -154,18 +165,21 @@ export function CommentSection({ post }: { post: Post }) {
 
 function CommentItem({
   comment,
+  floor,
   liked,
   onLike,
   myBubble,
+  authorPendants,
 }: {
   comment: Comment;
+  floor: number;
   liked: boolean;
   onLike: () => void;
   myBubble?: SkinItem | null;
+  authorPendants: Record<string, SkinItem>;
 }) {
   const { t } = useI18n();
   const [replyOpen, setReplyOpen] = useState(false);
-  // 气泡样式
   const bubbleMeta = myBubble?.meta as Record<string, unknown> | undefined;
   const bubbleStyle = bubbleMeta
     ? {
@@ -176,25 +190,29 @@ function CommentItem({
 
   return (
     <div className="p-5">
-      <div className="flex gap-3">
-        <Link href={`/user/${comment.author.id}`}>
-          <Avatar src={comment.author.avatar} alt={comment.author.name} size={36} />
-        </Link>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2">
-            <Link
-              href={`/user/${comment.author.id}`}
-              className="text-sm font-medium text-ink-800 hover:text-leaf-700"
-            >
-              {comment.author.name}
-            </Link>
-            <span className="text-[11px] text-leaf-700/60">Lv.{comment.author.level}</span>
-            <span className="text-[11px] text-leaf-700/60">· {timeAgo(comment.createdAt)}</span>
+      <div className="grid gap-4 sm:grid-cols-[112px_minmax(0,1fr)]">
+        <CommentAuthorCard
+          author={comment.author}
+          pendant={authorPendants[comment.author.id] ?? null}
+        />
+
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2 text-[11px] text-leaf-700/60">
+              <span className="rounded-full bg-leaf-50 px-2 py-0.5 font-semibold text-leaf-800">
+                #{floor} 楼
+              </span>
+              <span>Lv.{comment.author.level}</span>
+              <span>{formatNumber(comment.author.posts)} 帖</span>
+              <span>{timeAgo(comment.createdAt)}</span>
+            </div>
+            <CommentBadges badges={comment.author.badges} compact />
           </div>
+
           <div
             className={cn(
-              'mt-1.5',
-              myBubble && myBubble.slug !== 'bubble-default' && 'inline-block max-w-full rounded-none px-3 py-2 shadow-sm'
+              'mt-2',
+              myBubble && myBubble.slug !== 'bubble-default' && 'inline-block max-w-full rounded-xl px-3 py-2 shadow-sm'
             )}
             style={myBubble && myBubble.slug !== 'bubble-default' ? bubbleStyle : undefined}
           >
@@ -203,8 +221,10 @@ function CommentItem({
               html={comment.content}
               text={comment.contentText}
               size="sm"
+              className="comment-rich-text"
             />
           </div>
+
           <div className="mt-2 flex items-center gap-3 text-xs">
             <button
               type="button"
@@ -247,26 +267,120 @@ function CommentItem({
           )}
 
           {comment.replies && comment.replies.length > 0 && (
-            <div className="mt-3 space-y-2 rounded-none bg-leaf-50/60 p-3">
+            <div className="mt-3 space-y-2 rounded-xl bg-leaf-50/70 p-3">
               {comment.replies.map((r) => (
-                <div key={r.id} className="text-xs">
-                  <Link href={`/user/${r.author.id}`} className="font-medium text-leaf-700">
-                    {r.author.name}
-                  </Link>
-                  <span className="ml-1.5 text-leaf-700/60">· {timeAgo(r.createdAt)}</span>
-                  <RichTextView
-                    json={r.contentJson}
-                    html={r.content}
-                    text={r.contentText}
-                    size="sm"
-                    className="mt-0.5"
-                  />
-                </div>
+                <ReplyItem
+                  key={r.id}
+                  reply={r}
+                  pendant={authorPendants[r.author.id] ?? null}
+                />
               ))}
             </div>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function ReplyItem({
+  reply,
+  pendant,
+}: {
+  reply: Comment;
+  pendant?: SkinItem | null;
+}) {
+  return (
+    <div className="grid grid-cols-[32px_minmax(0,1fr)] gap-2 text-xs">
+      <Link href={`/user/${reply.author.id}`}>
+        <UserAvatar
+          src={reply.author.avatar}
+          alt={reply.author.name}
+          size={30}
+          pendant={pendant ?? null}
+          showFestival={false}
+        />
+      </Link>
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Link href={`/user/${reply.author.id}`} className="font-medium text-leaf-700">
+            {reply.author.name}
+          </Link>
+          <span className="text-leaf-700/60">Lv.{reply.author.level}</span>
+          <span className="text-leaf-700/60">{formatNumber(reply.author.posts)} 帖</span>
+          <span className="text-leaf-700/60">{timeAgo(reply.createdAt)}</span>
+          <CommentBadges badges={reply.author.badges} compact />
+        </div>
+        <RichTextView
+          json={reply.contentJson}
+          html={reply.content}
+          text={reply.contentText}
+          size="sm"
+          className="comment-rich-text mt-0.5"
+        />
+      </div>
+    </div>
+  );
+}
+
+function CommentAuthorCard({
+  author,
+  pendant,
+}: {
+  author: Comment['author'];
+  pendant?: SkinItem | null;
+}) {
+  return (
+    <aside className="rounded-xl bg-leaf-50/70 px-3 py-3 text-center">
+      <Link href={`/user/${author.id}`} className="inline-flex">
+        <UserAvatar
+          src={author.avatar}
+          alt={author.name}
+          size={54}
+          pendant={pendant ?? null}
+        />
+      </Link>
+      <Link
+        href={`/user/${author.id}`}
+        className="mt-2 block truncate text-sm font-semibold text-ink-900 hover:text-leaf-800"
+        title={author.name}
+      >
+        {author.name}
+      </Link>
+      <div className="mt-1 flex items-center justify-center gap-1.5 text-[11px] text-ink-500">
+        <span>Lv.{author.level}</span>
+        <span>·</span>
+        <span>{formatNumber(author.posts)} 帖</span>
+      </div>
+      <CommentBadges badges={author.badges} />
+    </aside>
+  );
+}
+
+function CommentBadges({
+  badges,
+  compact = false,
+}: {
+  badges: Comment['author']['badges'];
+  compact?: boolean;
+}) {
+  const visible = badges.filter((badge) => badge.obtained).slice(0, compact ? 2 : 3);
+  if (visible.length === 0) return null;
+
+  return (
+    <div className={cn('flex flex-wrap justify-center gap-1', compact ? 'max-w-full' : 'mt-2')}>
+      {visible.map((badge) => (
+        <span
+          key={badge.id}
+          title={badge.name}
+          className={cn(
+            'inline-grid place-items-center rounded-full border border-leaf-100 bg-white text-[11px] shadow-sm',
+            compact ? 'h-5 w-5' : 'h-6 w-6'
+          )}
+        >
+          {badge.icon}
+        </span>
+      ))}
     </div>
   );
 }

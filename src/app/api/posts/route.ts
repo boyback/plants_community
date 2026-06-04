@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler, fail, stringifyJson } from '@/lib/api';
 import { requireUser, getCurrentUser } from '@/lib/auth';
-import { serializePost } from '@/lib/serializers';
+import { serializePost, serializeSkin } from '@/lib/serializers';
 import { postInclude } from '@/lib/post-include';
 import type { Permission } from '@/lib/levels';
 import { hasUserPermission } from '@/lib/permissions';
@@ -11,6 +11,7 @@ import { processRichInput } from '@/lib/richtext';
 import { postNeedsReview } from '@/lib/post-review';
 import { firePushToBaidu } from '@/lib/baidu-push';
 import { sortPostsForPins, type PinSortTarget } from '@/lib/post-pins';
+import { incrementSpeciesDailyStat } from '@/lib/species-daily-stats';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://plantcommunity.cn';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
@@ -96,16 +97,47 @@ export const GET = handler(async (req) => {
     })
   );
 
+  const authorPendants = await getAuthorPendants(list as any);
+  const items = postsWithVoteStatus.map(({ post, userVoted }) =>
+    withAuthorPendant(
+      serializePost(post as any, userVoted, undefined, currentUser),
+      authorPendants
+    )
+  );
+
   return {
-    items: sortPostsForPins(
-      postsWithVoteStatus.map(({ post, userVoted }) =>
-        serializePost(post as any, userVoted, undefined, currentUser)
-      ),
-      pinTargets
-    ),
+    items: sortPostsForPins(items, pinTargets),
     nextCursor,
   };
 });
+
+async function getAuthorPendants(postsRaw: Array<{ author?: { id: string; equipPendantId?: string | null } | null }>) {
+  const pairs = postsRaw
+    .map((post) => ({ authorId: post.author?.id, pendantId: post.author?.equipPendantId }))
+    .filter((item): item is { authorId: string; pendantId: string } => Boolean(item.authorId && item.pendantId));
+  if (pairs.length === 0) return new Map<string, ReturnType<typeof serializeSkin>>();
+
+  const skins = await prisma.skinItem.findMany({
+    where: { id: { in: [...new Set(pairs.map((item) => item.pendantId))] } },
+  });
+  const skinById = new Map(skins.map((skin) => [skin.id, serializeSkin(skin)]));
+  return new Map(
+    pairs
+      .map((item) => [item.authorId, skinById.get(item.pendantId)] as const)
+      .filter((item): item is readonly [string, NonNullable<ReturnType<typeof serializeSkin>>] => Boolean(item[1]))
+  );
+}
+
+function withAuthorPendant(
+  post: ReturnType<typeof serializePost>,
+  authorPendants: Map<string, ReturnType<typeof serializeSkin>>
+) {
+  const pendant = authorPendants.get(post.author.id);
+  if (pendant) {
+    post.author.equip = { ...(post.author.equip ?? {}), pendant };
+  }
+  return post;
+}
 
 /**
  * 发布新帖:支持三种板块定位方式:
@@ -414,6 +446,7 @@ export const POST = handler(async (req) => {
   // 待审核帖不推百度(避免推了一个未公开页面)
   if (!needsReview) {
     firePushToBaidu(`${SITE_URL}/post/${created.id}`);
+    await incrementSpeciesDailyStat(resolvedIds.speciesId, 'posts');
   }
 
   return serializePost(created);

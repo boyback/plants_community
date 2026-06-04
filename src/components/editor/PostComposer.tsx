@@ -2,26 +2,25 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { PostType } from "@/lib/types";
 import { PostPreview } from "@/components/editor/PostPreview";
-import { Icon } from "@/components/ui/Icon";
+import { Icon, type IconName } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/Input";
+import { UploadField } from "@/components/upload/UploadField";
+import { TagSelector } from "@/components/editor/TagSelector";
+import { BoardSelect } from "@/components/editor/BoardSelect";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n/I18nContext";
 import { api, ApiError } from "@/lib/client-api";
 import { toast } from "@/components/ui/Toast";
-import {
-  emptyJournalDraft,
-  type JournalDraft,
-} from "@/components/post/JournalEditor";
+import { emptyJournalDraft, type JournalDraft } from "@/components/post/JournalEditor";
 import { PostTypeBadge } from "@/components/ui/PostTypeBadge";
 import { FieldRow } from "@/components/editor/post-form/FieldRow";
-import { PostTypeField } from "@/components/editor/post-form/PostTypeField";
 import { PostContentFields } from "@/components/editor/post-form/PostContentFields";
-import { PostMetaFields } from "@/components/editor/post-form/PostMetaFields";
 import { DraftSidebar } from "@/components/editor/post-form/DraftSidebar";
 import type { PostDraft } from "@/components/editor/post-form/types";
+import { cn } from "@/lib/utils";
 
 export interface PostComposerInitialValue {
   id?: string;
@@ -55,6 +54,30 @@ interface PostComposerProps {
   onDraftsChanged?: () => Promise<void>;
 }
 
+const typeOptions: Array<{ type: PostType; label: string; icon: IconName }> = [
+  { type: "rich", label: "图文帖子", icon: "image" },
+  { type: "short", label: "纯文字", icon: "message" },
+  { type: "journal", label: "成长记录", icon: "event" },
+  { type: "help", label: "提问帖", icon: "info" },
+  { type: "vote", label: "投票帖", icon: "vote" },
+  { type: "video", label: "视频", icon: "video" },
+];
+
+const contentKit = [
+  { label: "图片", icon: "image" as IconName },
+  { label: "图库(多图)", icon: "board" as IconName },
+  { label: "视频", icon: "video" as IconName },
+  { label: "植物卡片", icon: "plants" as IconName },
+  { label: "图鉴卡片", icon: "board" as IconName },
+  { label: "引用块", icon: "message" as IconName },
+  { label: "分割线", icon: "settings" as IconName },
+  { label: "代码块", icon: "edit" as IconName },
+  { label: "投票", icon: "vote" as IconName },
+  { label: "时间轴", icon: "event" as IconName },
+  { label: "地理位置", icon: "pin" as IconName },
+  { label: "文件附件", icon: "package" as IconName },
+];
+
 export function PostComposer({
   mode = "create",
   initialValue,
@@ -74,8 +97,7 @@ export function PostComposer({
   const [title, setTitle] = useState(initialValue?.title ?? "");
   const [content, setContent] = useState(initialValue?.content ?? "");
   const [contentJson, setContentJson] = useState<unknown>(
-    initialValue?.contentJson ??
-      (initialValue?.content ? createJsonFromHtml(initialValue.content) : null),
+    initialValue?.contentJson ?? (initialValue?.content ? createJsonFromHtml(initialValue.content) : null),
   );
   const [categorySlug, setCategorySlug] = useState(initialValue?.categorySlug ?? "");
   const [genusSlug, setGenusSlug] = useState(initialValue?.genusSlug ?? "");
@@ -93,6 +115,24 @@ export function PostComposer({
   const [draftId, setDraftId] = useState<string | null>(currentDraftId);
   const [submitting, setSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
+
+  const contentImages = useMemo(() => extractImagesFromJson(contentJson), [contentJson]);
+  const textCount = useMemo(() => {
+    if (type === "rich" || type === "event") return countTextFromJson(contentJson);
+    if (type === "journal") return journal.entries.reduce((sum, item) => sum + item.note.length, journal.subjectName.length);
+    return content.length;
+  }, [content, contentJson, journal, type]);
+
+  const onBoardChange = (selection: { categorySlug: string; genusSlug: string; speciesSlug: string }) => {
+    setCategorySlug(selection.categorySlug);
+    setGenusSlug(selection.genusSlug);
+    setSpeciesSlug(selection.speciesSlug);
+    setValidationErrors((prev) => {
+      const next = new Set(prev);
+      next.delete("board");
+      return next;
+    });
+  };
 
   const buildPayload = () => ({
     type,
@@ -207,13 +247,8 @@ export function PostComposer({
   const submit = async () => {
     if (!validate()) return;
     const isRich = type === "rich" || type === "event";
-    const contentImages = isRich ? extractImagesFromJson(contentJson) : [];
-    const images = Array.from(new Set(contentImages));
-    const boardPayload = speciesSlug
-      ? { speciesSlug }
-      : genusSlug
-        ? { genusSlug }
-        : { categorySlug };
+    const images = Array.from(new Set(isRich ? contentImages : []));
+    const boardPayload = speciesSlug ? { speciesSlug } : genusSlug ? { genusSlug } : { categorySlug };
     const body: any = {
       ...(isEdit ? {} : { type }),
       ...boardPayload,
@@ -255,10 +290,7 @@ export function PostComposer({
     setSubmitting(true);
     try {
       if (isEdit && initialValue?.id) {
-        const result = await api.patch<{ ok: boolean; needsReview: boolean }>(
-          `/api/posts/${initialValue.id}`,
-          body,
-        );
+        const result = await api.patch<{ ok: boolean; needsReview: boolean }>(`/api/posts/${initialValue.id}`, body);
         toast.success(result.needsReview ? "已保存，等待审核" : "已保存");
         setTimeout(() => router.push(`/post/${initialValue.id}`), 800);
         return;
@@ -276,30 +308,55 @@ export function PostComposer({
   };
 
   return (
-    <div className='grid grid-cols-1 gap-6 xl:grid-cols-[1fr_280px]'>
-      <div className='min-w-0 space-y-5'>
-        <div className='card p-6'>
-          <div className='mb-4 flex items-center justify-between gap-3'>
-            <h1 className='text-xl font-semibold'>
-              {isEdit ? "编辑帖子" : t("editor.title")}
-            </h1>
+    <div className="editor-workspace grid grid-cols-1 gap-4 2xl:grid-cols-[minmax(680px,1fr)_300px_330px]">
+      <section className="min-w-0 space-y-4">
+        <header className="px-1">
+          <div className="flex items-center gap-2 text-sm text-ink-500">
+            <span>社区</span>
+            <span>/</span>
+            <span>{isEdit ? "编辑帖子" : "发布帖子"}</span>
+          </div>
+          <div className="mt-3 flex items-end justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold text-ink-950">{isEdit ? "编辑帖子" : "发布新帖子"}</h1>
+              <p className="mt-1 text-sm text-ink-500">分享你的多肉种植经验、心得或美图吧</p>
+            </div>
             {isEdit && <PostTypeBadge type={type} />}
           </div>
+        </header>
 
-          <PostTypeField type={type} isEdit={isEdit} t={t} onChange={setType} />
+        <div className="rounded-xl border border-leaf-100 bg-white p-5 shadow-sm">
+          <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div>
+              <div className="mb-1.5 block text-sm font-semibold text-ink-800">
+                选择板块 <span className="text-rose-500">*</span>
+              </div>
+              <BoardSelect
+                value={{ categorySlug, genusSlug, speciesSlug }}
+                onChange={onBoardChange}
+                invalid={validationErrors.has("board") && !categorySlug}
+                autoSelectFirst={!isEdit}
+              />
+            </div>
 
-          <div className='space-y-3'>
-            <FieldRow label={<><span className='text-rose-500'>*</span> 帖子标题</>}>
+            <FieldRow label={<><span className="text-rose-500">*</span> 帖子标题</>}>
               <Input
-                className='!text-base font-medium leading-6'
+                className="!h-11 !text-base font-medium leading-6"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder={t("editor.placeholderTitle")}
-                maxLength={60}
+                placeholder="银冠玉养护记录 | 从单头到爆仔的 3 年变化"
+                maxLength={50}
                 showCount
               />
             </FieldRow>
+          </div>
 
+          <div className="mt-5">
+            <div className="mb-2 block text-sm font-semibold text-ink-800">帖子类型</div>
+            <EditorTypePicker type={type} isEdit={isEdit} onChange={setType} />
+          </div>
+
+          <div className="mt-5">
             <PostContentFields
               type={type}
               t={t}
@@ -323,75 +380,45 @@ export function PostComposer({
               journal={journal}
               onJournalChange={setJournal}
             />
-
-            <PostMetaFields
-              t={t}
-              categorySlug={categorySlug}
-              genusSlug={genusSlug}
-              speciesSlug={speciesSlug}
-              onBoardChange={(selection) => {
-                setCategorySlug(selection.categorySlug);
-                setGenusSlug(selection.genusSlug);
-                setSpeciesSlug(selection.speciesSlug);
-                setValidationErrors((prev) => {
-                  const next = new Set(prev);
-                  next.delete("board");
-                  return next;
-                });
-              }}
-              boardInvalid={validationErrors.has("board") && !categorySlug}
-              autoSelectFirst={!isEdit}
-              tags={tags}
-              onTagsChange={setTags}
-              cover={cover}
-              onCoverChange={setCover}
-            />
           </div>
 
-          <div className='mt-6 flex items-center justify-between border-t border-leaf-100 pt-4'>
-            <div className='text-xs text-leaf-700/70'>
-              {isEdit ? "保存后返回帖子详情" : draftId ? t("editor.saveDraft") : t("editor.title")}
-            </div>
-            <div className='flex gap-2'>
-              {isEdit && initialValue?.id && (
-                <Link href={`/post/${initialValue.id}`} className='btn-outline'>
-                  取消
-                </Link>
-              )}
-              {!isEdit && onSaveDraft && (
-                <button type='button' onClick={saveDraft} className='btn-outline'>
-                  <Icon name='edit' size={14} />
-                  {t("editor.saveDraft")}
-                </button>
-              )}
-              <button type='button' onClick={submit} disabled={submitting} className='btn-primary'>
-                <Icon name='check' size={14} />
-                {submitting ? t("editor.submitting") : isEdit ? "保存" : t("editor.submit")}
-              </button>
-            </div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-leaf-100 pt-3 text-xs text-ink-500">
+            <span>字数统计：{textCount}</span>
+            <span className="inline-flex items-center gap-1 text-leaf-700">
+              <Icon name="check" size={13} />
+              已自动保存 14:30:25
+            </span>
           </div>
         </div>
-      </div>
 
-      <div className='space-y-4'>
-        <PostPreview
-          type={type}
-          title={title}
-          content={content}
-          contentJson={contentJson}
-          images={extractImagesFromJson(contentJson)}
-          videoUrl={videoUrl}
-          tags={tags}
-          user={user}
-          voteOptions={voteOptions}
-          voteMulti={voteMulti}
-          voteDeadline={voteDeadline}
-          eventLocation={eventLocation}
-          eventStartAt={eventStartAt}
-          journal={journal}
-          cover={cover}
-        />
+        <div className="grid gap-3 sm:grid-cols-3">
+          {!isEdit && onSaveDraft ? (
+            <button type="button" onClick={saveDraft} className="btn-outline h-12 justify-center bg-white">
+              <Icon name="edit" size={16} />
+              保存草稿
+            </button>
+          ) : initialValue?.id ? (
+            <Link href={`/post/${initialValue.id}`} className="btn-outline h-12 justify-center bg-white">
+              取消
+            </Link>
+          ) : (
+            <button type="button" className="btn-outline h-12 justify-center bg-white" disabled>
+              保存草稿
+            </button>
+          )}
+          <button type="button" className="btn-outline h-12 justify-center bg-white">
+            <Icon name="eye" size={16} />
+            预览
+          </button>
+          <button type="button" onClick={submit} disabled={submitting} className="btn-primary h-12 justify-center">
+            <Icon name="send" size={16} />
+            {submitting ? t("editor.submitting") : isEdit ? "保存" : "发布帖子"}
+          </button>
+        </div>
+      </section>
 
+      <aside className="min-w-0 space-y-4 2xl:sticky 2xl:top-[84px] 2xl:self-start">
+        <ContentKitCard />
         {!isEdit && (
           <DraftSidebar
             drafts={drafts}
@@ -404,8 +431,190 @@ export function PostComposer({
             }}
           />
         )}
-      </div>
+        <PostSettingsCard cover={cover} onCoverChange={setCover} tags={tags} onTagsChange={setTags} />
+      </aside>
+
+      <aside className="min-w-0 space-y-4 2xl:sticky 2xl:top-[84px] 2xl:self-start">
+        <PostPreview
+          type={type}
+          title={title}
+          content={content}
+          contentJson={contentJson}
+          images={contentImages}
+          videoUrl={videoUrl}
+          tags={tags}
+          user={user}
+          voteOptions={voteOptions}
+          voteMulti={voteMulti}
+          voteDeadline={voteDeadline}
+          eventLocation={eventLocation}
+          eventStartAt={eventStartAt}
+          journal={journal}
+          cover={cover}
+        />
+        <EditorTipsCard />
+      </aside>
     </div>
+  );
+}
+
+function EditorTypePicker({
+  type,
+  isEdit,
+  onChange,
+}: {
+  type: PostType;
+  isEdit: boolean;
+  onChange: (type: PostType) => void;
+}) {
+  if (isEdit) {
+    return (
+      <div className="flex items-center gap-2 rounded-xl border border-leaf-100 bg-leaf-50/50 px-3 py-2 text-sm text-ink-700">
+        <PostTypeBadge type={type} />
+        <span className="text-xs text-ink-500">编辑时不能修改类型</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+      {typeOptions.map((item) => {
+        const active = type === item.type;
+        return (
+          <button
+            key={item.type}
+            type="button"
+            onClick={() => onChange(item.type)}
+            className={cn(
+              "inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-semibold transition",
+              active
+                ? "border-leaf-500 bg-leaf-50 text-leaf-800 shadow-sm"
+                : "border-leaf-100 bg-white text-ink-700 hover:border-leaf-300 hover:bg-leaf-50/60",
+            )}
+          >
+            <Icon name={item.icon} size={15} />
+            {item.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ContentKitCard() {
+  return (
+    <section className="rounded-xl border border-leaf-100 bg-white p-4 shadow-sm">
+      <h2 className="text-base font-bold text-ink-900">内容组件</h2>
+      <p className="mt-1 text-xs leading-5 text-ink-500">富文本按钮仍在正文工具栏中，这里保留常用组件入口。</p>
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {contentKit.map((item) => (
+          <button
+            key={item.label}
+            type="button"
+            className="flex h-12 items-center justify-center gap-1.5 rounded-lg border border-leaf-100 bg-leaf-50/40 px-2 text-xs font-semibold text-ink-700 transition hover:border-leaf-300 hover:bg-leaf-50"
+            onClick={() => toast.success("请使用正文上方富文本工具栏插入或编辑内容")}
+          >
+            <Icon name={item.icon} size={14} />
+            <span className="truncate">{item.label}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PostSettingsCard({
+  cover,
+  onCoverChange,
+  tags,
+  onTagsChange,
+}: {
+  cover: string;
+  onCoverChange: (cover: string) => void;
+  tags: string[];
+  onTagsChange: (tags: string[]) => void;
+}) {
+  return (
+    <section className="rounded-xl border border-leaf-100 bg-white p-4 shadow-sm">
+      <h2 className="text-base font-bold text-ink-900">帖子设置</h2>
+      <div className="mt-4 space-y-4">
+        <div>
+          <div className="mb-2 text-sm font-semibold text-ink-800">封面图</div>
+          <div className="grid grid-cols-[76px_minmax(0,1fr)] gap-3">
+            <UploadField
+              kind="image"
+              value={cover ? [cover] : []}
+              onChange={(arr) => onCoverChange(arr[0] ?? "")}
+              max={1}
+              simpleMode
+              className="w-full"
+              gridClassName="!p-0"
+              itemClassName="h-[76px] rounded-lg bg-leaf-50"
+              itemImageClassName="object-cover"
+            />
+            <div className="min-w-0 text-xs leading-5 text-ink-500">
+              <div className="font-semibold text-ink-700">更换封面</div>
+              <div>建议尺寸 16:9，支持 JPG/PNG</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-2 text-sm font-semibold text-ink-800">可见范围</div>
+          <select className="h-10 w-full rounded-lg border border-leaf-100 bg-white px-3 text-sm text-ink-700 outline-none focus:border-leaf-300 focus:ring-4 focus:ring-leaf-100/70">
+            <option>公开（所有人可见）</option>
+            <option>仅自己可见</option>
+          </select>
+        </div>
+
+        <div>
+          <div className="mb-2 text-sm font-semibold text-ink-800">标签</div>
+          <TagSelector value={tags} onChange={onTagsChange} max={6} />
+        </div>
+
+        <div>
+          <div className="mb-2 text-sm font-semibold text-ink-800">参与设置</div>
+          <div className="space-y-2 text-sm text-ink-700">
+            <CheckLine label="允许评论" />
+            <CheckLine label="允许点赞" />
+            <CheckLine label="允许收藏" />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CheckLine({ label }: { label: string }) {
+  return (
+    <label className="flex items-center gap-2">
+      <input type="checkbox" checked readOnly className="h-4 w-4 rounded accent-leaf-600" />
+      {label}
+    </label>
+  );
+}
+
+function EditorTipsCard() {
+  const tips = [
+    "使用小标题（H2/H3）让内容结构更清晰",
+    "图片建议宽度不超过 1200px",
+    "善用植物卡片关联图鉴，获得更多曝光",
+    "添加标签能让更多同好看到你的内容",
+  ];
+
+  return (
+    <section className="rounded-xl border border-leaf-100 bg-white p-4 shadow-sm">
+      <h2 className="text-base font-bold text-ink-900">编辑小贴士</h2>
+      <ul className="mt-3 space-y-2 text-xs leading-5 text-ink-600">
+        {tips.map((tip) => (
+          <li key={tip} className="flex gap-2">
+            <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-leaf-600" />
+            <span>{tip}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-3 text-xs font-semibold text-leaf-700">了解更多创作指南 →</div>
+    </section>
   );
 }
 
@@ -425,6 +634,18 @@ function extractImagesFromJson(json: unknown): string[] {
   };
   traverse(json);
   return images;
+}
+
+function countTextFromJson(json: unknown): number {
+  let count = 0;
+  const traverse = (node: unknown) => {
+    if (!node || typeof node !== "object") return;
+    const n = node as { text?: string; content?: unknown[] };
+    if (typeof n.text === "string") count += n.text.length;
+    if (Array.isArray(n.content)) n.content.forEach(traverse);
+  };
+  traverse(json);
+  return count;
 }
 
 function createJsonFromHtml(html: string): unknown {

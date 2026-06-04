@@ -101,6 +101,8 @@ model User {
   drafts            Draft[]
   votes             VoteRecord[]
   collects          PostCollect[]
+  speciesCollects   SpeciesCollect[]
+  speciesCompares   SpeciesCompare[]
   events            EventAttendee[]
 
   // 新增关系
@@ -130,6 +132,7 @@ model User {
   // 关注板块(可跨三级:科/属/品种)
   boardFollows        BoardFollow[]
   moderatorScopes     ModeratorScope[]
+  speciesContributions SpeciesContribution[]
   // 历史字段:管理员曾可对单个用户覆盖功能权限;新逻辑使用 RolePermissionOverride.
   permissionOverrides UserPermissionOverride[]
 
@@ -1575,6 +1578,15 @@ model Species {
   blooming     String? // 花期
   originRegion String? // 原产地
   growthType   String? // 夏型 / 冬型 / 中间型
+  growthSpeed  String? // 生长速度
+  summerDormancy String? // 夏眠程度
+  lightRequirement String? // 光照需求
+  idealTemperature String? // 适宜温度
+  minTemperature String? // 最低温度
+  maxTemperature String? // 最高温度
+  humidity String? // 适宜湿度
+  soil String? // 配土建议
+  riskTips String? @db.Text // JSON array,官方风险提示
 
   // 用户打分汇总(由 SpeciesRating 触发更新)
   ratingSum   Int @default(0) // 所有打分之和
@@ -1585,6 +1597,12 @@ model Species {
 
   posts          Post[]
   ratings        SpeciesRating[]
+  contributions  SpeciesContribution[]
+  collects       SpeciesCollect[]
+  compares       SpeciesCompare[]
+  similarities   SpeciesSimilarity[] @relation("SpeciesSimilaritySource")
+  similarTo      SpeciesSimilarity[] @relation("SpeciesSimilarityTarget")
+  dailyStats     SpeciesDailyStat[]
   journals       Journal[]
   contestEntries ContestEntry[]
   marketListings MarketListing[]
@@ -1598,6 +1616,108 @@ model Species {
   @@index([slug])
   @@index([genusId, name])
   @@map("species")
+}
+
+model SpeciesCollect {
+  userId    String
+  speciesId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  species Species @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+
+  @@id([userId, speciesId])
+  @@index([speciesId, createdAt])
+  @@map("species_collects")
+}
+
+model SpeciesCompare {
+  userId    String
+  speciesId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  species Species @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+
+  @@id([userId, speciesId])
+  @@index([userId, createdAt])
+  @@index([speciesId, createdAt])
+  @@map("species_compares")
+}
+
+model SpeciesSimilarity {
+  id              String   @id @default(cuid())
+  speciesId       String
+  similarSpeciesId String
+  score           Int      @default(80)
+  reason          String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  species        Species @relation("SpeciesSimilaritySource", fields: [speciesId], references: [id], onDelete: Cascade)
+  similarSpecies Species @relation("SpeciesSimilarityTarget", fields: [similarSpeciesId], references: [id], onDelete: Cascade)
+
+  @@unique([speciesId, similarSpeciesId])
+  @@index([speciesId, score])
+  @@index([similarSpeciesId])
+  @@map("species_similarities")
+}
+
+model SpeciesDailyStat {
+  id            String   @id @default(cuid())
+  speciesId     String
+  date          DateTime @db.Date
+  views         Int      @default(0)
+  collects      Int      @default(0)
+  compares      Int      @default(0)
+  contributions Int      @default(0)
+  posts         Int      @default(0)
+  ratings       Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  species Species @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+
+  @@unique([speciesId, date])
+  @@index([speciesId, date])
+  @@map("species_daily_stats")
+}
+
+enum SpeciesContributionType {
+  image
+  correction
+  care_tip
+  morphology
+  growth_image
+  gallery_image
+  similar_species
+}
+
+enum SpeciesContributionStatus {
+  pending
+  approved
+  rejected
+}
+
+model SpeciesContribution {
+  id         String                    @id @default(cuid())
+  speciesId  String
+  userId     String
+  type       SpeciesContributionType
+  status     SpeciesContributionStatus @default(pending)
+  payload    Json
+  reviewedBy String?
+  reviewedAt DateTime?
+  createdAt  DateTime                  @default(now())
+  updatedAt  DateTime                  @updatedAt
+
+  species Species @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([speciesId, status, createdAt])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("species_contributions")
 }
 
 /**

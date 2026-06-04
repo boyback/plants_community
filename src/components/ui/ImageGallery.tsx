@@ -10,6 +10,9 @@ import { cn } from "@/lib/utils";
 interface ImageGalleryProps {
   images: string[];
   livePhotoMap?: Record<string, string>;
+  equalCells?: boolean;
+  labels?: Array<{ label?: string; note?: string } | undefined>;
+  className?: string;
 }
 
 interface ImageSize {
@@ -17,7 +20,7 @@ interface ImageSize {
   height: number;
 }
 
-export function ImageGallery({ images, livePhotoMap }: ImageGalleryProps) {
+export function ImageGallery({ images, livePhotoMap, equalCells, labels, className }: ImageGalleryProps) {
   const [imageSizes, setImageSizes] = useState<Record<string, ImageSize>>({});
   const pswpRef = useRef<PhotoSwipe | null>(null);
 
@@ -78,7 +81,10 @@ export function ImageGallery({ images, livePhotoMap }: ImageGalleryProps) {
   let layoutClass = "";
   let cellClass = (_i: number) => "aspect-square";
 
-  if (n === 1) {
+  if (equalCells) {
+    layoutClass = "grid-cols-2 sm:grid-cols-3 2xl:grid-cols-6";
+    cellClass = () => "aspect-[4/3]";
+  } else if (n === 1) {
     layoutClass = "grid-cols-1";
     cellClass = () => "aspect-[16/10]";
   } else if (n === 2) {
@@ -93,10 +99,11 @@ export function ImageGallery({ images, livePhotoMap }: ImageGalleryProps) {
   if (!images.length) return null;
 
   return (
-    <div className="relative">
+    <div className={cn("relative", className)}>
       <div className={cn("grid gap-2 overflow-hidden rounded-none", layoutClass)}>
         {images.map((src, index) => {
           const isLive = Boolean(livePhotoMap?.[src]);
+          const label = labels?.[index];
 
           return (
             <button
@@ -122,6 +129,12 @@ export function ImageGallery({ images, livePhotoMap }: ImageGalleryProps) {
                 <span className="pointer-events-none absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white shadow">
                   <span className="h-1.5 w-1.5 rounded-full bg-white" />
                   LIVE
+                </span>
+              )}
+              {(label?.label || label?.note) && (
+                <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/62 via-black/24 to-transparent p-3 pt-10">
+                  {label.label && <span className="block text-sm font-semibold text-white">{label.label}</span>}
+                  {label.note && <span className="mt-0.5 block text-[11px] text-white/75">{label.note}</span>}
                 </span>
               )}
             </button>

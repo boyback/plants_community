@@ -1,5 +1,6 @@
 import { handler } from '@/lib/api';
-import { getCurrentUser, isVipActive } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
+import { isVipActive } from '@/lib/vip';
 
 export const dynamic = 'force-dynamic';
 

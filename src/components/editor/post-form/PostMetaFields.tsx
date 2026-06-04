@@ -18,6 +18,7 @@ interface Props {
   onBoardChange: (selection: BoardSelection) => void;
   boardInvalid: boolean;
   autoSelectFirst: boolean;
+  showBoard?: boolean;
   tags: string[];
   onTagsChange: (tags: string[]) => void;
   cover: string;
@@ -32,6 +33,7 @@ export function PostMetaFields({
   onBoardChange,
   boardInvalid,
   autoSelectFirst,
+  showBoard = true,
   tags,
   onTagsChange,
   cover,
@@ -39,17 +41,19 @@ export function PostMetaFields({
 }: Props) {
   return (
     <div className='space-y-5'>
-      <div>
-        <div className='mb-1.5 block text-sm font-semibold text-ink-800'>
-          <span className='text-rose-500'>*</span> {t('editor.chooseBoard')}
+      {showBoard && (
+        <div>
+          <div className='mb-1.5 block text-sm font-semibold text-ink-800'>
+            <span className='text-rose-500'>*</span> {t('editor.chooseBoard')}
+          </div>
+          <BoardSelect
+            value={{ categorySlug, genusSlug, speciesSlug }}
+            onChange={onBoardChange}
+            invalid={boardInvalid}
+            autoSelectFirst={autoSelectFirst}
+          />
         </div>
-        <BoardSelect
-          value={{ categorySlug, genusSlug, speciesSlug }}
-          onChange={onBoardChange}
-          invalid={boardInvalid}
-          autoSelectFirst={autoSelectFirst}
-        />
-      </div>
+      )}
 
       <FieldRow label={t('editor.tags')}>
         <TagSelector value={tags} onChange={onTagsChange} max={6} />

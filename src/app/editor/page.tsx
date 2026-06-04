@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import type { PostType } from "@/lib/types";
-import { Shell } from "@/components/layout/Shell";
+import { AppShell } from "@/components/layout/AppShell";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n/I18nContext";
 import { api } from "@/lib/client-api";
@@ -48,7 +48,7 @@ function EditorPageInner() {
 
   if (!authLoading && !user) {
     return (
-      <Shell withSidebar={false}>
+      <AppShell showFloatingAi={false}>
         <div className='card mx-auto max-w-md p-10 text-center'>
           <div className='text-lg font-semibold'>{t("error.unauthorized")}</div>
           <p className='mt-1 text-sm text-leaf-700/70'>{t("editor.title")}</p>
@@ -61,12 +61,12 @@ function EditorPageInner() {
             </Link>
           </div>
         </div>
-      </Shell>
+      </AppShell>
     );
   }
 
   return (
-    <Shell>
+    <AppShell showFloatingAi={false}>
       <PostComposer
         initialValue={{
           categorySlug: searchParams.get("category") ?? searchParams.get("board") ?? "",
@@ -89,6 +89,6 @@ function EditorPageInner() {
         }}
         onDraftsChanged={loadDrafts}
       />
-    </Shell>
+    </AppShell>
   );
 }

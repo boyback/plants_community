@@ -67,18 +67,26 @@ export function PostActions({
     toast.success(t('detail.post.shareSuccess', { channel: t(`detail.post.shareChannels.${channelKey}`) }));
   };
 
+  const scrollToComments = () => {
+    document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
-    <div className="relative hidden md:block">
-      <div className="card flex items-center justify-between gap-3 p-3">
-        <div className="flex items-center gap-3">
+    <div className="relative hidden border-t border-leaf-100 bg-white px-5 py-3 md:block md:px-7">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-center justify-around gap-2">
           <ActionBtn
             active={liked}
             onClick={toggleLike}
             icon="heart"
-            label={formatNumber(likes)}
+            label={`喜欢 ${formatNumber(likes)}`}
             activeCls="text-rose-500 bg-rose-50"
           />
-          <ActionBtn icon="comment" label={String(post.comments)} />
+          <ActionBtn
+            onClick={scrollToComments}
+            icon="comment"
+            label={`评论 ${formatNumber(post.comments)}`}
+          />
           <ActionBtn
             active={saved}
             onClick={toggleCollect}
@@ -86,20 +94,23 @@ export function PostActions({
             label={saved ? t('detail.post.collected') : t('detail.post.collect')}
             activeCls="text-amber-500 bg-amber-50"
           />
+          <ActionBtn
+            icon="share"
+            label={t('detail.post.shareChannels.link')}
+            onClick={() => share('link')}
+          />
         </div>
-        <div className="flex items-center gap-1">
-          <span className="mr-2 hidden text-xs text-leaf-700/70 md:inline">{t('detail.post.shareTo')}</span>
+        <div className="flex items-center gap-1 border-l border-leaf-100 pl-3">
           {(['wechat', 'weibo', 'link'] as const).map((k) => {
-            const emoji = k === 'wechat' ? '💬' : k === 'weibo' ? '🌐' : '🔗';
             const name = t(`detail.post.shareChannels.${k}`);
             return (
               <button
                 key={k}
                 onClick={() => share(k)}
-                className="grid h-9 w-9 place-items-center rounded-none text-base hover:bg-leaf-50"
+                className="grid h-9 w-9 place-items-center rounded-xl text-ink-500 hover:bg-leaf-50 hover:text-leaf-800"
                 title={t('detail.post.shareToX', { name })}
               >
-                {emoji}
+                <Icon name={k === 'link' ? 'link' : 'share'} size={15} />
               </button>
             );
           })}
@@ -127,7 +138,7 @@ function ActionBtn({
       type="button"
       onClick={onClick}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors',
+        'inline-flex h-10 items-center justify-center gap-1.5 rounded-xl px-4 text-sm font-medium transition-colors',
         active ? activeCls : 'text-ink-700/80 hover:bg-leaf-50'
       )}
     >

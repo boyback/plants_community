@@ -10,7 +10,7 @@ import {
   type LevelDef,
   type Permission,
 } from '@/lib/levels';
-import { isVipActive } from '@/lib/auth';
+import { isVipActive } from '@/lib/vip';
 
 export interface PermissionOverrides {
   grantedPermissions: Permission[];

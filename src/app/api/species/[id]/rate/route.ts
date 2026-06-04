@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { handler, fail } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { incrementSpeciesDailyStat } from '@/lib/species-daily-stats';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +30,7 @@ export const POST = handler(async (req) => {
   const sp = await prisma.species.findUnique({ where: { id: speciesId } });
   if (!sp) return fail(404, '品种不存在');
 
+  let createdRating = false;
   await prisma.$transaction(async (tx) => {
     const old = await tx.speciesRating.findUnique({
       where: { userId_speciesId: { userId: me.id, speciesId } },
@@ -50,6 +52,7 @@ export const POST = handler(async (req) => {
       await tx.speciesRating.create({
         data: { userId: me.id, speciesId, score: body.score },
       });
+      createdRating = true;
       await tx.species.update({
         where: { id: speciesId },
         data: {
@@ -59,6 +62,7 @@ export const POST = handler(async (req) => {
       });
     }
   });
+  if (createdRating) await incrementSpeciesDailyStat(speciesId, 'ratings');
 
   // 返回最新 stats + 我的分
   const fresh = await prisma.species.findUnique({

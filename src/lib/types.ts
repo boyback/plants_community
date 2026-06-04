@@ -68,6 +68,7 @@ export interface User {
   grantedPermissions?: string[];
   revokedPermissions?: string[];
   permissionLevels?: Record<string, number | null>;
+  equip?: EquipState;
 }
 
 export interface Badge {

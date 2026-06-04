@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
-import { Shell } from '@/components/layout/Shell';
+import { AppShell } from '@/components/layout/AppShell';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { parseJsonArray } from '@/lib/api';
@@ -48,20 +48,20 @@ export default async function PostEditPage({ params }: { params: { id: string } 
   if (post.deleted) notFound();
   if (post.authorId !== me.id) {
     return (
-      <Shell>
+      <AppShell showFloatingAi={false}>
         <div className="card mx-auto max-w-md p-10 text-center">
           <div className="text-4xl">!</div>
           <div className="mt-3 text-lg font-semibold">无权编辑</div>
           <p className="mt-1 text-sm text-leaf-700/70">只能编辑自己发布的帖子</p>
         </div>
-      </Shell>
+      </AppShell>
     );
   }
 
   const images = parseJsonArray(post.images);
 
   return (
-    <Shell>
+    <AppShell showFloatingAi={false}>
       <PostComposer
         mode="edit"
         initialValue={{
@@ -96,7 +96,7 @@ export default async function PostEditPage({ params }: { params: { id: string } 
             : undefined,
         }}
       />
-    </Shell>
+    </AppShell>
   );
 }
 

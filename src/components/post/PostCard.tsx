@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Post } from '@/lib/types';
-import { Avatar } from '@/components/ui/Avatar';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Icon } from '@/components/ui/Icon';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
 import { TopicTag } from '@/components/ui/TopicTag';
@@ -106,8 +106,15 @@ function FeedCard({ post, className, onVoteUpdate, onPostChanged, onPostDeleted 
         {/* 作者 + 时间（最上面一行） */}
         <div className="flex items-center justify-between gap-2 text-[11px] text-ink-500">
           <div className="flex items-center gap-1.5 min-w-0">
-            <Avatar src={post.author.avatar} alt={post.author.name} size={18} />
+            <UserAvatar
+              src={post.author.avatar}
+              alt={post.author.name}
+              size={20}
+              pendant={post.author.equip?.pendant ?? null}
+              showFestival={false}
+            />
             <span className="truncate font-medium text-ink-800">{post.author.name}</span>
+            <AuthorBadgeIcons post={post} compact />
           </div>
           <span className="shrink-0 text-ink-400">{formatDateTime(post.createdAt)}</span>
         </div>
@@ -602,6 +609,7 @@ function CompactCard({ post, className }: { post: Post; className?: string }) {
         <h4 className="truncate text-sm font-medium text-ink-800">{post.title}</h4>
         <div className="mt-1 flex items-center gap-3 text-[11px] text-leaf-700/70">
           <span>{post.author.name}</span>
+          <AuthorBadgeIcons post={post} compact />
           <span>·</span>
           <span>{timeAgo(post.createdAt)}</span>
           <span>·</span>
@@ -616,6 +624,28 @@ function CompactCard({ post, className }: { post: Post; className?: string }) {
  * 品种 chip:🌱 月迷 (28)
  * - 点击进品种页(走 board 路径)
  */
+function AuthorBadgeIcons({ post, compact }: { post: Post; compact?: boolean }) {
+  const badges = post.author.badges.filter((badge) => badge.obtained).slice(0, compact ? 2 : 3);
+  if (badges.length === 0) return null;
+
+  return (
+    <span className="inline-flex shrink-0 items-center gap-0.5">
+      {badges.map((badge) => (
+        <span
+          key={badge.id}
+          title={badge.name}
+          className={cn(
+            'inline-grid place-items-center rounded-full border border-leaf-100 bg-white shadow-sm',
+            compact ? 'h-4 w-4 text-[9px]' : 'h-5 w-5 text-[10px]'
+          )}
+        >
+          {badge.icon}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function SpeciesChip({
   species,
   board,

@@ -237,7 +237,7 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
               .insertContent([
                 ...urls.map((url) => ({
                   type: "image",
-                  attrs: { src: url },
+                  attrs: { src: url, width: "50%" },
                 })),
                 {
                   type: "paragraph",

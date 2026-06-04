@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
-import { requireUser, isVipActive } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
+import { isVipActive } from '@/lib/vip';
 
 export const dynamic = 'force-dynamic';
 

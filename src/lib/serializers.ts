@@ -36,6 +36,7 @@ import type {
   JournalEndReason,
 } from './types';
 import { parseJsonArray } from './api';
+import { parseSpeciesGallery } from './species-gallery';
 
 // ------------ User ------------
 
@@ -219,12 +220,15 @@ export function serializeSpeciesFull(s: SpeciesWithRelations) {
   const base = serializeSpecies(s);
   const g = s.genus;
   const cat = g?.board;
+  const galleryData = parseSpeciesGallery(s.gallery);
   return {
     ...base,
     level: 'species' as const,
     latinName: s.latinName,
     alias: parseJsonArray(s.alias),
-    gallery: parseJsonArray(s.gallery),
+    gallery: galleryData.items.map((item) => item.url),
+    galleryItems: galleryData.items,
+    coverPosition: galleryData.coverPosition,
     difficulty: s.difficulty,
     light: s.light,
     watering: s.watering,
@@ -233,6 +237,15 @@ export function serializeSpeciesFull(s: SpeciesWithRelations) {
     blooming: s.blooming ?? undefined,
     originRegion: s.originRegion ?? undefined,
     growthType: s.growthType ?? undefined,
+    growthSpeed: s.growthSpeed ?? undefined,
+    summerDormancy: s.summerDormancy ?? undefined,
+    lightRequirement: s.lightRequirement ?? undefined,
+    idealTemperature: s.idealTemperature ?? undefined,
+    minTemperature: s.minTemperature ?? undefined,
+    maxTemperature: s.maxTemperature ?? undefined,
+    humidity: s.humidity ?? undefined,
+    soil: s.soil ?? undefined,
+    riskTips: parseJsonArray(s.riskTips),
     categorySlug: cat?.slug ?? '',
     genusSlug: g?.slug ?? '',
   };
@@ -565,6 +578,7 @@ export interface ConversationSummary extends Conversation {}
 // ------------ Plant ------------
 
 export function serializePlant(p: DBPlant): PlantSpecies {
+  const galleryData = parseSpeciesGallery(p.gallery);
   return {
     id: p.id,
     slug: p.slug,
@@ -578,7 +592,7 @@ export function serializePlant(p: DBPlant): PlantSpecies {
     hardiness: p.hardiness,
     description: p.description,
     tips: parseJsonArray(p.tips),
-    gallery: parseJsonArray(p.gallery),
+    gallery: galleryData.items.map((item) => item.url),
   };
 }
 
