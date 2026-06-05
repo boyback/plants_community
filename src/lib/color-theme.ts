@@ -48,11 +48,11 @@ export interface ColorThemeMeta {
 export const COLOR_THEMES: ColorThemeMeta[] = [
   {
     key: 'plantnet',
-    name: 'PlantNet 绿',
-    desc: '清爽自然 · 默认',
-    logoEmoji: '🌿',
-    swatch: { primary: '#4f8b43', bg: '#f7f8f5' },
-    vibe: '自然',
+    name: '黑白',
+    desc: '克制清爽 · 默认',
+    logoEmoji: '●',
+    swatch: { primary: '#0f1419', bg: '#ffffff' },
+    vibe: '极简',
   },
   {
     key: 'ocean',
@@ -168,10 +168,10 @@ export const COLOR_THEMES: ColorThemeMeta[] = [
   },
   {
     key: 'minimal',
-    name: '极简灰',
+    name: '黑白灰',
     desc: '去色 · 专注内容',
-    logoEmoji: '⬜',
-    swatch: { primary: '#737373', bg: '#fafafa' },
+    logoEmoji: '◐',
+    swatch: { primary: '#0f1419', bg: '#ffffff' },
     vibe: '极简',
   },
   {

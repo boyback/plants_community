@@ -1,12 +1,13 @@
 import { HomeDashboard } from '@/components/home/HomeDashboard';
 import { prisma } from '@/lib/db';
 import { postInclude } from '@/lib/post-include';
-import { serializePost, serializeSkin, serializeUser } from '@/lib/serializers';
+import { serializePost, serializeSkin } from '@/lib/serializers';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 import type { BannerItem } from '@/lib/types';
 import { jsonLdScript, websiteJsonLd, organizationJsonLd } from '@/lib/jsonld';
 import { getCurrentUser } from '@/lib/auth';
 import { sortPostsForPins } from '@/lib/post-pins';
+import { getHomeBannerImage, getHomeBannerTitle } from '@/lib/home-banners';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +15,6 @@ export default async function HomePage() {
   const [
     postsRaw,
     bannersRaw,
-    recommendUsersRaw,
     topicsRaw,
     eventsRaw,
     speciesCount,
@@ -37,14 +37,6 @@ export default async function HomePage() {
     prisma.banner.findMany({
       where: { enabled: true },
       orderBy: { orderIdx: 'asc' },
-    }),
-    prisma.user.findMany({
-      take: 8,
-      orderBy: { updatedAt: 'desc' },
-      include: {
-        _count: { select: { posts: true, followers: true, following: true } },
-        badges: { include: { badge: true } },
-      },
     }),
     prisma.topicRanking.findMany({
       orderBy: [{ recent30dCount: 'desc' }, { postCount: 'desc' }],
@@ -97,17 +89,15 @@ export default async function HomePage() {
   ]);
 
   const authorPendants = await getAuthorPendants(postsRaw);
-  const userPendants = await getUserPendants(recommendUsersRaw);
   const posts = sortPostsForPins(
     postsRaw.map((post: any) => withAuthorPendant(serializePost(post, undefined, undefined, me), authorPendants)),
     [{ scope: 'global', targetId: '' }]
   );
 
-  const banners: BannerItem[] = bannersRaw.map((banner) => ({
+  const banners: BannerItem[] = bannersRaw.map((banner, index) => ({
     id: banner.id,
-    title: banner.title,
-    subtitle: banner.subtitle,
-    image: banner.image,
+    title: getHomeBannerTitle(index, banner.title),
+    image: getHomeBannerImage(index, banner.image),
     link: banner.link,
     tint: banner.tint,
     durationMs: banner.durationMs > 0 ? banner.durationMs : undefined,
@@ -155,12 +145,6 @@ export default async function HomePage() {
           journalCount,
           postCount,
         }}
-        recommendUsers={recommendUsersRaw.map((user) => {
-          const serialized = serializeUser(user);
-          const pendant = userPendants.get(serialized.id);
-          if (pendant) serialized.equip = { ...(serialized.equip ?? {}), pendant };
-          return serialized;
-        })}
         selections={selectionRaw.map((species) => ({
           id: species.id,
           name: species.name,
@@ -202,21 +186,4 @@ function withAuthorPendant(
     post.author.equip = { ...(post.author.equip ?? {}), pendant };
   }
   return post;
-}
-
-async function getUserPendants(usersRaw: Array<{ id: string; equipPendantId?: string | null }>) {
-  const pairs = usersRaw
-    .map((user) => ({ userId: user.id, pendantId: user.equipPendantId }))
-    .filter((item): item is { userId: string; pendantId: string } => Boolean(item.pendantId));
-  if (pairs.length === 0) return new Map<string, ReturnType<typeof serializeSkin>>();
-
-  const skins = await prisma.skinItem.findMany({
-    where: { id: { in: [...new Set(pairs.map((item) => item.pendantId))] } },
-  });
-  const skinById = new Map(skins.map((skin) => [skin.id, serializeSkin(skin)]));
-  return new Map(
-    pairs
-      .map((item) => [item.userId, skinById.get(item.pendantId)] as const)
-      .filter((item): item is readonly [string, NonNullable<ReturnType<typeof serializeSkin>>] => Boolean(item[1]))
-  );
 }

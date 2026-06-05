@@ -83,9 +83,9 @@ const systemMenus = [
 
 /* ---------------- Banner ---------------- */
 const banners = [
-  { title: '2026 多肉摄影大赛 征稿中', subtitle: '上传你最满意的多肉作品,万元奖金 · 限定徽章 · 大V 流量扶持', image: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=1600', link: '/board/paishe', tint: 'from-leaf-900/70', orderIdx: 0 },
-  { title: '养护教程合集 · 新手必看', subtitle: '浇水、配土、光照、度夏越冬,从入门到精通的完整路径', image: 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=1600', link: '/board/yangzhi', tint: 'from-leaf-700/70', orderIdx: 1 },
-  { title: '景天鉴赏 · 状态肉合集', subtitle: '拟石莲、风车、长生草,看老玩家如何把它们养出极致状态', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=1600', link: '/board/jingtian', tint: 'from-sand-300/60', orderIdx: 2 },
+  { title: '遇见多肉，遇见美好', subtitle: '', image: 'https://cdn.plantcommunity.cn/cmoz85oi8000ay601io2nm9iv/202606/mq1i4tjg0967l1.png', link: '/board', tint: 'from-leaf-900/70', orderIdx: 0 },
+  { title: '探索品种之美 · 分享养护经验 · 收藏成长时光', subtitle: '', image: 'https://cdn.plantcommunity.cn/cmoz85oi8000ay601io2nm9iv/202606/mq1i4tqhkoomj4.png', link: '/plants', tint: 'from-leaf-700/70', orderIdx: 1 },
+  { title: '发现生活的小确幸,记录植物成长的每一条', subtitle: '', image: 'https://cdn.plantcommunity.cn/cmoz85oi8000ay601io2nm9iv/202606/mq1i4tlekwnysu.png', link: '/editor?type=journal', tint: 'from-sand-300/60', orderIdx: 2 },
 ];
 
 /* ---------------- 帖子(需要作者/板块 id,在函数内拼装) ---------------- */

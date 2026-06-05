@@ -78,7 +78,7 @@ export function RichTextView({
 
     const imgs = Array.from(container.querySelectorAll<HTMLImageElement>('img'));
     imgs.forEach((img) => {
-      img.style.cursor = 'pointer';
+      img.style.cursor = 'zoom-in';
     });
 
     const handleClick = (event: MouseEvent) => {

@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import 'swiper/css/navigation';
 import { startEmailBroadcastWorker } from '@/lib/email-broadcast-worker';
 
 // 启动后台 worker(单进程,layout 模块加载即跑;幂等)

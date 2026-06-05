@@ -173,7 +173,6 @@ function BannerSlide({ item, priority }: { item: BannerItem; priority?: boolean 
           精选活动
         </span>
         <h2 className="text-xl font-bold md:text-3xl">{item.title}</h2>
-        <p className="mt-1.5 max-w-md text-xs opacity-90 md:text-sm">{item.subtitle}</p>
       </div>
     </Link>
   );

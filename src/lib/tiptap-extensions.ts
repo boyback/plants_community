@@ -31,26 +31,9 @@ const ListMarkerColor = Extension.create({
   },
 });
 
-const DEFAULT_IMAGE_WIDTH = '50%';
+const DEFAULT_IMAGE_WIDTH = 'auto';
 const MIN_IMAGE_WIDTH_PERCENT = 25;
 const MAX_IMAGE_WIDTH_PERCENT = 100;
-
-const IMAGE_LAYOUT_PRESETS = [
-  { key: 'natural', label: '原比例', width: '50%' },
-  { key: 'full', label: '全宽显示', width: '100%' },
-  { key: 'double', label: '双列', width: '50%' },
-  { key: 'triple', label: '三列', width: '33%' },
-  { key: 'grid', label: '九宫格', width: '33%' },
-  { key: 'leftText', label: '左图右文', width: '42%', align: 'left' },
-  { key: 'rightText', label: '右图左文', width: '42%', align: 'right' },
-] as const;
-
-const IMAGE_SIZE_PRESETS = [
-  { key: 'none', label: '无', width: 'auto' },
-  { key: 'sm', label: '小', width: '25%' },
-  { key: 'md', label: '中', width: '50%' },
-  { key: 'lg', label: '大', width: '75%' },
-] as const;
 
 function normalizeImageWidth(value: unknown): string | null {
   if (value === 'auto') return 'auto';
@@ -73,42 +56,19 @@ function normalizeImageWidth(value: unknown): string | null {
   return null;
 }
 
-function normalizeImageAlign(value: unknown): 'left' | 'center' | 'right' {
-  return value === 'left' || value === 'right' || value === 'center' ? value : 'center';
-}
-
-function isFixedImageLayout(value: unknown) {
-  return value === 'double' || value === 'triple' || value === 'grid';
-}
-
 function mergeImageStyle(style: unknown, width: string): string {
   const styleText = typeof style === 'string' ? style : '';
   const preserved = styleText
     .split(';')
     .map((item) => item.trim())
     .filter(Boolean)
-    .filter((item) => !/^(width|max-width|height)\s*:/i.test(item));
+    .filter((item) => !/^(width|max-width|height|display|margin)\s*:/i.test(item));
   return [
     ...preserved,
     width === 'auto' ? 'width: auto' : `width: ${width}`,
     'max-width: 100%',
     'height: auto',
-  ].join('; ');
-}
-
-function imageFigureStyle(width: string, align: 'left' | 'center' | 'right'): string {
-  const margin =
-    align === 'left'
-      ? '10px 8px 10px 0'
-      : align === 'right'
-        ? '10px 0 10px 8px'
-        : '10px 8px 10px 0';
-  return [
-    'display: inline-block',
-    width === 'auto' ? 'width: auto' : `width: ${width}`,
-    'max-width: 100%',
-    'vertical-align: top',
-    `margin: ${margin}`,
+    'display: block',
   ].join('; ');
 }
 
@@ -147,30 +107,18 @@ const RichImage = Image.extend({
   },
 
   renderHTML({ node, HTMLAttributes }) {
-    const width = normalizeImageWidth(node.attrs.width) ?? DEFAULT_IMAGE_WIDTH;
-    const align = normalizeImageAlign(node.attrs.align);
-    const caption = typeof node.attrs.caption === 'string' ? node.attrs.caption.trim() : '';
+    const width = DEFAULT_IMAGE_WIDTH;
     const layout = typeof node.attrs.layout === 'string' ? node.attrs.layout : 'natural';
     const { width: _width, height: _height, align: _align, caption: _caption, layout: _layout, style, ...rest } =
       HTMLAttributes;
 
     return [
-      'figure',
-      {
-        class: 'rte-image-figure',
+      'img',
+      mergeAttributes(this.options.HTMLAttributes, rest, {
         'data-width': width,
-        'data-align': align,
         'data-layout': layout,
-        ...(caption ? { 'data-caption': caption } : {}),
-        style: imageFigureStyle(width, align),
-      },
-      [
-        'img',
-        mergeAttributes(this.options.HTMLAttributes, rest, {
-          style: mergeImageStyle(style, '100%'),
-        }),
-      ],
-      ...(caption ? [['figcaption', { class: 'rte-image-caption' }, caption]] : []),
+        style: mergeImageStyle(style, width),
+      }),
     ];
   },
 
@@ -179,146 +127,22 @@ const RichImage = Image.extend({
 
     return ({ node, editor, getPos, HTMLAttributes }) => {
       let currentNode = node;
-      let currentWidth = normalizeImageWidth(node.attrs.width) ?? DEFAULT_IMAGE_WIDTH;
-      let currentAlign = normalizeImageAlign(node.attrs.align);
-      let currentLayout = typeof node.attrs.layout === 'string' ? node.attrs.layout : 'natural';
-
       const wrapper = document.createElement('span');
-      wrapper.className = 'rte-resizable-image';
+      const img = document.createElement('img');
+      const deleteButton = document.createElement('button');
+
+      wrapper.className = 'rte-editor-image';
       wrapper.contentEditable = 'false';
 
-      const img = document.createElement('img');
-      const toolbar = document.createElement('span');
-      const panel = document.createElement('span');
-      const handle = document.createElement('span');
-      const label = document.createElement('span');
-      const captionInput = document.createElement('input');
-      const fileInput = document.createElement('input');
-
-      toolbar.className = 'rte-resizable-image__toolbar';
-      panel.className = 'rte-resizable-image__panel';
-      panel.hidden = true;
-      handle.className = 'rte-resizable-image__handle';
-      label.className = 'rte-resizable-image__label';
-      captionInput.className = 'rte-resizable-image__caption-input';
-      captionInput.placeholder = '添加图片说明';
-      fileInput.type = 'file';
-      fileInput.accept = 'image/*';
-      fileInput.hidden = true;
-      handle.title = '拖拽调整图片宽度';
-
-      const commitAttrs = (attrs: Record<string, unknown>) => {
-        const pos = getPos();
-        if (typeof pos !== 'number') return;
-        editor.chain().setNodeSelection(pos).updateAttributes('image', attrs).run();
-      };
-
-      const makeToolButton = (text: string, title: string, onClick: () => void) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.textContent = text;
-        button.title = title;
-        button.className = 'rte-resizable-image__tool';
-        button.addEventListener('click', (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          onClick();
-        });
-        return button;
-      };
-
-      fileInput.addEventListener('change', async () => {
-        const file = fileInput.files?.[0];
-        fileInput.value = '';
-        if (!file) return;
-        toolbar.dataset.busy = '上传中';
-        try {
-          const { uploadFileWithProgress } = await import('@/lib/upload-client');
-          const result = await uploadFileWithProgress(file);
-          commitAttrs({ src: result.url });
-        } catch {
-          window.alert('图片替换失败，请稍后重试');
-        } finally {
-          delete toolbar.dataset.busy;
-        }
-      });
-
-      toolbar.append(
-        makeToolButton('替换', '替换图片', () => fileInput.click()),
-        makeToolButton('排版', '设置图片排版', () => {
-          panel.hidden = !panel.hidden;
-        }),
-        makeToolButton('左', '左对齐', () => {
-          setAlign('left');
-          commitAttrs({ align: 'left' });
-        }),
-        makeToolButton('中', '居中', () => {
-          setAlign('center');
-          commitAttrs({ align: 'center' });
-        }),
-        makeToolButton('右', '右对齐', () => {
-          setAlign('right');
-          commitAttrs({ align: 'right' });
-        }),
-        makeToolButton('说明', '编辑图片说明', () => captionInput.focus()),
-        makeToolButton('删除', '删除图片', () => {
-          const pos = getPos();
-          if (typeof pos !== 'number') return;
-          editor.chain().focus().deleteRange({ from: pos, to: pos + currentNode.nodeSize }).run();
-        }),
-        fileInput,
-      );
-
-      const layoutTitle = document.createElement('span');
-      layoutTitle.className = 'rte-resizable-image__panel-title';
-      layoutTitle.textContent = '选择排版方式';
-      panel.appendChild(layoutTitle);
-
-      const layoutGrid = document.createElement('span');
-      layoutGrid.className = 'rte-resizable-image__panel-grid';
-      IMAGE_LAYOUT_PRESETS.forEach((preset) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.textContent = preset.label;
-        button.title = preset.label;
-        button.className = 'rte-resizable-image__preset';
-        button.addEventListener('click', (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          const nextAlign = normalizeImageAlign('align' in preset ? preset.align : currentAlign);
-          setDisplayWidth(preset.width);
-          setAlign(nextAlign);
-          setLayout(preset.key);
-          commitAttrs({ width: preset.width, align: nextAlign, layout: preset.key, height: null });
-        });
-        layoutGrid.appendChild(button);
-      });
-      panel.appendChild(layoutGrid);
-
-      const sizeTitle = document.createElement('span');
-      sizeTitle.className = 'rte-resizable-image__panel-title';
-      sizeTitle.textContent = '图片尺寸';
-      panel.appendChild(sizeTitle);
-
-      const sizeRow = document.createElement('span');
-      sizeRow.className = 'rte-resizable-image__size-row';
-      IMAGE_SIZE_PRESETS.forEach((preset) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.textContent = preset.label;
-        button.title = `图片尺寸：${preset.label}`;
-        button.className = 'rte-resizable-image__size';
-        button.addEventListener('click', (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          setDisplayWidth(preset.width);
-          commitAttrs({ width: preset.width, height: null });
-        });
-        sizeRow.appendChild(button);
-      });
-      panel.appendChild(sizeRow);
+      deleteButton.type = 'button';
+      deleteButton.className = 'rte-editor-image__delete';
+      deleteButton.title = '删除图片';
+      deleteButton.setAttribute('aria-label', '删除图片');
+      deleteButton.innerHTML =
+        '<svg width="14" height="14" viewBox="0 0 24 24" class="ZDI ZDI--Xmark24" fill="currentColor"><path d="M5.619 4.381A.875.875 0 1 0 4.38 5.62L10.763 12 4.38 18.381A.875.875 0 1 0 5.62 19.62L12 13.237l6.381 6.382a.875.875 0 1 0 1.238-1.238L13.237 12l6.382-6.381A.875.875 0 0 0 18.38 4.38L12 10.763 5.619 4.38Z"></path></svg>';
 
       function applyImageAttributes(attrs: Record<string, unknown>) {
+        Array.from(img.attributes).forEach((attr) => img.removeAttribute(attr.name));
         Object.entries(attrs).forEach(([key, value]) => {
           if (
             value == null ||
@@ -334,91 +158,20 @@ const RichImage = Image.extend({
           }
           img.setAttribute(key, String(value));
         });
-        img.style.width = '100%';
+        img.style.width = 'auto';
         img.style.maxWidth = '100%';
         img.style.height = 'auto';
       }
 
-      function setDisplayWidth(width: string) {
-        currentWidth = width;
-        wrapper.style.width = width;
-        wrapper.dataset.width = width;
-        label.textContent = width.endsWith('%') ? width.replace(/\.0%$/, '%') : width;
-      }
-
-      function setAlign(align: 'left' | 'center' | 'right') {
-        currentAlign = align;
-        wrapper.dataset.align = align;
-        wrapper.style.marginLeft = align === 'right' || align === 'center' ? 'auto' : '0';
-        wrapper.style.marginRight = align === 'left' || align === 'center' ? 'auto' : '0';
-      }
-
-      function setLayout(layout: string) {
-        currentLayout = layout;
-        wrapper.dataset.layout = layout;
-        if (isFixedImageLayout(layout)) {
-          img.style.aspectRatio = '4 / 3';
-          img.style.objectFit = 'cover';
-        } else {
-          img.style.removeProperty('aspect-ratio');
-          img.style.removeProperty('object-fit');
-        }
-      }
-
-      function setCaption(caption: string) {
-        captionInput.value = caption;
-        wrapper.dataset.hasCaption = caption.trim() ? 'true' : 'false';
-      }
-
-      function getContainerWidth() {
-        return wrapper.parentElement?.getBoundingClientRect().width || editor.view.dom.getBoundingClientRect().width || 1;
-      }
-
       applyImageAttributes(HTMLAttributes);
-      setDisplayWidth(currentWidth);
-      setAlign(currentAlign);
-      setLayout(currentLayout);
-      setCaption(typeof node.attrs.caption === 'string' ? node.attrs.caption : '');
+      wrapper.append(img, deleteButton);
 
-      captionInput.addEventListener('change', () => {
-        setCaption(captionInput.value);
-        commitAttrs({ caption: captionInput.value.trim() || null });
-      });
-      captionInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          captionInput.blur();
-        }
-      });
-
-      wrapper.append(toolbar, panel, img, handle, label, captionInput);
-
-      handle.addEventListener('pointerdown', (event) => {
+      deleteButton.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
-
-        const containerWidth = getContainerWidth();
-        const startX = event.clientX;
-        const startWidth = wrapper.getBoundingClientRect().width || containerWidth * 0.5;
-        let nextWidth = currentWidth;
-
-        const onMove = (moveEvent: PointerEvent) => {
-          const nextPercent = Math.min(
-            MAX_IMAGE_WIDTH_PERCENT,
-            Math.max(MIN_IMAGE_WIDTH_PERCENT, ((startWidth + moveEvent.clientX - startX) / containerWidth) * 100),
-          );
-          nextWidth = `${Number(nextPercent.toFixed(1))}%`;
-          setDisplayWidth(nextWidth);
-        };
-
-        const onUp = () => {
-          window.removeEventListener('pointermove', onMove);
-          window.removeEventListener('pointerup', onUp);
-          commitAttrs({ width: nextWidth, height: null });
-        };
-
-        window.addEventListener('pointermove', onMove);
-        window.addEventListener('pointerup', onUp, { once: true });
+        const pos = getPos();
+        if (typeof pos !== 'number') return;
+        editor.chain().focus().deleteRange({ from: pos, to: pos + currentNode.nodeSize }).run();
       });
 
       return {
@@ -427,10 +180,6 @@ const RichImage = Image.extend({
           if (updatedNode.type !== currentNode.type) return false;
           currentNode = updatedNode;
           applyImageAttributes(updatedNode.attrs);
-          setDisplayWidth(normalizeImageWidth(updatedNode.attrs.width) ?? DEFAULT_IMAGE_WIDTH);
-          setAlign(normalizeImageAlign(updatedNode.attrs.align));
-          setLayout(typeof updatedNode.attrs.layout === 'string' ? updatedNode.attrs.layout : 'natural');
-          setCaption(typeof updatedNode.attrs.caption === 'string' ? updatedNode.attrs.caption : '');
           return true;
         },
         selectNode() {
@@ -441,11 +190,7 @@ const RichImage = Image.extend({
         },
         stopEvent(event: Event) {
           const target = event.target as HTMLElement | null;
-          return Boolean(
-            target?.closest(
-              '.rte-resizable-image__handle, .rte-resizable-image__toolbar, .rte-resizable-image__panel, .rte-resizable-image__caption-input',
-            ),
-          );
+          return Boolean(target?.closest('.rte-editor-image__delete'));
         },
       };
     };

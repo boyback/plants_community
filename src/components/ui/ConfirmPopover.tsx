@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
+import { Popover as RadixPopover } from 'radix-ui';
+import { cn } from '@/lib/utils';
 
 interface ConfirmPopoverProps {
   children: React.ReactNode;
@@ -28,36 +30,6 @@ export function ConfirmPopover({
 }: ConfirmPopoverProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const triggerRef = useRef<HTMLDivElement>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        popoverRef.current &&
-        !popoverRef.current.contains(e.target as Node) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-      }
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [open]);
 
   const handleConfirm = async () => {
     setLoading(true);
@@ -71,22 +43,17 @@ export function ConfirmPopover({
   };
 
   return (
-    <div className="relative inline-block">
-      <div
-        ref={triggerRef}
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen(!open);
-        }}
-        className={className}
-      >
-        {children}
-      </div>
+    <RadixPopover.Root open={open} onOpenChange={setOpen}>
+      <RadixPopover.Trigger asChild>
+        <span className={cn('inline-block', className)}>{children}</span>
+      </RadixPopover.Trigger>
 
-      {open && (
-        <div
-          ref={popoverRef}
-          className="absolute left-0 top-full z-50 mt-2 w-64 rounded-lg border border-leaf-200 bg-white p-4 shadow-lg animate-in fade-in-0 zoom-in-95"
+      <RadixPopover.Portal>
+        <RadixPopover.Content
+          align="start"
+          sideOffset={8}
+          collisionPadding={8}
+          className="z-50 w-64 rounded-lg border border-leaf-200 bg-white p-4 shadow-lg outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
           style={{ minWidth: '200px' }}
         >
           <div className="mb-1 text-sm font-medium text-ink-800">{title}</div>
@@ -122,13 +89,10 @@ export function ConfirmPopover({
             </button>
           </div>
 
-          {/* 气泡尖角 */}
-          <div className="absolute -top-2 left-4 w-4 h-2 overflow-hidden">
-            <div className="absolute left-0 top-0 w-3 h-3 rotate-45 bg-white border-l border-t border-leaf-200 transform -translate-x-1/2" />
-          </div>
-        </div>
-      )}
-    </div>
+          <RadixPopover.Arrow className="fill-white stroke-leaf-200" width={16} height={8} />
+        </RadixPopover.Content>
+      </RadixPopover.Portal>
+    </RadixPopover.Root>
   );
 }
 

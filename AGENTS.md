@@ -163,6 +163,7 @@ scripts/
 - 输入:input
 - 圆角:rounded-lg / rounded-xl
 - 字号:11-12px辅助文字,13-14px正文,16-20px标题
+- 基础交互组件优先基于 `radix-ui` Primitives 做二次封装,业务代码统一从 `@/components/ui/*` 引入封装组件,不要直接在业务页散落使用 Radix 原始组件
 
 ### 图标
 - SVG icon 库(@/components/ui/Icon)

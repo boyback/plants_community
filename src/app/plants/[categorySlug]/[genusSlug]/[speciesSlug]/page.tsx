@@ -191,7 +191,7 @@ export default async function PlantSpeciesPage({
   ]);
 
   return (
-    <AppShell className="!mx-0 !max-w-none" showFloatingAi={false}>
+    <AppShell showFloatingAi={false}>
       {jsonLdScript([...speciesLd, breadcrumbLd])}
       <div className="grid w-full max-w-none grid-cols-1 gap-x-5 gap-y-3 pb-24 xl:grid-cols-[max-content_minmax(0,1fr)] 2xl:grid-cols-[max-content_minmax(0,1fr)_clamp(280px,18vw,340px)]">
         <TaxonomyPanel taxonomy={taxonomy} current={params} />

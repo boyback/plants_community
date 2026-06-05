@@ -80,8 +80,7 @@ export function RichTextEditor({
       <Toolbar editor={editor} />
       <EditorContent
         editor={editor}
-        style={{ minHeight, maxHeight: 500 }}
-        className="overflow-y-auto"
+        style={{ minHeight }}
       />
       <div className="flex items-center justify-between border-t border-leaf-100 bg-leaf-50/30 px-3 py-1.5 text-[10px] text-leaf-700/60">
         <span>支持 Markdown 快捷键:**粗体** *斜体* # 标题 - 列表 &gt; 引用</span>

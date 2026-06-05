@@ -15,7 +15,7 @@ import { formatNumber } from '@/lib/utils';
  * 图片预览侧边栏内容
  * - 顶部：帖子信息
  * - 中间：评论区（可滚动）
- * - 底部：评论输入（富文本）
+ * - 底部：评论输入（纯文本）
  */
 export function ImagePreviewSidebar({
   post,
@@ -74,6 +74,7 @@ export function ImagePreviewSidebar({
           ) : (
             <CommentList
               comments={comments}
+              postId={post.id}
               onReplyAdded={onReplyAdded}
               compact
             />

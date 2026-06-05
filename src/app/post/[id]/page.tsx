@@ -5,7 +5,6 @@ import { PostActions } from "@/components/post/PostActions";
 import { MobileActionBar } from "@/components/post/MobileActionBar";
 import { JournalTimeline } from "@/components/post/JournalTimeline";
 import { PostAdminMenu } from "@/components/post/PostAdminMenu";
-import { PostTypeBadge } from "@/components/ui/PostTypeBadge";
 import { Avatar } from "@/components/ui/Avatar";
 import { Icon } from "@/components/ui/Icon";
 import { prisma } from "@/lib/db";
@@ -26,16 +25,6 @@ const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://plantcommunity.cn";
 
 export const dynamic = "force-dynamic";
-
-type TocItem = {
-  title: string;
-  depth: 2 | 3;
-};
-
-type TagCount = {
-  name: string;
-  count: number;
-};
 
 type SpeciesRailItem = {
   id: string;
@@ -155,6 +144,9 @@ export default async function PostDetailPage({
 
   const me = await getCurrentUser();
   const post = serializePost(postRaw, undefined, undefined, me);
+  const collectCount = await prisma.postCollect.count({
+    where: { postId: post.id },
+  });
   let liked = false;
   let collected = false;
   let attending = false;
@@ -224,9 +216,6 @@ export default async function PostDetailPage({
   const [
     relatedRaw,
     fallbackRelatedRaw,
-    authorMoreRaw,
-    hotTagRows,
-    hotPostsRaw,
     communityEventsRaw,
     speciesDetail,
   ] = await Promise.all([
@@ -250,28 +239,6 @@ export default async function PostDetailPage({
       where: { ...visiblePostWhere, id: { not: post.id } },
       take: 4,
       orderBy: { hotScore: "desc" },
-      include: postInclude(),
-    }),
-    prisma.post.findMany({
-      where: {
-        ...visiblePostWhere,
-        authorId: postRaw.authorId,
-        id: { not: post.id },
-      },
-      take: 4,
-      orderBy: { createdAt: "desc" },
-      include: postInclude(),
-    }),
-    prisma.post.findMany({
-      where: visiblePostWhere,
-      select: { tags: true },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    }),
-    prisma.post.findMany({
-      where: { ...visiblePostWhere, id: { not: post.id } },
-      take: 5,
-      orderBy: [{ hotScore: "desc" }, { createdAt: "desc" }],
       include: postInclude(),
     }),
     prisma.post.findMany({
@@ -306,15 +273,11 @@ export default async function PostDetailPage({
       })
     : [];
 
-  const related =
-    relatedRaw.length > 0
-      ? relatedRaw.map((p) => serializePost(p))
-      : fallbackRelatedRaw.map((p) => serializePost(p));
-  const authorMore = authorMoreRaw.map((p) => serializePost(p));
-  const hotPosts = hotPostsRaw.map((p) => serializePost(p));
+  const related = [...relatedRaw, ...fallbackRelatedRaw]
+    .filter((item, index, arr) => arr.findIndex((p) => p.id === item.id) === index)
+    .slice(0, 4)
+    .map((p) => serializePost(p));
   const communityEvents = communityEventsRaw.map((p) => serializePost(p));
-  const tagCounts = buildTagCounts(hotTagRows.map((row) => row.tags));
-  const toc = buildArticleToc(post.content, post.contentText);
 
   const postUrl = `${SITE_URL}/post/${post.id}`;
   const cover = post.cover
@@ -343,215 +306,155 @@ export default async function PostDetailPage({
   ]);
 
   return (
-    <AppShell
-      showFloatingAi={false}
-      className="xl:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1fr)_360px]"
-      rightRail={
-        <PostDetailRightRail
-          post={post}
-          toc={toc}
-          relatedTags={post.tags}
-          hotTags={tagCounts}
-          related={related}
-          authorMore={authorMore}
-          hotPosts={hotPosts}
-          species={speciesDetail}
-          sameGenusSpecies={sameGenusSpecies}
-          communityEvents={communityEvents}
-        />
-      }
-    >
+    <AppShell showFloatingAi={false} showLeftRail={false}>
       {jsonLdScript([ld, breadcrumb])}
 
-      <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_clamp(520px,32vw,760px)] 2xl:items-start">
+      <div className="mx-auto grid w-full max-w-[1180px] gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-5">
-        <article className="overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-sm">
-          <div className="border-b border-leaf-100/80 px-5 py-4 md:px-7">
-            <div className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-leaf-700/70">
-              <Link href="/" className="hover:text-leaf-800">
-                社区
-              </Link>
-              <Icon name="arrow-right" size={12} />
-              {post.board.path.map((p, i) => (
-                <span key={`${p.slug}-${i}`} className="contents">
-                  <Link
-                    href={
-                      "/board/" +
-                      post.board.path
-                        .slice(0, i + 1)
-                        .map((x) => encodeURIComponent(x.slug))
-                        .join("/")
-                    }
-                    className="hover:text-leaf-800"
-                  >
-                    {p.name}
-                  </Link>
-                  <Icon name="arrow-right" size={12} />
-                </span>
-              ))}
-              <span className="text-ink-500">帖子详情</span>
-            </div>
-
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <PostTypeBadge type={post.type} />
-              {post.pinState?.any && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">
-                  <Icon name="pin" size={12} />
-                  置顶
-                </span>
-              )}
-              {post.locked && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2.5 py-0.5 text-xs font-medium text-ink-600">
-                  <Icon name="lock" size={12} />
-                  已锁定
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-start gap-4">
-              <div className="min-w-0 flex-1">
-                <h1 className="text-[24px] font-bold leading-snug text-ink-950 md:text-[30px]">
-                  {post.title}
-                </h1>
-                <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-500">
-                  <Link
-                    href={`/user/${post.author.id}`}
-                    className="flex items-center gap-2 text-ink-800 hover:text-leaf-800"
-                  >
-                    <Avatar
-                      src={post.author.avatar}
-                      alt={post.author.name}
-                      size={30}
-                    />
-                    <span className="font-semibold">{post.author.name}</span>
-                    <span className="rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-800">
-                      Lv.{post.author.level}
-                    </span>
-                  </Link>
-                  <span>{formatDateTime(post.createdAt)}</span>
-                  {post.updatedAt && post.updatedAt !== post.createdAt && (
-                    <span>编辑于 {formatDateTime(post.updatedAt)}</span>
-                  )}
-                  <span className="inline-flex items-center gap-1">
-                    <Icon name="eye" size={13} />
-                    {formatNumber(post.views)}
+          <article className="overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-sm">
+            <div className="border-b border-leaf-100/80 px-5 py-4 md:px-7">
+              <div className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-leaf-700/70">
+                <Link href="/" className="hover:text-leaf-800">
+                  社区
+                </Link>
+                <Icon name="arrow-right" size={12} />
+                {post.board.path.map((p, i) => (
+                  <span key={`${p.slug}-${i}`} className="contents">
+                    <Link
+                      href={
+                        "/board/" +
+                        post.board.path
+                          .slice(0, i + 1)
+                          .map((x) => encodeURIComponent(x.slug))
+                          .join("/")
+                      }
+                      className="hover:text-leaf-800"
+                    >
+                      {p.name}
+                    </Link>
+                    <Icon name="arrow-right" size={12} />
                   </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Icon name="comment" size={13} />
-                    {formatNumber(post.comments)}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Icon name="heart" size={13} />
-                    {formatNumber(post.likes)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex shrink-0 items-center gap-2">
-                {me?.id === post.author.id && post.adminPermissions?.canEdit && (
-                  <Link
-                    href={`/post/${post.id}/edit`}
-                    className="hidden h-9 items-center gap-1.5 rounded-xl border border-leaf-100 px-3 text-xs font-semibold text-leaf-800 hover:bg-leaf-50 md:inline-flex"
-                  >
-                    <Icon name="edit" size={13} />
-                    编辑
-                  </Link>
-                )}
-                <PostAdminMenu post={post} user={me} buttonSize="md" />
-              </div>
-            </div>
-
-            {post.tags.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {post.tags.map((t) => (
-                  <Link
-                    key={t}
-                    href={`/topic/${encodeURIComponent(t)}`}
-                    className="rounded-full bg-leaf-50 px-3 py-1 text-xs font-medium text-leaf-800 transition-colors hover:bg-leaf-100"
-                  >
-                    #{t}
-                  </Link>
                 ))}
+                <span className="text-ink-500">帖子详情</span>
               </div>
-            )}
-          </div>
 
-          <div className="px-5 py-5 md:px-7 md:py-6">
-            {REVIEW_FILTER_ENABLED &&
-              me?.id === post.author.id &&
-              postRaw.reviewStatus !== "published" && (
-                <div
-                  className={
-                    postRaw.reviewStatus === "pending"
-                      ? "mb-4 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-xs text-amber-800"
-                      : "mb-4 rounded-xl border border-rose-200 bg-rose-50/70 px-4 py-3 text-xs text-rose-800"
-                  }
-                >
-                  {postRaw.reviewStatus === "pending"
-                    ? "帖子正在审核中，通过后才会公开展示。"
-                    : "帖子已被驳回。"}
-                  {postRaw.reviewReason && (
-                    <div className="mt-1 text-[11px] opacity-80">
-                      原因：{postRaw.reviewReason}
-                    </div>
+              <div className="flex items-start gap-4">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-[24px] font-bold leading-snug text-ink-950 md:text-[30px]">
+                    {post.title}
+                  </h1>
+                  <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-500">
+                    <span>{formatDateTime(post.createdAt)}</span>
+                    {post.updatedAt && post.updatedAt !== post.createdAt && (
+                      <span>编辑于 {formatDateTime(post.updatedAt)}</span>
+                    )}
+                    <span className="inline-flex items-center gap-1">
+                      <Icon name="eye" size={13} />
+                      {formatNumber(post.views)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  {me?.id === post.author.id && post.adminPermissions?.canEdit && (
+                    <Link
+                      href={`/post/${post.id}/edit`}
+                      className="hidden h-9 items-center gap-1.5 rounded-xl border border-leaf-100 px-3 text-xs font-semibold text-leaf-800 hover:bg-leaf-50 md:inline-flex"
+                    >
+                      <Icon name="edit" size={13} />
+                      编辑
+                    </Link>
                   )}
+                  <PostAdminMenu post={post} user={me} buttonSize="md" />
+                </div>
+              </div>
+
+              {post.tags.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {post.tags.map((t) => (
+                    <Link
+                      key={t}
+                      href={`/topic/${encodeURIComponent(t)}`}
+                      className="rounded-full bg-leaf-50 px-3 py-1 text-xs font-medium text-leaf-800 transition-colors hover:bg-leaf-100"
+                    >
+                      #{t}
+                    </Link>
+                  ))}
                 </div>
               )}
+            </div>
 
-            <PostBody
+            <div className="px-5 py-5 md:px-7 md:py-6">
+              {REVIEW_FILTER_ENABLED &&
+                me?.id === post.author.id &&
+                postRaw.reviewStatus !== "published" && (
+                  <div
+                    className={
+                      postRaw.reviewStatus === "pending"
+                        ? "mb-4 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-xs text-amber-800"
+                        : "mb-4 rounded-xl border border-rose-200 bg-rose-50/70 px-4 py-3 text-xs text-rose-800"
+                    }
+                  >
+                    {postRaw.reviewStatus === "pending"
+                      ? "帖子正在审核中，通过后才会公开展示。"
+                      : "帖子已被驳回。"}
+                    {postRaw.reviewReason && (
+                      <div className="mt-1 text-[11px] opacity-80">
+                        原因：{postRaw.reviewReason}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              <PostBody
+                post={post}
+                livePhotoMap={livePhotoMap}
+                initialAttending={attending}
+              />
+            </div>
+
+            <PostActions
               post={post}
-              livePhotoMap={livePhotoMap}
-              initialAttending={attending}
+              initialLiked={liked}
+              initialCollected={collected}
+              initialCollectedTotal={collectCount}
             />
-          </div>
+          </article>
 
-          <PostActions
-            post={post}
-            initialLiked={liked}
-            initialCollected={collected}
-          />
-        </article>
+          {post.type === "journal" && post.journal && (
+            <JournalTimeline post={post} />
+          )}
 
-        {post.type === "journal" && post.journal && (
-          <JournalTimeline post={post} />
-        )}
-
-        </div>
-
-        <div className="min-w-0 2xl:sticky 2xl:top-[88px] 2xl:max-h-[calc(100vh-104px)] 2xl:overflow-y-auto">
           <CommentSection post={post} authorPendants={commentAuthorPendants} />
         </div>
 
-        <MobileActionBar
-          post={post}
-          initialLiked={liked}
-          initialCollected={collected}
-        />
+        <aside className="hidden min-w-0 space-y-5 xl:sticky xl:top-[88px] xl:block xl:h-[calc(100vh-104px)] xl:overflow-y-auto">
+          <PostDetailRightRail
+            post={post}
+            related={related}
+            sameGenusSpecies={sameGenusSpecies}
+            communityEvents={communityEvents}
+          />
+        </aside>
       </div>
+
+      <MobileActionBar
+        post={post}
+        initialLiked={liked}
+        initialCollected={collected}
+      />
     </AppShell>
   );
 }
 
 function PostDetailRightRail({
   post,
-  toc,
-  relatedTags,
-  hotTags,
   related,
-  authorMore,
-  hotPosts,
-  species,
   sameGenusSpecies,
   communityEvents,
 }: {
   post: Post;
-  toc: TocItem[];
-  relatedTags: string[];
-  hotTags: TagCount[];
   related: Post[];
-  authorMore: Post[];
-  hotPosts: Post[];
-  species: SpeciesRailItem | null;
   sameGenusSpecies: SpeciesRailItem[];
   communityEvents: Post[];
 }) {
@@ -596,62 +499,8 @@ function PostDetailRightRail({
         </div>
       </SideCard>
 
-      <SideCard title="文章目录">
-        {toc.length > 0 ? (
-          <ol className="space-y-2 text-xs text-ink-600">
-            {toc.map((item, index) => (
-              <li
-                key={`${item.title}-${index}`}
-                className={item.depth === 3 ? "pl-4 text-ink-500" : ""}
-              >
-                <span className="mr-2 text-leaf-700">{index + 1}.</span>
-                {item.title}
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <div className="text-xs text-ink-400">正文暂无可提取目录</div>
-        )}
-      </SideCard>
-
-      {(relatedTags.length > 0 || hotTags.length > 0) && (
-        <SideCard title="相关标签">
-          <div className="flex flex-wrap gap-2">
-            {[...relatedTags, ...hotTags.map((tag) => tag.name)]
-              .filter((tag, index, arr) => arr.indexOf(tag) === index)
-              .slice(0, 10)
-              .map((tag) => (
-                <Link
-                  key={tag}
-                  href={`/topic/${encodeURIComponent(tag)}`}
-                  className="rounded-full bg-leaf-50 px-3 py-1.5 text-xs font-medium text-leaf-800 hover:bg-leaf-100"
-                >
-                  {tag}
-                </Link>
-              ))}
-          </div>
-        </SideCard>
-      )}
-
-      {hotTags.length > 0 && (
-        <SideCard title="热门话题">
-          <div className="space-y-2">
-            {hotTags.slice(0, 5).map((tag) => (
-              <Link
-                key={tag.name}
-                href={`/topic/${encodeURIComponent(tag.name)}`}
-                className="flex items-center justify-between rounded-xl px-2 py-1.5 text-xs hover:bg-leaf-50"
-              >
-                <span className="font-medium text-ink-700"># {tag.name}</span>
-                <span className="text-ink-400">{formatNumber(tag.count)} 帖子</span>
-              </Link>
-            ))}
-          </div>
-        </SideCard>
-      )}
-
       {related.length > 0 && (
-        <SideCard title="相关帖子推荐" footerHref="/board" footerLabel="查看更多">
+        <SideCard title="相关帖子" footerHref="/board" footerLabel="查看更多">
           <div className="space-y-3">
             {related.map((item) => (
               <MiniPostItem key={item.id} post={item} />
@@ -659,18 +508,6 @@ function PostDetailRightRail({
           </div>
         </SideCard>
       )}
-
-      {authorMore.length > 0 && (
-        <SideCard title="作者更多内容" footerHref={`/user/${post.author.id}`} footerLabel="查看更多">
-          <div className="space-y-3">
-            {authorMore.map((item) => (
-              <MiniPostItem key={item.id} post={item} compact />
-            ))}
-          </div>
-        </SideCard>
-      )}
-
-      {species && <PlantAtlasCard species={species} />}
 
       {sameGenusSpecies.length > 0 && (
         <SideCard title="同属植物推荐" footerHref="/plants" footerLabel="查看更多">
@@ -726,15 +563,6 @@ function PostDetailRightRail({
         </SideCard>
       )}
 
-      {hotPosts.length > 0 && (
-        <SideCard title="社区热帖">
-          <div className="space-y-3">
-            {hotPosts.slice(0, 4).map((item) => (
-              <MiniPostItem key={item.id} post={item} compact />
-            ))}
-          </div>
-        </SideCard>
-      )}
     </>
   );
 }
@@ -776,7 +604,7 @@ function RailStat({ label, value }: { label: string; value: string }) {
 }
 
 function MiniPostItem({ post, compact }: { post: Post; compact?: boolean }) {
-  const image = post.cover ?? post.images?.[0];
+  const image = post.cover ?? post.images?.[0] ?? firstImageFromHtml(post.content);
   return (
     <Link href={`/post/${post.id}`} className="group flex gap-3">
       <div
@@ -811,111 +639,10 @@ function MiniPostItem({ post, compact }: { post: Post; compact?: boolean }) {
   );
 }
 
-function PlantAtlasCard({ species }: { species: SpeciesRailItem }) {
-  return (
-    <SideCard title="植物图鉴卡片">
-      <div className="flex gap-3">
-        <Link
-          href={speciesHref(species)}
-          className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-leaf-50"
-        >
-          {species.cover ? (
-            <img
-              src={species.cover}
-              alt={species.name}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="grid h-full place-items-center text-leaf-700">
-              <Icon name="plants" size={22} />
-            </div>
-          )}
-        </Link>
-        <div className="min-w-0 flex-1">
-          <Link
-            href={speciesHref(species)}
-            className="truncate text-sm font-bold text-ink-950 hover:text-leaf-800"
-          >
-            {species.name}
-          </Link>
-          {species.latinName && (
-            <div className="mt-1 truncate text-[11px] italic text-ink-400">
-              {species.latinName}
-            </div>
-          )}
-          {species.description && (
-            <p className="mt-2 line-clamp-2 text-xs leading-5 text-ink-500">
-              {species.description}
-            </p>
-          )}
-        </div>
-      </div>
-      <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-        <RailStat label="人收藏" value={formatNumber(species._count?.collects ?? 0)} />
-        <RailStat label="帖子" value={formatNumber(species._count?.posts ?? 0)} />
-        <RailStat label="评分" value={formatNumber(species._count?.ratings ?? 0)} />
-      </div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <Link
-          href={speciesHref(species)}
-          className="rounded-xl bg-leaf-600 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-leaf-700"
-        >
-          查看图鉴
-        </Link>
-        <Link
-          href="/plants/favorites"
-          className="rounded-xl border border-leaf-100 px-3 py-2 text-center text-xs font-semibold text-ink-700 hover:bg-leaf-50"
-        >
-          已收藏
-        </Link>
-      </div>
-    </SideCard>
-  );
-}
-
-function buildTagCounts(rawTags: Array<string | null>): TagCount[] {
-  const counts = new Map<string, number>();
-  for (const row of rawTags) {
-    for (const tag of parseJsonArray(row)) {
-      const normalized = tag.trim();
-      if (!normalized) continue;
-      counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
-    }
-  }
-  return [...counts.entries()]
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 12);
-}
-
-function buildArticleToc(html?: string, text?: string): TocItem[] {
-  const headings = [...(html ?? "").matchAll(/<h([23])[^>]*>(.*?)<\/h[23]>/gi)]
-    .map((match) => ({
-      depth: Number(match[1]) === 3 ? (3 as const) : (2 as const),
-      title: cleanText(match[2]),
-    }))
-    .filter((item) => item.title.length > 0)
-    .slice(0, 8);
-
-  if (headings.length > 0) return headings;
-
-  return (text ?? "")
-    .split(/\r?\n/)
-    .map((line) => cleanText(line))
-    .filter((line) => /^\d+[.、]/.test(line) || line.length >= 6)
-    .slice(0, 5)
-    .map((title) => ({ title: title.replace(/^\d+[.、]\s*/, ""), depth: 2 as const }));
-}
-
-function cleanText(value: string) {
-  return value
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/\s+/g, " ")
-    .trim();
+function firstImageFromHtml(html?: string) {
+  const match = html?.match(/<img[^>]+src=(?:"([^"]+)"|'([^']+)')/i);
+  const src = match?.[1] ?? match?.[2];
+  return src?.replace(/&amp;/g, "&");
 }
 
 function speciesHref(species: SpeciesRailItem) {

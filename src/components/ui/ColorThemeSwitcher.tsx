@@ -1,6 +1,7 @@
 'use client';
 
 import { useColorTheme } from '@/context/ColorThemeContext';
+import { Icon } from '@/components/ui/Icon';
 import { useHoverOpen } from '@/lib/hooks/useHoverOpen';
 import { cn } from '@/lib/utils';
 
@@ -21,14 +22,15 @@ export function ColorThemeSwitcher({ className }: { className?: string }) {
         title={`主题:${meta.name}`}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="grid h-9 w-9 place-items-center rounded-full text-base hover:bg-leaf-50"
+        className="inline-flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-xl px-2.5 text-sm font-semibold text-ink-800 transition hover:bg-leaf-50 hover:text-leaf-900"
       >
-        {meta.logoEmoji}
+        <Icon name="palette" size={17} />
+        <span className="hidden sm:inline">主题</span>
       </button>
 
       {open && (
         <div className="absolute right-0 top-full z-50 mt-2 w-[300px] overflow-hidden rounded-2xl border border-leaf-100 bg-white p-3 shadow-card">
-          <div className="mb-2 text-xs font-semibold text-ink-800">🎨 配色主题</div>
+          <div className="mb-2 text-xs font-semibold text-ink-800">配色主题</div>
 
           <div className="grid max-h-[420px] grid-cols-2 gap-1.5 overflow-y-auto pr-0.5">
             {themes.map((t) => {

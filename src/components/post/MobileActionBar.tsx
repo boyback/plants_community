@@ -95,14 +95,14 @@ export function MobileActionBar({
            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="mx-auto flex max-w-[640px] items-center gap-1.5 px-3 py-2">
           <BottomBtn
-            icon="heart"
+            icon="thumbs-up"
             label={formatNumber(likes)}
             active={liked}
             activeCls="text-rose-500"
             onClick={toggleLike}
           />
           <BottomBtn
-            icon="star"
+            icon="bookmark"
             label={saved ? t('detail.post.collected') : t('detail.post.collect')}
             active={saved}
             activeCls="text-amber-500"
@@ -129,17 +129,22 @@ export function MobileActionBar({
         title={t('detail.post.shareTo')}
       >
         <div className="grid grid-cols-3 gap-3 p-5">
-          {(['wechat', 'weibo', 'link'] as const).map((k) => {
-            const emoji = k === 'wechat' ? '💬' : k === 'weibo' ? '🌐' : '🔗';
+          {([
+            { key: 'wechat', icon: 'message' },
+            { key: 'weibo', icon: 'globe' },
+            { key: 'link', icon: 'link' },
+          ] as const).map(({ key, icon }) => {
             return (
               <button
-                key={k}
+                key={key}
                 type="button"
-                onClick={() => share(k)}
-                className="flex flex-col items-center gap-2 rounded-none bg-leaf-50/60 p-4 hover:bg-leaf-100"
+                onClick={() => share(key)}
+                className="flex flex-col items-center gap-2 rounded-lg bg-leaf-50/60 p-4 text-ink-700 transition-colors hover:bg-leaf-100 hover:text-leaf-800"
               >
-                <span className="text-3xl">{emoji}</span>
-                <span className="text-xs">{t(`detail.post.shareChannels.${k}`)}</span>
+                <span className="grid h-10 w-10 place-items-center rounded-full bg-white text-leaf-700 shadow-sm">
+                  <Icon name={icon} size={18} />
+                </span>
+                <span className="text-xs">{t(`detail.post.shareChannels.${key}`)}</span>
               </button>
             );
           })}

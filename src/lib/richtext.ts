@@ -45,8 +45,6 @@ export const ALLOWED_TAGS = [
   'code',
   'a',
   'img',
-  'figure',
-  'figcaption',
   'hr',
   'span',
   'div',
@@ -97,8 +95,6 @@ export function sanitizeHtml(html: string): string {
     allowedAttributes: {
       a: ['href', 'title'],
       img: ['src', 'alt', 'title', 'width', 'height', 'class', 'style'],
-      figure: ['class', 'style', 'data-width', 'data-align', 'data-layout', 'data-caption'],
-      figcaption: ['class', 'style'],
       mark: ['class', 'data-type'],
       span: ['class', 'style', 'data-type', 'data-value'],
       p: ['class', 'style', 'data-text-align'],
@@ -142,17 +138,6 @@ export function sanitizeHtml(html: string): string {
         if (attribs.style) preserved.style = attribs.style;
         return { tagName, attribs: preserved };
       },
-      figure: (tagName, attribs) => ({
-        tagName,
-        attribs: {
-          class: attribs.class || 'rte-image-figure',
-          style: attribs.style || '',
-          ...(attribs['data-width'] ? { 'data-width': attribs['data-width'] } : {}),
-          ...(attribs['data-align'] ? { 'data-align': attribs['data-align'] } : {}),
-          ...(attribs['data-layout'] ? { 'data-layout': attribs['data-layout'] } : {}),
-          ...(attribs['data-caption'] ? { 'data-caption': attribs['data-caption'] } : {}),
-        },
-      }),
       // 保留 heading/paragraph 的 style 属性
       h1: (tagName, attribs) => ({
         tagName,

@@ -97,7 +97,7 @@ export function useConcurrentUpload({
       if (item.abortController.signal.aborted) return null;
       setUploadingItems((prev) =>
         prev.map((x) =>
-          x.id === item.id ? { ...x, status: 'uploaded', progress: 1, url: result.url } : x,
+          x.id === item.id ? { ...x, status: 'uploaded', progress: 100, url: result.url } : x,
         ),
       );
       return { id: item.id, url: result.url };

@@ -3,7 +3,7 @@
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
-import { RichTextView } from '@/components/richtext/RichTextView';
+import { PostContentView } from '@/components/post/PostContentView';
 import { STAGE_META } from '@/lib/journal';
 import type { JournalStage, PostType } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -37,6 +37,8 @@ interface Props {
   videoUrl: string;
   tags: string[];
   user: User | null;
+  boardLabel?: string;
+  visibilityLabel?: string;
   voteOptions: string[];
   voteMulti: boolean;
   voteDeadline: string;
@@ -55,6 +57,8 @@ export function PostPreview({
   videoUrl,
   tags,
   user,
+  boardLabel,
+  visibilityLabel,
   voteOptions,
   voteMulti,
   voteDeadline,
@@ -64,148 +68,279 @@ export function PostPreview({
   cover,
 }: Props) {
   const isRichContent = type === 'rich' || type === 'event';
-  const displayImage = cover || images[0] || '';
-  const extraImages = images.filter((url) => url !== displayImage).slice(0, 3);
+  const previewTitle = title || '帖子标题预览';
+  const plainImages = isRichContent ? [] : cover ? [cover, ...images.filter((url) => url !== cover)] : images;
 
   return (
     <section className="rounded-xl border border-leaf-100 bg-white p-4 shadow-sm">
       <h2 className="text-base font-bold text-ink-900">实时预览</h2>
 
-      <article className="mt-4 overflow-hidden rounded-xl border border-leaf-100 bg-white p-3 shadow-sm">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <Avatar src={user?.avatar || ''} alt={user?.name || '用户'} size={34} />
-            <div className="min-w-0">
-              <div className="truncate text-sm font-bold text-ink-900">{user?.name || '肉友'}</div>
-              <div className="text-[11px] text-ink-500">刚刚 · Lv.{user?.level ?? 1}</div>
-            </div>
+      <article className="mt-4 overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-sm">
+        <div className="border-b border-leaf-100 px-4 py-4">
+          <div className="mb-3 flex items-center gap-2">
+            <PostTypeBadge type={type} />
           </div>
-          <PostTypeBadge type={type} />
+
+          <div className="mb-3 flex flex-wrap gap-2 text-[11px]">
+            <span className="rounded-full bg-leaf-50 px-2.5 py-1 font-medium text-leaf-800">
+              板块：{boardLabel || '待选择'}
+            </span>
+            <span className="rounded-full bg-ink-50 px-2.5 py-1 font-medium text-ink-600">
+              {visibilityLabel || '公开（所有人可见）'}
+            </span>
+            <span className={cn(
+              'rounded-full px-2.5 py-1 font-medium',
+              cover ? 'bg-leaf-50 text-leaf-800' : 'bg-ink-50 text-ink-500',
+            )}>
+              封面：{cover ? '已设置' : '未设置'}
+            </span>
+          </div>
+
+          <h3 className={cn('text-[22px] font-bold leading-snug text-ink-950', !title && 'text-ink-400')}>
+            {previewTitle}
+          </h3>
+
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-500">
+            <div className="flex min-w-0 items-center gap-2 text-ink-800">
+              <Avatar src={user?.avatar || ''} alt={user?.name || '用户'} size={30} />
+              <span className="truncate font-semibold">{user?.name || '肉友'}</span>
+              <span className="rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-800">
+                Lv.{user?.level ?? 1}
+              </span>
+            </div>
+            <span>刚刚</span>
+            <span className="inline-flex items-center gap-1">
+              <Icon name="eye" size={13} />
+              0
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Icon name="comment" size={13} />
+              0
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Icon name="heart" size={13} />
+              0
+            </span>
+          </div>
+
+          {tags.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-leaf-50 px-3 py-1 text-xs font-medium text-leaf-800"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
-        <h3 className="mt-4 line-clamp-2 text-base font-bold leading-6 text-ink-950">
-          {title || <span className="text-ink-400">帖子标题预览</span>}
-        </h3>
-
-        {isRichContent && contentJson ? (
-          <div className="preview-prose prose-article mt-3 max-h-[230px] overflow-hidden text-sm leading-6 text-ink-700">
-            <RichTextView json={contentJson} html={content || undefined} />
-          </div>
-        ) : content ? (
-          <p className="mt-3 line-clamp-5 whitespace-pre-wrap text-sm leading-6 text-ink-700">{content}</p>
-        ) : (
-          <p className="mt-3 text-sm leading-6 text-ink-400">正文内容会在这里实时预览。</p>
-        )}
-
-        {displayImage && (
-          <div className="mt-3 overflow-hidden rounded-lg bg-leaf-50">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={displayImage} alt="" className="block aspect-[4/3] w-full object-cover" />
-          </div>
-        )}
-
-        {extraImages.length > 0 && (
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            {extraImages.map((url, index) => (
-              <div key={`${url}-${index}`} className="relative overflow-hidden rounded-lg bg-leaf-50">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt="" className="block aspect-square w-full object-cover" />
-                {index === 2 && images.length > 4 && (
-                  <span className="absolute inset-0 grid place-items-center bg-black/45 text-sm font-bold text-white">
-                    +{images.length - 4}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {type === 'video' && videoUrl && (
-          <video src={videoUrl} controls preload="metadata" className="mt-3 block w-full rounded-lg" />
-        )}
-
-        {type === 'vote' && (
-          <div className="mt-3 space-y-1.5 rounded-lg bg-leaf-50/70 p-2.5 text-xs text-ink-700">
-            <div className="font-semibold">{title || '投票问题'}</div>
-            {voteOptions.filter((x) => x.trim()).map((option, index) => (
-              <div key={`${option}-${index}`} className="rounded-md bg-white px-2 py-1">
-                {option}
-              </div>
-            ))}
-            <div className="text-[11px] text-ink-500">
-              {voteMulti ? '多选' : '单选'}
-              {voteDeadline && ` · 截止 ${new Date(voteDeadline).toLocaleString('zh-CN')}`}
+        <div className="px-4 py-4">
+          {cover && (
+            <div className="mb-4 overflow-hidden rounded-lg border border-leaf-100 bg-leaf-50">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={cover} alt="" className="block aspect-video w-full object-cover" />
             </div>
-          </div>
-        )}
+          )}
 
-        {type === 'event' && (
-          <div className="mt-3 rounded-lg bg-leaf-50/70 p-2.5 text-xs leading-5 text-ink-700">
-            <div>地点：{eventLocation || '待填写'}</div>
-            <div>时间：{eventStartAt ? new Date(eventStartAt).toLocaleString('zh-CN') : '待填写'}</div>
-          </div>
-        )}
+          {renderPreviewBody({
+            content,
+            contentJson,
+            eventLocation,
+            eventStartAt,
+            images: plainImages,
+            isRichContent,
+            journal,
+            title: previewTitle,
+            type,
+            videoUrl,
+            voteDeadline,
+            voteMulti,
+            voteOptions,
+          })}
 
-        {type === 'journal' && (
-          <div className="mt-3 rounded-lg bg-leaf-50/70 p-2.5 text-xs">
-            <div className="mb-2 flex items-center justify-between text-leaf-800">
-              <span className="font-semibold">{journal.subjectName || '植物昵称'}</span>
-              <span>{journal.entries.length} 条记录</span>
-            </div>
-            <ol className="space-y-1.5">
-              {journal.entries.slice(0, 3).map((entry, index) => {
-                const meta = STAGE_META[entry.stage as JournalStage] || STAGE_META.other;
-                return (
-                  <li key={index} className="flex items-start gap-1.5">
-                    <span
-                      className={cn(
-                        'mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px]',
-                        meta?.color?.replace('border-', '') || 'bg-leaf-50 text-leaf-700',
-                      )}
-                    >
-                      {meta?.emoji || '•'}
-                    </span>
-                    <div className="min-w-0 flex-1 text-[11px] leading-4 text-ink-700">
-                      <span className="text-ink-500">
-                        {entry.entryDate
-                          ? new Date(entry.entryDate).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
-                          : '?'}
-                      </span>{' '}
-                      {entry.note ? truncate(entry.note, 30) : meta?.zh || '其他'}
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        )}
+          {!content && !contentJson && type !== 'journal' && type !== 'vote' && type !== 'event' && !videoUrl && (
+            <p className="text-base leading-7 text-ink-400">正文内容会在这里实时预览。</p>
+          )}
 
-        {tags.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1">
-            {tags.map((tag) => (
-              <span key={tag} className="rounded-full bg-leaf-50 px-2 py-0.5 text-[10px] font-semibold text-leaf-700">
-                #{tag}
-              </span>
-            ))}
+          <div className="mt-5 flex items-center justify-between border-t border-leaf-100 pt-3 text-xs text-ink-600">
+            <span className="inline-flex items-center gap-1">
+              <Icon name="heart" size={14} />
+              0
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Icon name="comment" size={14} />
+              0
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Icon name="star" size={14} />
+              收藏
+            </span>
           </div>
-        )}
-
-        <div className="mt-4 flex items-center justify-between border-t border-leaf-100 pt-3 text-xs text-ink-600">
-          <span className="inline-flex items-center gap-1">
-            <Icon name="heart" size={14} />
-            256
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Icon name="comment" size={14} />
-            128
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Icon name="star" size={14} />
-            收藏
-          </span>
         </div>
       </article>
     </section>
+  );
+}
+
+function renderPreviewBody({
+  content,
+  contentJson,
+  eventLocation,
+  eventStartAt,
+  images,
+  isRichContent,
+  journal,
+  title,
+  type,
+  videoUrl,
+  voteDeadline,
+  voteMulti,
+  voteOptions,
+}: {
+  content: string;
+  contentJson: unknown;
+  eventLocation: string;
+  eventStartAt: string;
+  images: string[];
+  isRichContent: boolean;
+  journal: JournalDraft;
+  title: string;
+  type: PostType;
+  videoUrl: string;
+  voteDeadline: string;
+  voteMulti: boolean;
+  voteOptions: string[];
+}) {
+  if (type === 'video') {
+    return (
+      <div className="space-y-4">
+        {videoUrl && (
+          <div className="overflow-hidden rounded-none bg-black">
+            <video src={videoUrl} controls preload="metadata" className="aspect-video w-full" />
+          </div>
+        )}
+        <PostContentView text={content || undefined} images={images} />
+      </div>
+    );
+  }
+
+  if (type === 'vote') {
+    const visibleOptions = voteOptions.filter((x) => x.trim());
+    return (
+      <div className="space-y-4">
+        <PostContentView text={content || undefined} />
+        <div className="space-y-2 rounded-none bg-leaf-50/60 p-2">
+          <div className="flex items-center gap-2">
+            <span className="line-clamp-1 min-w-0 flex-1 text-[12px] font-medium text-leaf-800">
+              投票：{title || '投票问题'}
+            </span>
+            <span className="shrink-0 rounded bg-leaf-200 px-1.5 py-0.5 text-[10px] text-leaf-800">进行中</span>
+            <span className="shrink-0 text-[10px] text-leaf-600">{voteMulti ? '多选' : '单选'}</span>
+          </div>
+          <div className="space-y-1.5">
+            {visibleOptions.length > 0 ? (
+              visibleOptions.map((option, index) => (
+                <div key={`${option}-${index}`} className="rounded bg-white/70 px-2 py-1 text-[11px] text-leaf-900">
+                  {option}
+                </div>
+              ))
+            ) : (
+              <div className="rounded bg-white/70 px-2 py-1 text-[11px] text-leaf-700/50">投票选项会显示在这里</div>
+            )}
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-leaf-700/80">
+            <span>0 票</span>
+            {voteDeadline && <span>截止 {new Date(voteDeadline).toLocaleString('zh-CN')}</span>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (type === 'event') {
+    return (
+      <div className="space-y-4">
+        <div className="card overflow-hidden">
+          <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-3">
+            <InfoBlock title="时间" value={eventStartAt ? new Date(eventStartAt).toLocaleString('zh-CN') : '待填写'} />
+            <InfoBlock title="地点" value={eventLocation || '待填写'} />
+            <InfoBlock title="报名" value="0 人已参加" />
+          </div>
+          <div className="flex items-center justify-between border-t border-leaf-100 px-5 py-3">
+            <div className="text-xs text-leaf-700/70">活动预览</div>
+            <span className="btn bg-violet-500 !px-4 text-white">报名</span>
+          </div>
+        </div>
+        <PostContentView json={contentJson || undefined} html={contentJson ? undefined : content || undefined} />
+      </div>
+    );
+  }
+
+  if (type === 'journal') {
+    return <JournalPreview journal={journal} />;
+  }
+
+  if (isRichContent && contentJson) {
+    return <PostContentView json={contentJson} />;
+  }
+
+  if (content || images.length > 0) {
+    return <PostContentView text={content || undefined} images={images} />;
+  }
+
+  return null;
+}
+
+function InfoBlock({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-none bg-leaf-50/60 p-3">
+      <div className="text-[11px] text-leaf-700/70">{title}</div>
+      <div className="mt-1 text-sm font-medium text-ink-800">{value}</div>
+    </div>
+  );
+}
+
+function JournalPreview({ journal }: { journal: JournalDraft }) {
+  return (
+    <div className="space-y-4">
+      <div className="rounded-none border border-leaf-100 bg-leaf-50/40 p-4">
+        <div className="grid gap-3 md:grid-cols-3">
+          <InfoBlock title="对象" value={journal.subjectName || '植物昵称'} />
+          <InfoBlock title="起始日期" value={journal.startDate ? new Date(journal.startDate).toLocaleDateString('zh-CN') : '待填写'} />
+          <InfoBlock title="记录" value={`${journal.entries.length} 条记录`} />
+        </div>
+      </div>
+      {journal.entries.length > 0 && (
+        <ol className="space-y-2">
+          {journal.entries.slice(0, 3).map((entry, index) => {
+            const meta = STAGE_META[entry.stage as JournalStage] || STAGE_META.other;
+            return (
+              <li key={index} className="flex items-start gap-2 rounded-none bg-leaf-50/60 p-2 text-xs">
+                <span
+                  className={cn(
+                    'mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px]',
+                    meta?.color?.replace('border-', '') || 'bg-leaf-50 text-leaf-700',
+                  )}
+                >
+                  {meta?.emoji || '•'}
+                </span>
+                <div className="min-w-0 flex-1 leading-5 text-ink-700">
+                  <span className="text-ink-500">
+                    {entry.entryDate
+                      ? new Date(entry.entryDate).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
+                      : '?'}
+                  </span>{' '}
+                  {entry.note ? truncate(entry.note, 36) : meta?.zh || '其他'}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </div>
   );
 }
 

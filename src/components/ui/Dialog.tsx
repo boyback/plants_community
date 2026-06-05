@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Dialog as RadixDialog } from 'radix-ui';
 import { Icon } from '@/components/ui/Icon';
+import { cn } from '@/lib/utils';
 
 interface DialogProps {
   open: boolean;
@@ -16,19 +18,6 @@ interface DialogProps {
  * 通用对话框组件
  */
 export function Dialog({ open, onClose, title, children, actions, maxWidth = 'md' }: DialogProps) {
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [open]);
-
-  if (!open) return null;
-
   const maxWidthClass = {
     sm: 'max-w-sm',
     md: 'max-w-md',
@@ -36,25 +25,39 @@ export function Dialog({ open, onClose, title, children, actions, maxWidth = 'md
   }[maxWidth];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 p-4" onClick={onClose}>
-      <div
-        className={`bg-white rounded-lg shadow-sm w-full ${maxWidthClass} p-5`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-base font-medium text-ink-800">{title}</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="grid h-7 w-7 place-items-center rounded text-ink-400 hover:bg-ink-50 hover:text-ink-600"
-          >
-            <Icon name="close" size={14} />
-          </button>
-        </div>
-        <div className="text-sm text-ink-600">{children}</div>
-        {actions && <div className="mt-4 flex gap-2">{actions}</div>}
-      </div>
-    </div>
+    <RadixDialog.Root
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
+      }}
+    >
+      <RadixDialog.Portal>
+        <RadixDialog.Overlay className="fixed inset-0 z-50 bg-black/20 data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <RadixDialog.Content
+          className={cn(
+            'fixed left-1/2 top-1/2 z-50 w-[calc(100vw-32px)] -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-5 shadow-sm outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+            maxWidthClass
+          )}
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <RadixDialog.Title className="text-base font-medium text-ink-800">{title}</RadixDialog.Title>
+            <RadixDialog.Close asChild>
+              <button
+                type="button"
+                className="grid h-7 w-7 shrink-0 place-items-center rounded text-ink-400 hover:bg-ink-50 hover:text-ink-600"
+                aria-label="关闭"
+              >
+                <Icon name="close" size={14} />
+              </button>
+            </RadixDialog.Close>
+          </div>
+          <RadixDialog.Description asChild>
+            <div className="text-sm text-ink-600">{children}</div>
+          </RadixDialog.Description>
+          {actions && <div className="mt-4 flex gap-2">{actions}</div>}
+        </RadixDialog.Content>
+      </RadixDialog.Portal>
+    </RadixDialog.Root>
   );
 }
 

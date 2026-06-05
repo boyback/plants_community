@@ -13,9 +13,11 @@ interface TagSelectorProps {
   value: string[];
   onChange: (tags: string[]) => void;
   max?: number;
+  className?: string;
+  controlClassName?: string;
 }
 
-export function TagSelector({ value, onChange, max = 6 }: TagSelectorProps) {
+export function TagSelector({ value, onChange, max = 6, className, controlClassName }: TagSelectorProps) {
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
@@ -23,7 +25,7 @@ export function TagSelector({ value, onChange, max = 6 }: TagSelectorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 加载所有标签
+  // 加载所有话题
   useEffect(() => {
     setLoading(true);
     fetch('/api/tags')
@@ -55,7 +57,7 @@ export function TagSelector({ value, onChange, max = 6 }: TagSelectorProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 过滤标签
+  // 过滤话题
   const filteredTags = allTags.filter((tag) => {
     if (!searchInput.trim()) return true;
     return tag.name.toLowerCase().includes(searchInput.toLowerCase());
@@ -67,7 +69,7 @@ export function TagSelector({ value, onChange, max = 6 }: TagSelectorProps) {
   const canCreateTag =
     normalizedInput.length > 0 && !hasExactMatch && value.length < max;
 
-  // 添加标签
+  // 添加话题
   const addTag = (tagName: string) => {
     const name = tagName.trim().replace(/^#/, '');
     if (!name) return;
@@ -77,7 +79,7 @@ export function TagSelector({ value, onChange, max = 6 }: TagSelectorProps) {
     setSearchInput('');
   };
 
-  // 移除标签
+  // 移除话题
   const removeTag = (tagName: string) => {
     onChange(value.filter((t) => t !== tagName));
   };
@@ -93,12 +95,13 @@ export function TagSelector({ value, onChange, max = 6 }: TagSelectorProps) {
   };
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className={cn('relative', className)}>
       {/* 输入区域 */}
       <div
         className={cn(
-          'flex min-h-[42px] cursor-text flex-wrap items-center gap-1.5 rounded-lg border border-leaf-200 bg-white px-2 py-1.5 transition-colors',
+          'flex min-h-10 cursor-text flex-wrap items-center gap-1.5 rounded-lg border border-leaf-200 bg-white px-3 py-2 text-sm text-ink-800 transition-colors',
           'hover:border-leaf-300',
+          controlClassName,
           isOpen && 'border-leaf-400 ring-2 ring-leaf-100'
         )}
         onClick={() => {
@@ -106,7 +109,7 @@ export function TagSelector({ value, onChange, max = 6 }: TagSelectorProps) {
           inputRef.current?.focus();
         }}
       >
-        {/* 已选标签 */}
+        {/* 已选话题 */}
         {value.map((tag) => (
           <span
             key={tag}
@@ -129,7 +132,7 @@ export function TagSelector({ value, onChange, max = 6 }: TagSelectorProps) {
         {/* 输入框 */}
         <input
           ref={inputRef}
-          className="min-w-[140px] flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-leaf-700/45"
+          className="min-w-[140px] flex-1 bg-transparent px-0 text-sm outline-none placeholder:text-leaf-700/45"
           value={searchInput}
           onChange={(e) => {
             setSearchInput(e.target.value);
@@ -137,7 +140,7 @@ export function TagSelector({ value, onChange, max = 6 }: TagSelectorProps) {
           }}
           onKeyDown={handleKeyDown}
           onFocus={() => setIsOpen(true)}
-          placeholder={value.length >= max ? `最多 ${max} 个标签` : '输入或选择标签'}
+          placeholder={value.length >= max ? `最多 ${max} 个话题` : '输入或选择话题'}
           disabled={value.length >= max}
         />
       </div>
@@ -152,7 +155,7 @@ export function TagSelector({ value, onChange, max = 6 }: TagSelectorProps) {
             </div>
           ) : filteredTags.length === 0 ? (
             <div className="p-5 text-center text-xs text-leaf-700/60">
-              {searchInput ? '没有找到匹配标签' : '暂无标签'}
+              {searchInput ? '没有找到匹配话题' : '暂无话题'}
               {canCreateTag && (
                 <button
                   type="button"
@@ -167,7 +170,7 @@ export function TagSelector({ value, onChange, max = 6 }: TagSelectorProps) {
             <div className="p-1.5">
               <div className="flex items-center justify-between px-2 py-1.5">
                 <span className="text-[10px] font-medium text-leaf-700/60">
-                  {searchInput ? '搜索结果' : '热门标签'}
+                  {searchInput ? '搜索结果' : '热门话题'}
                 </span>
                 <span className="text-[10px] text-leaf-700/45">
                   {value.length}/{max}

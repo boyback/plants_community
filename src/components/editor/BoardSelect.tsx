@@ -150,7 +150,7 @@ export function BoardSelect(props: SingleBoardSelectProps | MultiBoardSelectProp
       !props.value.genusSlug &&
       !props.value.speciesSlug
     ) {
-      props.onChange(pickSelection(options[0]));
+      props.onChange({ ...pickSelection(options[0]), label: formatBoardPathLabel(options[0]) });
     }
   }, [isMultiple, options, props]);
 
@@ -206,7 +206,7 @@ export function BoardSelect(props: SingleBoardSelectProps | MultiBoardSelectProp
       {isMultiple ? (
         <div
           className={cn(
-            'flex min-h-10 w-full flex-wrap items-center gap-1.5 border border-leaf-200 bg-white px-2 py-1.5 text-sm outline-none transition-colors focus-within:border-leaf-400 focus-within:ring-2 focus-within:ring-leaf-100',
+            'flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-lg border border-leaf-200 bg-white px-3 py-2 text-sm text-ink-800 outline-none transition-colors focus-within:border-leaf-400 focus-within:ring-2 focus-within:ring-leaf-100',
             invalid && 'border-rose-300 bg-rose-50/30 focus-within:border-rose-300 focus-within:ring-rose-100',
           )}
           onClick={() => inputRef.current?.focus()}
@@ -255,7 +255,7 @@ export function BoardSelect(props: SingleBoardSelectProps | MultiBoardSelectProp
                 setQuery('');
               }
             }}
-            className="min-w-[160px] flex-1 bg-transparent px-1 py-1 text-sm outline-none disabled:cursor-not-allowed disabled:text-leaf-700/45"
+            className="min-w-[160px] flex-1 bg-transparent px-0 text-sm outline-none placeholder:text-leaf-700/45 disabled:cursor-not-allowed disabled:text-leaf-700/45"
             placeholder={selectedOptions.length === 0 ? placeholder : disabled ? `最多选择 ${max} 个` : '继续选择'}
             disabled={disabled}
             role="combobox"

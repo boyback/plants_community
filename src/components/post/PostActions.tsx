@@ -14,10 +14,12 @@ export function PostActions({
   post,
   initialLiked = false,
   initialCollected = false,
+  initialCollectedTotal = 0,
 }: {
   post: Post;
   initialLiked?: boolean;
   initialCollected?: boolean;
+  initialCollectedTotal?: number;
 }) {
   const { user } = useAuth();
   const { t } = useI18n();
@@ -25,6 +27,8 @@ export function PostActions({
   const [liked, setLiked] = useState(initialLiked);
   const [saved, setSaved] = useState(initialCollected);
   const [likes, setLikes] = useState(post.likes);
+  const [collects, setCollects] = useState(initialCollectedTotal);
+  const [railOpen, setRailOpen] = useState(true);
 
   const ensureLogin = () => {
     if (!user) {
@@ -50,10 +54,11 @@ export function PostActions({
   const toggleCollect = async () => {
     if (!ensureLogin()) return;
     try {
-      const res = await api.post<{ collected: boolean }>(
+      const res = await api.post<{ collected: boolean; total: number }>(
         `/api/posts/${post.id}/collect`
       );
       setSaved(res.collected);
+      setCollects(res.total);
       toast.success(res.collected ? t('detail.post.collectSuccess') : t('detail.post.collectUnsetSuccess'));
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t('detail.post.opFail'));
@@ -67,55 +72,105 @@ export function PostActions({
     toast.success(t('detail.post.shareSuccess', { channel: t(`detail.post.shareChannels.${channelKey}`) }));
   };
 
+  const report = async () => {
+    if (!ensureLogin()) return;
+    const detail = window.prompt('请输入举报原因');
+    if (detail === null) return;
+    const text = detail.trim();
+    if (!text) {
+      toast.error('请输入举报原因');
+      return;
+    }
+    try {
+      await api.post('/api/reports', {
+        targetType: 'post',
+        targetId: post.id,
+        reason: 'user_report',
+        detail: text,
+      });
+      toast.success('举报已提交');
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : '举报失败');
+    }
+  };
+
   const scrollToComments = () => {
     document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   return (
-    <div className="relative hidden border-t border-leaf-100 bg-white px-5 py-3 md:block md:px-7">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-center justify-around gap-2">
-          <ActionBtn
-            active={liked}
-            onClick={toggleLike}
-            icon="heart"
-            label={`喜欢 ${formatNumber(likes)}`}
-            activeCls="text-rose-500 bg-rose-50"
-          />
-          <ActionBtn
-            onClick={scrollToComments}
-            icon="comment"
-            label={`评论 ${formatNumber(post.comments)}`}
-          />
-          <ActionBtn
-            active={saved}
-            onClick={toggleCollect}
-            icon="star"
-            label={saved ? t('detail.post.collected') : t('detail.post.collect')}
-            activeCls="text-amber-500 bg-amber-50"
-          />
-          <ActionBtn
-            icon="share"
-            label={t('detail.post.shareChannels.link')}
-            onClick={() => share('link')}
-          />
-        </div>
-        <div className="flex items-center gap-1 border-l border-leaf-100 pl-3">
-          {(['wechat', 'weibo', 'link'] as const).map((k) => {
-            const name = t(`detail.post.shareChannels.${k}`);
-            return (
-              <button
-                key={k}
-                onClick={() => share(k)}
-                className="grid h-9 w-9 place-items-center rounded-xl text-ink-500 hover:bg-leaf-50 hover:text-leaf-800"
-                title={t('detail.post.shareToX', { name })}
-              >
-                <Icon name={k === 'link' ? 'link' : 'share'} size={15} />
-              </button>
-            );
-          })}
+    <div className="hidden md:block">
+      <div
+        className={cn(
+          'fixed left-[max(16px,calc(50vw_-_666px))] top-1/2 z-30 w-16 -translate-y-1/2 transition-[transform,opacity] duration-200 ease-out',
+          railOpen
+            ? 'translate-x-0 opacity-100'
+            : 'pointer-events-none -translate-x-3 opacity-0'
+        )}
+        aria-hidden={!railOpen}
+      >
+        <div className="overflow-hidden rounded-2xl border border-leaf-100 bg-white/95 p-1.5 shadow-lg shadow-ink-900/5 backdrop-blur">
+          <button
+            type="button"
+            onClick={() => setRailOpen(false)}
+            className="mb-1 grid h-8 w-full place-items-center rounded-xl text-ink-400 transition-colors hover:bg-ink-50 hover:text-ink-700"
+            title="收起操作栏"
+            aria-label="收起操作栏"
+          >
+            <Icon name="close" size={14} />
+          </button>
+          <div className="space-y-1">
+            <ActionBtn
+              icon="share"
+              label="分享"
+              onClick={() => share('link')}
+            />
+            <ActionBtn
+              active={saved}
+              icon="bookmark"
+              label="收藏"
+              count={collects}
+              activeCls="bg-amber-50 text-amber-600"
+              onClick={toggleCollect}
+            />
+            <ActionBtn
+              active={liked}
+              icon="thumbs-up"
+              label="点赞"
+              count={likes}
+              activeCls="bg-rose-50 text-rose-600"
+              onClick={toggleLike}
+            />
+            <ActionBtn
+              icon="comment"
+              label="评论"
+              count={post.comments}
+              onClick={scrollToComments}
+            />
+            <ActionBtn
+              icon="alert"
+              label="举报"
+              onClick={report}
+            />
+          </div>
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={() => setRailOpen(true)}
+        className={cn(
+          'fixed left-[max(16px,calc(50vw_-_662px))] top-1/2 z-30 grid h-12 w-8 -translate-y-1/2 place-items-center rounded-full bg-ink-100 text-ink-500 shadow-md shadow-ink-900/5 transition-[transform,opacity,background-color,color] duration-200 ease-out hover:bg-ink-200 hover:text-ink-800',
+          railOpen
+            ? 'pointer-events-none -translate-x-3 opacity-0'
+            : 'translate-x-0 opacity-100'
+        )}
+        title="展开操作栏"
+        aria-label="展开操作栏"
+        aria-expanded={railOpen}
+      >
+        <Icon name="menu" size={16} />
+      </button>
     </div>
   );
 }
@@ -123,12 +178,14 @@ export function PostActions({
 function ActionBtn({
   icon,
   label,
+  count,
   onClick,
   active,
   activeCls,
 }: {
   icon: Parameters<typeof Icon>[0]['name'];
   label: string;
+  count?: number;
   onClick?: () => void;
   active?: boolean;
   activeCls?: string;
@@ -138,12 +195,19 @@ function ActionBtn({
       type="button"
       onClick={onClick}
       className={cn(
-        'inline-flex h-10 items-center justify-center gap-1.5 rounded-xl px-4 text-sm font-medium transition-colors',
-        active ? activeCls : 'text-ink-700/80 hover:bg-leaf-50'
+        'flex min-h-14 w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1.5 py-2 text-[11px] font-semibold leading-tight text-ink-600 transition-colors hover:bg-leaf-50 hover:text-leaf-800',
+        active && (activeCls ?? 'bg-leaf-50 text-leaf-800')
       )}
+      title={label}
+      aria-label={label}
     >
       <Icon name={icon} size={16} fill={active ? 'currentColor' : 'none'} />
-      {label}
+      <span>{label}</span>
+      {typeof count === 'number' && (
+        <span className={cn('text-[11px] font-medium text-ink-400', active && 'text-current')}>
+          {formatNumber(count)}
+        </span>
+      )}
     </button>
   );
 }

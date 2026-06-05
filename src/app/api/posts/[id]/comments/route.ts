@@ -39,7 +39,8 @@ export const POST = handler(async (req) => {
     text: typeof body.content === 'string' ? body.content : undefined,
     textMaxLen: 2000,
   });
-  if (!stored.text) return fail(400, '评论内容不能为空');
+  const hasImage = /<img\b/i.test(stored.html);
+  if (!stored.text && !hasImage) return fail(400, '评论内容不能为空');
 
   const post = await prisma.post.findUnique({
     where: { id: postId },
@@ -81,7 +82,7 @@ export const POST = handler(async (req) => {
         recipientId: post.authorId,
         fromId: me.id,
         type: 'comment',
-        text: `评论了你的帖子《${post.title.slice(0, 20)}》:${stored.text.slice(0, 40)}`,
+        text: `评论了你的帖子《${post.title.slice(0, 20)}》:${(stored.text || '[图片]').slice(0, 40)}`,
         link: `/post/${post.id}`,
       },
     });

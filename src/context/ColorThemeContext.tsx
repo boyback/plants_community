@@ -52,7 +52,7 @@ export function ColorThemeProvider({ children }: { children: React.ReactNode }) 
     try {
       const savedTheme = localStorage.getItem(COLOR_THEME_STORAGE_KEY);
       const savedMode = localStorage.getItem(COLOR_THEME_MODE_STORAGE_KEY);
-      const t = isValidColorTheme(savedTheme) && savedTheme !== 'ocean' ? savedTheme : DEFAULT_COLOR_THEME;
+      const t = isValidColorTheme(savedTheme) ? savedTheme : DEFAULT_COLOR_THEME;
       const m = isValidMode(savedMode) ? savedMode : DEFAULT_COLOR_MODE;
       setThemeState(t);
       setModeState(m);
@@ -128,10 +128,6 @@ export const COLOR_THEME_SSR_SCRIPT = `
     var t = localStorage.getItem('${COLOR_THEME_STORAGE_KEY}');
     var m = localStorage.getItem('${COLOR_THEME_MODE_STORAGE_KEY}');
     var validThemes = ['plantnet','ocean','forest','vintage','dopamine-red','dopamine-purple','latte','matcha','cybermist','rosegold','sapphire','beach','lavender','cream','neon','minimal','forest-green','terracotta','mint','amethyst'];
-    if (t === 'ocean') {
-      t = 'plantnet';
-      localStorage.setItem('${COLOR_THEME_STORAGE_KEY}', t);
-    }
     if (validThemes.indexOf(t) >= 0) {
       document.documentElement.setAttribute('data-theme', t);
     }

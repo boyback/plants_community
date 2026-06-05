@@ -305,7 +305,6 @@ export interface Message {
 export interface BannerItem {
   id: string;
   title: string;
-  subtitle: string;
   image: string;
   link: string;
   tint: string; // tailwind color class for overlay

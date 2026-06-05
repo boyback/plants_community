@@ -9,11 +9,13 @@ import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { timeAgo, formatNumber, cn } from '@/lib/utils';
 import { RichTextView } from '@/components/richtext/RichTextView';
-import { RichTextEditor } from '@/components/richtext/RichTextEditor';
+import { PlainCommentComposer } from '@/components/post/PlainCommentComposer';
 import { api, ApiError } from '@/lib/client-api';
+import { buildCommentContentJson } from '@/lib/comment-content';
 
 interface CommentListProps {
   comments: Comment[];
+  postId: string;
   onCommentAdded?: (comment: Comment) => void;
   onReplyAdded?: (commentId: string, reply: Comment) => void;
   compact?: boolean;
@@ -22,16 +24,15 @@ interface CommentListProps {
 /**
  * 评论列表组件
  * - 包含评论列表、回复评论功能
- * - 评论输入使用富文本编辑器
+ * - 评论输入使用纯文本编辑器
  */
 export function CommentList({
   comments,
-  onCommentAdded,
+  postId,
   onReplyAdded,
   compact = false,
 }: CommentListProps) {
   const { user, equip } = useAuth();
-  const { t } = useI18n();
   const myBubble = user ? (equip.bubble ?? null) : null;
 
   return (
@@ -40,6 +41,7 @@ export function CommentList({
         <CommentItem
           key={comment.id}
           comment={comment}
+          postId={postId}
           myBubble={user?.id === comment.author.id ? myBubble : null}
           onReplyAdded={onReplyAdded}
         />
@@ -50,15 +52,16 @@ export function CommentList({
 
 function CommentItem({
   comment,
+  postId,
   myBubble,
   onReplyAdded,
 }: {
   comment: Comment;
+  postId: string;
   myBubble?: SkinItem | null;
   onReplyAdded?: (commentId: string, reply: Comment) => void;
 }) {
   const { user } = useAuth();
-  const { t } = useI18n();
   const [replyOpen, setReplyOpen] = useState(false);
   const [liked, setLiked] = useState(false);
 
@@ -128,29 +131,38 @@ function CommentItem({
               <button
                 type="button"
                 onClick={() => setReplyOpen(!replyOpen)}
-                className="inline-flex items-center gap-1 text-leaf-700/70 hover:text-leaf-700"
+                className="grid h-7 w-7 place-items-center rounded-md text-leaf-700/70 transition-colors hover:bg-leaf-50 hover:text-leaf-700"
+                aria-label="回复"
+                aria-expanded={replyOpen}
               >
                 <Icon name="comment" size={12} />
-                {t('detail.post.reply')}
               </button>
             </div>
 
             {/* 回复输入 */}
-            {replyOpen && (
-              <CommentReplyInput
-                commentId={comment.id}
-                replyTo={comment.author.name}
-                onSubmit={(reply) => {
-                  onReplyAdded?.(comment.id, reply);
-                  setReplyOpen(false);
-                }}
-                onCancel={() => setReplyOpen(false)}
-              />
-            )}
+            <div
+              className={cn(
+                'grid overflow-hidden transition-[grid-template-rows,opacity,margin-top] duration-200 ease-out',
+                replyOpen ? 'mt-2 grid-rows-[1fr] opacity-100' : 'mt-0 grid-rows-[0fr] opacity-0 pointer-events-none'
+              )}
+              aria-hidden={!replyOpen}
+            >
+              <div className="min-h-0 overflow-hidden">
+                <CommentReplyInput
+                  commentId={comment.id}
+                  postId={postId}
+                  replyTo={comment.author.name}
+                  onSubmit={(reply) => {
+                    onReplyAdded?.(comment.id, reply);
+                    setReplyOpen(false);
+                  }}
+                />
+              </div>
+            </div>
 
             {/* 子回复列表 */}
             {comment.replies && comment.replies.length > 0 && (
-              <div className="mt-2 space-y-2 rounded-none bg-leaf-50/60 p-2">
+              <div className="mt-2 flex flex-wrap gap-2 rounded-none bg-leaf-50/60 p-2">
                 {comment.replies.map((r) => (
                   <ReplyItem key={r.id} reply={r} />
                 ))}
@@ -164,10 +176,8 @@ function CommentItem({
 }
 
 function ReplyItem({ reply }: { reply: Comment }) {
-  const { t } = useI18n();
-
   return (
-    <div className="text-[11px]">
+    <article className="min-w-[220px] max-w-full flex-1 basis-[220px] rounded-lg border border-leaf-100 bg-white px-3 py-2 text-[11px]">
       <Link href={`/user/${reply.author.id}`} className="font-medium text-leaf-700 hover:text-leaf-600">
         {reply.author.name}
       </Link>
@@ -179,75 +189,61 @@ function ReplyItem({ reply }: { reply: Comment }) {
         size="sm"
         className="mt-0.5"
       />
-    </div>
+    </article>
   );
 }
 
 interface CommentReplyInputProps {
   commentId: string;
+  postId: string;
   replyTo?: string;
   onSubmit: (reply: Comment) => void;
-  onCancel: () => void;
 }
 
 /**
- * 评论回复输入组件（富文本）
+ * 评论回复输入组件（纯文本）
  */
-export function CommentReplyInput({ commentId, replyTo, onSubmit, onCancel }: CommentReplyInputProps) {
-  const { t } = useI18n();
-  const [contentJson, setContentJson] = useState<unknown>(null);
+export function CommentReplyInput({ commentId, postId, replyTo, onSubmit }: CommentReplyInputProps) {
+  const [replyText, setReplyText] = useState('');
+  const [replyImages, setReplyImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
-
-  const isContentEmpty = () => {
-    const j = contentJson as { content?: unknown[] } | null;
-    return !j || !Array.isArray(j.content) || j.content.length === 0;
-  };
+  const [err, setErr] = useState<string | null>(null);
 
   const handleSubmit = async () => {
-    if (isContentEmpty()) return;
+    const text = replyText.trim();
+    if (!text && replyImages.length === 0) return;
     setSubmitting(true);
+    setErr(null);
     try {
-      const reply = await api.post<Comment>(`/api/comments/${commentId}/replies`, {
-        contentJson,
+      const reply = await api.post<Comment>(`/api/posts/${postId}/comments`, {
+        contentJson: buildCommentContentJson(text, replyImages),
+        parentId: commentId,
       });
       onSubmit(reply);
-      setContentJson(null);
+      setReplyText('');
+      setReplyImages([]);
     } catch (e) {
-      console.error('回复失败', e);
+      setErr(e instanceof ApiError ? e.message : '回复失败');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="mt-2 flex gap-2">
-      <div className="flex-1">
-        <RichTextEditor
-          value={contentJson ?? undefined}
-          onChange={setContentJson}
-          placeholder={replyTo ? `${t('detail.post.replyTo', { name: replyTo })}...` : t('detail.post.commentPlaceholder')}
-          minHeight={60}
-          charLimit={1000}
-        />
-      </div>
-      <div className="flex flex-col gap-1">
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={isContentEmpty() || submitting}
-          className="btn-primary h-8 !px-3 !text-xs"
-        >
-          {submitting ? '...' : t('detail.post.reply')}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="btn-outline h-8 !px-3 !text-xs"
-        >
-          {t('detail.post.cancel')}
-        </button>
-      </div>
-    </div>
+    <PlainCommentComposer
+      value={replyText}
+      onChange={setReplyText}
+      images={replyImages}
+      onImagesChange={setReplyImages}
+      onSubmit={handleSubmit}
+      placeholder={replyTo ? `回复 ${replyTo}...` : '写下你的回复...'}
+      submitLabel="发送"
+      submitting={submitting}
+      error={err}
+      maxLength={1000}
+      minHeight={96}
+      className="mt-2"
+    />
   );
 }
 
@@ -257,31 +253,29 @@ interface CommentInputProps {
 }
 
 /**
- * 评论输入组件（富文本，用于回复帖子）
+ * 评论输入组件（纯文本，用于回复帖子）
  */
 export function CommentInput({ postId, onSubmit }: CommentInputProps) {
   const { user } = useAuth();
   const { t } = useI18n();
-  const [contentJson, setContentJson] = useState<unknown>(null);
+  const [commentText, setCommentText] = useState('');
+  const [commentImages, setCommentImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const isContentEmpty = () => {
-    const j = contentJson as { content?: unknown[] } | null;
-    return !j || !Array.isArray(j.content) || j.content.length === 0;
-  };
-
   const handleSubmit = async () => {
     if (!user) return;
-    if (isContentEmpty()) return;
+    const text = commentText.trim();
+    if (!text && commentImages.length === 0) return;
     setSubmitting(true);
     setErr(null);
     try {
       const comment = await api.post<Comment>(`/api/posts/${postId}/comments`, {
-        contentJson,
+        contentJson: buildCommentContentJson(text, commentImages),
       });
       onSubmit(comment);
-      setContentJson(null);
+      setCommentText('');
+      setCommentImages([]);
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : t('detail.post.commentSendFail'));
     } finally {
@@ -303,28 +297,19 @@ export function CommentInput({ postId, onSubmit }: CommentInputProps) {
   return (
     <div className="flex gap-3">
       <Avatar src={user.avatar} alt={user.name} size={36} />
-      <div className="flex-1 min-w-0">
-        <RichTextEditor
-          value={contentJson ?? undefined}
-          onChange={setContentJson}
-          placeholder={t('detail.post.commentPlaceholderTpl', { name: user.name })}
-          minHeight={80}
-          charLimit={2000}
-        />
-        <div className="mt-2 flex items-center justify-between">
-          <div className="text-[11px] text-leaf-700/60">
-            {err ? <span className="text-rose-500">{err}</span> : t('detail.post.commentEtiquette')}
-          </div>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isContentEmpty() || submitting}
-            className="btn-primary h-8 !px-4 !text-xs"
-          >
-            {submitting ? t('detail.post.commentSending') : t('detail.post.commentSend')}
-          </button>
-        </div>
-      </div>
+      <PlainCommentComposer
+        title="评论"
+        value={commentText}
+        onChange={setCommentText}
+        images={commentImages}
+        onImagesChange={setCommentImages}
+        onSubmit={handleSubmit}
+        placeholder="写下你的想法..."
+        submitLabel="发送"
+        submitting={submitting}
+        error={err}
+        className="min-w-0 flex-1"
+      />
     </div>
   );
 }

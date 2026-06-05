@@ -1,12 +1,20 @@
 'use client';
 
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import type { Swiper as SwiperInstance } from 'swiper';
+import { A11y, Autoplay, Navigation } from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import { AppShell } from '@/components/layout/AppShell';
+import { PostAdminMenu } from '@/components/post/PostAdminMenu';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Icon, type IconName } from '@/components/ui/Icon';
-import type { BannerItem, Post, User } from '@/lib/types';
-import { cn, formatNumber } from '@/lib/utils';
+import { TopicTag } from '@/components/ui/TopicTag';
+import { useAuth } from '@/context/AuthContext';
+import { api } from '@/lib/client-api';
+import type { BannerItem, Post } from '@/lib/types';
+import { boardUrl, cn, formatDateTime, formatNumber } from '@/lib/utils';
 
 type TopicItem = {
   tag: string;
@@ -48,15 +56,27 @@ type HomeStats = {
   postCount: number;
 };
 
+type ActiveUser = {
+  id: string;
+  name: string;
+  avatar?: string | null;
+  posts: number;
+  score: number;
+};
+
+interface FeedResponse {
+  items: Post[];
+  nextCursor: string | null;
+}
+
+const RECOMMENDED_FEED_PAGE_SIZE = 20;
+
 export function HomeDashboard({
   posts,
   banners,
   topics,
   events,
-  reminders,
   stats,
-  recommendUsers,
-  selections,
 }: {
   posts: Post[];
   banners: BannerItem[];
@@ -64,22 +84,15 @@ export function HomeDashboard({
   events: EventItem[];
   reminders: ReminderItem[];
   stats: HomeStats;
-  recommendUsers: User[];
   selections: SelectionItem[];
 }) {
   return (
-    <AppShell
-      rightRail={<InsightRail reminders={reminders} stats={stats} users={recommendUsers} />}
-      aiRail={<AiRail />}
-    >
-      <div className="space-y-6">
+    <AppShell>
+      <div>
         <HomeHero banners={banners} />
+        <Recommended posts={posts} />
         <FeatureGrid stats={stats} />
-        <TimelineHighlights reminders={reminders} />
-        <HotAtlasZone selections={selections} />
         <EventsStrip events={events} />
-        <CommunityPicks posts={posts} />
-        <PlantSelection selections={selections} />
         <HotTopics topics={topics} />
       </div>
     </AppShell>
@@ -87,47 +100,596 @@ export function HomeDashboard({
 }
 
 function HomeHero({ banners }: { banners: BannerItem[] }) {
-  const banner = banners[0];
-  const image =
-    banner?.image ||
-    'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=1600';
+  const swiperRef = useRef<SwiperInstance | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const slides = banners.length
+    ? banners
+    : [
+        {
+          id: 'fallback',
+          title: '探索多肉的美好世界',
+          image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=1600',
+          link: '/board',
+          tint: '',
+        },
+      ];
+  const canLoop = slides.length > 1;
 
   return (
-    <section className="relative min-h-[330px] overflow-hidden rounded-2xl bg-leaf-100 shadow-sm">
-      <Image
-        src={image}
-        alt={banner?.title || '多肉植物'}
-        fill
-        priority
-        unoptimized
-        className="object-cover"
-      />
-      <div className="absolute inset-0 bg-gradient-to-r from-white/92 via-white/58 to-white/8" />
-      <div className="relative z-10 flex min-h-[330px] flex-col justify-center px-8 py-8 md:px-12">
-        <h1 className="max-w-xl text-4xl font-bold leading-tight text-ink-950 md:text-5xl">
-          {banner?.title || '探索多肉的美好世界'}
-          <span className="ml-3 text-leaf-600">🌿</span>
-        </h1>
-        <p className="mt-5 max-w-md text-lg text-ink-700">
-          {banner?.subtitle || '记录 · 学习 · 交流 · 成长'}
-        </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/search?q=多肉病害诊断" className="inline-flex h-12 items-center gap-2 rounded-full bg-leaf-600 px-7 text-sm font-semibold text-white shadow-sm transition hover:bg-leaf-700">
-            开始 AI 诊断
-          </Link>
-          <Link href="/search?q=多肉拍照识别" className="inline-flex h-12 items-center gap-2 rounded-full border border-leaf-200 bg-white/78 px-7 text-sm font-semibold text-ink-800 backdrop-blur transition hover:bg-white">
-            拍照识别
-          </Link>
+    <section className="relative mx-auto my-12 w-full max-w-[1280px] overflow-hidden rounded-[6px] bg-white shadow-sm">
+      <Swiper
+        modules={[Autoplay, Navigation, A11y]}
+        slidesPerView={1}
+        loop={canLoop}
+        speed={650}
+        navigation={canLoop}
+        autoplay={canLoop ? { delay: 3000, disableOnInteraction: false, pauseOnMouseEnter: true } : false}
+        a11y={{ enabled: true, prevSlideMessage: '上一张 Banner', nextSlideMessage: '下一张 Banner' }}
+        className="home-hero-swiper h-[454px] md:h-[594px]"
+        onSwiper={(swiper) => {
+          swiperRef.current = swiper;
+        }}
+        onRealIndexChange={(swiper) => setActiveIndex(swiper.realIndex)}
+      >
+        {slides.map((banner, index) => (
+          <SwiperSlide
+            key={banner.id}
+            data-swiper-autoplay={banner.durationMs && banner.durationMs > 0 ? banner.durationMs : undefined}
+          >
+            <Link href={banner.link || '/board'} className="flex h-full flex-col" aria-label={banner.title}>
+              <span className="relative block h-[320px] overflow-hidden bg-leaf-100 md:h-[460px]">
+                <Image
+                  src={banner.image}
+                  alt={banner.title || '多肉植物'}
+                  fill
+                  priority={index === 0}
+                  unoptimized
+                  className="object-cover"
+                />
+              </span>
+              <span className="box-border flex h-[134px] items-center rounded-b-[6px] bg-white px-10 py-[37px]">
+                <span className="line-clamp-2 whitespace-normal text-[26px] font-bold leading-tight text-black">
+                  {banner.title || '探索多肉的美好世界'}
+                </span>
+              </span>
+            </Link>
+          </SwiperSlide>
+        ))}
+      </Swiper>
+      {canLoop && (
+        <div className="home-hero-pagination" aria-label="轮播图分页">
+          {slides.map((banner, index) => (
+            <button
+              key={banner.id}
+              type="button"
+              className={cn('home-hero-pagination-bullet', index === activeIndex && 'is-active')}
+              aria-label={`切换到第 ${index + 1} 张轮播图`}
+              aria-current={index === activeIndex ? 'true' : undefined}
+              onClick={() => swiperRef.current?.slideToLoop(index)}
+            />
+          ))}
         </div>
-      </div>
-      <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 gap-2">
-        {[0, 1, 2, 3, 4, 5].map((dot) => (
-          <span
-            key={dot}
-            className={cn('h-2 rounded-full bg-white/75 shadow-sm', dot === 1 ? 'w-8 bg-leaf-600' : 'w-2')}
-          />
+      )}
+    </section>
+  );
+}
+
+function Recommended({ posts }: { posts: Post[] }) {
+  const [items, setItems] = useState(posts);
+  const [cursor, setCursor] = useState<string | null>(
+    posts.length >= RECOMMENDED_FEED_PAGE_SIZE ? '1' : posts.length === 0 ? '0' : null
+  );
+  const [initialLoading, setInitialLoading] = useState(posts.length === 0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setItems(posts);
+    setCursor(posts.length >= RECOMMENDED_FEED_PAGE_SIZE ? '1' : posts.length === 0 ? '0' : null);
+    setInitialLoading(posts.length === 0);
+    setLoadingMore(false);
+    setError(null);
+  }, [posts]);
+
+  const loadMore = useCallback(async () => {
+    if (!cursor || loadingMore) return;
+    setLoadingMore(true);
+    setError(null);
+    try {
+      const result = await api.get<FeedResponse>(
+        `/api/feed?tab=recommend&limit=${RECOMMENDED_FEED_PAGE_SIZE}&cursor=${encodeURIComponent(cursor)}`
+      );
+      setItems((prev) => {
+        const seen = new Set(prev.map((post) => post.id));
+        const next = result.items.filter((post) => !seen.has(post.id));
+        return [...prev, ...next];
+      });
+      setCursor(result.nextCursor);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '加载失败');
+    } finally {
+      setLoadingMore(false);
+      setInitialLoading(false);
+    }
+  }, [cursor, loadingMore]);
+
+  useEffect(() => {
+    if (initialLoading && cursor === '0') {
+      void loadMore();
+    }
+  }, [cursor, initialLoading, loadMore]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !cursor) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void loadMore();
+        }
+      },
+      { rootMargin: '0px 0px 520px 0px' }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [cursor, loadMore]);
+
+  if (initialLoading) {
+    return <RecommendedFeedSkeleton />;
+  }
+
+  if (items.length === 0) {
+    return <RecommendedFeedEmpty />;
+  }
+
+  const featuredPosts = items.slice(0, 3);
+  const feedPosts = items.slice(3);
+  const activeUsers = getActiveUsers(items);
+
+  return (
+    <section className="mb-[18px]">
+      <div className="grid gap-5 md:grid-cols-3">
+        {featuredPosts.map((post) => (
+          <RecommendedCard key={post.id} post={post} />
         ))}
       </div>
+
+      {feedPosts.length > 0 && (
+        <div className="mt-12 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-sm">
+            {feedPosts.map((post, index) => (
+              <RecommendedFeedItem
+                key={post.id}
+                post={post}
+                showDivider={index < feedPosts.length - 1 || loadingMore || Boolean(cursor)}
+              />
+            ))}
+            {loadingMore && <RecommendedFeedLoading />}
+            {error && <RecommendedFeedError message={error} onRetry={() => void loadMore()} />}
+            {!cursor && !loadingMore && !error && <RecommendedFeedEnd />}
+            {cursor && <div ref={sentinelRef} className="h-1 w-full" aria-hidden />}
+          </div>
+
+          <aside className="space-y-5 lg:sticky lg:top-[136px] lg:self-start">
+            <CheckInCard />
+            <ActiveUsersCard users={activeUsers} />
+          </aside>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function RecommendedFeedSkeleton() {
+  return (
+    <section className="mb-[18px] animate-pulse">
+      <div className="grid gap-5 md:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="overflow-hidden rounded-lg border border-leaf-100 bg-white shadow-sm">
+            <div className="aspect-[16/9] bg-leaf-100/80" />
+            <div className="space-y-2.5 p-4">
+              <div className="h-5 w-5/6 rounded bg-leaf-100" />
+              <div className="h-5 w-2/3 rounded bg-leaf-100/80" />
+              <div className="flex items-center justify-between pt-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-full bg-leaf-100" />
+                  <div className="h-3 w-20 rounded bg-leaf-100" />
+                </div>
+                <div className="h-3 w-24 rounded bg-leaf-100" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-12 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-sm">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index}>
+              <div className="px-5 py-5 md:px-6">
+                <div className="mb-3.5 flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-leaf-100" />
+                  <div className="h-4 w-24 rounded bg-leaf-100" />
+                  <div className="ml-auto h-8 w-8 rounded-lg bg-leaf-100/70" />
+                </div>
+                <div className="mb-2.5 h-5 w-3/4 rounded bg-leaf-100" />
+                <div className="mb-2 h-3.5 w-full rounded bg-leaf-100/80" />
+                <div className="mb-3 h-3.5 w-2/3 rounded bg-leaf-100/70" />
+                <div className="mb-3 flex gap-1.5">
+                  <div className="h-5 w-14 rounded-full bg-leaf-100/80" />
+                  <div className="h-5 w-16 rounded-full bg-leaf-100/80" />
+                  <div className="h-5 w-12 rounded-full bg-leaf-100/80" />
+                </div>
+                <div className="mb-3 grid grid-cols-5 gap-1.5">
+                  {Array.from({ length: 5 }).map((_, itemIndex) => (
+                    <div key={itemIndex} className="aspect-square bg-leaf-100" />
+                  ))}
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="h-6 w-20 rounded-full bg-leaf-100" />
+                  <div className="flex gap-3">
+                    <div className="h-4 w-24 rounded bg-leaf-100" />
+                    <div className="h-4 w-10 rounded bg-leaf-100" />
+                    <div className="h-4 w-10 rounded bg-leaf-100" />
+                  </div>
+                </div>
+              </div>
+              {index < 3 && <div className="mx-5 border-t border-leaf-100 md:mx-6" />}
+            </div>
+          ))}
+        </div>
+
+        <aside className="space-y-5">
+          <div className="h-[108px] rounded-[6px] border border-leaf-100 bg-white shadow-sm">
+            <div className="h-14 bg-leaf-100" />
+            <div className="mx-auto mt-4 h-4 w-40 rounded bg-leaf-100" />
+          </div>
+          <div className="rounded-2xl border border-leaf-100 bg-white p-6 shadow-sm">
+            <div className="mb-5 h-6 w-32 rounded bg-leaf-100" />
+            <div className="space-y-4">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="flex items-center gap-3">
+                  <div className="h-5 w-5 rounded bg-leaf-100" />
+                  <div className="h-9 w-9 rounded-full bg-leaf-100" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="h-3 w-24 rounded bg-leaf-100" />
+                    <div className="h-3 w-16 rounded bg-leaf-100/80" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+function RecommendedFeedLoading() {
+  return (
+    <div className="flex items-center justify-center gap-3 border-t border-leaf-100 py-10 text-sm font-medium text-ink-600">
+      <span className="h-5 w-5 animate-spin rounded-full border-2 border-leaf-200 border-t-leaf-600" />
+      <span>加载中</span>
+    </div>
+  );
+}
+
+function RecommendedFeedEnd() {
+  return (
+    <div className="border-t border-leaf-100 py-8 text-center text-sm text-leaf-700/60">
+      已经到底了，没有更多内容了
+    </div>
+  );
+}
+
+function RecommendedFeedEmpty() {
+  return (
+    <section className="mb-[18px] rounded-2xl border border-dashed border-leaf-200 bg-white/70 py-16 text-center">
+      <div className="text-base font-semibold text-ink-900">暂无推荐内容</div>
+      <div className="mt-2 text-sm text-leaf-700/60">稍后再来看看新的帖子</div>
+    </section>
+  );
+}
+
+function RecommendedFeedError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex items-center justify-center gap-3 border-t border-leaf-100 py-8 text-sm text-rose-600">
+      <span>{message}</span>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold hover:bg-rose-50"
+      >
+        重试
+      </button>
+    </div>
+  );
+}
+
+function RecommendedCard({ post }: { post: Post }) {
+  const cover = getPostCover(post);
+
+  return (
+    <Link
+      href={`/post/${post.id}`}
+      className="group overflow-hidden rounded-lg border border-leaf-100 bg-white shadow-sm"
+    >
+      <div className="relative aspect-[16/9] overflow-hidden bg-leaf-50">
+        {cover ? (
+          <Image
+            src={cover}
+            alt={post.title}
+            fill
+            sizes="(max-width: 768px) 100vw, 390px"
+            unoptimized
+            className="object-cover"
+          />
+        ) : (
+          <div className="grid h-full place-items-center text-leaf-300">
+            <Icon name="plants" size={44} />
+          </div>
+        )}
+      </div>
+      <div className="p-4">
+        <h3 className="line-clamp-2 min-h-[2.75rem] text-lg font-bold leading-[1.22] text-ink-950 group-hover:text-leaf-800">
+          {post.title}
+        </h3>
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <span className="flex min-w-0 items-center gap-2">
+            <UserAvatar
+              src={post.author.avatar}
+              alt={post.author.name}
+              size={26}
+              pendant={post.author.equip?.pendant ?? null}
+              showFestival={false}
+            />
+            <span className="truncate text-[13px] font-semibold text-ink-800">{post.author.name}</span>
+          </span>
+          <span className="shrink-0 text-xs text-ink-400">{formatDateTime(post.createdAt)}</span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function RecommendedFeedItem({ post, showDivider }: { post: Post; showDivider: boolean }) {
+  const { user } = useAuth();
+  const mediaItems = getPostDisplayImages(post);
+  const remainingImageCount = Math.max(0, getPostImageCount(post) - 5);
+  const summary = post.contentText || stripHtml(post.content);
+
+  return (
+    <article className={cn('px-5 py-5 md:px-6', showDivider && 'border-b border-leaf-100')}>
+      <div className="flex items-start justify-between gap-4">
+        <Link href={`/user/${post.author.id}`} className="flex min-w-0 items-center gap-2">
+          <UserAvatar
+            src={post.author.avatar}
+            alt={post.author.name}
+            size={30}
+            pendant={post.author.equip?.pendant ?? null}
+            showFestival={false}
+          />
+          <span className="truncate text-[13px] font-semibold text-ink-900">{post.author.name}</span>
+        </Link>
+        <PostAdminMenu post={post} user={user} align="center" />
+      </div>
+
+      <Link href={`/post/${post.id}`} className="group mt-3.5 block">
+        <h3 className="line-clamp-2 text-[17px] font-bold leading-[1.35] text-ink-950 group-hover:text-leaf-800">
+          {post.title}
+        </h3>
+        {summary && <p className="mt-1.5 line-clamp-2 text-[13px] leading-[22px] text-ink-600">{summary}</p>}
+      </Link>
+
+      {post.tags.length > 0 && (
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {post.tags.slice(0, 5).map((tag) => (
+            <TopicTag key={tag} tag={tag} href={`/topic/${encodeURIComponent(tag)}`} size="sm" />
+          ))}
+        </div>
+      )}
+
+      {mediaItems.length > 0 && (
+        <Link href={`/post/${post.id}`} className="mt-3.5 block">
+          <div className="grid grid-cols-5 gap-1.5">
+            {mediaItems.map((item, index) => (
+              <div
+                key={`${item.src}-${index}`}
+                className="group relative aspect-square overflow-hidden rounded-none bg-leaf-50"
+              >
+                <Image
+                  src={item.src}
+                  alt={item.isCover ? `${post.title} 封面图` : `${post.title} 图片 ${index + 1}`}
+                  fill
+                  sizes="(max-width: 1024px) 20vw, 130px"
+                  unoptimized
+                  className="object-cover transition duration-500 group-hover:scale-105"
+                />
+                {item.isCover && (
+                  <span className="absolute left-2 top-2 rounded-md bg-black/72 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                    封面
+                  </span>
+                )}
+                {index === 4 && remainingImageCount > 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                    <span className="text-lg font-bold text-white">+{remainingImageCount}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </Link>
+      )}
+
+      <div className="mt-3 flex items-center justify-between gap-4 text-[12px] text-ink-500">
+        <Link
+          href={boardUrl(post.board)}
+          className="shrink-0 rounded-full border border-leaf-100 px-2.5 py-1 text-[12px] font-semibold text-ink-500 hover:bg-leaf-50 hover:text-leaf-800"
+        >
+          {post.board.name}
+        </Link>
+        <div className="ml-auto flex min-w-0 items-center gap-3.5">
+          <span className="shrink-0">{formatDateTime(post.createdAt)}</span>
+          <span className="inline-flex items-center gap-1">
+            <Icon name="eye" size={14} />
+            {formatNumber(post.views)}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Icon name="comment" size={14} />
+            {formatNumber(post.comments)}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Icon name="thumbs-up" size={14} />
+            {formatNumber(post.likes)}
+          </span>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function CheckInCard() {
+  const { user, signedInToday, signIn, signInStreak } = useAuth();
+  const [todaySignedCount, setTodaySignedCount] = useTodaySignedCount();
+  const [submitting, setSubmitting] = useState(false);
+  const cells = useMemo(
+    () => buildSignInCells(signInStreak, signedInToday),
+    [signInStreak, signedInToday]
+  );
+  const monthLabel = new Date().toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+  });
+
+  const handleSignIn = async () => {
+    if (!user || signedInToday || submitting) return;
+    setSubmitting(true);
+    try {
+      await signIn();
+      setTodaySignedCount((count) => count + 1);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <section className="overflow-hidden rounded-[6px] border border-leaf-100 bg-white shadow-sm">
+      {user ? (
+        <button
+          type="button"
+          onClick={handleSignIn}
+          disabled={signedInToday || submitting}
+          className={cn(
+            'flex h-14 w-full items-center justify-center gap-2 bg-leaf-600 text-base font-bold text-white transition',
+            signedInToday || submitting ? 'cursor-default opacity-90' : 'hover:bg-leaf-700'
+          )}
+        >
+          <Icon name={signedInToday ? 'check' : 'event'} size={20} />
+          {signedInToday ? '今日已签到' : submitting ? '签到中' : '立即签到'}
+        </button>
+      ) : (
+        <Link
+          href="/login?redirect=/"
+          className="flex h-14 items-center justify-center gap-2 bg-leaf-600 text-base font-bold text-white transition hover:bg-leaf-700"
+        >
+          <Icon name="event" size={20} />
+          立即签到
+        </Link>
+      )}
+
+      <div className="flex min-h-[52px] items-center justify-center border-b border-leaf-100 px-4 text-center text-base font-bold text-ink-900">
+        今天已有 {formatNumber(todaySignedCount)} 位肉友签到
+      </div>
+
+      {signedInToday && (
+        <div className="p-4">
+          <div className="mb-2.5 flex items-center justify-between text-[11px] text-leaf-700/70">
+            <span>连续签到 {signInStreak} 天</span>
+            <span>{monthLabel}</span>
+          </div>
+
+          <div className="mb-1.5 grid grid-cols-7 gap-1 text-center text-[10px] text-leaf-700/60">
+            {['一', '二', '三', '四', '五', '六', '日'].map((day) => (
+              <div key={day}>{day}</div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-1">
+            {cells.map((cell, index) =>
+              cell == null ? (
+                <div key={index} />
+              ) : (
+                <div
+                  key={index}
+                  className={cn(
+                    'grid h-7 place-items-center rounded-md text-[10px] tabular-nums transition-colors',
+                    cell.signed
+                      ? 'bg-leaf-600 text-white shadow-sm'
+                      : cell.today
+                        ? 'border-2 border-dashed border-leaf-400 font-semibold text-leaf-600'
+                        : cell.future
+                          ? 'text-leaf-300'
+                          : 'bg-leaf-50/70 text-leaf-700/70'
+                  )}
+                  title={
+                    cell.signed
+                      ? `${cell.day} 日 已签到`
+                      : cell.today
+                        ? `今天 ${cell.day} 日`
+                        : cell.future
+                          ? `${cell.day} 日 还未到`
+                          : `${cell.day} 日`
+                  }
+                >
+                  {cell.day}
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ActiveUsersCard({ users }: { users: ActiveUser[] }) {
+  if (users.length === 0) return null;
+
+  return (
+    <section className="rounded-2xl border border-leaf-100 bg-white p-6 shadow-sm">
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <h3 className="text-xl font-bold leading-7 text-ink-950">本周活跃肉友</h3>
+        <Link href="/ranking" className="shrink-0 text-sm font-semibold text-leaf-700 hover:text-leaf-800">
+          查看
+        </Link>
+      </div>
+      <div className="space-y-4">
+        {users.slice(0, 5).map((user, index) => (
+          <div key={user.id} className="flex items-center gap-3">
+            <span className={cn('grid h-5 w-5 shrink-0 place-items-center rounded-md text-xs font-bold text-white', rankTone(index))}>
+              {index + 1}
+            </span>
+            <Link href={`/user/${user.id}`} className="flex min-w-0 flex-1 items-center gap-2">
+              <UserAvatar src={user.avatar || '/default-avatar.svg'} alt={user.name} size={38} showFestival={false} />
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold text-ink-900">{user.name}</span>
+                <span className="block truncate text-xs text-leaf-700">活跃值 {formatNumber(user.score)}</span>
+              </span>
+            </Link>
+            <Link
+              href={`/user/${user.id}`}
+              className="shrink-0 rounded-full bg-leaf-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-leaf-700"
+            >
+              关注
+            </Link>
+          </div>
+        ))}
+      </div>
+      <Link href="/ranking" className="mt-5 flex items-center justify-center gap-1 text-sm font-semibold text-leaf-700 hover:text-leaf-800">
+        更多
+        <Icon name="arrow-right" size={14} />
+      </Link>
     </section>
   );
 }
@@ -137,7 +699,7 @@ function FeatureGrid({ stats }: { stats: HomeStats }) {
     {
       title: 'AI 植物医生',
       desc: '拍照诊断，识别病害',
-      href: '/search?q=多肉病害诊断',
+      href: '/ai-care',
       action: '立即诊断',
       tone: 'from-leaf-50 to-white',
       icon: 'star' as IconName,
@@ -198,143 +760,6 @@ function FeatureGrid({ stats }: { stats: HomeStats }) {
   );
 }
 
-function TimelineHighlights({ reminders }: { reminders: ReminderItem[] }) {
-  const fallback: ReminderItem[] = [
-    { id: 'sun', speciesName: '玉蝶', cover: '', text: '叶片浓密很好，阳光充足', when: '5月20日' },
-    { id: 'water', speciesName: '桃蛋', cover: '', text: '浇水状态稳定', when: '5月18日' },
-    { id: 'sprout', speciesName: '白凤', cover: '', text: '新叶萌发，长势喜人', when: '5月15日' },
-    { id: 'repot', speciesName: '吉娃娃', cover: '', text: '换盆完成，适应中', when: '5月12日' },
-    { id: 'move', speciesName: '劳尔', cover: '', text: '轻微褪色，移到散光处', when: '5月8日' },
-  ];
-  const items = (reminders.length ? reminders : fallback).slice(0, 5);
-
-  return (
-    <section>
-      <SectionHead title="成长时间轴精选" href="/editor?type=journal" />
-      <div className="relative pt-3">
-        <div className="absolute left-[9%] right-[9%] top-5 hidden h-px bg-leaf-200 md:block" />
-        <div className="grid gap-3 md:grid-cols-5">
-          {items.map((item, index) => (
-            <Link
-              key={item.id}
-              href="/editor?type=journal"
-              className="group relative min-h-[118px] overflow-hidden rounded-xl border border-leaf-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <span className="absolute left-1/2 top-[-1px] hidden h-3 w-3 -translate-x-1/2 rounded-full border-2 border-white bg-leaf-600 shadow-[0_0_0_1px_rgba(79,139,67,0.25)] md:block" />
-              <div className="relative z-10 max-w-[58%]">
-                <div className="text-base font-bold text-ink-900">{normalizeTimelineDate(item.when, index)}</div>
-                <p className="mt-3 text-xs leading-5 text-ink-600">{item.text}</p>
-              </div>
-              {item.cover ? (
-                <Image
-                  src={item.cover}
-                  alt={item.speciesName}
-                  width={92}
-                  height={82}
-                  unoptimized
-                  className="absolute bottom-0 right-0 h-[82px] w-[92px] rounded-tl-xl object-cover transition duration-500 group-hover:scale-105"
-                />
-              ) : (
-                <span className="absolute bottom-2 right-3 grid h-16 w-16 place-items-center rounded-xl bg-leaf-50 text-leaf-500">
-                  <Icon name="plants" size={28} />
-                </span>
-              )}
-            </Link>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function HotAtlasZone({ selections }: { selections: SelectionItem[] }) {
-  if (selections.length === 0) return null;
-
-  const tabs = ['景天科', '番杏科', '十二卷属', '仙人掌科', '块根植物', '稀有品种'];
-  const cards = selections.slice(0, 6);
-
-  return (
-    <section className="rounded-2xl border border-leaf-100 bg-white/88 p-5 shadow-sm">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-5">
-          <h2 className="text-xl font-bold text-ink-950">热门图鉴专区</h2>
-          <div className="hidden items-center gap-5 md:flex">
-            {tabs.map((tab, index) => (
-              <Link
-                key={tab}
-                href="/plants"
-                className={cn(
-                  'text-sm font-semibold transition-colors',
-                  index === 0 ? 'rounded-full bg-leaf-100 px-4 py-1.5 text-leaf-800' : 'text-ink-500 hover:text-leaf-700'
-                )}
-              >
-                {tab}
-              </Link>
-            ))}
-          </div>
-        </div>
-        <Link href="/plants" className="inline-flex items-center gap-1 text-sm font-semibold text-ink-500 hover:text-leaf-700">
-          查看全部图鉴
-          <Icon name="arrow-right" size={13} />
-        </Link>
-      </div>
-
-      <div className="relative">
-        <AtlasArrow direction="left" />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-          {cards.map((item, index) => (
-            <Link
-              key={item.id}
-              href={item.href}
-              className="group relative aspect-[1.08/1] min-h-[190px] overflow-hidden rounded-xl bg-ink-900 shadow-sm"
-            >
-              <Image
-                src={item.cover}
-                alt={item.name}
-                fill
-                sizes="240px"
-                unoptimized
-                className="object-cover transition duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/82 via-black/25 to-black/0" />
-              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                <h3 className="line-clamp-1 text-base font-bold">{item.name}</h3>
-                <p className="mt-1 line-clamp-1 text-xs italic text-white/78">{item.latinName}</p>
-                <div className="mt-3 flex items-center gap-1 text-xs text-white/86">
-                  <Icon name="eye" size={13} />
-                  收藏 {formatNumber(20_000 - index * 1800)}
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-        <AtlasArrow direction="right" />
-      </div>
-
-      <div className="mt-5 flex justify-center gap-3">
-        <span className="h-1.5 w-16 rounded-full bg-leaf-600" />
-        <span className="h-1.5 w-16 rounded-full bg-leaf-100" />
-        <span className="h-1.5 w-16 rounded-full bg-leaf-100" />
-      </div>
-    </section>
-  );
-}
-
-function AtlasArrow({ direction }: { direction: 'left' | 'right' }) {
-  return (
-    <button
-      type="button"
-      aria-label={direction === 'left' ? '上一组' : '下一组'}
-      className={cn(
-        'absolute top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white text-ink-700 shadow-lg ring-1 ring-leaf-100 transition hover:bg-leaf-50 2xl:grid',
-        direction === 'left' ? '-left-5' : '-right-5'
-      )}
-    >
-      <Icon name="arrow-right" size={18} className={direction === 'left' ? 'rotate-180' : ''} />
-    </button>
-  );
-}
-
 function EventsStrip({ events }: { events: EventItem[] }) {
   const items = events.slice(0, 3);
   if (items.length === 0) return null;
@@ -367,175 +792,6 @@ function EventsStrip({ events }: { events: EventItem[] }) {
         ))}
       </div>
     </section>
-  );
-}
-
-function CommunityPicks({ posts }: { posts: Post[] }) {
-  const tabs = ['精选', '最新', '关注', '问答', '教程', '美图分享'];
-  const cards = posts.slice(0, 5);
-
-  return (
-    <section>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-5">
-          <h2 className="text-xl font-bold text-ink-950">社区精选内容</h2>
-          <div className="hidden items-center gap-5 md:flex">
-            {tabs.map((tab, index) => (
-              <button
-                key={tab}
-                type="button"
-                className={cn(
-                  'text-sm font-semibold transition-colors',
-                  index === 0 ? 'rounded-full bg-leaf-100 px-3 py-1 text-leaf-800' : 'text-ink-500 hover:text-leaf-700'
-                )}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-        </div>
-        <Link href="/board" className="inline-flex items-center gap-1 text-sm font-semibold text-ink-500 hover:text-leaf-700">
-          查看更多
-          <Icon name="arrow-right" size={13} />
-        </Link>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
-        {cards.map((post, index) => (
-          <HomePostCard key={post.id} post={post} featured={index === 0} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function PlantSelection({ selections }: { selections: SelectionItem[] }) {
-  if (selections.length === 0) return null;
-
-  const tabs = ['热门', '新品', '景天科', '番杏科', '仙人掌科', '十二卷属', '更多分类'];
-
-  return (
-    <section>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-5">
-          <h2 className="text-xl font-bold text-ink-950">植物甄选推荐</h2>
-          <div className="hidden items-center gap-4 md:flex">
-            {tabs.map((tab, index) => (
-              <Link
-                key={tab}
-                href="/plants"
-                className={cn(
-                  'rounded-full px-3 py-1 text-xs font-semibold transition-colors',
-                  index === 0 ? 'bg-leaf-100 text-leaf-800' : 'text-ink-500 hover:bg-leaf-50 hover:text-leaf-700'
-                )}
-              >
-                {tab}
-              </Link>
-            ))}
-          </div>
-        </div>
-        <Link href="/plants" className="inline-flex items-center gap-1 text-sm font-semibold text-ink-500 hover:text-leaf-700">
-          查看更多
-          <Icon name="arrow-right" size={13} />
-        </Link>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-        {selections.map((item, index) => (
-          <Link
-            key={item.id}
-            href={item.href}
-            className="group overflow-hidden rounded-xl border border-leaf-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <div className="relative aspect-[4/3] bg-leaf-50">
-              <Image src={item.cover} alt={item.name} fill sizes="220px" unoptimized className="object-cover transition duration-500 group-hover:scale-105" />
-            </div>
-            <div className="p-3">
-              <h3 className="line-clamp-1 text-sm font-bold text-ink-900">{item.name}</h3>
-              <p className="mt-1 line-clamp-1 text-[11px] text-ink-500">{item.latinName}</p>
-              <div className="mt-3 flex items-center justify-between text-xs">
-                <span className="font-bold text-leaf-800">难度 {item.difficulty}</span>
-                <span className="inline-flex items-center gap-1 text-leaf-700">
-                  <Icon name="check-circle" size={12} />
-                  {Math.max(8, 68 - index * 5)}
-                </span>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function HomePostCard({ post, featured }: { post: Post; featured?: boolean }) {
-  const cover = post.cover ?? post.images?.[0];
-
-  return (
-    <Link
-      href={`/post/${post.id}`}
-      className="group overflow-hidden rounded-xl border border-leaf-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-    >
-      <div className="relative aspect-[4/3] overflow-hidden bg-leaf-50">
-        {cover ? (
-          <Image
-            src={cover}
-            alt={post.title}
-            fill
-            sizes="(max-width: 768px) 100vw, 300px"
-            unoptimized
-            className="object-cover transition duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="grid h-full place-items-center text-leaf-300">
-            <Icon name="plants" size={44} />
-          </div>
-        )}
-        {featured && (
-          <span className="absolute left-3 top-3 rounded-full bg-leaf-600 px-2.5 py-1 text-[11px] font-semibold text-white">
-            精选
-          </span>
-        )}
-      </div>
-      <div className="p-3">
-        <h3 className="line-clamp-1 text-sm font-bold text-ink-900 group-hover:text-leaf-700">{post.title}</h3>
-        <div className="mt-3 flex items-center justify-between">
-          <span className="flex min-w-0 items-center gap-2">
-            <UserAvatar
-              src={post.author.avatar}
-              alt={post.author.name}
-              size={24}
-              pendant={post.author.equip?.pendant ?? null}
-              showFestival={false}
-            />
-            <span className="truncate text-xs text-ink-600">{post.author.name}</span>
-            <AuthorBadgeIcons post={post} />
-          </span>
-          <span className="inline-flex items-center gap-1 text-xs text-ink-500">
-            <Icon name="heart" size={13} />
-            {formatNumber(post.likes)}
-          </span>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function AuthorBadgeIcons({ post }: { post: Post }) {
-  const badges = post.author.badges.filter((badge) => badge.obtained).slice(0, 2);
-  if (badges.length === 0) return null;
-
-  return (
-    <span className="inline-flex shrink-0 items-center gap-0.5">
-      {badges.map((badge) => (
-        <span
-          key={badge.id}
-          title={badge.name}
-          className="inline-grid h-4 w-4 place-items-center rounded-full border border-leaf-100 bg-white text-[9px] shadow-sm"
-        >
-          {badge.icon}
-        </span>
-      ))}
-    </span>
   );
 }
 
@@ -573,265 +829,6 @@ function HotTopics({ topics }: { topics: TopicItem[] }) {
   );
 }
 
-function InsightRail({ reminders, stats, users }: { reminders: ReminderItem[]; stats: HomeStats; users: User[] }) {
-  return (
-    <>
-      <PlantStatusCard stats={stats} />
-      <DynamicReminderCard reminders={reminders} users={users} />
-      <CommunityRankingCard users={users} />
-    </>
-  );
-}
-
-function PlantStatusCard({ stats }: { stats: HomeStats }) {
-  const healthy = Math.max(8, Math.round(stats.speciesCount * 0.07));
-  const warning = Math.max(3, Math.round(stats.speciesCount * 0.02));
-  const dormant = Math.max(1, Math.round(stats.speciesCount * 0.005));
-
-  return (
-    <section className="rounded-xl border border-leaf-100 bg-white p-5 shadow-sm">
-      <h2 className="font-bold text-ink-950">我的植物概览</h2>
-      <div className="mt-5 flex items-center justify-between gap-4">
-        <div className="grid grid-cols-4 gap-3 text-center">
-          <StatusCount label="总数" value={86} />
-          <StatusCount label="健康" value={healthy} className="text-leaf-700" />
-          <StatusCount label="休眠" value={warning} className="text-red-600" />
-          <StatusCount label="待养" value={dormant} className="text-ink-500" />
-        </div>
-        <div className="relative grid h-[82px] w-[82px] shrink-0 place-items-center rounded-full bg-[conic-gradient(#4f8b43_0_52%,#8fc6ff_52%_72%,#ff756e_72%_84%,#e7eee2_84%_100%)]">
-          <div className="h-[58px] w-[58px] rounded-full bg-white" />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function StatusCount({ label, value, className }: { label: string; value: number; className?: string }) {
-  return (
-    <div>
-      <div className={cn('text-xl font-bold text-ink-900', className)}>{value}</div>
-      <div className="mt-1 text-[11px] text-ink-500">{label}</div>
-    </div>
-  );
-}
-
-function DynamicReminderCard({ reminders, users }: { reminders: ReminderItem[]; users: User[] }) {
-  const names = users.length ? users : [];
-  const activity = [
-    { user: names[0], actor: names[0]?.name ?? '多肉小仙女', text: '评论了你的帖子', time: '2 分钟前', icon: 'comment' as IconName },
-    { user: names[1], actor: names[1]?.name ?? '植物爱好者', text: '点赞了你的内容', time: '15 分钟前', icon: 'heart' as IconName },
-    { user: undefined, actor: 'AI 助手', text: reminders[0]?.text ? `提醒你${reminders[0].text}` : '提醒你该给植物浇水了', time: '1 小时前', icon: 'plants' as IconName },
-    { user: undefined, actor: '社区活动', text: '即将开始：知识问答赛', time: '2 小时前', icon: 'event' as IconName },
-  ];
-
-  return (
-    <section className="rounded-xl border border-leaf-100 bg-white p-5 shadow-sm">
-      <h2 className="font-bold text-ink-950">动态提醒</h2>
-      <div className="mt-4 space-y-3">
-        {activity.map((item) => (
-          <div key={`${item.actor}-${item.time}`} className="flex items-center gap-3">
-            {item.user ? (
-              <UserAvatar
-                src={item.user.avatar}
-                alt={item.user.name}
-                size={28}
-                pendant={item.user.equip?.pendant ?? null}
-                showFestival={false}
-              />
-            ) : (
-              <span className="grid h-[26px] w-[26px] place-items-center rounded-full bg-leaf-50 text-leaf-700">
-                <Icon name={item.icon} size={14} />
-              </span>
-            )}
-            <div className="min-w-0 flex-1 text-xs">
-              <span className="inline-flex min-w-0 items-center gap-1 align-middle">
-                <span className="truncate font-semibold text-ink-900">{item.actor}</span>
-                {item.user && <UserBadgeIcons user={item.user} />}
-              </span>
-              <span className="ml-1 text-ink-600">{item.text}</span>
-            </div>
-            <span className="shrink-0 text-[11px] text-ink-400">{item.time}</span>
-          </div>
-        ))}
-      </div>
-      <Link href="/notifications" className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-ink-500 hover:text-leaf-700">
-        查看全部通知
-        <Icon name="arrow-right" size={12} />
-      </Link>
-    </section>
-  );
-}
-
-function CommunityRankingCard({ users }: { users: User[] }) {
-  if (users.length === 0) return null;
-
-  return (
-    <section className="rounded-xl border border-leaf-100 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="font-bold text-ink-950">社区排行榜</h2>
-        <div className="flex items-center gap-2 text-[11px] font-semibold">
-          <span className="rounded-full bg-leaf-100 px-2 py-1 text-leaf-800">周榜</span>
-          <span className="text-ink-400">月榜</span>
-          <span className="text-ink-400">总榜</span>
-        </div>
-      </div>
-      <div className="space-y-3">
-        {users.slice(0, 5).map((user, index) => (
-          <Link key={user.id} href={`/user/${user.id}`} className="flex items-center gap-3 text-sm">
-            <span className={cn('w-4 shrink-0 text-center font-bold', index === 0 ? 'text-orange-500' : 'text-ink-500')}>{index + 1}</span>
-            <UserAvatar
-              src={user.avatar}
-              alt={user.name}
-              size={28}
-              pendant={user.equip?.pendant ?? null}
-              showFestival={false}
-            />
-            <span className="flex min-w-0 flex-1 items-center gap-1">
-              <span className="truncate font-semibold text-ink-800">{user.name}</span>
-              <UserBadgeIcons user={user} />
-            </span>
-            <span className="shrink-0 text-xs text-ink-500">{formatNumber(user.pointsBalance || 2800 - index * 380)}</span>
-            <span className="text-xs text-ink-400">积分</span>
-          </Link>
-        ))}
-      </div>
-      <Link href="/ranking" className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-ink-500 hover:text-leaf-700">
-        查看完整排行榜
-        <Icon name="arrow-right" size={12} />
-      </Link>
-    </section>
-  );
-}
-
-function UserBadgeIcons({ user }: { user: User }) {
-  const badges = user.badges.filter((badge) => badge.obtained).slice(0, 2);
-  if (badges.length === 0) return null;
-
-  return (
-    <span className="inline-flex shrink-0 items-center gap-0.5">
-      {badges.map((badge) => (
-        <span
-          key={badge.id}
-          title={badge.name}
-          className="inline-grid h-4 w-4 place-items-center rounded-full border border-leaf-100 bg-white text-[9px] shadow-sm"
-        >
-          {badge.icon}
-        </span>
-      ))}
-    </span>
-  );
-}
-
-function AiRail() {
-  return (
-    <>
-      <AiAssistantCard />
-    </>
-  );
-}
-
-function AiAssistantCard() {
-  const questions = ['多肉叶片发软怎么办?', '夏天如何给多肉浇水?', '推荐适合新手的多肉', '叶片化水要怎么处理?'];
-
-  return (
-    <section className="rounded-2xl border border-leaf-100 bg-white p-5 shadow-[0_18px_48px_rgba(46,78,38,0.08)]">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-bold text-ink-950">AI 助手</h2>
-        <div className="flex items-center gap-3 text-ink-600">
-          <span className="h-px w-3 bg-ink-400" />
-          <Icon name="close" size={15} />
-        </div>
-      </div>
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <span className="inline-flex items-center gap-1 rounded-full bg-leaf-100 px-2 py-1 text-[11px] font-semibold text-leaf-800">
-            <span className="h-1.5 w-1.5 rounded-full bg-leaf-600" />
-            在线
-          </span>
-          <div className="mt-5 font-semibold text-ink-900">Hi，多肉小仙女 🌿</div>
-          <p className="mt-2 text-sm leading-5 text-ink-600">有什么植物问题都可以问我哦~</p>
-        </div>
-        <span className="grid h-[84px] w-[84px] shrink-0 place-items-center rounded-full bg-leaf-50 text-4xl ring-8 ring-leaf-50/60">🤖</span>
-      </div>
-      <div className="mt-5 space-y-2">
-        {questions.map((question) => (
-          <Link key={question} href={`/search?q=${encodeURIComponent(question)}`} className="flex items-center gap-2 rounded-xl border border-leaf-100 bg-sand-50/80 px-4 py-3 text-sm text-ink-700 hover:bg-leaf-50">
-            <Icon name="check-circle" size={13} className="text-ink-400" />
-            {question}
-          </Link>
-        ))}
-      </div>
-      <div className="mt-5 flex h-12 items-center gap-2 rounded-xl border border-leaf-100 bg-white px-4 shadow-sm">
-        <span className="min-w-0 flex-1 truncate text-sm text-ink-400">告诉我你的植物问题吧...</span>
-        <Link href="/search?q=多肉养护问题" aria-label="发送" className="grid h-8 w-8 place-items-center rounded-full bg-leaf-600 text-white hover:bg-leaf-700">
-          <Icon name="send" size={15} />
-        </Link>
-      </div>
-      <div className="mt-4 grid grid-cols-4 gap-2">
-        <AiMiniAction icon="camera" label="拍照识别" href="/search?q=拍照识别多肉" />
-        <AiMiniAction icon="plants" label="养护建议" href="/search?q=多肉养护建议" />
-        <AiMiniAction icon="settings" label="配土方案" href="/search?q=多肉配土方案" />
-        <AiMiniAction icon="arrow-right" label="更多" href="/search?q=多肉问题" />
-      </div>
-    </section>
-  );
-}
-
-function AiChatCard() {
-  return (
-    <section className="rounded-2xl border border-leaf-100 bg-white p-5 shadow-[0_18px_48px_rgba(46,78,38,0.08)]">
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-lg font-bold text-ink-950">AI 助手</h2>
-        <div className="flex items-center gap-3 text-ink-500">
-          <span className="h-px w-3 bg-ink-400" />
-          <Icon name="close" size={15} />
-        </div>
-      </div>
-      <div className="space-y-4">
-        <div className="ml-auto max-w-[82%] rounded-2xl rounded-tr-md bg-leaf-100 px-4 py-3 text-sm text-ink-800">
-          我的多肉叶片发软是什么原因?
-          <div className="mt-1 text-right text-[10px] text-ink-500">10:24</div>
-        </div>
-        <div className="flex items-start gap-3">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-leaf-50 text-lg">🤖</span>
-          <div className="rounded-2xl rounded-tl-md bg-sand-50 px-4 py-3 text-sm leading-6 text-ink-700">
-            叶片发软通常和控水、根系、光照有关。先检查盆土是否长期湿润，再看根部有没有腐烂；如果最近暴晒，也可能是应激脱水。
-            <div className="mt-2 text-[10px] text-ink-500">10:24</div>
-          </div>
-        </div>
-      </div>
-      <div className="mt-4 grid gap-2">
-        {['浇水过多怎么办', '根系检查教程', '叶片发软建议'].map((item) => (
-          <Link key={item} href={`/search?q=${encodeURIComponent(item)}`} className="rounded-xl bg-leaf-50 px-3 py-2 text-xs text-leaf-800 hover:bg-leaf-100">
-            {item}
-          </Link>
-        ))}
-      </div>
-      <div className="mt-4 flex h-12 items-center gap-2 rounded-xl border border-leaf-100 bg-white px-3 shadow-sm">
-        <span className="flex-1 truncate text-sm text-ink-400">继续问我植物养护问题...</span>
-        <Link href="/search?q=多肉图片诊断" aria-label="上传图片" className="text-ink-500 hover:text-leaf-700">
-          <Icon name="image" size={17} />
-        </Link>
-        <Link href="/search?q=多肉拍照诊断" aria-label="拍照" className="text-ink-500 hover:text-leaf-700">
-          <Icon name="camera" size={17} />
-        </Link>
-        <Link href="/search?q=多肉养护问题" aria-label="发送" className="grid h-8 w-8 place-items-center rounded-full bg-leaf-600 text-white hover:bg-leaf-700">
-          <Icon name="send" size={15} />
-        </Link>
-      </div>
-    </section>
-  );
-}
-
-function AiMiniAction({ icon, label, href }: { icon: IconName; label: string; href: string }) {
-  return (
-    <Link href={href} className="grid gap-1 rounded-xl bg-leaf-50/70 px-1 py-2 text-center text-[11px] text-ink-700 hover:bg-leaf-100">
-      <Icon name={icon} size={14} className="mx-auto text-leaf-700" />
-      <span>{label}</span>
-    </Link>
-  );
-}
-
 function SectionHead({ title, href }: { title: string; href: string }) {
   return (
     <div className="mb-4 flex items-center justify-between gap-3">
@@ -844,15 +841,120 @@ function SectionHead({ title, href }: { title: string; href: string }) {
   );
 }
 
-function normalizeTimelineDate(when: string, index: number) {
-  if (when.includes('月')) return when;
-  const days = [20, 18, 15, 12, 8];
-  return `5月${days[index] ?? 6}日`;
-}
-
 function formatDateShort(iso: string) {
   const d = new Date(iso);
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${month}.${day}`;
+}
+
+function getPostCover(post: Post) {
+  return post.cover ?? post.images?.[0] ?? post.species?.cover ?? null;
+}
+
+function getPostDisplayImages(post: Post) {
+  const items: { src: string; isCover: boolean }[] = [];
+
+  if (post.cover) {
+    items.push({ src: post.cover, isCover: true });
+  }
+
+  for (const image of (post.images ?? []).slice(0, 5 - items.length)) {
+    if (!image || items.some((item) => item.src === image)) continue;
+    items.push({ src: image, isCover: false });
+  }
+
+  return items;
+}
+
+function getPostImageCount(post: Post) {
+  return (post.cover ? 1 : 0) + (post.images?.length ?? 0);
+}
+
+function useTodaySignedCount() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get<{ count: number }>('/api/stats/signed-today')
+      .then((result) => {
+        if (!cancelled) setCount(result.count);
+      })
+      .catch(() => null);
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return [count, setCount] as const;
+}
+
+interface SignInCell {
+  day: number;
+  signed: boolean;
+  today: boolean;
+  future: boolean;
+}
+
+function buildSignInCells(streak: number, todayDone: boolean): (SignInCell | null)[] {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const todayDate = now.getDate();
+  const first = new Date(year, month, 1);
+  const firstWeekIndex = (first.getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const signedDays = new Set<number>();
+  let cursor = todayDone ? todayDate : todayDate - 1;
+
+  for (let i = 0; i < streak && cursor >= 1; i++) {
+    signedDays.add(cursor);
+    cursor -= 1;
+  }
+
+  const cells: (SignInCell | null)[] = [];
+  for (let i = 0; i < firstWeekIndex; i++) cells.push(null);
+  for (let day = 1; day <= daysInMonth; day++) {
+    cells.push({
+      day,
+      signed: signedDays.has(day),
+      today: day === todayDate,
+      future: day > todayDate,
+    });
+  }
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  return cells;
+}
+
+function stripHtml(value: string) {
+  return value.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function rankTone(index: number) {
+  if (index === 0) return 'bg-rose-500';
+  if (index === 1) return 'bg-orange-400';
+  if (index === 2) return 'bg-amber-400';
+  return 'bg-ink-100 text-ink-700';
+}
+
+function getActiveUsers(posts: Post[]): ActiveUser[] {
+  const users = new Map<string, ActiveUser>();
+
+  posts.forEach((post) => {
+    const current = users.get(post.author.id) ?? {
+      id: post.author.id,
+      name: post.author.name,
+      avatar: post.author.avatar,
+      posts: 0,
+      score: 0,
+    };
+    current.posts += 1;
+    current.score += post.likes * 3 + post.comments * 4 + post.views + 20;
+    users.set(post.author.id, current);
+  });
+
+  return [...users.values()].sort((a, b) => b.score - a.score || b.posts - a.posts);
 }
