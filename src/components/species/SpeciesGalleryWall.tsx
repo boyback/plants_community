@@ -24,7 +24,7 @@ export function SpeciesGalleryWall({
 
   if (images.length === 0) {
     return (
-      <div className="mt-4 grid min-h-[180px] place-items-center rounded-2xl bg-leaf-50 text-sm text-ink-500">
+      <div className="mt-4 grid min-h-[180px] place-items-center rounded-[6px] bg-leaf-50 text-sm text-ink-500">
         等待补充图集图片
       </div>
     );
@@ -36,6 +36,7 @@ export function SpeciesGalleryWall({
       equalCells
       labels={labels}
       className="mt-4"
+      imageClassName="rounded-[6px]"
     />
   );
 }

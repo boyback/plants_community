@@ -7,6 +7,7 @@ import { RichTextEditor } from '@/components/richtext/RichTextEditor';
 import { JournalEditor, type JournalDraft } from '@/components/post/JournalEditor';
 import { FieldRow } from './FieldRow';
 import type { EditorT } from './types';
+import { cn } from '@/lib/utils';
 
 interface Props {
   type: PostType;
@@ -30,6 +31,7 @@ interface Props {
   onEventStartAtChange: (value: string) => void;
   journal: JournalDraft;
   onJournalChange: (value: JournalDraft) => void;
+  invalid?: boolean;
 }
 
 export function PostContentFields({
@@ -54,6 +56,7 @@ export function PostContentFields({
   onEventStartAtChange,
   journal,
   onJournalChange,
+  invalid,
 }: Props) {
   if (type === 'rich') {
     return (
@@ -64,7 +67,7 @@ export function PostContentFields({
           placeholder={t('editor.placeholderRich')}
           minHeight={460}
           charLimit={20000}
-          className="rounded-xl"
+          className={cn("rounded-xl", invalid && "ring-2 ring-rose-100")}
         />
       </FieldRow>
     );
@@ -72,9 +75,10 @@ export function PostContentFields({
 
   if (type === 'short') {
     return (
-      <FieldRow label={t('editor.placeholderShort')}>
+      <FieldRow label={<><span className="text-rose-500">*</span> 正文内容</>}>
         <Textarea
           className='min-h-[140px] !text-base leading-7'
+          error={invalid}
           placeholder={t('editor.placeholderShort')}
           value={content}
           onChange={(event) => onContentChange(event.target.value)}
@@ -87,9 +91,10 @@ export function PostContentFields({
 
   if (type === 'help') {
     return (
-      <FieldRow label={t('editor.placeholderShort')}>
+      <FieldRow label={<><span className="text-rose-500">*</span> 正文内容</>}>
         <Textarea
           className='min-h-[140px] !text-base leading-7'
+          error={invalid}
           placeholder={t('editor.placeholderShort')}
           value={content}
           onChange={(event) => onContentChange(event.target.value)}
@@ -103,9 +108,10 @@ export function PostContentFields({
   if (type === 'video') {
     return (
       <>
-        <FieldRow label={t('editor.video')}>
+        <FieldRow label={<><span className="text-rose-500">*</span> 正文内容</>}>
           <Textarea
             className='min-h-[100px] !text-base leading-7'
+            error={invalid}
             value={content}
             onChange={(event) => onContentChange(event.target.value)}
             placeholder={t('editor.placeholderShort')}
@@ -126,9 +132,10 @@ export function PostContentFields({
   if (type === 'vote') {
     return (
       <>
-        <FieldRow label={t('editor.vote')}>
+        <FieldRow label={<><span className="text-rose-500">*</span> 正文内容</>}>
           <Textarea
             className='min-h-[80px] !text-base leading-7'
+            error={invalid}
             value={content}
             onChange={(event) => onContentChange(event.target.value)}
             placeholder={t('editor.voteQuestion')}
@@ -211,7 +218,7 @@ export function PostContentFields({
             placeholder={t('editor.event')}
             minHeight={460}
             charLimit={5000}
-            className="rounded-xl"
+            className={cn("rounded-xl", invalid && "ring-2 ring-rose-100")}
           />
         </FieldRow>
         <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>

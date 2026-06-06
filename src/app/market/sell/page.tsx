@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 export default function SellPage() {
   return (
-    <Shell>
+    <Shell withSidebar={false}>
       <MarketListingForm mode="create" />
     </Shell>
   );

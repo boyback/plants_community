@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { ColorThemeSwitcher } from '@/components/ui/ColorThemeSwitcher';
@@ -13,7 +13,7 @@ import { FestivalParticles } from '@/theme/FestivalParticles';
 import { useAuth } from '@/context/AuthContext';
 import { useRealtime } from '@/context/RealtimeContext';
 import { api } from '@/lib/client-api';
-import type { Conversation } from '@/lib/types';
+import type { Conversation, Notification } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 type NavItem = {
@@ -24,32 +24,27 @@ type NavItem = {
 
 const primaryNav: NavItem[] = [
   { href: '/', label: '首页', icon: 'home' },
-  { href: '/user/me', label: '我的植物', icon: 'plants' },
   { href: '/editor?type=journal', label: '成长时间轴', icon: 'event' },
-  { href: '/plants', label: '植物图鉴', icon: 'board' },
-  { href: '/board', label: '社区', icon: 'message' },
-  { href: '/market', label: '交易市场', icon: 'shop' },
-  { href: '/contests', label: '活动广场', icon: 'event' },
   { href: '/ranking', label: '排行榜', icon: 'trophy' },
   { href: '/plants/favorites', label: '收藏夹', icon: 'heart' },
-  { href: '/user/me', label: '关注列表', icon: 'user' },
+  { href: '/user/me', label: '关注列表', icon: 'heart' },
 ];
 
 const spaceNav: NavItem[] = [
   { href: '/user/me', label: '我的帖子', icon: 'edit' },
-  { href: '/user/me', label: '我的评论', icon: 'comment' },
+  { href: '/user/me?tab=comments', label: '我的评论', icon: 'comment' },
   { href: '/orders', label: '我的订单', icon: 'package' },
   { href: '/user/me', label: '我的勋章', icon: 'diamond' },
   { href: '/settings', label: '设置', icon: 'settings' },
 ];
 
 const topNav = [
-  { href: '/', label: '发现' },
+  { href: '/board', label: '板块' },
   { href: '/plants', label: '图鉴' },
-  { href: '/ai-care', label: 'AI 养护' },
-  { href: '/board', label: '社区' },
   { href: '/market', label: '交易' },
-  { href: '/contests', label: '活动' },
+  { href: '/ai-care', label: 'AI 养护' },
+  { href: '/shaitu', label: '晒图广场' },
+  // { href: '/contests', label: '活动' },
 ];
 
 export function AppShell({
@@ -58,6 +53,7 @@ export function AppShell({
   aiRail,
   className,
   showFloatingAi = false,
+  hideNavOnScrollDown = false,
 }: {
   children: React.ReactNode;
   rightRail?: React.ReactNode;
@@ -65,6 +61,7 @@ export function AppShell({
   className?: string;
   showFloatingAi?: boolean;
   showLeftRail?: boolean;
+  hideNavOnScrollDown?: boolean;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -77,10 +74,13 @@ export function AppShell({
 
       <div className="min-h-screen">
         <div className="min-w-0">
-          <TopBar onOpenMobile={() => setMobileOpen(true)} />
+          <TopBar
+            onOpenMobile={() => setMobileOpen(true)}
+            hideOnScrollDown={hideNavOnScrollDown}
+          />
           <div
             className={cn(
-              'mx-auto grid w-full max-w-[1280px] gap-5 px-4 pb-8 lg:px-6',
+              'mx-auto grid w-full max-w-[1180px] gap-5 px-4 pb-8 lg:px-6',
               rightRail && aiRail
                 ? 'xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_300px_340px]'
                 : rightRail || aiRail
@@ -163,7 +163,7 @@ function AppMobileNav({ open, onClose }: { open: boolean; onClose: () => void })
 
         {user && (
           <Link href={`/user/${user.id}`} onClick={onClose} className="mb-4 flex items-center gap-3 rounded-2xl bg-leaf-50 p-3">
-            <UserAvatar src={user.avatar} alt={user.name} size={42} />
+              <UserAvatar src={user.avatar} alt={user.name} size={42} />
             <span className="min-w-0">
               <span className="block truncate text-sm font-semibold text-ink-900">{user.name}</span>
               <span className="block text-xs text-leaf-700/70">Lv.{user.level} 重生玩家</span>
@@ -202,41 +202,114 @@ function AppMobileNav({ open, onClose }: { open: boolean; onClose: () => void })
 
 function TopBar({
   onOpenMobile,
+  hideOnScrollDown = false,
 }: {
   onOpenMobile: () => void;
+  hideOnScrollDown?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, vip, equip } = useAuth();
   const { subscribe } = useRealtime();
   const [q, setQ] = useState('');
-  const [unread, setUnread] = useState(0);
+  const [unreadMsgs, setUnreadMsgs] = useState(0);
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    if (!hideOnScrollDown) {
+      setHidden(false);
+      document.documentElement.style.removeProperty('--app-board-filter-top');
+      return;
+    }
+
+    let lastY = window.scrollY;
+    let ticking = false;
+
+    const expandedTop = () => (window.innerWidth >= 1024 ? 112 : 64);
+    const applyStickyTop = (isHidden: boolean) => {
+      document.documentElement.style.setProperty(
+        '--app-board-filter-top',
+        isHidden ? '0px' : `${expandedTop()}px`,
+      );
+    };
+
+    const update = () => {
+      const y = window.scrollY;
+      const delta = y - lastY;
+      const nextHidden = y > 120 && delta > 4;
+      const nextShown = y < 80 || delta < -4;
+
+      if (nextHidden) {
+        setHidden(true);
+        applyStickyTop(true);
+      } else if (nextShown) {
+        setHidden(false);
+        applyStickyTop(false);
+      }
+
+      lastY = y;
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(update);
+    };
+
+    const onResize = () => applyStickyTop(hidden);
+
+    applyStickyTop(hidden);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+      document.documentElement.style.removeProperty('--app-board-filter-top');
+    };
+  }, [hideOnScrollDown, hidden]);
 
   useEffect(() => {
     if (!user) {
-      setUnread(0);
+      setUnreadMsgs(0);
+      setUnreadNotifs(0);
       return;
     }
     let cancelled = false;
-    Promise.all([
-      api.get<Conversation[]>('/api/conversations').catch(() => []),
-      api.get<{ unread: number }>('/api/notifications').catch(() => ({ unread: 0 })),
-    ]).then(([convs, notifs]) => {
-      if (cancelled) return;
-      setUnread(convs.reduce((sum, item) => sum + item.unread, 0) + (notifs.unread ?? 0));
-    });
+    const fetchCounts = async () => {
+      try {
+        const [convs, notifs] = await Promise.all([
+          api.get<Conversation[]>('/api/conversations').catch(() => []),
+          api.get<{ items: Notification[]; unread: number }>('/api/notifications').catch(() => ({ items: [], unread: 0 })),
+        ]);
+        if (cancelled) return;
+        setUnreadMsgs(convs.reduce((sum, item) => sum + item.unread, 0));
+        setUnreadNotifs(notifs.unread ?? 0);
+      } catch {
+        // ignore count refresh failures
+      }
+    };
+    void fetchCounts();
+    const timer = setInterval(fetchCounts, 60_000);
     return () => {
       cancelled = true;
+      clearInterval(timer);
     };
   }, [user]);
 
   useEffect(() => {
     if (!user) return;
-    const un1 = subscribe('notification', () => setUnread((n) => n + 1));
-    const un2 = subscribe('message', () => setUnread((n) => n + 1));
+    const un1 = subscribe('notification', () => setUnreadNotifs((n) => n + 1));
+    const un2 = subscribe('message', () => setUnreadMsgs((n) => n + 1));
+    const un3 = subscribe('notification.read', () => setUnreadNotifs(0));
+    const un4 = subscribe('message.read', () => setUnreadMsgs((n) => Math.max(0, n - 1)));
     return () => {
       un1();
       un2();
+      un3();
+      un4();
     };
   }, [subscribe, user]);
 
@@ -248,7 +321,12 @@ function TopBar({
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b border-leaf-100/80 bg-white/90 shadow-[0_8px_24px_rgba(15,20,25,0.04)] backdrop-blur-xl">
+    <header
+      className={cn(
+        'sticky top-0 z-30 border-b border-leaf-100/80 bg-white/90 shadow-[0_8px_24px_rgba(15,20,25,0.04)] backdrop-blur-xl transition-transform duration-200 ease-out',
+        hideOnScrollDown && hidden && '-translate-y-full',
+      )}
+    >
       <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center gap-4 px-4 lg:px-6">
         <button
           type="button"
@@ -307,10 +385,17 @@ function TopBar({
           <ColorThemeSwitcher />
           <Link
             href="/editor"
-            className="hidden h-11 items-center gap-2 rounded-xl bg-leaf-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-leaf-700 sm:inline-flex"
+            className="hidden h-9 items-center gap-1.5 rounded-lg bg-leaf-600 px-3.5 text-xs font-semibold text-white shadow-sm transition hover:bg-leaf-700 sm:inline-flex"
           >
-            <Icon name="plus" size={16} />
-            发布
+            <Icon name="plus" size={14} />
+            发帖
+          </Link>
+          <Link
+            href="/market/sell"
+            className="hidden h-9 items-center gap-1.5 rounded-lg border border-leaf-200 bg-white px-3.5 text-xs font-semibold text-leaf-700 shadow-sm transition hover:border-leaf-300 hover:bg-leaf-50 sm:inline-flex"
+          >
+            <Icon name="shop" size={14} />
+            出售
           </Link>
           {user ? (
             <Link href={`/user/${user.id}`} className="ml-1 flex items-center gap-3 rounded-full px-1 py-1 hover:bg-leaf-50">
@@ -349,14 +434,206 @@ function TopBar({
             })}
           </nav>
           <div className="ml-4 flex shrink-0 items-center gap-1.5">
-            <NavActionIcon href="/notifications" icon="bell" badge={unread} label="通知" />
-            <NavActionIcon href="/messages" icon="mail" label="私信" />
+            {user ? (
+              <NotificationBell
+                unreadCount={unreadNotifs + unreadMsgs}
+                onReadAll={() => setUnreadNotifs(0)}
+              />
+            ) : (
+              <NavActionIcon href="/login" icon="bell" label="通知" />
+            )}
+            <NavActionIcon href={user ? '/messages' : '/login'} icon="mail" label="私信" />
             <NavActionIcon href={user ? `/user/${user.id}` : '/login'} icon="user" label="个人主页" />
           </div>
         </div>
       </div>
     </header>
   );
+}
+
+function NotificationBell({
+  unreadCount,
+  onReadAll,
+}: {
+  unreadCount: number;
+  onReadAll: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<Notification[]>([]);
+  const [convs, setConvs] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [notifications, conversations] = await Promise.all([
+        api.get<{ items: Notification[]; unread: number }>('/api/notifications?limit=20').catch(() => ({ items: [], unread: 0 })),
+        api.get<Conversation[]>('/api/conversations').catch(() => [] as Conversation[]),
+      ]);
+      setItems(Array.isArray(notifications.items) ? notifications.items : []);
+      setConvs(Array.isArray(conversations) ? conversations.slice(0, 10) : []);
+      if ((notifications.unread ?? 0) === 0) onReadAll();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openPanel = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (!open) {
+      setOpen(true);
+      void load();
+    }
+  };
+
+  const closePanelLater = () => {
+    timerRef.current = setTimeout(() => setOpen(false), 150);
+  };
+
+  const toggle = () => {
+    const next = !open;
+    setOpen(next);
+    if (next) void load();
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative" onMouseEnter={openPanel} onMouseLeave={closePanelLater}>
+      <button
+        type="button"
+        onClick={toggle}
+        className="relative grid h-9 w-9 place-items-center rounded-lg text-ink-700 transition hover:bg-leaf-50 hover:text-leaf-800"
+        aria-label="消息通知"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <Icon name="bell" size={17} />
+        {unreadCount > 0 && (
+          <span className="absolute right-0.5 top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-rose-500 px-1 text-[9px] font-bold leading-none text-white">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-2 w-[300px] overflow-hidden rounded-lg border border-leaf-100/80 bg-white shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center justify-between border-b border-leaf-100/50 px-4 py-2.5">
+            <span className="text-sm font-semibold text-ink-800">消息通知</span>
+            <Link
+              href="/settings/notifications"
+              onClick={() => setOpen(false)}
+              className="text-xs text-leaf-700 transition-colors hover:text-leaf-800"
+            >
+              设置
+            </Link>
+          </div>
+
+          <div className="max-h-[400px] overflow-y-auto">
+            {loading ? (
+              <div className="py-8 text-center text-sm text-leaf-700/70">加载中...</div>
+            ) : (
+              <>
+                {convs.map((conversation) => (
+                  <Link
+                    key={conversation.id}
+                    href={`/messages?to=${conversation.user.id}`}
+                    onClick={() => setOpen(false)}
+                    className="flex items-start gap-2.5 border-b border-leaf-50 px-3 py-2.5 transition-colors hover:bg-leaf-50/60"
+                  >
+                    <UserAvatar src={conversation.user.avatar} alt={conversation.user.name} size={32} />
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <div className="mb-0.5 flex items-center justify-between">
+                        <span className="truncate text-xs font-medium text-ink-800">私信 · {conversation.user.name}</span>
+                        {conversation.unread > 0 && <span className="ml-2 h-2 w-2 shrink-0 rounded-full bg-rose-500" />}
+                      </div>
+                      <p className="truncate text-[11px] text-leaf-700/80">{conversation.lastMessage}</p>
+                      <span className="text-[10px] text-leaf-700/60">{timeShort(conversation.lastAt)}</span>
+                    </div>
+                  </Link>
+                ))}
+
+                {items.map((notification) => (
+                  <Link
+                    key={notification.id}
+                    href={notification.link ?? '#'}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      'flex items-start gap-2.5 border-b border-leaf-50 px-3 py-2.5 transition-colors hover:bg-leaf-50/60',
+                      !notification.read && 'bg-leaf-50/40',
+                    )}
+                  >
+                    {notification.fromUser ? (
+                      <img
+                        src={notification.fromUser.avatar || '/default-avatar.svg'}
+                        alt={notification.fromUser.name}
+                        className="h-8 w-8 shrink-0 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-leaf-100 text-sm">
+                        {iconForType(notification.type)}
+                      </span>
+                    )}
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <div className="mb-0.5 flex items-center gap-1.5">
+                        {notification.fromUser && (
+                          <span className="truncate text-xs font-medium text-ink-800">{notification.fromUser.name}</span>
+                        )}
+                        {!notification.read && <span className="h-2 w-2 shrink-0 rounded-full bg-rose-500" />}
+                      </div>
+                      <p className="line-clamp-2 text-[11px] leading-[1.4] text-ink-700">{notification.text}</p>
+                      <span className="text-[10px] text-leaf-700/60">{timeShort(notification.createdAt)}</span>
+                    </div>
+                  </Link>
+                ))}
+
+                {items.length === 0 && convs.length === 0 && (
+                  <div className="py-8 text-center text-sm text-leaf-700/60">暂无消息</div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function iconForType(type: Notification['type']): string {
+  switch (type) {
+    case 'like':
+      return '♥';
+    case 'comment':
+      return '聊';
+    case 'follow':
+      return '+';
+    case 'mention':
+      return '@';
+    case 'system':
+      return '告';
+    default:
+      return '•';
+  }
+}
+
+function timeShort(iso: string): string {
+  const date = new Date(iso);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${month}-${day} ${hours}:${minutes}`;
 }
 
 function NavActionIcon({ href, icon, label, badge }: { href: string; icon: IconName; label: string; badge?: number }) {

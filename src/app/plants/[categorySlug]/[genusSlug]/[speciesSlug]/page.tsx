@@ -191,43 +191,45 @@ export default async function PlantSpeciesPage({
   ]);
 
   return (
-    <AppShell showFloatingAi={false}>
+    <AppShell showFloatingAi={false} className="!max-w-[1280px]">
       {jsonLdScript([...speciesLd, breadcrumbLd])}
-      <div className="grid w-full max-w-none grid-cols-1 gap-x-5 gap-y-3 pb-24 xl:grid-cols-[max-content_minmax(0,1fr)] 2xl:grid-cols-[max-content_minmax(0,1fr)_clamp(280px,18vw,340px)]">
+      <div className="mx-auto w-full max-w-7xl space-y-4 pb-24 pt-[18px]">
         <TaxonomyPanel taxonomy={taxonomy} current={params} />
 
-        <main className="min-w-0 space-y-3">
-          <DetailHero
-            full={full}
-            galleryItems={galleryItems}
-          />
-
-          <InfoCards
+        <div className="grid gap-5 xl:grid-cols-[clamp(280px,22vw,340px)_minmax(0,1fr)]">
+          <RightActionRail
+            params={params}
             full={full}
             boardName={species.genus.board?.name ?? ''}
             genusName={species.genus.name}
+            metrics={metrics}
+            relatedSpecies={relatedSpecies}
+            contributors={contributors}
+            contributorTotal={contributorTotal}
+            collectTotal={collectTotal}
+            initiallyCollected={initiallyCollected}
+            initiallyCompared={initiallyCompared}
           />
 
-          <LowerModules
-            full={full}
-            posts={posts}
-            params={params}
-          />
-        </main>
+          <main className="min-w-0 space-y-3">
+            <DetailHero
+              full={full}
+              galleryItems={galleryItems}
+            />
 
-        <RightActionRail
-          params={params}
-          full={full}
-          boardName={species.genus.board?.name ?? ''}
-          genusName={species.genus.name}
-          metrics={metrics}
-          relatedSpecies={relatedSpecies}
-          contributors={contributors}
-          contributorTotal={contributorTotal}
-          collectTotal={collectTotal}
-          initiallyCollected={initiallyCollected}
-          initiallyCompared={initiallyCompared}
-        />
+            <InfoCards
+              full={full}
+              boardName={species.genus.board?.name ?? ''}
+              genusName={species.genus.name}
+            />
+
+            <LowerModules
+              full={full}
+              posts={posts}
+              params={params}
+            />
+          </main>
+        </div>
       </div>
     </AppShell>
   );
@@ -265,136 +267,105 @@ function TaxonomyPanel({
 }) {
   const currentBoard = taxonomy.find((board) => board.slug === current.categorySlug);
   const currentGenus = currentBoard?.genera.find((genus) => genus.slug === current.genusSlug);
+  const currentSpecies = currentGenus?.species.find((item) => item.slug === current.speciesSlug);
   const total = taxonomy.reduce((sum, board) => sum + board.genera.reduce((n, genus) => n + genus.species.length, 0), 0);
 
   return (
-    <div className="xl:row-span-3 xl:w-[560px]">
-    <aside className="max-w-full overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-sm xl:fixed xl:left-[300px] xl:top-[84px] xl:z-20 xl:h-[calc(100vh-92px)] xl:w-[560px]">
-      <div className="border-b border-leaf-100 px-5 py-4">
-        <div className="flex items-center justify-between gap-3">
+    <section className="rounded-[6px] border border-leaf-100 bg-white p-4 shadow-sm">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div>
           <h2 className="text-base font-bold text-ink-900">植物分类体系</h2>
-          <span className="text-xs text-ink-500">已收录 <b className="text-ink-900">{formatNumber(total)}</b> 种</span>
+          <p className="mt-1 text-xs text-leaf-700/60">
+            {[currentBoard?.name, currentGenus?.name, currentSpecies?.name].filter(Boolean).join(' / ')}
+          </p>
         </div>
+        <span className="rounded-full bg-leaf-50 px-3 py-1 text-xs text-ink-500">
+          已收录 <b className="text-ink-900">{formatNumber(total)}</b> 种
+        </span>
       </div>
-      <div className="h-[calc(100vh-149px)] min-h-[560px] overflow-x-auto overflow-y-hidden">
-        <div className="grid w-max min-w-full grid-cols-[max-content_max-content_max-content] text-xs">
-        <TaxonomyColumn title="科属" subTitle="总览">
+
+      <div className="space-y-3">
+        <TaxonomyFilterRow label="科">
           {taxonomy.map((board) => (
-            <TaxonomyLink
+            <TaxonomyChip
               key={board.id}
               href={firstHref(board)}
               active={board.slug === current.categorySlug}
-              icon="board"
-              title={board.name}
-              subtitle={board.latinName ?? board.slug}
-              count={board.genera.reduce((sum, genus) => sum + genus.species.length, 0)}
-            />
-          ))}
-        </TaxonomyColumn>
-
-        <TaxonomyColumn title={currentBoard?.name ?? '属'} subTitle={currentBoard?.latinName ?? ''}>
-          {currentBoard?.genera.map((genus) => (
-            <TaxonomyLink
-              key={genus.id}
-              href={genus.species[0] ? `/plants/${current.categorySlug}/${genus.slug}/${genus.species[0].slug}` : '#'}
-              active={genus.slug === current.genusSlug}
-              title={genus.name}
-              subtitle={genus.latinName ?? genus.slug}
-              count={genus.species.length}
-            />
-          ))}
-        </TaxonomyColumn>
-
-        <TaxonomyColumn title={currentGenus?.name ?? '品种'} subTitle={currentGenus?.latinName ?? ''} withSearch>
-          {currentGenus?.species.map((item) => (
-            <Link
-              key={item.id}
-              href={`/plants/${current.categorySlug}/${current.genusSlug}/${item.slug}`}
-              className={cn(
-                'mb-2 flex min-w-max items-center gap-2 rounded-xl p-2 pr-3 transition',
-                item.slug === current.speciesSlug
-                  ? 'bg-leaf-600 text-white shadow-sm'
-                  : 'text-ink-700 hover:bg-leaf-50',
-              )}
             >
-              <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-leaf-50">
-                <Image src={item.cover} alt={item.name} fill className="object-cover" unoptimized />
+              {board.name}
+              <span className="ml-1 text-[10px] opacity-60">
+                {board.genera.reduce((sum, genus) => sum + genus.species.length, 0)}
               </span>
-              <span className="flex min-h-9 min-w-max flex-1 items-center">
-                <span className="block whitespace-nowrap font-semibold leading-none">{item.name}</span>
-              </span>
-              {item.slug === current.speciesSlug && <Icon name="check" size={14} />}
-            </Link>
+            </TaxonomyChip>
           ))}
-        </TaxonomyColumn>
-        </div>
-      </div>
-    </aside>
-    </div>
-  );
-}
+        </TaxonomyFilterRow>
 
-function TaxonomyColumn({
-  title,
-  subTitle,
-  children,
-  withSearch,
-}: {
-  title: string;
-  subTitle?: string | null;
-  children: React.ReactNode;
-  withSearch?: boolean;
-}) {
-  return (
-    <div className="w-max min-w-[158px] border-r border-leaf-100 last:border-r-0">
-      <div className="border-b border-leaf-50 px-3 py-3">
-        <div className="whitespace-nowrap font-semibold text-ink-900">{title}</div>
-        {subTitle && <div className="mt-0.5 whitespace-nowrap text-[10px] text-ink-400">{subTitle}</div>}
-        {withSearch && (
-          <div className="relative mt-3">
-            <Icon name="search" size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-ink-400" />
-            <input className="h-8 w-full min-w-[180px] rounded-lg border border-leaf-100 pl-7 pr-2 text-xs outline-none focus:border-leaf-300" placeholder="搜索品种..." />
-          </div>
+        {currentBoard && currentBoard.genera.length > 0 && (
+          <TaxonomyFilterRow label="属">
+            <TaxonomyChip href={`/plants/${current.categorySlug}`} active={false}>
+              全部
+            </TaxonomyChip>
+            {currentBoard.genera.map((genus) => (
+              <TaxonomyChip
+                key={genus.id}
+                href={genus.species[0] ? `/plants/${current.categorySlug}/${genus.slug}/${genus.species[0].slug}` : '#'}
+                active={genus.slug === current.genusSlug}
+              >
+                {genus.name}
+                <span className="ml-1 text-[10px] opacity-60">{genus.species.length}</span>
+              </TaxonomyChip>
+            ))}
+          </TaxonomyFilterRow>
+        )}
+
+        {currentGenus && currentGenus.species.length > 0 && (
+          <TaxonomyFilterRow label="品种">
+            {currentGenus.species.map((item) => (
+              <TaxonomyChip
+                key={item.id}
+                href={`/plants/${current.categorySlug}/${current.genusSlug}/${item.slug}`}
+                active={item.slug === current.speciesSlug}
+              >
+                <span className="relative -ml-1 h-5 w-5 shrink-0 overflow-hidden rounded-[6px] bg-leaf-50">
+                  <Image src={item.cover} alt={item.name} fill className="object-cover" unoptimized />
+                </span>
+                <span>{item.name}</span>
+              </TaxonomyChip>
+            ))}
+          </TaxonomyFilterRow>
         )}
       </div>
-      <div className="max-h-[calc(100vh-212px)] overflow-auto p-2">{children}</div>
+    </section>
+  );
+}
+
+function TaxonomyFilterRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2 text-xs">
+      <span className="mt-1 w-12 shrink-0 text-leaf-700/60">{label}</span>
+      <div className="flex flex-1 flex-wrap items-center gap-1.5">{children}</div>
     </div>
   );
 }
 
-function TaxonomyLink({
+function TaxonomyChip({
   href,
   active,
-  title,
-  subtitle,
-  count,
-  icon,
+  children,
 }: {
   href: string;
   active: boolean;
-  title: string;
-  subtitle?: string | null;
-  count: number;
-  icon?: IconName;
+  children: React.ReactNode;
 }) {
   return (
     <Link
       href={href}
       className={cn(
-        'mb-2 flex min-w-max items-center gap-2 rounded-xl px-3 py-2 transition',
-        active ? 'bg-leaf-600 text-white shadow-sm' : 'text-ink-700 hover:bg-leaf-50',
+        'inline-flex h-7 items-center gap-1 rounded-md px-2.5 text-xs transition-colors',
+        active ? 'bg-leaf-100 font-medium text-leaf-700' : 'text-ink-700/80 hover:bg-leaf-50 hover:text-leaf-700',
       )}
     >
-      {icon && (
-        <span className={cn('grid h-7 w-7 shrink-0 place-items-center rounded-lg', active ? 'bg-white/15' : 'bg-leaf-50 text-leaf-700')}>
-          <Icon name={icon} size={14} />
-        </span>
-      )}
-      <span className="min-w-max flex-1">
-        <span className="block whitespace-nowrap font-semibold">{title}</span>
-        {subtitle && <span className={cn('block whitespace-nowrap text-[10px]', active ? 'text-white/70' : 'text-ink-400')}>{subtitle}</span>}
-      </span>
-      <span className={cn('shrink-0 text-[11px] font-semibold', active ? 'text-white' : 'text-ink-500')}>{count}</span>
+      {children}
     </Link>
   );
 }
@@ -407,7 +378,7 @@ function DetailHero({
   galleryItems: NonNullable<FullSpecies['galleryItems']>;
 }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-sm">
+    <section className="overflow-hidden rounded-[6px] border border-leaf-100 bg-white shadow-sm">
       <div className="relative aspect-[4/3] overflow-hidden bg-leaf-50 md:aspect-[16/9]">
         <Image
           src={full.cover}
@@ -456,7 +427,7 @@ function SidebarTag({ icon, text }: { icon: IconName; text: string }) {
 
 function SidebarStat({ label, value, icon }: { label: string; value: string; icon: IconName }) {
   return (
-    <div className="rounded-2xl bg-ink-50 p-3">
+    <div className="rounded-[6px] bg-ink-50 p-3">
       <div className="flex items-center justify-between gap-2 text-[11px] text-ink-500">
         <span>{label}</span>
         <Icon name={icon} size={13} />
@@ -496,10 +467,10 @@ function RightActionRail({
   const care = getCareProfile(full);
 
   return (
-    <aside className="hidden space-y-4 2xl:block">
-      <section className="rounded-2xl border border-leaf-100 bg-white p-4 shadow-sm">
+    <aside className="space-y-4 xl:sticky xl:top-20 xl:self-start">
+      <section className="rounded-[6px] border border-leaf-100 bg-white p-4 shadow-sm">
         <div className="flex items-start gap-3">
-          <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-leaf-50">
+          <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[6px] bg-leaf-50">
             <Image src={full.cover} alt={full.name} fill className="object-cover" unoptimized />
           </span>
           <div className="min-w-0">
@@ -542,7 +513,7 @@ function RightActionRail({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-leaf-100 bg-white p-4 shadow-sm">
+      <section className="rounded-[6px] border border-leaf-100 bg-white p-4 shadow-sm">
         <h2 className="font-bold text-ink-900">养护参数</h2>
         <div className="mt-4 space-y-3">
           <CareMeter label="光照" value={care.light} percent={care.lightPercent} icon="star" compact />
@@ -554,7 +525,7 @@ function RightActionRail({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-leaf-100 bg-white p-4 shadow-sm">
+      <section className="rounded-[6px] border border-leaf-100 bg-white p-4 shadow-sm">
         <h2 className="font-bold text-ink-900">图鉴贡献</h2>
         {visibleContributors.length > 0 ? (
           <div className="mt-4 grid grid-cols-6 gap-y-2">
@@ -579,7 +550,7 @@ function RightActionRail({
             )}
           </div>
         ) : (
-          <div className="mt-4 rounded-xl bg-leaf-50 px-3 py-2 text-xs text-leaf-800">
+          <div className="mt-4 rounded-[6px] bg-leaf-50 px-3 py-2 text-xs text-leaf-800">
             还没有已采纳的贡献
           </div>
         )}
@@ -587,16 +558,16 @@ function RightActionRail({
         <p className="mt-3 text-xs text-ink-500">已有 {contributorTotal} 位玩家参与完善</p>
       </section>
 
-      <section className="rounded-2xl border border-leaf-100 bg-white p-4 shadow-sm">
+      <section className="rounded-[6px] border border-leaf-100 bg-white p-4 shadow-sm">
         <SectionHead title="同属品种推荐" href={`/plants/${params.categorySlug}/${params.genusSlug}/${params.speciesSlug}`} />
         <div className="max-h-[296px] space-y-3 overflow-hidden">
           {relatedSpecies.slice(0, 4).map((item) => (
             <Link
               key={item.id}
               href={`/plants/${params.categorySlug}/${params.genusSlug}/${item.slug}`}
-              className="group flex items-center gap-3 rounded-xl border border-leaf-100 bg-white p-2 transition hover:bg-leaf-50"
+              className="group flex items-center gap-3 rounded-[6px] border border-leaf-100 bg-white p-2 transition hover:bg-leaf-50"
             >
-              <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-leaf-50">
+              <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[6px] bg-leaf-50">
                 <Image src={item.cover} alt={item.name} fill className="object-cover transition group-hover:scale-105" unoptimized />
               </span>
               <span className="min-w-0">
@@ -606,7 +577,7 @@ function RightActionRail({
             </Link>
           ))}
           {relatedSpecies.length === 0 && (
-            <div className="rounded-xl bg-leaf-50 px-3 py-2 text-xs text-leaf-800">当前同属下暂无其他品种</div>
+            <div className="rounded-[6px] bg-leaf-50 px-3 py-2 text-xs text-leaf-800">当前同属下暂无其他品种</div>
           )}
         </div>
       </section>
@@ -650,7 +621,7 @@ function InfoCards({
 
 function InfoGroup({ title, badge, children }: { title: string; badge?: string; children: React.ReactNode }) {
   return (
-    <section className="min-w-0 rounded-2xl border border-leaf-100 bg-white p-5 shadow-sm">
+    <section className="min-w-0 rounded-[6px] border border-leaf-100 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h3 className="text-base font-bold text-ink-900">{title}</h3>
         {badge && <span className="rounded-full bg-leaf-50 px-3 py-1 text-[11px] font-semibold text-leaf-800">{badge}</span>}
@@ -700,7 +671,7 @@ function CareMeter({
 
 function RiskLine({ tone, text }: { tone: 'rose' | 'amber' | 'leaf'; text: string }) {
   const cls = tone === 'rose' ? 'bg-rose-50 text-rose-700' : tone === 'amber' ? 'bg-amber-50 text-amber-700' : 'bg-leaf-50 text-leaf-700';
-  return <div className={cn('rounded-xl px-3 py-2 text-xs font-medium', cls)}>{text}</div>;
+  return <div className={cn('rounded-[6px] px-3 py-2 text-xs font-medium', cls)}>{text}</div>;
 }
 
 function getCareProfile(full: FullSpecies) {
@@ -743,12 +714,12 @@ function LowerModules({
   return (
     <section className="grid gap-4">
       {full.tips.length > 0 && (
-        <section className="rounded-2xl border border-leaf-100 bg-white p-5 shadow-sm">
+        <section className="rounded-[6px] border border-leaf-100 bg-white p-5 shadow-sm">
           <SectionHead title="养护经验" />
           <div className="grid gap-3 md:grid-cols-2">
             {full.tips.slice(0, 6).map((tip, index) => (
-              <div key={`${tip}-${index}`} className="rounded-xl bg-leaf-50/70 p-4 text-sm leading-6 text-ink-700">
-                <div className="mb-2 inline-flex h-7 min-w-7 items-center justify-center rounded-lg bg-white px-2 text-xs font-semibold text-leaf-700">
+              <div key={`${tip}-${index}`} className="rounded-[6px] bg-leaf-50/70 p-4 text-sm leading-6 text-ink-700">
+                <div className="mb-2 inline-flex h-7 min-w-7 items-center justify-center rounded-[6px] bg-white px-2 text-xs font-semibold text-leaf-700">
                   #{index + 1}
                 </div>
                 <div className="whitespace-pre-wrap break-words">{tip}</div>
@@ -758,13 +729,13 @@ function LowerModules({
         </section>
       )}
 
-      <section className="rounded-2xl border border-leaf-100 bg-white p-5 shadow-sm">
+      <section className="rounded-[6px] border border-leaf-100 bg-white p-5 shadow-sm">
         <SectionHead title="玩家作品精选" href={`/board/${params.categorySlug}/${params.genusSlug}/${params.speciesSlug}`} />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {posts.slice(0, 4).map((post) => {
             const cover = post.cover ?? post.images?.[0] ?? full.cover;
             return (
-              <Link key={post.id} href={`/post/${post.id}`} className="group overflow-hidden rounded-xl border border-leaf-100 bg-white">
+              <Link key={post.id} href={`/post/${post.id}`} className="group overflow-hidden rounded-[6px] border border-leaf-100 bg-white">
                 <div className="relative aspect-[4/3] bg-leaf-50">
                   <Image src={cover} alt={post.title} fill className="object-cover transition group-hover:scale-105" unoptimized />
                 </div>

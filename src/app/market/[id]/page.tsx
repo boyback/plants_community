@@ -9,10 +9,17 @@ import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { formatPrice } from '@/lib/utils';
 import { ListingDetailClient, type MarketListingDetail } from './ListingDetailClient';
+import { Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function MarketListingPage({ params }: { params: { id: string } }) {
+export default async function MarketListingPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams?: { item?: string };
+}) {
   const me = await getCurrentUser();
   const raw = await prisma.marketListing.findUnique({
     where: { id: params.id },
@@ -52,6 +59,11 @@ export default async function MarketListingPage({ params }: { params: { id: stri
     data: { viewCount: { increment: 1 } },
   });
   const tradeModes = await loadListingTradeModes(raw.id, raw.tradeMode);
+  const visibleItems = searchParams?.item
+    ? raw.items.filter((item) => item.id === searchParams.item)
+    : raw.items;
+  const detailItems = visibleItems.length ? visibleItems : raw.items;
+  const itemMeta = await loadItemMeta(detailItems.map((item) => item.id));
 
   const listing: MarketListingDetail = {
     id: raw.id,
@@ -67,7 +79,7 @@ export default async function MarketListingPage({ params }: { params: { id: stri
     cover: raw.cover,
     minPrice: raw.minPrice,
     maxPrice: raw.maxPrice,
-    itemCount: raw.itemCount,
+    itemCount: visibleItems.length || raw.itemCount,
     viewCount: raw.viewCount + 1,
     commentCount: raw.commentCount,
     status: raw.status,
@@ -96,12 +108,17 @@ export default async function MarketListingPage({ params }: { params: { id: stri
       speciesSlug: item.speciesSlug,
       label: item.label,
     })),
-    items: raw.items.map((item) => ({
+    items: detailItems.map((item) => ({
       id: item.id,
       title: item.title,
       price: item.price,
       stock: item.stock,
       soldCount: item.soldCount,
+      mainHeadSize: itemMeta[item.id]?.mainHeadSize ?? '',
+      overallSize: itemMeta[item.id]?.overallSize ?? '',
+      potDiameter: itemMeta[item.id]?.potDiameter ?? '',
+      taxons: itemMeta[item.id]?.taxons ?? [],
+      tags: itemMeta[item.id]?.tags ?? [],
       cover: item.cover,
       images: parseJsonArray(item.images),
       description: item.description,
@@ -289,6 +306,69 @@ async function loadListingTradeModes(id: string, fallback: MarketListingDetail['
     return modes.length ? modes : [fallback];
   } catch {
     return [fallback];
+  }
+}
+
+type ItemTaxon = {
+  categorySlug: string;
+  genusSlug: string;
+  speciesSlug: string;
+  label?: string;
+};
+
+type ItemMeta = {
+  mainHeadSize: string;
+  overallSize: string;
+  potDiameter: string;
+  taxons?: ItemTaxon[];
+  tags?: string[];
+};
+
+async function loadItemMeta(itemIds: string[]) {
+  if (!itemIds.length) return {} as Record<string, ItemMeta>;
+  try {
+    const rows = await prisma.$queryRaw<Array<{
+      id: string;
+      mainHeadSize: string | null;
+      overallSize: string | null;
+      potDiameter: string | null;
+      taxons: string | null;
+      tags: string | null;
+    }>>`
+      SELECT id, mainHeadSize, overallSize, potDiameter, taxons, tags
+      FROM market_listing_items
+      WHERE id IN (${Prisma.join(itemIds)})
+    `;
+    return rows.reduce<Record<string, ItemMeta>>((map, row) => {
+      map[row.id] = {
+        mainHeadSize: row.mainHeadSize ?? '',
+        overallSize: row.overallSize ?? '',
+        potDiameter: row.potDiameter ?? '',
+        taxons: row.taxons === null ? undefined : parseItemTaxons(row.taxons),
+        tags: row.tags === null ? undefined : parseJsonArray(row.tags),
+      };
+      return map;
+    }, {});
+  } catch {
+    return {};
+  }
+}
+
+function parseItemTaxons(raw: string | null | undefined): ItemTaxon[] {
+  if (!raw) return [];
+  try {
+    const value = JSON.parse(raw);
+    if (!Array.isArray(value)) return [];
+    return value
+      .map((item) => ({
+        categorySlug: typeof item?.categorySlug === 'string' ? item.categorySlug : '',
+        genusSlug: typeof item?.genusSlug === 'string' ? item.genusSlug : '',
+        speciesSlug: typeof item?.speciesSlug === 'string' ? item.speciesSlug : '',
+        label: typeof item?.label === 'string' ? item.label : undefined,
+      }))
+      .filter((item) => item.categorySlug);
+  } catch {
+    return [];
   }
 }
 

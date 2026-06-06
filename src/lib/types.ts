@@ -69,6 +69,10 @@ export interface User {
   revokedPermissions?: string[];
   permissionLevels?: Record<string, number | null>;
   equip?: EquipState;
+  privacy?: {
+    showFollowing: boolean;
+    showFollowers: boolean;
+  };
 }
 
 export interface Badge {

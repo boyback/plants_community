@@ -3,6 +3,7 @@ import { Shell } from '@/components/layout/Shell';
 import { MarketListingForm, type MarketListingFormValue } from '@/components/market/MarketListingForm';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +27,7 @@ export default async function MarketListingEditPage({ params }: { params: { id: 
 
   if (listing.sellerId !== me.id) {
     return (
-      <Shell>
+      <Shell withSidebar={false}>
         <div className="card mx-auto max-w-md p-10 text-center">
           <div className="text-lg font-semibold">无权编辑</div>
           <p className="mt-1 text-sm text-leaf-700/70">只能编辑自己发布的交易帖。</p>
@@ -34,6 +35,7 @@ export default async function MarketListingEditPage({ params }: { params: { id: 
       </Shell>
     );
   }
+  const itemMeta = await loadItemMeta(listing.items.map((item) => item.id));
 
   const initialValue: MarketListingFormValue = {
     id: listing.id,
@@ -56,16 +58,84 @@ export default async function MarketListingEditPage({ params }: { params: { id: 
       title: item.title,
       price: item.price,
       stock: item.stock,
+      mainHeadSize: itemMeta[item.id]?.mainHeadSize ?? '',
+      overallSize: itemMeta[item.id]?.overallSize ?? '',
+      potDiameter: itemMeta[item.id]?.potDiameter ?? '',
+      taxons: itemMeta[item.id]?.taxons,
+      tags: itemMeta[item.id]?.tags,
       images: parseJsonArray(item.images),
       description: item.description,
     })),
   };
 
   return (
-    <Shell>
+    <Shell withSidebar={false}>
       <MarketListingForm mode="edit" initialValue={initialValue} />
     </Shell>
   );
+}
+
+type ItemTaxon = {
+  categorySlug: string;
+  genusSlug: string;
+  speciesSlug: string;
+  label?: string;
+};
+
+type ItemMeta = {
+  mainHeadSize: string;
+  overallSize: string;
+  potDiameter: string;
+  taxons?: ItemTaxon[];
+  tags?: string[];
+};
+
+async function loadItemMeta(itemIds: string[]) {
+  if (!itemIds.length) return {} as Record<string, ItemMeta>;
+  try {
+    const rows = await prisma.$queryRaw<Array<{
+      id: string;
+      mainHeadSize: string | null;
+      overallSize: string | null;
+      potDiameter: string | null;
+      taxons: string | null;
+      tags: string | null;
+    }>>`
+      SELECT id, mainHeadSize, overallSize, potDiameter, taxons, tags
+      FROM market_listing_items
+      WHERE id IN (${Prisma.join(itemIds)})
+    `;
+    return rows.reduce<Record<string, ItemMeta>>((map, row) => {
+      map[row.id] = {
+        mainHeadSize: row.mainHeadSize ?? '',
+        overallSize: row.overallSize ?? '',
+        potDiameter: row.potDiameter ?? '',
+        taxons: row.taxons === null ? undefined : parseItemTaxons(row.taxons),
+        tags: row.tags === null ? undefined : parseJsonArray(row.tags),
+      };
+      return map;
+    }, {});
+  } catch {
+    return {};
+  }
+}
+
+function parseItemTaxons(raw: string | null | undefined): ItemTaxon[] {
+  if (!raw) return [];
+  try {
+    const value = JSON.parse(raw);
+    if (!Array.isArray(value)) return [];
+    return value
+      .map((item) => ({
+        categorySlug: typeof item?.categorySlug === 'string' ? item.categorySlug : '',
+        genusSlug: typeof item?.genusSlug === 'string' ? item.genusSlug : '',
+        speciesSlug: typeof item?.speciesSlug === 'string' ? item.speciesSlug : '',
+        label: typeof item?.label === 'string' ? item.label : undefined,
+      }))
+      .filter((item) => item.categorySlug);
+  } catch {
+    return [];
+  }
 }
 
 function parseJsonArray(raw: string | null | undefined): string[] {

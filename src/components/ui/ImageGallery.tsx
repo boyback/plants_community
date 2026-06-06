@@ -13,6 +13,7 @@ interface ImageGalleryProps {
   equalCells?: boolean;
   labels?: Array<{ label?: string; note?: string } | undefined>;
   className?: string;
+  imageClassName?: string;
 }
 
 interface ImageSize {
@@ -20,7 +21,7 @@ interface ImageSize {
   height: number;
 }
 
-export function ImageGallery({ images, livePhotoMap, equalCells, labels, className }: ImageGalleryProps) {
+export function ImageGallery({ images, livePhotoMap, equalCells, labels, className, imageClassName }: ImageGalleryProps) {
   const [imageSizes, setImageSizes] = useState<Record<string, ImageSize>>({});
   const pswpRef = useRef<PhotoSwipe | null>(null);
 
@@ -111,8 +112,9 @@ export function ImageGallery({ images, livePhotoMap, equalCells, labels, classNa
               type="button"
               onClick={() => openPhotoSwipe(index)}
               className={cn(
-                "relative cursor-pointer overflow-hidden bg-leaf-50 text-left",
+                "relative cursor-zoom-in overflow-hidden bg-leaf-50 text-left",
                 cellClass(index),
+                imageClassName,
               )}
               aria-label={`预览图片 ${index + 1}`}
             >
@@ -121,7 +123,7 @@ export function ImageGallery({ images, livePhotoMap, equalCells, labels, classNa
                 alt={`图片 ${index + 1}`}
                 fill
                 sizes="(max-width:768px) 50vw, 400px"
-                className="object-cover transition-transform hover:scale-105"
+                className="object-cover"
                 unoptimized
                 onLoad={(event) => handleImageLoad(src, event)}
               />

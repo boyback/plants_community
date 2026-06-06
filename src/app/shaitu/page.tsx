@@ -62,7 +62,7 @@ export default function ShaiTuPage() {
   };
 
   return (
-    <Shell>
+    <Shell withSidebar={false}>
       <div className="max-w-6xl mx-auto">
         {/* 头部 */}
         <div className="flex items-center justify-between mb-6">
@@ -85,8 +85,8 @@ export default function ShaiTuPage() {
         {loading && albums.length === 0 ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="card animate-pulse">
-                <div className="aspect-square bg-leaf-100 rounded-t-xl" />
+              <div key={i} className="card animate-pulse overflow-hidden">
+                <div className="aspect-square bg-leaf-100" />
                 <div className="p-3 space-y-2">
                   <div className="h-4 w-3/4 rounded bg-leaf-100" />
                   <div className="h-3 w-1/2 rounded bg-leaf-100" />

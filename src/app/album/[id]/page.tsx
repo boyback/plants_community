@@ -2,13 +2,18 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
+import PhotoSwipe from 'photoswipe';
+import 'photoswipe/style.css';
 import { Shell } from '@/components/layout/Shell';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
+import { Empty } from '@/components/ui/Empty';
+import { PlainCommentComposer } from '@/components/post/PlainCommentComposer';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/client-api';
+import { registerPhotoSwipeGalleryUi } from '@/lib/photoswipe-ui';
 import { timeAgo } from '@/lib/utils';
 
 interface AlbumDetail {
@@ -38,12 +43,18 @@ interface AlbumDetail {
 interface Comment {
   id: string;
   content: string;
+  images?: string[];
   createdAt: string;
   user: {
     id: string;
     name: string;
     avatar: string;
   };
+}
+
+interface ImageSize {
+  width: number;
+  height: number;
 }
 
 export default function AlbumDetailPage() {
@@ -53,8 +64,8 @@ export default function AlbumDetailPage() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [liked, setLiked] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [commentText, setCommentText] = useState('');
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageSizes, setImageSizes] = useState<Record<string, ImageSize>>({});
+  const pswpRef = useRef<PhotoSwipe | null>(null);
 
   useEffect(() => {
     loadAlbum();
@@ -109,28 +120,66 @@ export default function AlbumDetailPage() {
     }
   };
 
-  const handleComment = async () => {
-    if (!user || !commentText.trim()) return;
-    try {
-      const comment = await api.post<Comment>(`/api/albums/${id}/comments`, {
-        content: commentText.trim(),
-      });
-      setComments((prev) => [comment, ...prev]);
-      setCommentText('');
-      setAlbum((prev) =>
-        prev ? { ...prev, commentCount: prev.commentCount + 1 } : prev
-      );
-    } catch {
-      // ignore
-    }
-  };
+  const handleImageLoad = useCallback(
+    (src: string, event: React.SyntheticEvent<HTMLImageElement>) => {
+      const img = event.currentTarget;
+      if (img.naturalWidth && img.naturalHeight) {
+        setImageSizes((prev) => ({
+          ...prev,
+          [src]: { width: img.naturalWidth, height: img.naturalHeight },
+        }));
+      }
+    },
+    [],
+  );
+
+  const slides = useMemo(
+    () =>
+      (album?.images ?? []).map((img) => {
+        const size = imageSizes[img.url] || { width: 1600, height: 1066 };
+        return {
+          src: img.url,
+          msrc: img.url,
+          thumbnail: img.url,
+          width: size.width,
+          height: size.height,
+        };
+      }),
+    [album?.images, imageSizes],
+  );
+
+  const openPhotoSwipe = useCallback(
+    (index: number) => {
+      if (!slides.length) return;
+      pswpRef.current?.destroy();
+      pswpRef.current = new PhotoSwipe({
+        dataSource: slides,
+        index,
+        showHideAnimationType: 'fade',
+        imageClickAction: false,
+        tapAction: false,
+        doubleTapAction: false,
+        zoom: false,
+        closeOnVerticalDrag: false,
+      } as any);
+      registerPhotoSwipeGalleryUi(pswpRef.current);
+      pswpRef.current.init();
+    },
+    [slides],
+  );
+
+  useEffect(() => {
+    return () => {
+      pswpRef.current?.destroy();
+    };
+  }, []);
 
   if (loading) {
     return (
-      <Shell>
+      <Shell withSidebar={false}>
         <div className="max-w-4xl mx-auto">
-          <div className="card animate-pulse">
-            <div className="aspect-video bg-leaf-100 rounded-t-xl" />
+          <div className="card animate-pulse overflow-hidden">
+            <div className="aspect-video bg-leaf-100" />
             <div className="p-6 space-y-4">
               <div className="h-6 w-1/2 rounded bg-leaf-100" />
               <div className="h-4 w-3/4 rounded bg-leaf-100" />
@@ -143,7 +192,7 @@ export default function AlbumDetailPage() {
 
   if (!album) {
     return (
-      <Shell>
+      <Shell withSidebar={false}>
         <div className="max-w-4xl mx-auto">
           <div className="card py-16 text-center">
             <div className="text-4xl mb-3">😕</div>
@@ -158,7 +207,7 @@ export default function AlbumDetailPage() {
   }
 
   return (
-    <Shell>
+    <Shell withSidebar={false}>
       <div className="max-w-4xl mx-auto">
         {/* 返回链接 */}
         <Link
@@ -173,24 +222,27 @@ export default function AlbumDetailPage() {
           {/* 图片网格 */}
           <div className="grid grid-cols-3 gap-1 sm:grid-cols-4">
             {album.images.slice(0, 8).map((img, i) => (
-              <div
+              <button
                 key={img.id}
-                className="relative aspect-square bg-leaf-50 cursor-pointer"
-                onClick={() => setSelectedImage(img.url)}
+                type="button"
+                className="relative aspect-square cursor-zoom-in bg-leaf-50"
+                onClick={() => openPhotoSwipe(i)}
+                aria-label={`预览图片 ${i + 1}`}
               >
                 <Image
                   src={img.url}
-                  alt=""
+                  alt={img.caption || ''}
                   fill
-                  className="object-cover hover:opacity-90 transition-opacity"
+                  className="object-cover transition-opacity hover:opacity-90"
                   unoptimized
+                  onLoad={(event) => handleImageLoad(img.url, event)}
                 />
                 {i === 7 && album.images.length > 8 && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white font-bold text-lg">
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-lg font-bold text-white">
                     +{album.images.length - 8}
                   </div>
                 )}
-              </div>
+              </button>
             ))}
           </div>
 
@@ -263,93 +315,162 @@ export default function AlbumDetailPage() {
           </div>
         </div>
 
-        {/* 评论区 */}
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-ink-800 mb-4">
-            评论 ({album.commentCount})
-          </h2>
+        <AlbumCommentSection
+          albumId={album.id}
+          comments={comments}
+          count={album.commentCount}
+          onCommentAdded={(comment) => {
+            setComments((prev) => [comment, ...prev]);
+            setAlbum((prev) =>
+              prev ? { ...prev, commentCount: prev.commentCount + 1 } : prev
+            );
+          }}
+        />
+      </div>
+    </Shell>
+  );
+}
 
-          {/* 发表评论 */}
-          {user && (
-            <div className="flex gap-3 mb-6">
-              <Avatar src={user.avatar} alt={user.name} size={36} />
-              <div className="flex-1">
-                <textarea
-                  className="input min-h-[80px]"
-                  placeholder="写下你的评论..."
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  maxLength={500}
-                />
-                <div className="flex justify-end mt-2">
-                  <button
-                    type="button"
-                    onClick={handleComment}
-                    disabled={!commentText.trim()}
-                    className="btn-primary text-sm"
-                  >
-                    发表评论
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+function AlbumCommentSection({
+  albumId,
+  comments,
+  count,
+  onCommentAdded,
+}: {
+  albumId: string;
+  comments: Comment[];
+  count: number;
+  onCommentAdded: (comment: Comment) => void;
+}) {
+  const { user } = useAuth();
+  const [commentText, setCommentText] = useState('');
+  const [commentImages, setCommentImages] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
-          {/* 评论列表 */}
-          {comments.length === 0 ? (
-            <div className="text-center py-8 text-ink-500">
-              还没有评论，快来发表第一条评论吧
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {comments.map((comment) => (
-                <div key={comment.id} className="flex gap-3">
-                  <Link href={`/user/${comment.user.id}`}>
-                    <Avatar
-                      src={comment.user.avatar}
-                      alt={comment.user.name}
-                      size={36}
-                    />
-                  </Link>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Link
-                        href={`/user/${comment.user.id}`}
-                        className="text-sm font-medium text-ink-800 hover:text-leaf-700"
-                      >
-                        {comment.user.name}
-                      </Link>
-                      <span className="text-xs text-ink-400">
-                        {timeAgo(comment.createdAt)}
-                      </span>
-                    </div>
-                    <p className="text-sm text-ink-600">{comment.content}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+  const sorted = useMemo(() => {
+    const list = [...comments];
+    list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return list;
+  }, [comments]);
+
+  const submit = async () => {
+    const text = commentText.trim();
+    if (!user || (!text && commentImages.length === 0)) return;
+    setSubmitting(true);
+    setErr(null);
+    try {
+      const comment = await api.post<Comment>(`/api/albums/${albumId}/comments`, {
+        content: text,
+        images: commentImages,
+      });
+      onCommentAdded(comment);
+      setCommentText('');
+      setCommentImages([]);
+    } catch {
+      setErr('评论发送失败');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div id="comments" className="scroll-mt-20 overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-sm">
+      <div className="border-b border-leaf-100 bg-leaf-50/30 p-5">
+        {user ? (
+          <div className="flex gap-3">
+            <Avatar src={user.avatar} alt={user.name} size={42} />
+            <PlainCommentComposer
+              title="评论"
+              value={commentText}
+              onChange={setCommentText}
+              images={commentImages}
+              onImagesChange={setCommentImages}
+              onSubmit={submit}
+              placeholder="写下你的想法..."
+              submitLabel="发送"
+              submitting={submitting}
+              error={err}
+              maxLength={500}
+              minHeight={112}
+              className="min-w-0 flex-1"
+            />
+          </div>
+        ) : (
+          <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3 text-sm">
+            <span className="text-leaf-700">登录后参与评论</span>
+            <Link href="/login" className="btn-primary h-8 !px-3 !text-xs">
+              登录
+            </Link>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between border-b border-leaf-100 px-5 py-4">
+        <div className="text-base font-bold text-ink-950">
+          全部评论 <span className="ml-1 text-leaf-700/70">({count})</span>
+        </div>
+        <div className="flex items-center gap-1 rounded-full bg-leaf-50 p-1 text-xs">
+          <span className="rounded-full bg-white px-3 py-1 font-medium text-leaf-800 shadow-sm">
+            最新
+          </span>
         </div>
       </div>
 
-      {/* 图片预览模态框 */}
-      {selectedImage && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-          onClick={() => setSelectedImage(null)}
-        >
-          <div className="relative max-w-4xl max-h-[90vh]">
-            <Image
-              src={selectedImage}
-              alt=""
-              width={1200}
-              height={800}
-              className="object-contain"
-              unoptimized
-            />
+      <div className="divide-y divide-leaf-100">
+        {sorted.length === 0 ? (
+          <div className="p-8">
+            <Empty title="还没有评论" desc="来写下第一条想法吧。" />
           </div>
-        </div>
-      )}
-    </Shell>
+        ) : (
+          sorted.map((comment, index) => (
+            <article key={comment.id} className="p-5">
+              <div className="grid gap-4 sm:grid-cols-[150px_minmax(0,1fr)]">
+                <aside className="rounded-xl bg-leaf-50/70 px-3 py-3 text-center">
+                  <Link href={`/user/${comment.user.id}`} className="inline-flex">
+                    <Avatar src={comment.user.avatar} alt={comment.user.name} size={54} />
+                  </Link>
+                  <Link
+                    href={`/user/${comment.user.id}`}
+                    className="mt-2 block truncate text-sm font-semibold text-ink-900 hover:text-leaf-800"
+                    title={comment.user.name}
+                  >
+                    {comment.user.name}
+                  </Link>
+                </aside>
+
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 text-[13px] text-leaf-700/60">
+                    <span className="mr-1 font-semibold text-leaf-800">#{index + 1} 楼</span>
+                    <span>{timeAgo(comment.createdAt)}</span>
+                  </div>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-ink-700">
+                    {comment.content}
+                  </p>
+                  {comment.images && comment.images.length > 0 && (
+                    <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                      {comment.images.map((url, imageIndex) => (
+                        <div
+                          key={`${comment.id}-${url}-${imageIndex}`}
+                          className="relative aspect-square overflow-hidden rounded-[6px] bg-leaf-50"
+                        >
+                          <Image
+                            src={url}
+                            alt=""
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+    </div>
   );
 }

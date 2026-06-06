@@ -77,6 +77,16 @@ interface MarketListingItem {
   price: number;
   stock: number;
   soldCount: number;
+  mainHeadSize?: string;
+  overallSize?: string;
+  potDiameter?: string;
+  taxons?: {
+    categorySlug: string;
+    genusSlug?: string | null;
+    speciesSlug?: string | null;
+    label?: string;
+  }[];
+  tags?: string[];
   cover: string;
   images: string[];
   description: string;
@@ -229,8 +239,28 @@ export function ListingDetailClient({ listing }: { listing: MarketListingDetail 
                   <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
                     <ProductStat label="库存" value={item.stock} />
                     <ProductStat label="已售" value={item.soldCount} />
+                    {item.mainHeadSize && <ProductStat label="主头" value={item.mainHeadSize} />}
+                    {item.overallSize && <ProductStat label="整体" value={item.overallSize} />}
+                    {item.potDiameter && <ProductStat label="盆径" value={item.potDiameter} />}
                     <ProductStat label="在线方式" value={availableTradeModes.map(tradeModeLabel).join(' / ')} />
                   </div>
+                  {((item.taxons?.length ?? 0) > 0 || (item.tags?.length ?? 0) > 0) && (
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      {item.taxons?.map((taxon) => (
+                        <span
+                          key={`${taxon.categorySlug}:${taxon.genusSlug ?? ''}:${taxon.speciesSlug ?? ''}`}
+                          className="rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-700"
+                        >
+                          {taxon.label || [taxon.categorySlug, taxon.genusSlug, taxon.speciesSlug].filter(Boolean).join(' / ')}
+                        </span>
+                      ))}
+                      {item.tags?.map((tag) => (
+                        <span key={tag} className="rounded-full bg-ink-50 px-2 py-0.5 text-[11px] text-ink-600">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {thumbnailStrip}
 
                   <div className="mt-2 rounded-lg border border-leaf-100 bg-leaf-50/40 p-2.5 md:flex-1">

@@ -7,14 +7,13 @@ import type { Swiper as SwiperInstance } from 'swiper';
 import { A11y, Autoplay, Navigation } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { AppShell } from '@/components/layout/AppShell';
-import { PostAdminMenu } from '@/components/post/PostAdminMenu';
+import { PostListItem } from '@/components/post/PostListItem';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Icon, type IconName } from '@/components/ui/Icon';
-import { TopicTag } from '@/components/ui/TopicTag';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/client-api';
 import type { BannerItem, Post } from '@/lib/types';
-import { boardUrl, cn, formatDateTime, formatNumber } from '@/lib/utils';
+import { cn, formatDateTime, formatFollowers, formatNumber } from '@/lib/utils';
 
 type TopicItem = {
   tag: string;
@@ -259,7 +258,7 @@ function Recommended({ posts }: { posts: Post[] }) {
         <div className="mt-12 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-sm">
             {feedPosts.map((post, index) => (
-              <RecommendedFeedItem
+              <PostListItem
                 key={post.id}
                 post={post}
                 showDivider={index < feedPosts.length - 1 || loadingMore || Boolean(cursor)}
@@ -436,116 +435,26 @@ function RecommendedCard({ post }: { post: Post }) {
           {post.title}
         </h3>
         <div className="mt-4 flex items-center justify-between gap-3">
-          <span className="flex min-w-0 items-center gap-2">
+          <span className="flex min-w-0 items-center gap-2.5">
             <UserAvatar
               src={post.author.avatar}
               alt={post.author.name}
-              size={26}
+              size={36}
               pendant={post.author.equip?.pendant ?? null}
+              ring={false}
               showFestival={false}
             />
-            <span className="truncate text-[13px] font-semibold text-ink-800">{post.author.name}</span>
+            <span className="min-w-0 leading-tight">
+              <span className="block truncate text-[13px] font-semibold text-ink-800">{post.author.name}</span>
+              <span className="block text-[10px] font-normal text-leaf-700/60">
+                {formatFollowers(post.author.followers)} 粉丝
+              </span>
+            </span>
           </span>
           <span className="shrink-0 text-xs text-ink-400">{formatDateTime(post.createdAt)}</span>
         </div>
       </div>
     </Link>
-  );
-}
-
-function RecommendedFeedItem({ post, showDivider }: { post: Post; showDivider: boolean }) {
-  const { user } = useAuth();
-  const mediaItems = getPostDisplayImages(post);
-  const remainingImageCount = Math.max(0, getPostImageCount(post) - 5);
-  const summary = post.contentText || stripHtml(post.content);
-
-  return (
-    <article className={cn('px-5 py-5 md:px-6', showDivider && 'border-b border-leaf-100')}>
-      <div className="flex items-start justify-between gap-4">
-        <Link href={`/user/${post.author.id}`} className="flex min-w-0 items-center gap-2">
-          <UserAvatar
-            src={post.author.avatar}
-            alt={post.author.name}
-            size={30}
-            pendant={post.author.equip?.pendant ?? null}
-            showFestival={false}
-          />
-          <span className="truncate text-[13px] font-semibold text-ink-900">{post.author.name}</span>
-        </Link>
-        <PostAdminMenu post={post} user={user} align="center" />
-      </div>
-
-      <Link href={`/post/${post.id}`} className="group mt-3.5 block">
-        <h3 className="line-clamp-2 text-[17px] font-bold leading-[1.35] text-ink-950 group-hover:text-leaf-800">
-          {post.title}
-        </h3>
-        {summary && <p className="mt-1.5 line-clamp-2 text-[13px] leading-[22px] text-ink-600">{summary}</p>}
-      </Link>
-
-      {post.tags.length > 0 && (
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {post.tags.slice(0, 5).map((tag) => (
-            <TopicTag key={tag} tag={tag} href={`/topic/${encodeURIComponent(tag)}`} size="sm" />
-          ))}
-        </div>
-      )}
-
-      {mediaItems.length > 0 && (
-        <Link href={`/post/${post.id}`} className="mt-3.5 block">
-          <div className="grid grid-cols-5 gap-1.5">
-            {mediaItems.map((item, index) => (
-              <div
-                key={`${item.src}-${index}`}
-                className="group relative aspect-square overflow-hidden rounded-none bg-leaf-50"
-              >
-                <Image
-                  src={item.src}
-                  alt={item.isCover ? `${post.title} 封面图` : `${post.title} 图片 ${index + 1}`}
-                  fill
-                  sizes="(max-width: 1024px) 20vw, 130px"
-                  unoptimized
-                  className="object-cover transition duration-500 group-hover:scale-105"
-                />
-                {item.isCover && (
-                  <span className="absolute left-2 top-2 rounded-md bg-black/72 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                    封面
-                  </span>
-                )}
-                {index === 4 && remainingImageCount > 0 && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                    <span className="text-lg font-bold text-white">+{remainingImageCount}</span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </Link>
-      )}
-
-      <div className="mt-3 flex items-center justify-between gap-4 text-[12px] text-ink-500">
-        <Link
-          href={boardUrl(post.board)}
-          className="shrink-0 rounded-full border border-leaf-100 px-2.5 py-1 text-[12px] font-semibold text-ink-500 hover:bg-leaf-50 hover:text-leaf-800"
-        >
-          {post.board.name}
-        </Link>
-        <div className="ml-auto flex min-w-0 items-center gap-3.5">
-          <span className="shrink-0">{formatDateTime(post.createdAt)}</span>
-          <span className="inline-flex items-center gap-1">
-            <Icon name="eye" size={14} />
-            {formatNumber(post.views)}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Icon name="comment" size={14} />
-            {formatNumber(post.comments)}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Icon name="thumbs-up" size={14} />
-            {formatNumber(post.likes)}
-          </span>
-        </div>
-      </div>
-    </article>
   );
 }
 
@@ -852,25 +761,6 @@ function getPostCover(post: Post) {
   return post.cover ?? post.images?.[0] ?? post.species?.cover ?? null;
 }
 
-function getPostDisplayImages(post: Post) {
-  const items: { src: string; isCover: boolean }[] = [];
-
-  if (post.cover) {
-    items.push({ src: post.cover, isCover: true });
-  }
-
-  for (const image of (post.images ?? []).slice(0, 5 - items.length)) {
-    if (!image || items.some((item) => item.src === image)) continue;
-    items.push({ src: image, isCover: false });
-  }
-
-  return items;
-}
-
-function getPostImageCount(post: Post) {
-  return (post.cover ? 1 : 0) + (post.images?.length ?? 0);
-}
-
 function useTodaySignedCount() {
   const [count, setCount] = useState(0);
 
@@ -927,10 +817,6 @@ function buildSignInCells(streak: number, todayDone: boolean): (SignInCell | nul
   while (cells.length % 7 !== 0) cells.push(null);
 
   return cells;
-}
-
-function stripHtml(value: string) {
-  return value.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 }
 
 function rankTone(index: number) {

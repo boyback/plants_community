@@ -28,6 +28,8 @@ interface GenusOption {
 interface ListingItem {
   type: 'product' | 'auction';
   id: string;
+  listingId?: string;
+  itemId?: string;
   title: string;
   description?: string;
   cover: string;
@@ -61,6 +63,8 @@ interface ListingItem {
     cover: string;
     images: string[];
   }[];
+  stock?: number;
+  collected?: boolean;
   genus?: { slug: string; name: string; cover?: string | null } | null;
   views?: number;
   comments?: number;
@@ -284,7 +288,7 @@ export function MarketIndexClient() {
             <span className="text-[11px] text-leaf-700/50">{items.length} 个结果</span>
           </div>
 
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {items.map((item) => (
               <DefaultCard key={`${item.type}-${item.id}`} item={item} />
             ))}
@@ -303,18 +307,6 @@ function DefaultCard({ item }: { item: ListingItem }) {
   const isAuction = item.type === 'auction';
   const isMine = Boolean(!isAuction && item.seller?.id && user?.id === item.seller.id);
   const images = item.images?.length ? item.images : [item.cover];
-  const displayImages = images.slice(0, 4);
-  const products = item.products?.length
-    ? item.products
-    : [{
-        id: item.id,
-        title: item.title,
-        description: item.description ?? '',
-        price: item.price,
-        stock: item.itemCount ?? 1,
-        cover: item.cover,
-        images,
-      }];
   const taxonLabels = item.taxons?.length
     ? item.taxons.map((taxon) => taxon.label).filter(Boolean)
     : item.genus?.name
@@ -324,126 +316,117 @@ function DefaultCard({ item }: { item: ListingItem }) {
 
   if (!isAuction) {
     return (
-      <article className="rounded-xl border border-leaf-100 bg-white p-4 transition-colors hover:border-leaf-300 hover:shadow-sm">
-        {item.seller && (
-          <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-ink-500">
-            {item.seller.avatar ? (
-              <img
-                src={item.seller.avatar}
-                alt={item.seller.name}
-                className="h-7 w-7 rounded-full object-cover ring-2 ring-leaf-100"
-              />
-            ) : (
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-leaf-100 text-xs text-leaf-600">
-                {item.seller.name[0]}
+      <article className="flex h-[360px] min-w-0 flex-col overflow-hidden rounded-xl border border-leaf-100 bg-white transition-colors hover:border-leaf-300 hover:shadow-sm">
+        <Link href={item.url} className="block">
+          <div className="relative h-[180px] bg-leaf-50">
+            <Image
+              src={item.cover}
+              alt={item.title}
+              fill
+              sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+              className="object-cover"
+              unoptimized
+            />
+            {images.length > 1 && (
+              <div className="absolute bottom-2 right-2 rounded-full bg-ink-900/70 px-2 py-0.5 text-[11px] font-medium text-white">
+                +{images.length - 1}
               </div>
             )}
-            <span className="font-medium text-ink-800">{item.seller.name}</span>
-            <FollowSellerButton sellerId={item.seller.id} initialFollowed={!!item.seller.followed} />
-            {isMine && (
-              <Link
-                href={`/market/${item.id}/edit`}
-                className="ml-auto flex items-center gap-1 rounded-md px-2 py-1 text-leaf-700 hover:bg-leaf-50"
-                title="编辑"
-              >
-                <Icon name="edit" size={14} />
-                编辑
-              </Link>
+            {item.listingId && item.itemId && (
+              <ProductCollectButton
+                listingId={item.listingId}
+                itemId={item.itemId}
+                initialCollected={!!item.collected}
+              />
             )}
           </div>
-        )}
-        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <Link
-              href={item.url}
-              className="line-clamp-2 text-base font-semibold text-ink-800 transition-colors hover:text-leaf-700"
-            >
-              {item.title}
-            </Link>
-            {item.description && (
-              <p className="mt-1 line-clamp-2 text-sm leading-6 text-ink-600">
+        </Link>
+
+        <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">
+          <Link
+            href={item.url}
+            className="line-clamp-2 min-h-[40px] text-[15px] font-semibold leading-5 text-ink-800 transition-colors hover:text-leaf-700"
+          >
+            {item.title}
+          </Link>
+
+          {item.seller && (
+            <div className="flex items-center gap-2 text-xs text-ink-500">
+              <Link
+                href={`/user/${item.seller.id}?tab=products`}
+                className="flex min-w-0 flex-1 items-center gap-2 transition-colors hover:text-leaf-700"
+              >
+                {item.seller.avatar ? (
+                  <img
+                    src={item.seller.avatar}
+                    alt={item.seller.name}
+                    className="h-7 w-7 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-leaf-100 text-xs text-leaf-600">
+                    {item.seller.name[0]}
+                  </div>
+                )}
+                <span className="min-w-0 flex-1 truncate font-medium text-ink-800">{item.seller.name}</span>
+              </Link>
+              <FollowSellerButton sellerId={item.seller.id} initialFollowed={!!item.seller.followed} />
+              {isMine && item.listingId && (
+                <Link
+                  href={`/market/${item.listingId}/edit`}
+                  className="grid h-7 w-7 place-items-center rounded-md text-leaf-700 hover:bg-leaf-50"
+                  title="编辑"
+                >
+                  <Icon name="edit" size={14} />
+                </Link>
+              )}
+            </div>
+          )}
+          {item.description && (
+            <Tooltip content={stripHtml(item.description)} className="text-left">
+              <p className="line-clamp-2 text-xs leading-5 text-ink-600">
                 {stripHtml(item.description)}
               </p>
+            </Tooltip>
+          )}
+
+          <div className="flex items-end justify-between gap-2">
+            <div className="text-lg font-bold text-rose-600">{formatPrice(item.price)}</div>
+            {typeof item.stock === 'number' && (
+              <div className="shrink-0 text-[11px] text-leaf-700/70">库存 {item.stock}</div>
             )}
           </div>
-          {tradeModes.length > 0 && (
-            <span className="shrink-0 rounded bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
-              {tradeModes.map(tradeModeLabel).join(' / ')}
-            </span>
-          )}
-        </div>
 
-        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-leaf-700/70">
-          {item.shipFrom && <span>发货地 {item.shipFrom}</span>}
-          {taxonLabels.length > 0 && (
-            <>
-              <span className="text-leaf-700/30">/</span>
-              <span>所属板块/品种</span>
-              {taxonLabels.slice(0, 6).map((label) => (
+          {tradeModes.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {tradeModes.map((mode) => (
+                <span key={mode} className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                  {tradeModeLabel(mode)}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {(taxonLabels.length > 0 || (item.tags?.length ?? 0) > 0) && (
+            <div className="flex max-h-[46px] flex-wrap gap-1 overflow-hidden">
+              {taxonLabels.slice(0, 2).map((label) => (
                 <span key={label} className="rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-700">
                   {label}
                 </span>
               ))}
-            </>
+              {item.tags?.slice(0, 2).map((tag) => (
+                <span key={tag} className="rounded-full bg-ink-50 px-2 py-0.5 text-[11px] text-ink-600">
+                  #{tag}
+                </span>
+              ))}
+            </div>
           )}
-        </div>
 
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-          {products.map((product) => {
-            const image = product.images[0] || product.cover;
-            const extraImageCount = Math.max(0, product.images.length - 1);
-            return (
-              <div key={product.id} className="rounded-lg border border-leaf-100 bg-leaf-50/30">
-                <div className="relative aspect-square overflow-hidden rounded-t-lg bg-leaf-50">
-                  <Link href={item.url} className="block h-full">
-                    <Image src={image} alt={product.title} fill className="object-cover" unoptimized />
-                  </Link>
-                  {extraImageCount > 0 && (
-                    <div className="absolute bottom-2 right-2 rounded-full bg-ink-900/70 px-2 py-0.5 text-[11px] font-medium text-white">
-                      +{extraImageCount}
-                    </div>
-                  )}
-                  <ProductCollectButton
-                    listingId={item.id}
-                    itemId={product.id}
-                    initialCollected={!!product.collected}
-                  />
-                </div>
-                <Link href={item.url} className="block">
-                  <div className="space-y-1 p-2">
-                    <div className="line-clamp-1 text-xs font-medium leading-4 text-ink-800">
-                      {product.title}
-                    </div>
-                    {product.description && (
-                      <Tooltip content={product.description} className="text-left">
-                        <span className="block max-h-8 overflow-hidden text-[11px] leading-4 text-leaf-700/70 [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]">
-                          {product.description}
-                        </span>
-                      </Tooltip>
-                    )}
-                    <div className="flex items-end justify-between gap-1 pt-0.5">
-                      <span className="text-sm font-bold text-rose-600">{formatPrice(product.price)}</span>
-                      <span className="shrink-0 text-[11px] text-leaf-700/70">数量 {product.stock}</span>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-3 flex items-center justify-between text-xs text-ink-500">
-          <span>{item.itemCount ?? products.length} 件商品</span>
-          <div className="ml-auto flex items-center gap-3">
-            <Link href={item.url} className="flex items-center gap-1 hover:text-leaf-700" title="查看">
-              <Icon name="eye" size={14} />
-              {item.views ?? 0}
-            </Link>
-            <Link href={`${item.url}#comments`} className="flex items-center gap-1 hover:text-leaf-700" title="评论">
-              <Icon name="message" size={14} />
-              {item.comments ?? 0}
-            </Link>
-            <span className="text-ink-400">{formatDateTime(item.createdAt)}</span>
+          <div className="mt-auto flex items-center justify-between gap-2 border-t border-leaf-100 pt-2 text-[11px] text-ink-500">
+            {item.shipFrom ? <span className="truncate">发货地 {item.shipFrom}</span> : <span />}
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="inline-flex items-center gap-1"><Icon name="eye" size={12} />{item.views ?? 0}</span>
+              <span className="inline-flex items-center gap-1"><Icon name="message" size={12} />{item.comments ?? 0}</span>
+            </div>
           </div>
         </div>
       </article>
@@ -451,132 +434,78 @@ function DefaultCard({ item }: { item: ListingItem }) {
   }
 
   return (
-    <article className="rounded-xl border border-leaf-100 bg-white p-4 transition-colors hover:border-leaf-300 hover:shadow-sm">
-      {/* 第一行：用户头像 + 昵称 */}
-      {item.seller && (
-        <div className="flex items-center gap-2 mb-3">
-          {item.seller.avatar ? (
-            <img
-              src={item.seller.avatar}
-              alt={item.seller.name}
-              className="h-8 w-8 rounded-full object-cover ring-2 ring-leaf-100"
-            />
-          ) : (
-            <div className="h-8 w-8 rounded-full bg-leaf-100 flex items-center justify-center text-leaf-600 text-sm">
-              {item.seller.name[0]}
-            </div>
-          )}
-          <span className="font-medium text-ink-800">{item.seller.name}</span>
-          <FollowSellerButton sellerId={item.seller.id} initialFollowed={!!item.seller.followed} />
-          {isAuction && (
-            <span className="ml-2 rounded bg-rose-500/95 px-2 py-0.5 text-[10px] font-medium text-white">
-              🔨 拍卖
-            </span>
-          )}
-          {!isAuction && (
-            <span className="ml-2 rounded bg-leaf-100 px-2 py-0.5 text-[10px] font-medium text-leaf-700">
-              {item.itemCount && item.itemCount > 1 ? `${item.itemCount} 件商品` : '一口价'}
-            </span>
-          )}
-          {!isAuction && tradeModes.length > 0 && (
-            <span className="rounded bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
-              {tradeModes.map(tradeModeLabel).join(' / ')}
-            </span>
-          )}
+    <article className="flex h-[360px] min-w-0 flex-col overflow-hidden rounded-xl border border-leaf-100 bg-white transition-colors hover:border-leaf-300 hover:shadow-sm">
+      <Link href={item.url} className="block">
+        <div className="relative h-[180px] bg-leaf-50">
+          <Image
+            src={item.cover}
+            alt={item.title}
+            fill
+            sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover"
+            unoptimized
+          />
+          <span className="absolute left-2 top-2 rounded bg-rose-500/95 px-2 py-0.5 text-[10px] font-medium text-white">
+            拍卖
+          </span>
         </div>
-      )}
-
-      {/* 第二行：标题 */}
-      <Link
-        href={item.url}
-        className="mb-2 block text-base font-semibold text-ink-800 transition-colors hover:text-leaf-700"
-      >
-        {item.title}
       </Link>
+      <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">
+        <Link
+          href={item.url}
+          className="line-clamp-2 min-h-[40px] text-[15px] font-semibold leading-5 text-ink-800 transition-colors hover:text-leaf-700"
+        >
+          {item.title}
+        </Link>
 
-      {/* 第三行：描述 */}
-      {item.description && (
-        <p className="text-sm text-ink-600 leading-relaxed mb-2 line-clamp-2">
-          {stripHtml(item.description)}
-        </p>
-      )}
-
-      {/* 第四行：话题标签 */}
-      {item.tags && item.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {item.tags.slice(0, 5).map((tag, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-700"
+        {item.seller && (
+          <div className="flex items-center gap-2 text-xs text-ink-500">
+            <Link
+              href={`/user/${item.seller.id}?tab=products`}
+              className="flex min-w-0 flex-1 items-center gap-2 transition-colors hover:text-leaf-700"
             >
-              #{tag}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {!isAuction && (
-        <div className="mb-3 text-lg font-bold text-rose-600">
-          {item.maxPrice && item.maxPrice !== item.price
-            ? `${formatPrice(item.price)} - ${formatPrice(item.maxPrice)}`
-            : formatPrice(item.price)}
-        </div>
-      )}
-
-      {/* 第五行：图片 */}
-      <Link href={item.url} className="mb-3 flex gap-2">
-        {displayImages.map((img, i) => (
-          <div
-            key={i}
-            className="relative h-24 w-24 overflow-hidden rounded-lg bg-leaf-50 flex-shrink-0"
-          >
-            <Image src={img} alt="" fill className="object-cover" unoptimized />
-          </div>
-        ))}
-      </Link>
-
-      {/* 最后一行：板块(属) + 时间 + 查看数 + 评论数 */}
-      <div className="flex items-center justify-between text-xs">
-        {/* 左侧：板块(属) */}
-        {item.genus && (
-          <div className="flex items-center gap-1.5 text-leaf-700">
-            {item.genus.cover ? (
-              <img
-                src={item.genus.cover}
-                alt={item.genus.name}
-                className="h-5 w-5 rounded object-cover"
-              />
-            ) : (
-              <span>📁</span>
-            )}
-            <span>{item.genus.name}</span>
+              {item.seller.avatar ? (
+                <img
+                  src={item.seller.avatar}
+                  alt={item.seller.name}
+                  className="h-7 w-7 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-leaf-100 text-xs text-leaf-600">
+                  {item.seller.name[0]}
+                </div>
+              )}
+              <span className="min-w-0 flex-1 truncate font-medium text-ink-800">{item.seller.name}</span>
+            </Link>
+            <FollowSellerButton sellerId={item.seller.id} initialFollowed={!!item.seller.followed} />
           </div>
         )}
-
-        {/* 右侧：查看数 + 评论数 + 时间 */}
-        <div className={cn(
-          "flex items-center gap-3 text-ink-500",
-          !item.genus && "ml-auto"
-        )}>
-          {item.views !== undefined && (
-            <span className="flex items-center gap-1">
-              <Icon name="eye" size={14} />
-              {item.views}
-            </span>
-          )}
-          {item.comments !== undefined && (
-            <span className="flex items-center gap-1">
-              <Icon name="message" size={14} />
-              {item.comments}
-            </span>
-          )}
-          <span className="text-ink-400">{formatDateTime(item.createdAt)}</span>
+        {item.description && (
+          <p className="line-clamp-2 text-xs leading-5 text-ink-600">
+            {stripHtml(item.description)}
+          </p>
+        )}
+        <div className="text-lg font-bold text-rose-600">{formatPrice(item.price)}</div>
+        {item.tags && item.tags.length > 0 && (
+          <div className="flex max-h-[46px] flex-wrap gap-1 overflow-hidden">
+            {item.tags.slice(0, 4).map((tag) => (
+              <span key={tag} className="rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-700">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="mt-auto flex items-center justify-between border-t border-leaf-100 pt-2 text-[11px] text-ink-500">
+          <span>{item.endAt ? fmtDate(item.endAt) : formatDateTime(item.createdAt)}</span>
+          <span className="inline-flex items-center gap-1">
+            <Icon name="message" size={12} />
+            {item.comments ?? 0}
+          </span>
         </div>
       </div>
     </article>
   );
 }
-
 // ============================================================
 // 工具函数
 // ============================================================

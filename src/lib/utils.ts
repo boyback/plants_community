@@ -10,6 +10,11 @@ export function formatNumber(n: number): string {
   return String(n);
 }
 
+export function formatFollowers(n: number): string {
+  if (n > 999) return `${(n / 1000).toFixed(1)}k`;
+  return String(n);
+}
+
 export function timeAgo(iso: string): string {
   const now = Date.now();
   const t = new Date(iso).getTime();

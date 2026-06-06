@@ -22,7 +22,7 @@ export function DraftSidebar({
       <div className='card p-4'>
         <div className='mb-3 flex items-center justify-between'>
           <div className='text-sm font-semibold text-ink-800'>
-            {t('editor.saveDraft')}
+            草稿箱
           </div>
           <span className='text-[11px] text-leaf-700/70'>{drafts.length}</span>
         </div>
@@ -64,16 +64,6 @@ export function DraftSidebar({
             ))}
           </ul>
         )}
-      </div>
-
-      <div className='card p-4 text-xs text-leaf-700/80'>
-        <div className='mb-2 font-semibold text-ink-800'>{t('editor.tips.title')}</div>
-        <ul className='ml-4 list-disc space-y-1'>
-          <li>{t('editor.tips.item1')}</li>
-          <li>{t('editor.tips.item2')}</li>
-          <li>{t('editor.tips.item3')}</li>
-          <li>{t('editor.tips.item4')}</li>
-        </ul>
       </div>
     </>
   );

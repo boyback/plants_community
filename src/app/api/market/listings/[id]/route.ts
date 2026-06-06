@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler, fail, parseJsonArray, stringifyJson } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
-import { type MarketTradeMode } from '@prisma/client';
+import { Prisma, type MarketTradeMode } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +11,16 @@ const ItemBody = z.object({
   title: z.string().min(2, '商品名称至少 2 个字').max(50, '商品名称不能超过 50 个字'),
   price: z.number().int().min(1, '价格必须大于 0'),
   stock: z.number().int().min(1).max(9999).default(1),
+  mainHeadSize: z.string().max(40).optional(),
+  overallSize: z.string().max(40).optional(),
+  potDiameter: z.string().max(40).optional(),
+  taxons: z.array(z.object({
+    categorySlug: z.string().min(1),
+    genusSlug: z.string().optional().default(''),
+    speciesSlug: z.string().optional().default(''),
+    label: z.string().optional(),
+  })).min(1).max(12).optional(),
+  tags: z.array(z.string().min(1).max(20)).max(8).optional(),
   images: z.array(z.string().url()).min(1, '每个商品至少上传一张图').max(9, '每个商品最多上传 9 张图'),
   description: z.string().min(2, '商品描述不能为空').max(2000),
 });
@@ -78,6 +88,7 @@ export const GET = handler(async (req) => {
   }).catch(() => null);
 
   const tradeModes = await loadListingTradeModes(raw.id, raw.tradeMode);
+  const itemMeta = await loadItemMeta(raw.items.map((item) => item.id));
 
   return {
     id: raw.id,
@@ -124,6 +135,11 @@ export const GET = handler(async (req) => {
       price: item.price,
       stock: item.stock,
       soldCount: item.soldCount,
+      mainHeadSize: itemMeta[item.id]?.mainHeadSize ?? '',
+      overallSize: itemMeta[item.id]?.overallSize ?? '',
+      potDiameter: itemMeta[item.id]?.potDiameter ?? '',
+      taxons: itemMeta[item.id]?.taxons ?? [],
+      tags: itemMeta[item.id]?.tags ?? [],
       cover: item.cover,
       images: parseJsonArray(item.images),
       description: item.description,
@@ -240,17 +256,21 @@ export const PATCH = handler(async (req) => {
       };
 
       if (item.id && existingIds.has(item.id)) {
-        await tx.marketListingItem.update({
+        const savedItem = await tx.marketListingItem.update({
           where: { id: item.id },
           data,
+          select: { id: true },
         });
+        await saveItemMeasurements(tx, savedItem.id, item);
       } else {
-        await tx.marketListingItem.create({
+        const savedItem = await tx.marketListingItem.create({
           data: {
             listingId: id,
             ...data,
           },
+          select: { id: true },
         });
+        await saveItemMeasurements(tx, savedItem.id, item);
       }
     }
 
@@ -285,6 +305,110 @@ async function loadListingTradeModes(id: string, fallback: MarketTradeMode): Pro
     return normalizeTradeModes(parseJsonArray(rows[0]?.tradeModes) as MarketTradeMode[], fallback);
   } catch {
     return [fallback];
+  }
+}
+
+async function saveItemMeasurements(
+  db: { $executeRaw: typeof prisma.$executeRaw },
+  itemId: string,
+  item: {
+    mainHeadSize?: string;
+    overallSize?: string;
+    potDiameter?: string;
+    taxons?: Array<{
+      categorySlug: string;
+      genusSlug?: string;
+      speciesSlug?: string;
+      label?: string;
+    }>;
+    tags?: string[];
+  },
+) {
+  try {
+    await db.$executeRaw`
+      UPDATE market_listing_items
+      SET mainHeadSize = ${item.mainHeadSize?.trim() || null},
+          overallSize = ${item.overallSize?.trim() || null},
+          potDiameter = ${item.potDiameter?.trim() || null},
+          taxons = ${item.taxons?.length ? stringifyJson(item.taxons) : null},
+          tags = ${stringifyJson(item.tags ?? [])}
+      WHERE id = ${itemId}
+    `;
+  } catch {
+    // Columns may not exist before the next Prisma db push; do not block editing.
+  }
+}
+
+type ItemTaxon = {
+  categorySlug: string;
+  genusSlug: string;
+  speciesSlug: string;
+  label?: string;
+};
+
+type ItemMeta = {
+  mainHeadSize: string;
+  overallSize: string;
+  potDiameter: string;
+  taxons?: ItemTaxon[];
+  tags?: string[];
+};
+
+async function loadItemMeta(itemIds: string[]) {
+  if (!itemIds.length) return {} as Record<string, ItemMeta>;
+  try {
+    const rows = await prisma.$queryRaw<Array<{
+      id: string;
+      mainHeadSize: string | null;
+      overallSize: string | null;
+      potDiameter: string | null;
+      taxons: string | null;
+      tags: string | null;
+    }>>`
+      SELECT id, mainHeadSize, overallSize, potDiameter, taxons, tags
+      FROM market_listing_items
+      WHERE id IN (${Prisma.join(itemIds)})
+    `;
+    return rows.reduce<Record<string, ItemMeta>>((map, row) => {
+      map[row.id] = {
+        mainHeadSize: row.mainHeadSize ?? '',
+        overallSize: row.overallSize ?? '',
+        potDiameter: row.potDiameter ?? '',
+        taxons: row.taxons === null ? undefined : parseItemTaxons(row.taxons),
+        tags: row.tags === null ? undefined : parseStringArray(row.tags),
+      };
+      return map;
+    }, {});
+  } catch {
+    return {};
+  }
+}
+
+function parseItemTaxons(raw: string | null | undefined): ItemTaxon[] {
+  if (!raw) return [];
+  try {
+    const value = JSON.parse(raw);
+    if (!Array.isArray(value)) return [];
+    return value
+      .map((item) => ({
+        categorySlug: typeof item?.categorySlug === 'string' ? item.categorySlug : '',
+        genusSlug: typeof item?.genusSlug === 'string' ? item.genusSlug : '',
+        speciesSlug: typeof item?.speciesSlug === 'string' ? item.speciesSlug : '',
+        label: typeof item?.label === 'string' ? item.label : undefined,
+      }))
+      .filter((item) => item.categorySlug);
+  } catch {
+    return [];
+  }
+}
+
+function parseStringArray(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const value = JSON.parse(raw);
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+  } catch {
+    return [];
   }
 }
 

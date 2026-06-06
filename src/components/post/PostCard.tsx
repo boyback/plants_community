@@ -10,7 +10,7 @@ import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
 import { TopicTag } from '@/components/ui/TopicTag';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { STAGE_META } from '@/lib/journal';
-import { formatNumber, formatDateTime, timeAgo, cn, boardUrl } from '@/lib/utils';
+import { formatNumber, formatDateTime, formatFollowers, timeAgo, cn, boardUrl } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/components/ui/Toast';
 import { PostAdminMenu } from '@/components/post/PostAdminMenu';
@@ -105,15 +105,21 @@ function FeedCard({ post, className, onVoteUpdate, onPostChanged, onPostDeleted 
       <div className="space-y-2 p-3">
         {/* 作者 + 时间（最上面一行） */}
         <div className="flex items-center justify-between gap-2 text-[11px] text-ink-500">
-          <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
             <UserAvatar
               src={post.author.avatar}
               alt={post.author.name}
-              size={20}
+              size={36}
               pendant={post.author.equip?.pendant ?? null}
+              ring={false}
               showFestival={false}
             />
-            <span className="truncate font-medium text-ink-800">{post.author.name}</span>
+            <span className="min-w-0 leading-tight">
+              <span className="block truncate font-medium text-ink-800">{post.author.name}</span>
+              <span className="block text-[10px] font-normal text-leaf-700/60">
+                {formatFollowers(post.author.followers)} 粉丝
+              </span>
+            </span>
             <AuthorBadgeIcons post={post} compact />
           </div>
           <span className="shrink-0 text-ink-400">{formatDateTime(post.createdAt)}</span>

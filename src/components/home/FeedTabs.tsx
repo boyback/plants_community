@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { cn, timeAgo, boardUrl } from '@/lib/utils';
+import { cn, formatFollowers, timeAgo, boardUrl } from '@/lib/utils';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Icon } from '@/components/ui/Icon';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
@@ -665,7 +665,11 @@ function EventPreview({ post }: { post: Post }) {
   );
 }
 
-/** 时间线预览(只读):显示前 3 条事件 */
+/**
+ * 时间线预览(只读):
+ *  - 记录 > 4 条：显示前 3 条 + 中间提示 + 最后 1 条
+ *  - 记录 ≤ 4 条：全部显示
+ */
 function JournalPreview({ post }: { post: Post }) {
   if (!post.journal) return null;
   const j = post.journal;
@@ -679,73 +683,26 @@ function JournalPreview({ post }: { post: Post }) {
   const middleCount = totalCount - 4;
 
   return (
-    <div className="rounded-none bg-leaf-50/60 p-2.5 mb-2">
-      <div className="mb-1.5 flex items-center justify-between text-sm text-leaf-700/80">
-        <span className="truncate font-medium">📖 {j.subjectName}</span>
-        <span className="text-xs">第 {j.daysSinceStart} 天 · 共 {j.entriesCount} 条</span>
+    <div className="mb-2 rounded-none bg-leaf-50/60 p-2">
+      <div className="mb-1 flex items-center justify-between text-xs text-leaf-700/80">
+        <span className="truncate font-semibold">📖 {j.subjectName}</span>
+        <span className="text-[11px]">第 {j.daysSinceStart} 天 · 共 {j.entriesCount} 条</span>
       </div>
 
       <div className="relative">
-        <ol className="space-y-2">
+        <ol className="space-y-1.5">
           {first3.map((e) => {
             const meta = STAGE_META[e.stage] || STAGE_META.other;
             return (
               <li key={e.id} className="space-y-1">
-                <div className="flex items-start gap-2">
-                  <span className="mt-1 block h-2 w-2 shrink-0 rounded-full bg-leaf-400" />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="font-medium text-ink-800">
-                        {(() => {
-                const d = new Date(e.entryDate);
-                const yyyy = d.getFullYear();
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                const dd = String(d.getDate()).padStart(2, '0');
-                return `${yyyy}/${mm}/${dd}`;
-              })()}
-                      </span>
-                      <span className={cn('rounded px-1.5 py-0.5 text-[11px] border', meta.color)}>
-                        {meta.emoji} {meta.zh}
-                      </span>
-                    </div>
-                    {e.note && (
-                      <Tooltip content={e.note}>
-                        <p className="line-clamp-1 text-xs text-ink-600/80 mt-0.5">{e.note}</p>
-                      </Tooltip>
-                    )}
-                  </div>
-                </div>
-                {/* 配图展示 - 在心得下面另起一行 */}
-                {e.images && e.images.length > 0 && (
-                  <div className="ml-3 grid grid-cols-9 gap-1">
-                    {e.images.slice(0, 9).map((img, idx) => (
-                      <div
-                        key={idx}
-                        className="relative aspect-square overflow-hidden rounded bg-white/50"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={img}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                        {/* 第 9 张且有剩余 */}
-                        {idx === 8 && e.images.length > 9 && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                            <span className="text-xs font-bold text-white">+{e.images.length - 9}</span>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <EntryItem entry={e} meta={meta} />
               </li>
             );
           })}
 
           {/* 中间省略提示 */}
           {showCompact && (
-            <li className="pl-4 text-xs text-leaf-700/60">
+            <li className="pl-4 text-[10px] text-leaf-700/60">
               + {middleCount} 条更多...
             </li>
           )}
@@ -753,52 +710,53 @@ function JournalPreview({ post }: { post: Post }) {
           {/* 最后 1 条 */}
           {showCompact && lastEntry && (
             <li key={lastEntry.id} className="space-y-1">
-              <div className="flex items-start gap-2">
-                <span className="mt-1 block h-2 w-2 shrink-0 rounded-full bg-leaf-400" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="font-medium text-ink-800">
-                      {(() => {
-                      const d = new Date(lastEntry.entryDate);
-                      const yyyy = d.getFullYear();
-                      const mm = String(d.getMonth() + 1).padStart(2, '0');
-                      const dd = String(d.getDate()).padStart(2, '0');
-                      return `${yyyy}/${mm}/${dd}`;
-                    })()}
-                    </span>
-                    <span className={cn('rounded px-1.5 py-0.5 text-[11px] border',
-                      STAGE_META[lastEntry.stage]?.color || STAGE_META.other.color
-                    )}>
-                      {STAGE_META[lastEntry.stage]?.emoji || STAGE_META.other.emoji} {STAGE_META[lastEntry.stage]?.zh || STAGE_META.other.zh}
-                    </span>
-                  </div>
-                  {lastEntry.note && (
-                    <p className="line-clamp-1 text-xs text-ink-600/80 mt-0.5" title={lastEntry.note}>{lastEntry.note}</p>
-                  )}
-                </div>
-              </div>
-              {/* 配图展示 */}
-              {lastEntry.images && lastEntry.images.length > 0 && (
-                <div className="ml-3 grid grid-cols-9 gap-1">
-                  {lastEntry.images.slice(0, 9).map((img, idx) => (
-                    <div
-                      key={idx}
-                      className="relative aspect-square overflow-hidden rounded bg-white/50"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={img} alt="" className="h-full w-full object-cover" />
-                      {idx === 8 && lastEntry.images.length > 9 && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                          <span className="text-xs font-bold text-white">+{lastEntry.images.length - 9}</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+              <EntryItem entry={lastEntry} meta={STAGE_META[lastEntry.stage] || STAGE_META.other} />
             </li>
           )}
         </ol>
+      </div>
+    </div>
+  );
+}
+
+/** 单条时间线记录项 */
+function EntryItem({ entry, meta }: { entry: any; meta: any }) {
+  const d = new Date(entry.entryDate);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return (
+    <div className="space-y-1">
+      <div className="flex items-start gap-2">
+        <span className="mt-1 block h-2 w-2 shrink-0 rounded-full bg-leaf-400" />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 text-[11px]">
+            <span className="font-medium text-ink-800">{yyyy}/{mm}/{dd}</span>
+            <span className={cn('rounded px-1.5 py-0.5 text-[10px] border', meta.color)}>
+              {meta.emoji} {meta.zh}
+            </span>
+          </div>
+          {entry.note && (
+            <Tooltip content={entry.note}>
+              <p className="mt-0.5 line-clamp-2 text-xs text-ink-600/80">{entry.note}</p>
+            </Tooltip>
+          )}
+          {entry.images && entry.images.length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {entry.images.slice(0, 3).map((img: string, idx: number) => (
+                <div key={idx} className="relative h-8 w-8 overflow-hidden rounded bg-white/50">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img} alt="" className="h-full w-full object-cover" />
+                </div>
+              ))}
+              {entry.images.length > 3 && (
+                <div className="relative flex h-8 w-8 items-center justify-center rounded bg-black/40 text-[10px] text-white">
+                  +{entry.images.length - 3}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -870,7 +828,7 @@ function FeedListCard({
   return (
     <div ref={ref} className="p-4 transition-colors hover:bg-leaf-50/50">
       {/* 第一行：用户头像 + 昵称 + 关注按钮 + 管理员按钮 */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2.5 mb-3">
         <Link
           href={`/user/${post.author.id}`}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
@@ -878,11 +836,17 @@ function FeedListCard({
           <UserAvatar
             src={post.author.avatar}
             alt={post.author.name}
-            size={30}
+            size={36}
             pendant={post.author.equip?.pendant ?? null}
+            ring={false}
             showFestival={false}
           />
-          <span className="font-medium text-[13px] text-ink-800">{post.author.name}</span>
+          <span className="min-w-0 leading-tight">
+            <span className="block truncate font-medium text-[13px] text-ink-800">{post.author.name}</span>
+            <span className="block text-[10px] font-normal text-leaf-700/60">
+              {formatFollowers(post.author.followers)} 粉丝
+            </span>
+          </span>
           <AuthorBadgeIcons post={post} />
         </Link>
         <PostTypeBadge type={post.type} />

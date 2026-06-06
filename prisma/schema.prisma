@@ -888,6 +888,11 @@ model MarketListingItem {
   cover       String
   images      String           @db.Text
   description String           @db.Text
+  taxons      String?          @db.Text
+  tags        String?          @db.Text
+  mainHeadSize String?
+  overallSize  String?
+  potDiameter  String?
   status      MarketItemStatus @default(on_sale)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt

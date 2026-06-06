@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Form } from 'radix-ui';
 import { UserAccountCard } from '@/components/layout/UserAccountCard';
 import { PermissionGate } from '@/components/ui/PermissionGate';
 import { Icon } from '@/components/ui/Icon';
@@ -12,10 +13,11 @@ import { MultiImageUploadGrid } from '@/components/upload/MultiImageUploadGrid';
 import { BoardSelect, type BoardSelection } from '@/components/editor/BoardSelect';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from '@/lib/client-api';
-import { formatPrice } from '@/lib/utils';
+import { cn, formatPrice } from '@/lib/utils';
 import { toast } from '@/components/ui/Toast';
 
 type TradeMode = 'platform_escrow' | 'online_payment' | 'external';
+type ValidationKey = string;
 
 interface ProductItem {
   id?: string;
@@ -23,6 +25,12 @@ interface ProductItem {
   title: string;
   priceYuan: string;
   stock: string;
+  mainHeadSize: string;
+  overallSize: string;
+  potDiameter: string;
+  taxons: BoardSelection[];
+  tags: string[];
+  tagInput: string;
   images: string[];
   description: string;
 }
@@ -43,6 +51,11 @@ export interface MarketListingFormValue {
     title: string;
     price: number;
     stock: number;
+    mainHeadSize?: string | null;
+    overallSize?: string | null;
+    potDiameter?: string | null;
+    taxons?: BoardSelection[];
+    tags?: string[];
     images: string[];
     description: string;
   }[];
@@ -83,21 +96,47 @@ function emptyProduct(): ProductItem {
     title: '',
     priceYuan: '',
     stock: '1',
+    mainHeadSize: '',
+    overallSize: '',
+    potDiameter: '',
+    taxons: [],
+    tags: [],
+    tagInput: '',
     images: [],
     description: '',
   };
 }
 
-function toProductItem(item: MarketListingFormValue['items'][number]): ProductItem {
+function toProductItem(
+  item: MarketListingFormValue['items'][number],
+  fallbackTaxons: BoardSelection[],
+  fallbackTags: string[],
+): ProductItem {
   return {
     id: item.id,
     clientId: item.id ?? createClientId(),
     title: item.title,
     priceYuan: item.price ? String(item.price / 100) : '',
     stock: String(item.stock || 1),
+    mainHeadSize: item.mainHeadSize ?? '',
+    overallSize: item.overallSize ?? '',
+    potDiameter: item.potDiameter ?? '',
+    taxons: item.taxons !== undefined ? item.taxons : fallbackTaxons,
+    tags: item.tags !== undefined ? item.tags : fallbackTags,
+    tagInput: '',
     images: item.images,
     description: item.description,
   };
+}
+
+function mergeTaxons(taxons: BoardSelection[]) {
+  const seen = new Set<string>();
+  return taxons.filter((item) => {
+    const key = `${item.categorySlug}:${item.genusSlug}:${item.speciesSlug}`;
+    if (!item.categorySlug || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export function MarketListingForm({ mode, initialValue }: Props) {
@@ -107,7 +146,6 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   const firstInitialProduct = initialValue?.items?.[0];
 
   const title = initialValue?.title ?? firstInitialProduct?.title ?? '';
-  const [taxons, setTaxons] = useState<BoardSelection[]>(initialValue?.taxons ?? []);
   const [shipFrom, setShipFrom] = useState(initialValue?.shipFrom ?? '');
   const description = initialValue?.description ?? firstInitialProduct?.description ?? '';
   const [tradeModes, setTradeModes] = useState<TradeMode[]>(
@@ -115,13 +153,14 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   );
   const [externalUrl, setExternalUrl] = useState(initialValue?.externalUrl ?? '');
   const [contactNote, setContactNote] = useState(initialValue?.contactNote ?? '');
-  const [tags, setTags] = useState<string[]>(initialValue?.tags ?? []);
-  const [tagInput, setTagInput] = useState('');
   const [products, setProducts] = useState<ProductItem[]>(
-    initialValue?.items?.length ? initialValue.items.map(toProductItem) : [emptyProduct()],
+    initialValue?.items?.length
+      ? initialValue.items.map((item) => toProductItem(item, initialValue?.taxons ?? [], initialValue?.tags ?? []))
+      : [emptyProduct()],
   );
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Set<ValidationKey>>(new Set());
 
   const prices = useMemo(
     () =>
@@ -136,8 +175,35 @@ export function MarketListingForm({ mode, initialValue }: Props) {
       : `${formatPrice(Math.min(...prices))} - ${formatPrice(Math.max(...prices))}`
     : '未填写';
 
+  const clearValidationError = (key: ValidationKey) => {
+    setValidationErrors((prev) => {
+      if (!prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+  };
+
+  const productFieldKey = (clientId: string, field: string) => `product:${clientId}:${field}`;
+
   const updateProduct = (clientId: string, patch: Partial<ProductItem>) => {
     setProducts((prev) => prev.map((item) => (item.clientId === clientId ? { ...item, ...patch } : item)));
+    Object.keys(patch).forEach((field) => clearValidationError(productFieldKey(clientId, field)));
+  };
+
+  const addProductTag = (clientId: string) => {
+    setProducts((prev) => prev.map((item) => {
+      if (item.clientId !== clientId) return item;
+      const value = item.tagInput.trim().replace(/^#/, '');
+      if (!value || item.tags.includes(value) || item.tags.length >= 8) return item;
+      return { ...item, tags: [...item.tags, value], tagInput: '' };
+    }));
+  };
+
+  const removeProductTag = (clientId: string, tag: string) => {
+    updateProduct(clientId, {
+      tags: products.find((item) => item.clientId === clientId)?.tags.filter((item) => item !== tag) ?? [],
+    });
   };
 
   const addProduct = () => {
@@ -157,56 +223,69 @@ export function MarketListingForm({ mode, initialValue }: Props) {
       }
       return [...prev, mode];
     });
+    clearValidationError('tradeModes');
+    clearValidationError('externalContact');
   };
 
-  const addTag = () => {
-    const value = tagInput.trim().replace(/^#/, '');
-    if (!value || tags.includes(value) || tags.length >= 8) return;
-    setTags((prev) => [...prev, value]);
-    setTagInput('');
-  };
+  const listingTaxons = mergeTaxons(products.flatMap((item) => item.taxons));
+  const listingTags = Array.from(new Set(products.flatMap((item) => item.tags))).slice(0, 8);
 
-  const validate = () => {
-    if (taxons.length === 0) return '请选择至少一个板块或品种';
-    if (!shipFrom.trim()) return '请输入发货地';
-    if (tradeModes.length === 0) return '请至少选择一种交易方式';
+  const getRequiredErrors = () => {
+    const errors = new Set<ValidationKey>();
+    if (!shipFrom.trim()) errors.add('shipFrom');
+    if (tradeModes.length === 0) errors.add('tradeModes');
     if (tradeModes.includes('external') && !externalUrl.trim() && !contactNote.trim()) {
-      return '自行联系/三方平台交易请填写联系方式或外部链接';
+      errors.add('externalContact');
     }
 
     for (let i = 0; i < products.length; i += 1) {
       const item = products[i];
-      const prefix = `商品 ${i + 1}`;
       const price = Math.round(Number(item.priceYuan) * 100);
       const stock = Number(item.stock);
-      if (!item.title.trim()) return `${prefix}：请输入名称`;
-      if (!Number.isFinite(price) || price <= 0) return `${prefix}：价格格式不正确`;
-      if (!Number.isInteger(stock) || stock <= 0) return `${prefix}：库存必须是正整数`;
-      if (item.images.length === 0) return `${prefix}：请至少上传一张图片`;
-      if (item.images.length > 9) return `${prefix}：图片最多 9 张`;
-      if (!item.description.trim()) return `${prefix}：请输入描述`;
+      if (!item.title.trim()) errors.add(productFieldKey(item.clientId, 'title'));
+      if (!Number.isFinite(price) || price <= 0) errors.add(productFieldKey(item.clientId, 'priceYuan'));
+      if (!Number.isInteger(stock) || stock <= 0) errors.add(productFieldKey(item.clientId, 'stock'));
+      if (item.taxons.length === 0) errors.add(productFieldKey(item.clientId, 'taxons'));
+      if (item.images.length === 0 || item.images.length > 9) errors.add(productFieldKey(item.clientId, 'images'));
+      if (!item.description.trim()) errors.add(productFieldKey(item.clientId, 'description'));
     }
-    return null;
+
+    return errors;
+  };
+
+  const validate = () => {
+    const errors = getRequiredErrors();
+    setValidationErrors(errors);
+    if (errors.has('shipFrom')) toast.error('请输入发货地');
+    else if (errors.has('tradeModes')) toast.error('请至少选择一种交易方式');
+    else if (errors.has('externalContact')) toast.error('自行联系/三方平台交易请填写联系方式或外部链接');
+    else if (errors.size > 0) toast.error('请完善商品必填信息');
+    return errors.size === 0;
   };
 
   const buildPayload = () => ({
     title: products[0]?.title.trim() || title.trim(),
-    category: taxons[0].categorySlug,
-    genus: taxons[0].genusSlug || undefined,
-    species: taxons[0].speciesSlug || undefined,
-    taxons,
+    category: listingTaxons[0].categorySlug,
+    genus: listingTaxons[0].genusSlug || undefined,
+    species: listingTaxons[0].speciesSlug || undefined,
+    taxons: listingTaxons,
     shipFrom: shipFrom.trim(),
     description: products[0]?.description.trim() || description.trim() || undefined,
     tradeMode: tradeModes[0] ?? 'platform_escrow',
     tradeModes,
     externalUrl: externalUrl.trim() || undefined,
     contactNote: contactNote.trim() || undefined,
-    tags,
+    tags: listingTags,
     items: products.map((item) => ({
       id: item.id,
       title: item.title.trim(),
       price: Math.round(Number(item.priceYuan) * 100),
       stock: Math.max(1, Number(item.stock) || 1),
+      mainHeadSize: item.mainHeadSize.trim() || undefined,
+      overallSize: item.overallSize.trim() || undefined,
+      potDiameter: item.potDiameter.trim() || undefined,
+      taxons: item.taxons,
+      tags: item.tags,
       images: item.images,
       description: item.description.trim(),
     })),
@@ -214,11 +293,7 @@ export function MarketListingForm({ mode, initialValue }: Props) {
 
   const submit = async () => {
     setErr(null);
-    const message = validate();
-    if (message) {
-      setErr(message);
-      return;
-    }
+    if (!validate()) return;
 
     setSubmitting(true);
     try {
@@ -227,7 +302,7 @@ export function MarketListingForm({ mode, initialValue }: Props) {
         ? await api.patch<{ id: string }>(`/api/market/listings/${initialValue.id}`, payload)
         : await api.post<{ id: string }>('/api/market/listings', payload);
       toast.success(isEdit ? '保存成功' : '发布成功');
-      router.push(`/market/${result.id}`);
+      router.push(isEdit ? `/market/${result.id}` : '/market');
       router.refresh();
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : isEdit ? '保存失败' : '发布失败');
@@ -252,58 +327,90 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   }
 
   const form = (
-    <div className="space-y-4">
+    <Form.Root
+      onInvalidCapture={() => setValidationErrors(getRequiredErrors())}
+      onSubmit={(event) => {
+        event.preventDefault();
+        void submit();
+      }}
+      className="space-y-4"
+    >
       <section className="card space-y-4 p-5">
         <SectionTitle title="交易方式" desc="官方推荐平台担保，也允许用户自行联系。" />
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          {TRADE_MODES.map((modeItem) => (
-            <button
-              key={modeItem.key}
-              type="button"
-              onClick={() => toggleTradeMode(modeItem.key)}
-              className={[
-                'rounded-lg border p-4 text-left transition-colors',
-                tradeModes.includes(modeItem.key)
-                  ? 'border-leaf-400 bg-leaf-50 ring-2 ring-leaf-100'
-                  : 'border-leaf-100 bg-white hover:border-leaf-300',
-              ].join(' ')}
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className={[
-                    'grid h-4 w-4 place-items-center rounded border text-[10px]',
-                    tradeModes.includes(modeItem.key)
-                      ? 'border-leaf-600 bg-leaf-600 text-white'
-                      : 'border-leaf-200 bg-white text-transparent',
-                  ].join(' ')}
-                >
-                  ✓
-                </span>
-                <span className="font-semibold text-ink-800">{modeItem.title}</span>
-                {modeItem.badge && (
-                  <span className="rounded-full bg-leaf-600 px-1.5 py-0.5 text-[10px] text-white">
-                    {modeItem.badge}
-                  </span>
+        <Field
+          name="tradeModes"
+          label="交易方式"
+          required
+          invalid={validationErrors.has('tradeModes')}
+          message="请至少选择一种交易方式"
+          hiddenValue={tradeModes.join(',')}
+        >
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            {TRADE_MODES.map((modeItem) => (
+              <button
+                key={modeItem.key}
+                type="button"
+                onClick={() => toggleTradeMode(modeItem.key)}
+                className={cn(
+                  'rounded-lg border p-4 text-left transition-colors',
+                  tradeModes.includes(modeItem.key)
+                    ? 'border-leaf-400 bg-leaf-50 ring-2 ring-leaf-100'
+                    : 'border-leaf-100 bg-white hover:border-leaf-300',
+                  validationErrors.has('tradeModes') && 'border-rose-300 bg-rose-50/30',
                 )}
-              </div>
-              <p className="mt-2 text-xs leading-5 text-leaf-700/70">{modeItem.desc}</p>
-            </button>
-          ))}
-        </div>
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      'grid h-4 w-4 place-items-center rounded border text-[10px]',
+                      tradeModes.includes(modeItem.key)
+                        ? 'border-leaf-600 bg-leaf-600 text-white'
+                        : 'border-leaf-200 bg-white text-transparent',
+                    )}
+                  >
+                    ✓
+                  </span>
+                  <span className="font-semibold text-ink-800">{modeItem.title}</span>
+                  {modeItem.badge && (
+                    <span className="rounded-full bg-leaf-600 px-1.5 py-0.5 text-[10px] text-white">
+                      {modeItem.badge}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-2 text-xs leading-5 text-leaf-700/70">{modeItem.desc}</p>
+              </button>
+            ))}
+          </div>
+        </Field>
 
         {tradeModes.includes('external') && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field label="外部链接">
               <Input
                 value={externalUrl}
-                onChange={(e) => setExternalUrl(e.target.value)}
+                error={validationErrors.has('externalContact')}
+                onChange={(e) => {
+                  setExternalUrl(e.target.value);
+                  if (e.target.value.trim() || contactNote.trim()) clearValidationError('externalContact');
+                }}
                 placeholder="可填写闲鱼、淘宝等链接"
               />
             </Field>
-            <Field label="联系方式 / 说明">
+            <Field
+              name="externalContact"
+              label="联系方式 / 说明"
+              required
+              invalid={validationErrors.has('externalContact')}
+              message="请填写联系方式或外部链接"
+              hiddenValue={externalUrl.trim() || contactNote.trim()}
+            >
               <Input
                 value={contactNote}
-                onChange={(e) => setContactNote(e.target.value)}
+                error={validationErrors.has('externalContact')}
+                onChange={(e) => {
+                  setContactNote(e.target.value);
+                  if (e.target.value.trim() || externalUrl.trim()) clearValidationError('externalContact');
+                }}
                 maxLength={120}
                 placeholder="例如：私信我确认库存"
               />
@@ -316,7 +423,7 @@ export function MarketListingForm({ mode, initialValue }: Props) {
         <section key={product.clientId} className="card space-y-4 p-5">
           <div className="flex items-center justify-between gap-3">
             <SectionTitle
-              title={`商品 ${idx + 1}`}
+              title={`#${idx + 1}`}
               desc={idx === 0 ? '第一张图会作为商品封面。' : undefined}
             />
             {products.length > 1 && (
@@ -331,26 +438,50 @@ export function MarketListingForm({ mode, initialValue }: Props) {
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_160px_120px]">
-            <Field label="商品名称">
+            <Field
+              name={productFieldKey(product.clientId, 'title')}
+              label="商品名称"
+              required
+              invalid={validationErrors.has(productFieldKey(product.clientId, 'title'))}
+              message="请输入商品名称"
+            >
               <Input
+                required
                 value={product.title}
+                error={validationErrors.has(productFieldKey(product.clientId, 'title'))}
                 onChange={(e) => updateProduct(product.clientId, { title: e.target.value })}
                 maxLength={50}
                 showCount
                 placeholder="例如：冰梅老桩"
               />
             </Field>
-            <Field label="价格（元）">
+            <Field
+              name={productFieldKey(product.clientId, 'priceYuan')}
+              label="价格（元）"
+              required
+              invalid={validationErrors.has(productFieldKey(product.clientId, 'priceYuan'))}
+              message="请输入有效价格"
+            >
               <Input
+                required
                 value={product.priceYuan}
+                error={validationErrors.has(productFieldKey(product.clientId, 'priceYuan'))}
                 onChange={(e) => updateProduct(product.clientId, { priceYuan: e.target.value })}
                 inputMode="decimal"
                 placeholder="0.00"
               />
             </Field>
-            <Field label="库存">
+            <Field
+              name={productFieldKey(product.clientId, 'stock')}
+              label="库存"
+              required
+              invalid={validationErrors.has(productFieldKey(product.clientId, 'stock'))}
+              message="库存必须是正整数"
+            >
               <Input
+                required
                 value={product.stock}
+                error={validationErrors.has(productFieldKey(product.clientId, 'stock'))}
                 onChange={(e) => updateProduct(product.clientId, { stock: e.target.value })}
                 inputMode="numeric"
                 placeholder="1"
@@ -358,36 +489,139 @@ export function MarketListingForm({ mode, initialValue }: Props) {
             </Field>
           </div>
 
-          {idx === 0 && (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_180px]">
-              <Field label="板块 / 属 / 品种">
-                <BoardSelect
-                  multiple
-                  values={taxons}
-                  onValuesChange={setTaxons}
-                  apiPath="/api/boards?kind=family&withSpecies=1"
-                  placeholder="搜索并选择一个或多个品种"
-                  max={12}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <Field label="主头尺寸">
+              <Input
+                value={product.mainHeadSize}
+                onChange={(e) => updateProduct(product.clientId, { mainHeadSize: e.target.value })}
+                maxLength={40}
+                placeholder="如：3.5cm"
+              />
+            </Field>
+            <Field label="整体尺寸">
+              <Input
+                value={product.overallSize}
+                onChange={(e) => updateProduct(product.clientId, { overallSize: e.target.value })}
+                maxLength={40}
+                placeholder="如：8cm × 7cm"
+              />
+            </Field>
+            <Field label="花盆外径">
+              <Input
+                value={product.potDiameter}
+                onChange={(e) => updateProduct(product.clientId, { potDiameter: e.target.value })}
+                maxLength={40}
+                placeholder="如：10cm"
+              />
+            </Field>
+          </div>
+
+          <div
+            className={cn(
+              'grid grid-cols-1 gap-4',
+              idx === 0
+                ? 'lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.75fr)_180px]'
+                : 'lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.75fr)]',
+            )}
+          >
+            <Field
+              name={productFieldKey(product.clientId, 'taxons')}
+              label="板块 / 属 / 品种"
+              required
+              invalid={validationErrors.has(productFieldKey(product.clientId, 'taxons'))}
+              message="请选择至少一个板块或品种"
+              hiddenValue={product.taxons.map((item) => [item.categorySlug, item.genusSlug, item.speciesSlug].filter(Boolean).join('/')).join(',')}
+            >
+              <BoardSelect
+                multiple
+                values={product.taxons}
+                onValuesChange={(next) => {
+                  updateProduct(product.clientId, { taxons: next });
+                  if (next.length > 0) clearValidationError(productFieldKey(product.clientId, 'taxons'));
+                }}
+                apiPath="/api/boards?kind=family&withSpecies=1"
+                placeholder="搜索并选择一个或多个品种"
+                invalid={validationErrors.has(productFieldKey(product.clientId, 'taxons'))}
+                max={12}
+              />
+              <div className="mt-1 text-[11px] text-leaf-700/60">
+                可多选，用于这个商品的分类和搜索筛选。
+              </div>
+            </Field>
+
+            <Field label="标签">
+              <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-lg border border-leaf-200 bg-white p-2">
+                {product.tags.map((tag) => (
+                  <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-leaf-100 px-2 py-0.5 text-xs text-leaf-700">
+                    #{tag}
+                    <button
+                      type="button"
+                      onClick={() => removeProductTag(product.clientId, tag)}
+                      className="text-leaf-600 hover:text-leaf-900"
+                    >
+                      x
+                    </button>
+                  </span>
+                ))}
+                <input
+                  className="min-w-[120px] flex-1 bg-transparent px-1 text-sm outline-none"
+                  value={product.tagInput}
+                  onChange={(e) => updateProduct(product.clientId, { tagInput: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                      e.preventDefault();
+                      addProductTag(product.clientId);
+                    }
+                  }}
+                  placeholder={product.tags.length >= 8 ? '最多 8 个标签' : '输入后回车'}
+                  disabled={product.tags.length >= 8}
                 />
-                <div className="mt-1 text-[11px] text-leaf-700/60">
-                  可多选，第一个选择会作为列表筛选主分类。
-                </div>
-              </Field>
-              <Field label="发货地">
+                <button type="button" onClick={() => addProductTag(product.clientId)} className="btn-outline !px-2.5 !py-1 !text-xs">
+                  添加
+                </button>
+              </div>
+              <div className="mt-1 text-[11px] text-leaf-700/60">
+                最多 8 个，用于搜索和推荐。
+              </div>
+            </Field>
+
+            {idx === 0 && (
+              <Field
+                name="shipFrom"
+                label="发货地"
+                required
+                invalid={validationErrors.has('shipFrom')}
+                message="请输入发货地"
+              >
                 <Input
+                  required
                   value={shipFrom}
-                  onChange={(e) => setShipFrom(e.target.value)}
+                  error={validationErrors.has('shipFrom')}
+                  onChange={(e) => {
+                    setShipFrom(e.target.value);
+                    if (e.target.value.trim()) clearValidationError('shipFrom');
+                  }}
                   maxLength={40}
                   placeholder="如：广东广州"
                 />
               </Field>
-            </div>
-          )}
+            )}
+          </div>
 
-          <Field label="商品图片">
+          <Field
+            name={productFieldKey(product.clientId, 'images')}
+            label="商品图片"
+            required
+            invalid={validationErrors.has(productFieldKey(product.clientId, 'images'))}
+            message="请至少上传一张图片"
+            hiddenValue={product.images.join(',')}
+          >
             <MultiImageUploadGrid
               value={product.images}
-              onChange={(images) => updateProduct(product.clientId, { images })}
+              onChange={(images) => {
+                updateProduct(product.clientId, { images });
+                if (images.length > 0) clearValidationError(productFieldKey(product.clientId, 'images'));
+              }}
               max={9}
               showCount={false}
               gridClassName="grid-cols-[repeat(auto-fill,80px)] justify-start gap-2"
@@ -401,9 +635,17 @@ export function MarketListingForm({ mode, initialValue }: Props) {
             </div>
           </Field>
 
-          <Field label="商品描述">
+          <Field
+            name={productFieldKey(product.clientId, 'description')}
+            label="商品描述"
+            required
+            invalid={validationErrors.has(productFieldKey(product.clientId, 'description'))}
+            message="请输入商品描述"
+          >
             <Textarea
+              required
               value={product.description}
+              error={validationErrors.has(productFieldKey(product.clientId, 'description'))}
               onChange={(e) => updateProduct(product.clientId, { description: e.target.value })}
               maxLength={2000}
               showCount
@@ -412,43 +654,6 @@ export function MarketListingForm({ mode, initialValue }: Props) {
             />
           </Field>
 
-          {idx === 0 && (
-            <Field label="标签">
-              <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-leaf-200 bg-white p-2">
-                {tags.map((tag) => (
-                  <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-leaf-100 px-2 py-0.5 text-xs text-leaf-700">
-                    #{tag}
-                    <button
-                      type="button"
-                      onClick={() => setTags((prev) => prev.filter((item) => item !== tag))}
-                      className="text-leaf-600 hover:text-leaf-900"
-                    >
-                      x
-                    </button>
-                  </span>
-                ))}
-                <input
-                  className="min-w-[140px] flex-1 bg-transparent px-1 text-sm outline-none"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ',') {
-                      e.preventDefault();
-                      addTag();
-                    }
-                  }}
-                  placeholder={tags.length >= 8 ? '最多 8 个标签' : '输入标签后按回车'}
-                  disabled={tags.length >= 8}
-                />
-                <button type="button" onClick={addTag} className="btn-outline !px-2.5 !py-1 !text-xs">
-                  添加
-                </button>
-              </div>
-              <div className="mt-1 text-[11px] text-leaf-700/60">
-                用于交易中心搜索和推荐，最多 8 个。
-              </div>
-            </Field>
-          )}
         </section>
       ))}
 
@@ -475,14 +680,14 @@ export function MarketListingForm({ mode, initialValue }: Props) {
             <Link href={isEdit && initialValue?.id ? `/market/${initialValue.id}` : '/market'} className="btn-outline">
               取消
             </Link>
-            <button type="button" onClick={submit} disabled={submitting} className="btn-primary">
+            <Form.Submit disabled={submitting} className="btn-primary">
               <Icon name="check" size={14} />
               {submitting ? (isEdit ? '保存中...' : '发布中...') : (isEdit ? '保存修改' : '发布商品')}
-            </button>
+            </Form.Submit>
           </div>
         </div>
       </div>
-    </div>
+    </Form.Root>
   );
 
   return (
@@ -512,10 +717,56 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  name,
+  required,
+  invalid,
+  message,
+  hiddenValue,
+  children,
+}: {
+  label: string;
+  name?: string;
+  required?: boolean;
+  invalid?: boolean;
+  message?: string;
+  hiddenValue?: string;
+  children: React.ReactNode;
+}) {
+  if (name) {
+    return (
+      <Form.Field name={name} serverInvalid={invalid}>
+        <Form.Label className="mb-1.5 block text-sm font-semibold text-ink-800">
+          {required && <span className="text-rose-500">*</span>} {label}
+        </Form.Label>
+        {hiddenValue !== undefined && (
+          <Form.Control
+            value={hiddenValue}
+            required={required}
+            readOnly
+            tabIndex={-1}
+            aria-hidden
+            className="sr-only"
+          />
+        )}
+        {children}
+        {message && (
+          <Form.Message
+            match="valueMissing"
+            forceMatch={invalid}
+            className="mt-1.5 block text-xs text-rose-600"
+          >
+            {message}
+          </Form.Message>
+        )}
+      </Form.Field>
+    );
+  }
+
   return (
     <div>
-      <label className="mb-1.5 block text-xs font-medium text-leaf-700/80">{label}</label>
+      <label className="mb-1.5 block text-sm font-semibold text-ink-800">{label}</label>
       {children}
     </div>
   );

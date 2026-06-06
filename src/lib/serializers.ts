@@ -71,6 +71,10 @@ export function serializeUser(u: UserWithRelations): User {
     revokedPermissions: (u.permissionOverrides ?? [])
       .filter((p) => p.effect === 'revoke')
       .map((p) => p.permission),
+    privacy: {
+      showFollowing: u.privacyShowFollowing,
+      showFollowers: u.privacyShowFollowers,
+    },
   };
 }
 

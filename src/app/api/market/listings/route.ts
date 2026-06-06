@@ -19,6 +19,16 @@ const CreateItemBody = z.object({
   title: z.string().min(2, '商品名称至少 2 个字').max(50, '商品名称不能超过 50 个字'),
   price: z.number().int().min(1, '价格必须大于 0'),
   stock: z.number().int().min(1).max(9999).default(1),
+  mainHeadSize: z.string().max(40).optional(),
+  overallSize: z.string().max(40).optional(),
+  potDiameter: z.string().max(40).optional(),
+  taxons: z.array(z.object({
+    categorySlug: z.string().min(1),
+    genusSlug: z.string().optional().default(''),
+    speciesSlug: z.string().optional().default(''),
+    label: z.string().optional(),
+  })).min(1).max(12).optional(),
+  tags: z.array(z.string().min(1).max(20)).max(8).optional(),
   images: z.array(z.string().url()).min(1, '每个商品至少上传一张图').max(9, '每个商品最多上传 9 张图'),
   description: z.string().min(2, '商品描述不能为空').max(2000),
 });
@@ -170,7 +180,16 @@ export async function GET(req: Request) {
           items: {
             where: { status: { not: 'off_shelf' } },
             orderBy: { createdAt: 'asc' },
-            select: { id: true, title: true, description: true, price: true, stock: true, cover: true, images: true },
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              price: true,
+              stock: true,
+              cover: true,
+              images: true,
+              createdAt: true,
+            },
           },
           taxons: {
             orderBy: { id: 'asc' },
@@ -180,37 +199,48 @@ export async function GET(req: Request) {
       });
 
       const tradeModesMap = await loadListingTradeModes(list.map((item) => item.id));
-      products = list.map((p) => ({
-        type: 'product',
-        id: p.id,
-        title: p.title,
-        description: p.description || undefined,
-        cover: p.cover,
-        images: collectListingImages(p.items, p.cover),
-        price: p.minPrice,
-        maxPrice: p.maxPrice,
-        itemCount: p.itemCount,
-        views: p.viewCount,
-        comments: p.commentCount,
-        tradeMode: p.tradeMode,
-        tradeModes: tradeModesMap[p.id] ?? [p.tradeMode],
-        createdAt: p.createdAt.toISOString(),
-        url: `/market/${p.id}`,
-        shipFrom: p.shipFrom,
-        seller: p.seller,
-        tags: parseJsonArray(p.tags),
-        genus: p.genus || undefined,
-        taxons: p.taxons,
-        products: p.items.map((item) => ({
-          id: item.id,
-          title: item.title,
-          description: item.description,
-          price: item.price,
-          stock: item.stock,
-          cover: item.cover,
-          images: parseJsonArray(item.images),
-        })),
-      }));
+      const itemMetaMap = await loadItemMeta(list.flatMap((item) => item.items.map((product) => product.id)));
+      products = list.flatMap((p) => {
+        const listingTags = parseJsonArray(p.tags);
+        return p.items
+          .map((item) => {
+            const meta = itemMetaMap[item.id];
+            const itemTaxons = meta?.taxons;
+            const itemTags = meta?.tags;
+            const images = parseJsonArray(item.images);
+            return {
+              type: 'product' as const,
+              id: item.id,
+              listingId: p.id,
+              itemId: item.id,
+              title: item.title,
+              description: item.description || p.description || undefined,
+              cover: item.cover,
+              images: images.length ? images : [item.cover],
+              price: item.price,
+              itemCount: 1,
+              views: p.viewCount,
+              comments: p.commentCount,
+              tradeMode: p.tradeMode,
+              tradeModes: tradeModesMap[p.id] ?? [p.tradeMode],
+              createdAt: item.createdAt.toISOString(),
+              url: `/market/${p.id}?item=${item.id}`,
+              shipFrom: p.shipFrom,
+              seller: p.seller,
+              tags: itemTags ?? listingTags,
+              genus: p.genus || undefined,
+              taxons: itemTaxons ?? p.taxons,
+              stock: item.stock,
+              collected: false,
+            };
+          })
+          .filter((item) => {
+            if (priceMin && item.price < priceMin) return false;
+            if (priceMax && item.price > priceMax) return false;
+            if (!matchesItemTaxon(item.taxons, family, genus, species)) return false;
+            return true;
+          });
+      });
     }
 
     let auctions: ListingItem[] = [];
@@ -278,7 +308,7 @@ export async function GET(req: Request) {
 
     const merged = [...products, ...auctions];
     if (me) {
-      const productIds = merged.flatMap((item) => item.products?.map((product) => product.id) ?? []);
+      const productIds = merged.flatMap((item) => item.type === 'product' && item.itemId ? [item.itemId] : []);
       if (productIds.length) {
         const rows = await prisma.$queryRaw<Array<{ itemId: string }>>`
           SELECT itemId FROM market_listing_item_collects
@@ -286,11 +316,8 @@ export async function GET(req: Request) {
         `;
         const collectedIds = new Set(rows.map((row) => row.itemId));
         for (const item of merged) {
-          if (item.products) {
-            item.products = item.products.map((product) => ({
-              ...product,
-              collected: collectedIds.has(product.id),
-            }));
+          if (item.type === 'product' && item.itemId) {
+            item.collected = collectedIds.has(item.itemId);
           }
         }
       }
@@ -337,7 +364,6 @@ export const POST = handler(async (req) => {
 
   const body = CreateListingBody.parse(await req.json());
   const tradeModes = normalizeTradeModes(body.tradeModes, body.tradeMode);
-  const itemPrices = body.items.map((item) => item.price);
   const cover = body.items[0]?.images[0];
   if (!cover) return fail(400, '请至少上传一张商品图');
   const taxons = normalizeTaxons(body);
@@ -363,63 +389,72 @@ export const POST = handler(async (req) => {
     return fail(400, '请选择有效的植物板块');
   }
 
-  const [genus, species] = await Promise.all([
-    taxons[0].genusSlug
-      ? prisma.genus.findFirst({ where: { slug: taxons[0].genusSlug }, select: { id: true } })
-      : null,
-    taxons[0].speciesSlug
-      ? prisma.species.findFirst({ where: { slug: taxons[0].speciesSlug }, select: { id: true } })
-      : null,
-  ]);
+  const listingIds: string[] = [];
 
-  const listing = await prisma.marketListing.create({
-    data: {
-      sellerId: me.id,
-      title: body.title.trim(),
-      category: taxons[0].categorySlug,
-      genusId: genus?.id ?? null,
-      speciesId: species?.id ?? null,
-      shipFrom: body.shipFrom.trim(),
-      tags: stringifyJson(body.tags ?? []),
-      description: body.description?.trim() || null,
-      tradeMode: tradeModes[0],
-      externalUrl: tradeModes.includes('external') ? body.externalUrl || null : null,
-      contactNote: body.contactNote?.trim() || null,
-      cover,
-      minPrice: Math.min(...itemPrices),
-      maxPrice: Math.max(...itemPrices),
-      itemCount: body.items.length,
-      status: 'on_sale',
-      items: {
-        create: body.items.map((item) => ({
-          title: item.title.trim(),
-          price: item.price,
-          stock: item.stock,
-          cover: item.images[0],
-          images: stringifyJson(item.images),
-          description: item.description.trim(),
-          status: 'on_sale',
-        })),
+  for (const item of body.items) {
+    const itemTaxons = normalizeTaxonList(item.taxons?.length ? item.taxons : taxons);
+    const [genus, species] = await Promise.all([
+      itemTaxons[0].genusSlug
+        ? prisma.genus.findFirst({ where: { slug: itemTaxons[0].genusSlug }, select: { id: true } })
+        : null,
+      itemTaxons[0].speciesSlug
+        ? prisma.species.findFirst({ where: { slug: itemTaxons[0].speciesSlug }, select: { id: true } })
+        : null,
+    ]);
+    const listingTags = item.tags ?? body.tags ?? [];
+
+    const listing = await prisma.marketListing.create({
+      data: {
+        sellerId: me.id,
+        title: item.title.trim(),
+        category: itemTaxons[0].categorySlug,
+        genusId: genus?.id ?? null,
+        speciesId: species?.id ?? null,
+        shipFrom: body.shipFrom.trim(),
+        tags: stringifyJson(listingTags),
+        description: item.description.trim() || body.description?.trim() || null,
+        tradeMode: tradeModes[0],
+        externalUrl: tradeModes.includes('external') ? body.externalUrl || null : null,
+        contactNote: body.contactNote?.trim() || null,
+        cover: item.images[0],
+        minPrice: item.price,
+        maxPrice: item.price,
+        itemCount: 1,
+        status: 'on_sale',
+        items: {
+          create: [{
+            title: item.title.trim(),
+            price: item.price,
+            stock: item.stock,
+            cover: item.images[0],
+            images: stringifyJson(item.images),
+            description: item.description.trim(),
+            status: 'on_sale',
+          }],
+        },
+        taxons: {
+          create: itemTaxons.map((taxon) => ({
+            categorySlug: taxon.categorySlug,
+            genusSlug: taxon.genusSlug || null,
+            speciesSlug: taxon.speciesSlug || null,
+            label: taxon.label || formatTaxonLabel(taxon),
+          })),
+        },
       },
-      taxons: {
-        create: taxons.map((item) => ({
-          categorySlug: item.categorySlug,
-          genusSlug: item.genusSlug || null,
-          speciesSlug: item.speciesSlug || null,
-          label: item.label || formatTaxonLabel(item),
-        })),
-      },
-    },
-    select: { id: true },
-  });
+      select: { id: true },
+    });
 
-  await prisma.$executeRaw`
-    UPDATE market_listings
-    SET tradeModes = ${stringifyJson(tradeModes)}
-    WHERE id = ${listing.id}
-  `;
+    await prisma.$executeRaw`
+      UPDATE market_listings
+      SET tradeModes = ${stringifyJson(tradeModes)}
+      WHERE id = ${listing.id}
+    `;
 
-  return { id: listing.id };
+    await saveItemMeasurements(listing.id, [{ ...item, taxons: itemTaxons, tags: listingTags }]);
+    listingIds.push(listing.id);
+  }
+
+  return { id: listingIds[0], ids: listingIds };
 });
 
 interface ListingItem {
@@ -432,6 +467,8 @@ interface ListingItem {
   price: number;
   maxPrice?: number;
   itemCount?: number;
+  listingId?: string;
+  itemId?: string;
   tradeMode?: MarketTradeMode;
   tradeModes?: MarketTradeMode[];
   originalPrice?: number | null;
@@ -463,6 +500,8 @@ interface ListingItem {
     cover: string;
     images: string[];
   }[];
+  stock?: number;
+  collected?: boolean;
   genus?: {
     slug: string;
     name: string;
@@ -511,6 +550,111 @@ function collectListingImages(items: { cover: string; images: string }[], fallba
   return Array.from(new Set([fallback, ...images])).slice(0, 4);
 }
 
+type ItemTaxon = {
+  categorySlug: string;
+  genusSlug: string | null;
+  speciesSlug: string | null;
+  label: string;
+};
+
+async function loadItemMeta(itemIds: string[]) {
+  if (!itemIds.length) return {} as Record<string, { taxons?: ItemTaxon[]; tags?: string[] }>;
+  try {
+    const rows = await prisma.$queryRaw<Array<{ id: string; taxons: string | null; tags: string | null }>>`
+      SELECT id, taxons, tags
+      FROM market_listing_items
+      WHERE id IN (${Prisma.join(itemIds)})
+    `;
+    return rows.reduce<Record<string, { taxons?: ItemTaxon[]; tags?: string[] }>>((map, row) => {
+      map[row.id] = {
+        taxons: row.taxons === null ? undefined : parseItemTaxons(row.taxons),
+        tags: row.tags === null ? undefined : parseJsonArray(row.tags),
+      };
+      return map;
+    }, {});
+  } catch {
+    return {};
+  }
+}
+
+function parseItemTaxons(raw: string | null | undefined): ItemTaxon[] {
+  if (!raw) return [];
+  try {
+    const value = JSON.parse(raw);
+    if (!Array.isArray(value)) return [];
+    return value
+      .map((item) => ({
+        categorySlug: typeof item?.categorySlug === 'string' ? item.categorySlug : '',
+        genusSlug: typeof item?.genusSlug === 'string' && item.genusSlug ? item.genusSlug : null,
+        speciesSlug: typeof item?.speciesSlug === 'string' && item.speciesSlug ? item.speciesSlug : null,
+        label: typeof item?.label === 'string' ? item.label : formatTaxonLabel({
+          categorySlug: typeof item?.categorySlug === 'string' ? item.categorySlug : '',
+          genusSlug: typeof item?.genusSlug === 'string' ? item.genusSlug : '',
+          speciesSlug: typeof item?.speciesSlug === 'string' ? item.speciesSlug : '',
+        }),
+      }))
+      .filter((item) => item.categorySlug);
+  } catch {
+    return [];
+  }
+}
+
+function matchesItemTaxon(
+  taxons: ItemTaxon[] | undefined,
+  family: string,
+  genus: string,
+  species: string,
+) {
+  if (!family && !genus && !species) return true;
+  const list = taxons ?? [];
+  if (list.length === 0) return true;
+  return list.some((item) => {
+    if (family && item.categorySlug !== family) return false;
+    if (genus && item.genusSlug !== genus) return false;
+    if (species && item.speciesSlug !== species) return false;
+    return true;
+  });
+}
+
+async function saveItemMeasurements(
+  listingId: string,
+  items: Array<{
+    mainHeadSize?: string;
+    overallSize?: string;
+    potDiameter?: string;
+    taxons?: Array<{
+      categorySlug: string;
+      genusSlug?: string;
+      speciesSlug?: string;
+      label?: string;
+    }>;
+    tags?: string[];
+  }>,
+) {
+  try {
+    const rows = await prisma.marketListingItem.findMany({
+      where: { listingId },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true },
+    });
+
+    for (let index = 0; index < rows.length && index < items.length; index += 1) {
+      const item = items[index];
+      await prisma.$executeRaw`
+        UPDATE market_listing_items
+        SET mainHeadSize = ${item.mainHeadSize?.trim() || null},
+            overallSize = ${item.overallSize?.trim() || null},
+            potDiameter = ${item.potDiameter?.trim() || null},
+            taxons = ${item.taxons?.length ? stringifyJson(item.taxons) : null},
+            tags = ${stringifyJson(item.tags ?? [])}
+        WHERE id = ${rows[index].id}
+      `;
+    }
+  } catch {
+    // Columns may not exist before the next Prisma db push; do not block publishing.
+  }
+}
+
 function normalizeTaxons(body: z.infer<typeof CreateListingBody>) {
   const source = body.taxons?.length
     ? body.taxons
@@ -521,6 +665,15 @@ function normalizeTaxons(body: z.infer<typeof CreateListingBody>) {
         label: undefined,
       }];
 
+  return normalizeTaxonList(source);
+}
+
+function normalizeTaxonList(source: Array<{
+  categorySlug: string;
+  genusSlug?: string;
+  speciesSlug?: string;
+  label?: string;
+}>) {
   const seen = new Set<string>();
   return source
     .map((item) => ({

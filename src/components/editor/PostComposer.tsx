@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Form } from "radix-ui";
 import type { PostType } from "@/lib/types";
 import { PostPreview } from "@/components/editor/PostPreview";
 import { Icon, type IconName } from "@/components/ui/Icon";
@@ -19,7 +20,6 @@ import { emptyJournalDraft, type JournalDraft } from "@/components/post/JournalE
 import { PostTypeBadge } from "@/components/ui/PostTypeBadge";
 import { FieldRow } from "@/components/editor/post-form/FieldRow";
 import { PostContentFields } from "@/components/editor/post-form/PostContentFields";
-import { DraftSidebar } from "@/components/editor/post-form/DraftSidebar";
 import type { PostDraft } from "@/components/editor/post-form/types";
 import { cn } from "@/lib/utils";
 
@@ -137,16 +137,26 @@ export function PostComposer({
     };
   }, []);
 
+  const clearValidationError = (key: string) => {
+    setValidationErrors((prev) => {
+      if (!prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+  };
+
   const onBoardChange = (selection: BoardSelection) => {
     setCategorySlug(selection.categorySlug);
     setGenusSlug(selection.genusSlug);
     setSpeciesSlug(selection.speciesSlug);
     setBoardLabel(selection.label ?? "");
-    setValidationErrors((prev) => {
-      const next = new Set(prev);
-      next.delete("board");
-      return next;
-    });
+    clearValidationError("board");
+  };
+
+  const onTagChange = (nextTags: string[]) => {
+    setTags(nextTags);
+    if (nextTags.length > 0) clearValidationError("tags");
   };
 
   const buildPayload = () => ({
@@ -201,10 +211,6 @@ export function PostComposer({
 
   const saveDraft = async () => {
     if (!onSaveDraft) return;
-    if (!title.trim() && !hasContent()) {
-      toast.error(t("editor.errors.contentRequired"));
-      return;
-    }
     try {
       const id = await onSaveDraft({ id: draftId ?? undefined, ...buildPayload() }, title || "(untitled)", type);
       if (typeof id === "string") setDraftId(id);
@@ -215,23 +221,29 @@ export function PostComposer({
     }
   };
 
-  const validate = () => {
+  const getRequiredErrors = () => {
     const errors = new Set<string>();
-    if (!title.trim()) {
-      errors.add("title");
+    if (!title.trim()) errors.add("title");
+    if (!type) errors.add("type");
+    if (!hasContent()) errors.add("content");
+    if (!genusSlug && !categorySlug && !speciesSlug) errors.add("board");
+    if (tags.length === 0) errors.add("tags");
+    return errors;
+  };
+
+  const validate = () => {
+    const errors = getRequiredErrors();
+    if (errors.has("title")) {
       toast.error(t("editor.errors.titleRequired"));
     }
-    if (!genusSlug && !categorySlug && !speciesSlug) {
-      errors.add("board");
+    if (errors.has("board")) {
       toast.error(t("editor.chooseBoard"));
     }
-    if ((type === "rich" || type === "event") && !hasContent()) {
-      errors.add("content");
+    if (errors.has("content")) {
       toast.error(t("editor.errors.contentRequired"));
     }
-    if ((type === "short" || type === "help") && !content.trim()) {
-      errors.add("content");
-      toast.error(t("editor.errors.contentRequired"));
+    if (errors.has("tags")) {
+      toast.error("请至少添加一个话题");
     }
     if (type === "video" && !videoUrl.trim()) {
       errors.add("content");
@@ -332,13 +344,19 @@ export function PostComposer({
   };
 
   return (
-    <>
+    <Form.Root
+      onInvalidCapture={() => setValidationErrors(getRequiredErrors())}
+      onSubmit={(event) => {
+        event.preventDefault();
+        void submit();
+      }}
+    >
       <div
         className={cn(
           "editor-workspace grid grid-cols-1 gap-4 pb-36 lg:pb-24",
           isEdit
-            ? "2xl:grid-cols-[minmax(740px,1fr)_430px]"
-            : "2xl:grid-cols-[minmax(740px,1fr)_300px_430px]",
+            ? "2xl:grid-cols-[minmax(740px,1fr)_330px]"
+            : "2xl:grid-cols-[minmax(740px,1fr)_330px]",
         )}
       >
         <section className="flex min-h-[calc(100dvh-221px)] min-w-0 flex-col gap-4 lg:min-h-[calc(100dvh-157px)]">
@@ -358,29 +376,86 @@ export function PostComposer({
           </header>
 
           <div className="flex flex-1 flex-col rounded-xl border border-leaf-100 bg-white p-5 shadow-sm">
-            <FieldRow label={<><span className="text-rose-500">*</span> 帖子标题</>}>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="银冠玉养护记录 | 从单头到爆仔的 3 年变化"
-                maxLength={50}
-                showCount
+            <Form.Field name="title" serverInvalid={validationErrors.has("title")}>
+              <Form.Label className="mb-1.5 block text-sm font-semibold text-ink-800">
+                <span className="text-rose-500">*</span> 帖子标题
+              </Form.Label>
+              <Form.Control asChild>
+                <Input
+                  required
+                  value={title}
+                  error={validationErrors.has("title")}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    if (e.target.value.trim()) clearValidationError("title");
+                  }}
+                  placeholder="银冠玉养护记录 | 从单头到爆仔的 3 年变化"
+                  maxLength={50}
+                  showCount
+                />
+              </Form.Control>
+              <Form.Message
+                match="valueMissing"
+                forceMatch={validationErrors.has("title")}
+                className="mt-1.5 block text-xs text-rose-600"
+              >
+                请输入帖子标题
+              </Form.Message>
+            </Form.Field>
+
+            <Form.Field name="type" serverInvalid={validationErrors.has("type")} className="mt-5">
+              <Form.Label className="mb-2 block text-sm font-semibold text-ink-800">
+                <span className="text-rose-500">*</span> 帖子类型
+              </Form.Label>
+              <Form.Control
+                value={type}
+                required
+                readOnly
+                tabIndex={-1}
+                aria-hidden
+                className="sr-only"
               />
-            </FieldRow>
+              <EditorTypePicker
+                type={type}
+                isEdit={isEdit}
+                invalid={validationErrors.has("type")}
+                onChange={(nextType) => {
+                  setType(nextType);
+                  clearValidationError("type");
+                }}
+              />
+              <Form.Message
+                match="valueMissing"
+                forceMatch={validationErrors.has("type")}
+                className="mt-1.5 block text-xs text-rose-600"
+              >
+                请选择帖子类型
+              </Form.Message>
+            </Form.Field>
 
-            <div className="mt-5">
-              <div className="mb-2 block text-sm font-semibold text-ink-800">帖子类型</div>
-              <EditorTypePicker type={type} isEdit={isEdit} onChange={setType} />
-            </div>
-
-            <div className="mt-5">
+            <Form.Field name="content" serverInvalid={validationErrors.has("content")} className="mt-5">
+              <Form.Control
+                value={hasContent() ? "ok" : ""}
+                required
+                readOnly
+                tabIndex={-1}
+                aria-hidden
+                className="sr-only"
+              />
               <PostContentFields
                 type={type}
                 t={t}
                 content={content}
-                onContentChange={setContent}
+                invalid={validationErrors.has("content")}
+                onContentChange={(value) => {
+                  setContent(value);
+                  if (value.trim()) clearValidationError("content");
+                }}
                 contentJson={contentJson}
-                onContentJsonChange={setContentJson}
+                onContentJsonChange={(value) => {
+                  setContentJson(value);
+                  clearValidationError("content");
+                }}
                 videoUrl={videoUrl}
                 onVideoUrlChange={setVideoUrl}
                 voteOptions={voteOptions}
@@ -395,9 +470,19 @@ export function PostComposer({
                 eventStartAt={eventStartAt}
                 onEventStartAtChange={setEventStartAt}
                 journal={journal}
-                onJournalChange={setJournal}
+                onJournalChange={(value) => {
+                  setJournal(value);
+                  clearValidationError("content");
+                }}
               />
-            </div>
+              <Form.Message
+                match="valueMissing"
+                forceMatch={validationErrors.has("content")}
+                className="mt-1.5 block text-xs text-rose-600"
+              >
+                请输入正文内容
+              </Form.Message>
+            </Form.Field>
 
             <div ref={settingsRef} className="mt-5 border-t border-solid border-leaf-200 pt-5 scroll-mt-24">
               <PostSettingsCard
@@ -410,7 +495,8 @@ export function PostComposer({
                 visibility={visibility}
                 onVisibilityChange={setVisibility}
                 tags={tags}
-                onTagsChange={setTags}
+                tagInvalid={validationErrors.has("tags")}
+                onTagsChange={onTagChange}
                 embedded
               />
             </div>
@@ -424,21 +510,6 @@ export function PostComposer({
             </div>
           </div>
         </section>
-
-        {!isEdit && (
-          <aside className="min-w-0 space-y-4 2xl:sticky 2xl:top-[84px] 2xl:self-start">
-            <DraftSidebar
-              drafts={drafts}
-              draftId={draftId}
-              t={t}
-              onLoadDraft={loadDraftIntoForm}
-              onDeleteDraft={async (draft) => {
-                await onDeleteDraft?.(draft.id);
-                if (draftId === draft.id) setDraftId(null);
-              }}
-            />
-          </aside>
-        )}
 
         <aside className="min-w-0 space-y-4 2xl:sticky 2xl:top-[84px] 2xl:self-start">
           <PostPreview
@@ -460,17 +531,16 @@ export function PostComposer({
             journal={journal}
             cover={cover}
           />
-          <EditorTipsCard />
         </aside>
       </div>
 
-      <div className="fixed inset-x-0 bottom-16 z-40 border-t border-leaf-100 bg-white/95 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur lg:bottom-0 lg:pl-[276px]">
+      <div className="fixed inset-x-0 bottom-16 z-40 border-t border-leaf-100 bg-white/95 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur lg:bottom-0">
         <div
           className={cn(
-            "grid w-full gap-4 px-4 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] lg:px-6",
+            "mx-auto grid w-full max-w-[1180px] gap-4 px-4 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] lg:px-6",
             isEdit
-              ? "2xl:grid-cols-[minmax(740px,1fr)_430px]"
-              : "2xl:grid-cols-[minmax(740px,1fr)_300px_430px]",
+              ? "2xl:grid-cols-[minmax(740px,1fr)_330px]"
+              : "2xl:grid-cols-[minmax(740px,1fr)_330px]",
           )}
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -505,25 +575,27 @@ export function PostComposer({
                 <Icon name="eye" size={14} />
                 预览
               </button>
-              <button type="button" onClick={submit} disabled={submitting} className="btn-primary h-10 justify-center !px-3 text-sm">
+              <Form.Submit disabled={submitting} className="btn-primary h-10 justify-center !px-3 text-sm">
                 <Icon name="send" size={14} />
                 {submitting ? t("editor.submitting") : isEdit ? "保存" : "发布帖子"}
-              </button>
+              </Form.Submit>
             </div>
           </div>
         </div>
       </div>
-    </>
+    </Form.Root>
   );
 }
 
 function EditorTypePicker({
   type,
   isEdit,
+  invalid,
   onChange,
 }: {
   type: PostType;
   isEdit: boolean;
+  invalid?: boolean;
   onChange: (type: PostType) => void;
 }) {
   if (isEdit) {
@@ -536,7 +608,7 @@ function EditorTypePicker({
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+    <div className={cn("grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6", invalid && "rounded-lg ring-2 ring-rose-100")}>
       {typeOptions.map((item) => {
         const active = type === item.type;
         return (
@@ -570,6 +642,7 @@ function PostSettingsCard({
   visibility,
   onVisibilityChange,
   tags,
+  tagInvalid,
   onTagsChange,
   embedded = false,
 }: {
@@ -582,6 +655,7 @@ function PostSettingsCard({
   visibility: string;
   onVisibilityChange: (visibility: string) => void;
   tags: string[];
+  tagInvalid: boolean;
   onTagsChange: (tags: string[]) => void;
   embedded?: boolean;
 }) {
@@ -613,28 +687,66 @@ function PostSettingsCard({
           </div>
         </div>
 
-        <div className="grid gap-3 py-4 md:grid-cols-[150px_minmax(0,1fr)]">
+        <Form.Field name="board" serverInvalid={boardInvalid} className="grid gap-3 py-4 md:grid-cols-[150px_minmax(0,1fr)]">
           <div>
-            <div className="text-sm font-semibold text-ink-800"><span className="text-rose-500">*</span> 选择板块</div>
+            <Form.Label className="text-sm font-semibold text-ink-800"><span className="text-rose-500">*</span> 板块</Form.Label>
             <div className="mt-1 text-xs leading-5 text-ink-500">选择内容归属的科、属或品种。</div>
           </div>
           <div className="w-[300px] max-w-full">
+            <Form.Control
+              value={[boardSelection.categorySlug, boardSelection.genusSlug, boardSelection.speciesSlug].filter(Boolean).join("/")}
+              required
+              readOnly
+              tabIndex={-1}
+              aria-hidden
+              className="sr-only"
+            />
             <BoardSelect
               value={boardSelection}
               onChange={onBoardChange}
               invalid={boardInvalid}
               autoSelectFirst={autoSelectFirst}
             />
+            <Form.Message
+              match="valueMissing"
+              forceMatch={boardInvalid}
+              className="mt-1.5 block text-xs text-rose-600"
+            >
+              请选择板块
+            </Form.Message>
           </div>
-        </div>
+        </Form.Field>
 
-        <div className="grid gap-3 py-4 md:grid-cols-[150px_minmax(0,1fr)]">
+        <Form.Field name="tags" serverInvalid={tagInvalid} className="grid gap-3 py-4 md:grid-cols-[150px_minmax(0,1fr)]">
           <div>
-            <div className="text-sm font-semibold text-ink-800">话题</div>
+            <Form.Label className="text-sm font-semibold text-ink-800"><span className="text-rose-500">*</span> 话题</Form.Label>
             <div className="mt-1 text-xs leading-5 text-ink-500">最多 6 个，帮助同好发现内容。</div>
           </div>
-          <TagSelector className="w-[300px] max-w-full" value={tags} onChange={onTagsChange} max={6} />
-        </div>
+          <div>
+            <Form.Control
+              value={tags.join(",")}
+              required
+              readOnly
+              tabIndex={-1}
+              aria-hidden
+              className="sr-only"
+            />
+            <TagSelector
+              className="w-[300px] max-w-full"
+              controlClassName={tagInvalid ? "border-rose-300 bg-rose-50/30" : undefined}
+              value={tags}
+              onChange={onTagsChange}
+              max={6}
+            />
+            <Form.Message
+              match="valueMissing"
+              forceMatch={tagInvalid}
+              className="mt-1.5 block text-xs text-rose-600"
+            >
+              请至少添加一个话题
+            </Form.Message>
+          </div>
+        </Form.Field>
 
         <div className="grid gap-3 py-4 md:grid-cols-[150px_minmax(0,1fr)]">
           <div>
@@ -671,30 +783,6 @@ function CheckLine({ label }: { label: string }) {
       <input type="checkbox" checked readOnly className="h-4 w-4 rounded accent-leaf-600" />
       {label}
     </label>
-  );
-}
-
-function EditorTipsCard() {
-  const tips = [
-    "使用小标题（H2/H3）让内容结构更清晰",
-    "图片建议宽度不超过 1200px",
-    "善用植物卡片关联图鉴，获得更多曝光",
-    "添加话题能让更多同好看到你的内容",
-  ];
-
-  return (
-    <section className="rounded-xl border border-leaf-100 bg-white p-4 shadow-sm">
-      <h2 className="text-base font-bold text-ink-900">编辑小贴士</h2>
-      <ul className="mt-3 space-y-2 text-xs leading-5 text-ink-600">
-        {tips.map((tip) => (
-          <li key={tip} className="flex gap-2">
-            <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-leaf-600" />
-            <span>{tip}</span>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-3 text-xs font-semibold text-leaf-700">了解更多创作指南 →</div>
-    </section>
   );
 }
 

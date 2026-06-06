@@ -4,9 +4,34 @@ import { requireUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+type ParsedAlbumComment = {
+  content: string;
+  images: string[];
+};
+
 function extractId(url: string): string {
   const parts = new URL(url).pathname.split('/').filter(Boolean);
   return parts[2] || '';
+}
+
+function parseAlbumCommentContent(raw: string): ParsedAlbumComment {
+  try {
+    const value = JSON.parse(raw);
+    if (value && typeof value === 'object' && Array.isArray(value.images)) {
+      return {
+        content: typeof value.text === 'string' ? value.text : '',
+        images: value.images.filter((item: unknown): item is string => typeof item === 'string'),
+      };
+    }
+  } catch {
+    // Old album comments are stored as plain text.
+  }
+  return { content: raw, images: [] };
+}
+
+function stringifyAlbumCommentContent(content: string, images: string[]) {
+  if (images.length === 0) return content;
+  return JSON.stringify({ text: content, images });
 }
 
 // GET /api/albums/[id]/comments - 获取评论
@@ -34,7 +59,7 @@ export const GET = handler(async (req) => {
   return {
     items: comments.map((c) => ({
       id: c.id,
-      content: c.content,
+      ...parseAlbumCommentContent(c.content),
       createdAt: c.createdAt.toISOString(),
       user: c.user,
     })),
@@ -50,8 +75,14 @@ export const POST = handler(async (req) => {
   const me = await requireUser();
   const id = extractId(req.url);
   const body = await req.json();
+  const content = typeof body.content === 'string' ? body.content.trim() : '';
+  const images = Array.isArray(body.images)
+    ? body.images
+        .filter((item: unknown): item is string => typeof item === 'string' && item.length > 0)
+        .slice(0, 9)
+    : [];
 
-  if (!body.content || body.content.trim().length === 0) {
+  if (!content && images.length === 0) {
     return fail(400, '评论内容不能为空');
   }
 
@@ -62,7 +93,7 @@ export const POST = handler(async (req) => {
     data: {
       albumId: id,
       userId: me.id,
-      content: body.content.trim(),
+      content: stringifyAlbumCommentContent(content, images),
     },
     include: {
       user: {
@@ -71,5 +102,11 @@ export const POST = handler(async (req) => {
     },
   });
 
-  return comment;
+  return {
+    id: comment.id,
+    content,
+    images,
+    createdAt: comment.createdAt.toISOString(),
+    user: comment.user,
+  };
 });
