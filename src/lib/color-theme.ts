@@ -224,5 +224,5 @@ export function getThemeMeta(key: ColorThemeKey): ColorThemeMeta {
 
 export const COLOR_THEME_STORAGE_KEY = 'rouyou.colorTheme';
 export const COLOR_THEME_MODE_STORAGE_KEY = 'rouyou.colorMode';
-export const DEFAULT_COLOR_THEME: ColorThemeKey = 'plantnet';
+export const DEFAULT_COLOR_THEME: ColorThemeKey = 'ocean';
 export const DEFAULT_COLOR_MODE: ColorThemeMode = 'light';

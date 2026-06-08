@@ -128,9 +128,7 @@ export const COLOR_THEME_SSR_SCRIPT = `
     var t = localStorage.getItem('${COLOR_THEME_STORAGE_KEY}');
     var m = localStorage.getItem('${COLOR_THEME_MODE_STORAGE_KEY}');
     var validThemes = ['plantnet','ocean','forest','vintage','dopamine-red','dopamine-purple','latte','matcha','cybermist','rosegold','sapphire','beach','lavender','cream','neon','minimal','forest-green','terracotta','mint','amethyst'];
-    if (validThemes.indexOf(t) >= 0) {
-      document.documentElement.setAttribute('data-theme', t);
-    }
+    document.documentElement.setAttribute('data-theme', validThemes.indexOf(t) >= 0 ? t : '${DEFAULT_COLOR_THEME}');
     if (m === 'dark' || m === 'light') {
       document.documentElement.setAttribute('data-mode', m);
       if (m === 'dark') document.documentElement.classList.add('dark');

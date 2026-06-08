@@ -8,6 +8,7 @@ import { A11y, Autoplay, Navigation } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { AppShell } from '@/components/layout/AppShell';
 import { PostListItem } from '@/components/post/PostListItem';
+import type { PostVoteUpdateHandler } from '@/components/post/PostVotePreview';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { useAuth } from '@/context/AuthContext';
@@ -89,8 +90,8 @@ export function HomeDashboard({
     <AppShell>
       <div>
         <HomeHero banners={banners} />
-        <Recommended posts={posts} />
         <FeatureGrid stats={stats} />
+        <Recommended posts={posts} />
         <EventsStrip events={events} />
         <HotTopics topics={topics} />
       </div>
@@ -234,6 +235,16 @@ function Recommended({ posts }: { posts: Post[] }) {
     return () => io.disconnect();
   }, [cursor, loadMore]);
 
+  const onVoteUpdate = useCallback<PostVoteUpdateHandler>((postId, options, total, voted, votedOptionIds) => {
+    setItems((prev) =>
+      prev.map((post) =>
+        post.id === postId && post.vote
+          ? { ...post, vote: { ...post.vote, options, total, voted, votedOptionIds } }
+          : post
+      )
+    );
+  }, []);
+
   if (initialLoading) {
     return <RecommendedFeedSkeleton />;
   }
@@ -262,6 +273,7 @@ function Recommended({ posts }: { posts: Post[] }) {
                 key={post.id}
                 post={post}
                 showDivider={index < feedPosts.length - 1 || loadingMore || Boolean(cursor)}
+                onVoteUpdate={onVoteUpdate}
               />
             ))}
             {loadingMore && <RecommendedFeedLoading />}
@@ -640,7 +652,7 @@ function FeatureGrid({ stats }: { stats: HomeStats }) {
   ];
 
   return (
-    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <section className="mb-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {items.map((item) => (
         <Link
           key={item.title}

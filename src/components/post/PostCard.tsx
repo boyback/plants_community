@@ -8,12 +8,11 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Icon } from '@/components/ui/Icon';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
 import { TopicTag } from '@/components/ui/TopicTag';
-import { Tooltip } from '@/components/ui/Tooltip';
-import { STAGE_META } from '@/lib/journal';
 import { formatNumber, formatDateTime, formatFollowers, timeAgo, cn, boardUrl } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
-import { toast } from '@/components/ui/Toast';
 import { PostAdminMenu } from '@/components/post/PostAdminMenu';
+import { PostVotePreview } from '@/components/post/PostVotePreview';
+import { PostJournalPreview } from '@/components/post/PostJournalPreview';
 
 /**
  * 推荐流/板块列表的帖子卡片
@@ -141,11 +140,11 @@ function FeedCard({ post, className, onVoteUpdate, onPostChanged, onPostDeleted 
             </p>
           )}
 
-        {post.type === 'vote' && post.vote && <VotePreview post={post} onVoteUpdate={onVoteUpdate} />}
+        {post.type === 'vote' && post.vote && <PostVotePreview post={post} onVoteUpdate={onVoteUpdate} />}
 
         {post.type === 'event' && post.event && <EventPreview post={post} />}
 
-        {post.type === 'journal' && post.journal && <JournalPreview post={post} />}
+        {post.type === 'journal' && post.journal && <PostJournalPreview post={post} />}
 
         {/* 话题标签（单独一行） */}
         {post.tags.length > 0 && (
@@ -292,180 +291,6 @@ function NestedLink({
   );
 }
 
-/** 投票预览(只读):展示问题 + 所有选项进度条 + 精确百分比 */
-function VotePreview({ post, onVoteUpdate }: { post: Post; onVoteUpdate?: (postId: string, options: { id: string; label: string; votes: number }[], total: number, voted: boolean, votedOptionIds: string[]) => void }) {
-  if (!post.vote) return null;
-  const total = post.vote.options.reduce((s, o) => s + o.votes, 0);
-  const deadlinePassed = new Date(post.vote.deadline).getTime() < Date.now();
-  const hasVoted = post.vote.voted;
-  const votedOptionIds = post.vote.votedOptionIds ?? [];
-  const canVote = !deadlinePassed && !hasVoted;
-  const [selectedOptions, setSelectedOptions] = useState<string[]>(hasVoted ? votedOptionIds : []);
-  const [submitting, setSubmitting] = useState(false);
-  const { user } = useAuth();
-
-  const handleSelect = (optionId: string) => {
-    if (!canVote) return;
-    setSelectedOptions(prev => {
-      if (post.vote?.multi) {
-        return prev.includes(optionId)
-          ? prev.filter(id => id !== optionId)
-          : [...prev, optionId];
-      } else {
-        return prev.includes(optionId) ? [] : [optionId];
-      }
-    });
-  };
-
-  const handleSubmit = async () => {
-    if (!user) {
-      toast.error('请先登录');
-      return;
-    }
-    if (selectedOptions.length === 0 || submitting) return;
-    setSubmitting(true);
-    try {
-      const res = await fetch(`/api/posts/${post.id}/vote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ optionIds: selectedOptions }),
-      });
-      const data = await res.json();
-      if (!data.ok) {
-        const msg = data.error?.message || data.code || '投票失败';
-        toast.error(msg);
-        setSubmitting(false);
-        return;
-      }
-      toast.success('投票成功');
-      onVoteUpdate?.(post.id, data.data.options, data.data.total, true, selectedOptions);
-    } catch (err) {
-      console.error('投票失败:', err);
-      toast.error('网络错误');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="space-y-2 rounded-none bg-leaf-50/60 p-2" onClick={(e) => e.stopPropagation()}>
-      {/* 问题 */}
-      <div className="flex items-center gap-2">
-        <Link
-          href={`/post/${post.id}`}
-          onClick={(e) => e.stopPropagation()}
-          className="flex-1 min-w-0"
-        >
-          <Tooltip content={post.vote.question} className="max-w-[200px]">
-            <div className="line-clamp-1 text-[12px] font-medium text-leaf-800 hover:text-leaf-600 transition-colors">
-              🗳️ {post.vote.question}
-            </div>
-          </Tooltip>
-        </Link>
-        <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] ${deadlinePassed ? 'bg-leaf-100 text-leaf-600' : 'bg-leaf-200 text-leaf-800'}`}>
-          {deadlinePassed ? '已截止' : '进行中'}
-        </span>
-        <span className="shrink-0 text-[10px] text-leaf-600">{post.vote.multi ? '多选' : '单选'}</span>
-      </div>
-
-      {/* 选项列表 */}
-      <div className="space-y-1.5">
-        {post.vote.options.map((o, idx) => {
-          // 计算精确百分比：最后一项 = 100 - 其他项之和，保留一位小数
-          let pct: number;
-          if (total === 0) {
-            pct = 0;
-          } else if (idx === post.vote!.options.length - 1) {
-            const sumBefore = post.vote!.options.slice(0, idx).reduce((s, opt) => s + opt.votes, 0);
-            pct = Number(((total - sumBefore) / total * 100).toFixed(1));
-          } else {
-            pct = Number((o.votes / total * 100).toFixed(1));
-          }
-
-          const isSelectable = canVote;
-          const isSelected = selectedOptions.includes(o.id);
-          return (
-            <div
-              key={o.id}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!isSelectable) return;
-                handleSelect(o.id);
-              }}
-              onMouseDown={(e) => e.preventDefault()}
-              onTouchStart={(e) => e.stopPropagation()}
-              onTouchEnd={(e) => {
-                e.stopPropagation();
-                if (!isSelectable) return;
-                handleSelect(o.id);
-              }}
-              onTouchMove={(e) => e.stopPropagation()}
-              onPointerDown={(e) => e.stopPropagation()}
-              onPointerUp={(e) => e.stopPropagation()}
-              onPointerMove={(e) => e.stopPropagation()}
-              onPointerCancel={(e) => e.stopPropagation()}
-              className={cn(
-                'relative overflow-hidden rounded px-1 py-1 transition-all',
-                isSelectable && 'cursor-pointer hover:bg-leaf-100 hover:shadow-sm active:bg-leaf-200',
-                isSelected && 'bg-leaf-200/40', // 选中时用进度条色加透明度
-                !isSelectable && !isSelected && 'bg-white/70', !isSelectable && isSelected && 'bg-leaf-200/40'
-              )}
-            >
-              {/* 进度条 */}
-              <div
-                className="absolute inset-y-0 left-0 bg-leaf-200"
-                style={{ width: `${pct}%` }}
-              />
-              {/* 内容 */}
-              <div className="relative flex items-center justify-between gap-1 text-[11px]">
-                <div className="flex items-center gap-1 min-w-0 flex-1">
-                  <span className="w-[10px] text-center text-leaf-600 font-bold shrink-0">
-                    {isSelected ? '✓' : ''}
-                  </span>
-                  <span className="truncate text-leaf-900">{o.label}</span>
-                </div>
-                <span className="shrink-0 tabular-nums text-leaf-700">
-                  {pct}% <span className="text-leaf-600">({o.votes}票)</span>
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* 底部统计 */}
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] text-leaf-700/80">{total} 票</span>
-        {canVote && (
-          <button
-            type="button"
-            className="px-3 py-1 rounded bg-leaf-500 text-white text-[10px] font-medium hover:bg-leaf-600 transition-colors disabled:opacity-50"
-            disabled={selectedOptions.length === 0 || submitting}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleSubmit();
-            }}
-          >
-            {submitting ? '提交中...' : '提交投票'}
-          </button>
-        )}
-        {hasVoted && (
-          <span className="px-3 py-1 rounded bg-leaf-200/60 text-leaf-700 text-[10px] font-medium">
-            已投票
-          </span>
-        )}
-        {!canVote && !hasVoted && deadlinePassed && (
-          <span className="px-3 py-1 rounded bg-leaf-100 text-leaf-600 text-[10px] font-medium">
-            已截止
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 /** 活动预览(只读):位置 + 时间 + 已报名人数 */
 function EventPreview({ post }: { post: Post }) {
   if (!post.event) return null;
@@ -480,105 +305,6 @@ function EventPreview({ post }: { post: Post }) {
           🕘 {new Date(post.event.startAt).toLocaleDateString()}
         </span>
         <span className="text-violet-700">{post.event.attendees} 人已报名</span>
-      </div>
-    </div>
-  );
-}
-
-/**
- * 时间线预览(只读):
- *  - 记录 > 4 条：显示前 3 条 + 倒数第二条 + 中间提示 + 最后 1 条
- *  - 记录 ≤ 4 条：全部显示
- */
-function JournalPreview({ post }: { post: Post }) {
-  if (!post.journal) return null;
-  const j = post.journal;
-  const shown = j.entries ?? [];
-  const totalCount = j.entriesCount ?? shown.length;
-
-  // 超过 4 条时：前 3 条 + 中间提示 + 最后 1 条
-  const showCompact = totalCount > 4;
-  const first3 = shown.slice(0, 3);
-  const lastEntry = shown[shown.length - 1];
-  const middleCount = totalCount - 4;
-
-  return (
-    <div className="rounded-none bg-leaf-50/60 p-2">
-      <div className="mb-1 flex items-center justify-between text-xs text-leaf-700/80">
-        <span className="truncate font-semibold">📖 {j.subjectName}</span>
-        <span className="text-[11px]">第 {j.daysSinceStart} 天 · 共 {j.entriesCount} 条</span>
-      </div>
-
-      <div className="relative">
-        <ol className="space-y-1.5">
-          {first3.map((e) => {
-            const meta = STAGE_META[e.stage] || STAGE_META.other;
-            return (
-              <li key={e.id} className="space-y-1">
-                <EntryItem entry={e} meta={meta} />
-              </li>
-            );
-          })}
-
-          {/* 中间省略提示 */}
-          {showCompact && (
-            <li className="pl-4 text-[10px] text-leaf-700/60">
-              + {middleCount} 条更多...
-            </li>
-          )}
-
-          {/* 最后 1 条 */}
-          {showCompact && lastEntry && (
-            <li key={lastEntry.id} className="space-y-1">
-              <EntryItem entry={lastEntry} meta={STAGE_META[lastEntry.stage] || STAGE_META.other} />
-            </li>
-          )}
-        </ol>
-      </div>
-    </div>
-  );
-}
-
-/** 单条时间线记录项 */
-function EntryItem({ entry, meta }: { entry: any; meta: any }) {
-  const d = new Date(entry.entryDate);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const stageText = entry.stage === 'other' && entry.stageLabel ? entry.stageLabel : meta.zh;
-  return (
-    <div className="space-y-1">
-      <div className="flex items-start gap-2">
-        <span className="mt-1 block h-2 w-2 shrink-0 rounded-full bg-leaf-400" />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 text-[11px]">
-            <span className="font-medium text-ink-800">{yyyy}/{mm}/{dd}</span>
-            <span className={cn('rounded px-1.5 py-0.5 text-[10px] border', meta.color)}>
-              {meta.emoji} {stageText}
-            </span>
-          </div>
-          {entry.note && (
-            <Tooltip content={entry.note}>
-              <p className="line-clamp-2 text-xs text-ink-600/80 mt-0.5">{entry.note}</p>
-            </Tooltip>
-          )}
-          {/* 配图展示 - 在描述下面 */}
-          {entry.images && entry.images.length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1">
-              {entry.images.slice(0, 3).map((img: string, idx: number) => (
-                <div key={idx} className="relative w-8 h-8 overflow-hidden rounded bg-white/50">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img} alt="" className="h-full w-full object-cover" />
-                </div>
-              ))}
-              {entry.images.length > 3 && (
-                <div className="relative w-8 h-8 flex items-center justify-center rounded bg-black/40 text-[10px] text-white">
-                  +{entry.images.length - 3}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

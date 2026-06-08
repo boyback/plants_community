@@ -6,11 +6,21 @@ import { PostAdminMenu } from '@/components/post/PostAdminMenu';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Icon } from '@/components/ui/Icon';
 import { TopicTag } from '@/components/ui/TopicTag';
+import { PostVotePreview, type PostVoteUpdateHandler } from '@/components/post/PostVotePreview';
+import { PostJournalPreview } from '@/components/post/PostJournalPreview';
 import { useAuth } from '@/context/AuthContext';
 import type { Post } from '@/lib/types';
 import { boardUrl, cn, formatDateTime, formatFollowers, formatNumber } from '@/lib/utils';
 
-export function PostListItem({ post, showDivider = true }: { post: Post; showDivider?: boolean }) {
+export function PostListItem({
+  post,
+  showDivider = true,
+  onVoteUpdate,
+}: {
+  post: Post;
+  showDivider?: boolean;
+  onVoteUpdate?: PostVoteUpdateHandler;
+}) {
   const { user } = useAuth();
   const cover = post.cover ?? post.images?.[0] ?? null;
   const contentImages = (post.images ?? []).filter((image) => image && image !== cover);
@@ -54,6 +64,12 @@ export function PostListItem({ post, showDivider = true }: { post: Post; showDiv
           ))}
         </div>
       )}
+
+      {post.type === 'vote' && post.vote && (
+        <PostVotePreview post={post} onVoteUpdate={onVoteUpdate} className="mt-3.5" />
+      )}
+
+      {post.type === 'journal' && post.journal && <PostJournalPreview post={post} className="mt-3.5" />}
 
       {(cover || displayImages.length > 0) && (
         <div className="mt-3.5 flex flex-col gap-2 sm:flex-row sm:items-start">
