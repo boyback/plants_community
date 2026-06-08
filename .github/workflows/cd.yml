@@ -100,12 +100,19 @@ jobs:
     runs-on: ubuntu-latest
     needs: publish
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    permissions:
+      contents: read
+      packages: read
     # secrets 直接从仓库 Settings → Secrets 读
     steps:
       - uses: actions/checkout@v4
 
       - name: SSH deploy
         uses: appleboy/ssh-action@v1
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_OWNER: ${{ github.repository_owner }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
@@ -114,13 +121,14 @@ jobs:
           command_timeout: 30m
           # SSH 连接超时
           timeout: 60s
+          envs: GHCR_USER,GHCR_TOKEN,GHCR_OWNER
           # 工作目录:服务器上 git clone 这个仓库的位置
           script: |
             set -e
             cd ${{ secrets.DEPLOY_PATH }}
             git fetch origin master
             git reset --hard origin/master
-            export GHCR_OWNER=${{ github.repository_owner }}
+            printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             export TAG=latest
             chmod +x ./scripts/deploy.sh
             ./scripts/deploy.sh
