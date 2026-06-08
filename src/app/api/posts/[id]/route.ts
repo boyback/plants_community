@@ -8,6 +8,7 @@ import { processRichInput } from '@/lib/richtext';
 import { postNeedsReview } from '@/lib/post-review';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 import { ALL_STAGES, STAGE_META } from '@/lib/journal';
+import { createUserPlantCode } from '@/lib/user-plant-code';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +28,7 @@ export const GET = handler(async (req) => {
       ...postInclude({ withJournalEntries: true }),
       comments: {
         where: { parentId: null },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: 'asc' },
         take: 50,
         include: {
           author: {
@@ -37,12 +38,25 @@ export const GET = handler(async (req) => {
             },
           },
           replies: {
+            where: { deleted: false },
             orderBy: { createdAt: 'asc' },
             include: {
               author: {
                 include: {
                   _count: { select: { posts: true, followers: true, following: true } },
                   badges: { include: { badge: true } },
+                },
+              },
+              replies: {
+                where: { deleted: false },
+                orderBy: { createdAt: 'asc' },
+                include: {
+                  author: {
+                    include: {
+                      _count: { select: { posts: true, followers: true, following: true } },
+                      badges: { include: { badge: true } },
+                    },
+                  },
                 },
               },
             },
@@ -93,14 +107,34 @@ const JournalPatch = z.object({
   entries: z
     .array(
       z.object({
+        id: z.string().optional(),
         entryDate: z.string(),
         stage: z.string().optional(),
-        note: z.string().max(2000).default(''),
-        images: z.array(z.string()).max(9).default([]),
+        stageLabel: z.string().trim().max(50).optional(),
+        note: z.string().trim().max(2000).default(''),
+        images: z.array(z.string()).min(1, '每条成长记录都需要上传配图').max(9).default([]),
       })
     )
     .max(50)
     .default([]),
+}).superRefine((journal, ctx) => {
+  journal.entries.forEach((entry, index) => {
+    if (entry.id) return;
+    if (!entry.stage) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['entries', index, 'stage'],
+        message: '每条成长记录都需要选择阶段',
+      });
+    }
+    if (!entry.note.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['entries', index, 'note'],
+        message: '每条成长记录都需要填写心得',
+      });
+    }
+  });
 });
 
 const PatchBody = z.object({
@@ -176,6 +210,10 @@ export const PATCH = handler(async (req) => {
 
   const boardIds = await resolveBoardIds(body);
   if (!boardIds.ok) return fail(400, boardIds.error);
+  const finalBoardIds = boardIds.ids;
+  if (post.type === 'journal' && body.journal && !(body.journal.speciesId ?? finalBoardIds?.speciesId ?? post.speciesId)) {
+    return fail(400, '成长记录需要选择具体品种');
+  }
 
   await prisma.$transaction(async (tx) => {
     await tx.post.update({
@@ -194,7 +232,7 @@ export const PATCH = handler(async (req) => {
         }),
         ...(body.cover !== undefined && { cover: body.cover }),
         ...(body.videoUrl !== undefined && { videoUrl: body.videoUrl }),
-        ...(boardIds.ids && boardIds.ids),
+        ...(finalBoardIds && finalBoardIds),
         ...(REVIEW_FILTER_ENABLED && {
           reviewStatus: needsReview ? 'pending' : 'published',
           reviewReason: needsReview ? '编辑后含外链，等待审核' : null,
@@ -253,7 +291,8 @@ export const PATCH = handler(async (req) => {
     }
 
     if (post.type === 'journal' && body.journal) {
-      const speciesId = body.journal.speciesId ?? boardIds.ids?.speciesId ?? post.speciesId ?? null;
+      const speciesId = body.journal.speciesId ?? finalBoardIds?.speciesId ?? post.speciesId ?? null;
+      if (!speciesId) return;
       const journal = post.journal
         ? await tx.journal.update({
             where: { id: post.journal.id },
@@ -272,17 +311,91 @@ export const PATCH = handler(async (req) => {
             },
           });
 
-      await tx.journalEntry.deleteMany({ where: { journalId: journal.id } });
-      await tx.journalEntry.createMany({
-        data: body.journal.entries.map((entry, orderIdx) => ({
-          journalId: journal.id,
-          entryDate: new Date(entry.entryDate),
-          stage: normalizeJournalStage(entry.stage) as any,
-          note: entry.note,
-          images: stringifyJson(entry.images),
-          orderIdx,
-        })),
+      const newEntries = body.journal.entries.filter((entry) => !entry.id);
+      if (newEntries.length > 0) {
+        const max = await tx.journalEntry.aggregate({
+          where: { journalId: journal.id },
+          _max: { orderIdx: true },
+        });
+        const startOrderIdx = max._max.orderIdx ?? -1;
+        await tx.journalEntry.createMany({
+          data: newEntries.map((entry, index) => ({
+            journalId: journal.id,
+            entryDate: new Date(entry.entryDate),
+            stage: normalizeJournalStage(entry.stage) as any,
+            stageLabel: normalizeJournalStage(entry.stage) === 'other' ? entry.stageLabel || null : null,
+            note: entry.note,
+            images: stringifyJson(entry.images),
+            orderIdx: startOrderIdx + index + 1,
+          })),
+        });
+      }
+
+      const latestEntry = await tx.journalEntry.findFirst({
+        where: { journalId: journal.id },
+        orderBy: [{ entryDate: 'desc' }, { orderIdx: 'desc' }],
+        select: { stage: true, stageLabel: true, note: true },
       });
+      const currentStage = latestEntry?.stage ?? 'growing';
+      const species = await tx.species.findUnique({
+        where: { id: speciesId },
+        select: { cover: true },
+      });
+      if (journal.userPlantId) {
+        await tx.userPlant.updateMany({
+          where: { id: journal.userPlantId, ownerId: me.id },
+          data: {
+            speciesId,
+            nickname: body.journal.subjectName,
+            acquiredAt: new Date(body.journal.startDate),
+            currentStage,
+            currentStageLabel: currentStage === 'other' ? latestEntry?.stageLabel || null : null,
+            cover: body.cover ?? post.cover ?? species?.cover ?? null,
+            note: latestEntry?.note || null,
+          },
+        });
+      } else {
+        const startDate = new Date(body.journal.startDate);
+        const existingPlant = await tx.userPlant.findFirst({
+          where: {
+            ownerId: me.id,
+            speciesId,
+            nickname: body.journal.subjectName,
+            acquiredAt: startDate,
+            journal: null,
+          },
+          select: { id: true },
+        });
+        const plant = existingPlant
+          ? await tx.userPlant.update({
+              where: { id: existingPlant.id },
+              data: {
+                currentStage,
+                currentStageLabel: currentStage === 'other' ? latestEntry?.stageLabel || null : null,
+                cover: body.cover ?? post.cover ?? species?.cover ?? null,
+                note: latestEntry?.note || null,
+              },
+              select: { id: true },
+            })
+          : await tx.userPlant.create({
+              data: {
+                ownerId: me.id,
+                speciesId,
+                code: await createUserPlantCode(tx, me.id, body.journal.subjectName, startDate),
+                nickname: body.journal.subjectName,
+                acquiredAt: startDate,
+                currentStage,
+                currentStageLabel: currentStage === 'other' ? latestEntry?.stageLabel || null : null,
+                cover: body.cover ?? post.cover ?? species?.cover ?? null,
+                note: latestEntry?.note || null,
+              },
+              select: { id: true },
+            });
+        await tx.journal.update({
+          where: { id: journal.id },
+          data: { userPlantId: plant.id },
+        });
+      }
     }
   });
 

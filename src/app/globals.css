@@ -35,6 +35,10 @@
   background: hsla(0, 0%, 100%, 0.9);
 }
 
+.home-hero-swiper .swiper-pagination {
+  display: none !important;
+}
+
 .home-hero-swiper .swiper-button-prev,
 .home-hero-swiper .swiper-button-next {
   --swiper-navigation-sides-offset: 40px;

@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 interface JournalDraftEntry {
   entryDate: string;
   stage: JournalStage | '';
+  stageLabel?: string;
   note: string;
   images: string[];
 }
@@ -317,6 +318,7 @@ function JournalPreview({ journal }: { journal: JournalDraft }) {
         <ol className="space-y-2">
           {journal.entries.slice(0, 3).map((entry, index) => {
             const meta = STAGE_META[entry.stage as JournalStage] || STAGE_META.other;
+            const stageText = entry.stage === 'other' && entry.stageLabel ? entry.stageLabel : meta?.zh || '其他';
             return (
               <li key={index} className="flex items-start gap-2 rounded-none bg-leaf-50/60 p-2 text-xs">
                 <span
@@ -333,7 +335,7 @@ function JournalPreview({ journal }: { journal: JournalDraft }) {
                       ? new Date(entry.entryDate).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
                       : '?'}
                   </span>{' '}
-                  {entry.note ? truncate(entry.note, 36) : meta?.zh || '其他'}
+                  {entry.note ? truncate(entry.note, 36) : stageText}
                 </div>
               </li>
             );

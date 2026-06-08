@@ -7,6 +7,8 @@ type SlideLike = {
   thumbnail?: string;
 };
 
+const ROTATE_CW_ICON_PATH = 'M21 2v6h-6M21 13a9 9 0 1 1-3-6.7L21 8';
+
 function ensurePhotoSwipeCursorStyle() {
   if (typeof document === 'undefined' || document.getElementById('rouyou-pswp-cursor-style')) return;
 
@@ -212,6 +214,73 @@ export function createZoomControlsUiElement() {
   };
 }
 
+export function createRotateButtonUiElement() {
+  return {
+    name: 'rotate-button',
+    ariaLabel: 'Rotate image',
+    order: 7,
+    isButton: true,
+    appendTo: 'bar' as const,
+    html:
+      `<svg aria-hidden="true" class="pswp__icn" viewBox="0 0 32 32" width="32" height="32">` +
+      `<g transform="translate(4 4)">` +
+      `<path d="${ROTATE_CW_ICON_PATH}" fill="none" stroke="var(--pswp-icon-color)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>` +
+      `</g>` +
+      `</svg>`,
+    onClick: (event: MouseEvent, el: HTMLElement, pswpInstance: PhotoSwipe) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const slide = pswpInstance.currSlide;
+      if (!slide) return;
+
+      const rotations = ((pswpInstance as any).__rouyouRotations ??= new Map<number, number>()) as Map<number, number>;
+      const nextRotation = (rotations.get(slide.index) ?? 0) + 90;
+      rotations.set(slide.index, nextRotation);
+
+      applySlideRotation(pswpInstance, nextRotation);
+      el.setAttribute('aria-label', `Rotate image (${nextRotation} degrees)`);
+    },
+    onInit: (el: HTMLElement, pswpInstance: PhotoSwipe) => {
+      el.setAttribute('title', '旋转 90°');
+      pswpInstance.on('change', () => {
+        const rotations = ((pswpInstance as any).__rouyouRotations ??= new Map<number, number>()) as Map<number, number>;
+        const rotation = rotations.get(pswpInstance.currSlide?.index ?? -1) ?? 0;
+        applySlideRotation(pswpInstance, rotation, false);
+        el.setAttribute('aria-label', rotation ? `Rotate image (${rotation} degrees)` : 'Rotate image');
+      });
+      pswpInstance.on('contentAppendImage', () => {
+        const rotations = ((pswpInstance as any).__rouyouRotations ??= new Map<number, number>()) as Map<number, number>;
+        const rotation = rotations.get(pswpInstance.currSlide?.index ?? -1) ?? 0;
+        applySlideRotation(pswpInstance, rotation, false);
+      });
+    },
+  };
+}
+
+function applySlideRotation(pswpInstance: PhotoSwipe, rotation: number, animate = true) {
+  const slide = pswpInstance.currSlide;
+  const contentEl = slide?.content?.element as HTMLElement | undefined;
+  if (!slide || !contentEl) return;
+
+  if (slide.currZoomLevel !== slide.zoomLevels.initial) {
+    slide.zoomAndPanToInitial();
+    slide.applyCurrentZoomPan();
+  }
+
+  const normalizedRotation = ((rotation % 360) + 360) % 360;
+  const isSideways = normalizedRotation % 180 !== 0;
+  const width = contentEl.offsetWidth || contentEl.getBoundingClientRect().width;
+  const height = contentEl.offsetHeight || contentEl.getBoundingClientRect().height;
+  const scale = isSideways && width > 0 && height > 0
+    ? Math.min(1, pswpInstance.viewportSize.x / height, pswpInstance.viewportSize.y / width)
+    : 1;
+
+  contentEl.style.transformOrigin = 'center center';
+  contentEl.style.transition = animate ? 'transform 180ms ease' : 'none';
+  contentEl.style.transform = `rotate(${rotation}deg) scale(${scale})`;
+}
+
 export function registerVerticalDragNavigation(pswp: PhotoSwipe) {
   let startX = 0;
   let startY = 0;
@@ -285,6 +354,7 @@ export function registerPhotoSwipeGalleryUi(pswp: PhotoSwipe) {
   registerPhotoSwipeCursorUi(pswp);
 
   pswp.on('uiRegister', () => {
+    pswp.ui?.registerElement(createRotateButtonUiElement());
     pswp.ui?.registerElement(createZoomControlsUiElement());
 
     pswp.ui?.registerElement({

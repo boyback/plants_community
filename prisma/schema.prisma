@@ -95,7 +95,10 @@ model User {
   reports           Report[]                @relation("ReportReporter")
   postViews         PostView[]
   speciesRatings    SpeciesRating[]
+  speciesCareVotes  SpeciesCareVote[]
+  userPlants        UserPlant[]
   uploads           UploadFile[]
+  journalEntryLikes JournalEntryLike[]
   sentMessages      Message[]               @relation("MessageFrom")
   receivedMessages  Message[]               @relation("MessageTo")
   drafts            Draft[]
@@ -350,6 +353,14 @@ enum JournalEndReason {
   other
 }
 
+enum UserPlantStatus {
+  healthy
+  watching
+  needs_attention
+  dormant
+  ended
+}
+
 enum JournalStage {
   germinate // 发芽
   growing // 成长
@@ -547,6 +558,8 @@ model Journal {
   subjectName String
   // 关联品种(可选;若关联,可继承品种封面 / 难度等)
   speciesId   String?
+  // 关联用户自己的植物档案(可选;一个植株只能对应一个生命周期帖)
+  userPlantId String? @unique
   // 起始日(种植/到家/萌芽起算日)
   startDate   DateTime
   // 结束日(死亡 / 送人 / 自然结束;空表示仍在养)
@@ -557,6 +570,7 @@ model Journal {
 
   post    Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
   species Species?       @relation(fields: [speciesId], references: [id])
+  userPlant UserPlant?   @relation(fields: [userPlantId], references: [id], onDelete: SetNull)
   entries JournalEntry[]
 
   @@index([speciesId])
@@ -568,6 +582,7 @@ model JournalEntry {
   journalId String
   entryDate DateTime
   stage     JournalStage @default(other)
+  stageLabel String?      @db.VarChar(50) // stage=other 时的自定义阶段名
   note      String       @db.Text // 心得文本(纯文本/简单 markdown)
   // MySQL TEXT 不允许默认值,空 JSON 在应用层兜底为 "[]"
   images    String       @db.Text // JSON array,封面或多张图
@@ -576,9 +591,35 @@ model JournalEntry {
   updatedAt DateTime     @updatedAt
 
   journal Journal @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  likes    JournalEntryLike[]
 
   @@index([journalId, entryDate])
   @@map("journal_entries")
+}
+
+model UserPlant {
+  id         String          @id @default(cuid())
+  ownerId    String
+  speciesId  String
+  code       String          @unique
+  nickname   String
+  acquiredAt DateTime
+  status     UserPlantStatus @default(healthy)
+  currentStage JournalStage @default(growing)
+  currentStageLabel String? @db.VarChar(50)
+  cover      String?
+  note       String?         @db.Text
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  species  Species   @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+  journal  Journal?
+
+  @@index([ownerId, updatedAt])
+  @@index([speciesId])
+  @@map("user_plants")
 }
 
 // ============== 评论 ==============
@@ -588,6 +629,7 @@ model Comment {
   postId      String
   authorId    String
   parentId    String?
+  journalEntryId String?
   // 富文本三套字段
   content     String   @db.Text // 已 sanitize 的 HTML
   contentJson String?  @db.Text // ProseMirror JSON 字符串
@@ -603,12 +645,27 @@ model Comment {
 
   post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   author  User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  journalEntry JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
   parent  Comment?  @relation("Replies", fields: [parentId], references: [id])
   replies Comment[] @relation("Replies")
 
   @@index([postId, createdAt])
+  @@index([journalEntryId])
   @@index([deleted, createdAt])
   @@map("comments")
+}
+
+model JournalEntryLike {
+  userId         String
+  journalEntryId String
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+
+  @@id([userId, journalEntryId])
+  @@index([journalEntryId, createdAt])
+  @@map("journal_entry_likes")
 }
 
 // ============== 交互:点赞、收藏 ==============
@@ -1602,9 +1659,11 @@ model Species {
 
   posts          Post[]
   ratings        SpeciesRating[]
+  careVotes      SpeciesCareVote[]
   contributions  SpeciesContribution[]
   collects       SpeciesCollect[]
   compares       SpeciesCompare[]
+  userPlants     UserPlant[]
   similarities   SpeciesSimilarity[] @relation("SpeciesSimilaritySource")
   similarTo      SpeciesSimilarity[] @relation("SpeciesSimilarityTarget")
   dailyStats     SpeciesDailyStat[]
@@ -1743,6 +1802,24 @@ model SpeciesRating {
   @@unique([userId, speciesId])
   @@index([speciesId, createdAt])
   @@map("species_ratings")
+}
+
+model SpeciesCareVote {
+  id        String   @id @default(cuid())
+  userId    String
+  speciesId String
+  field     String   @db.VarChar(32)
+  value     String   @db.VarChar(80)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  species Species @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, speciesId, field])
+  @@index([speciesId, field])
+  @@index([userId])
+  @@map("species_care_votes")
 }
 
 // ============================================================

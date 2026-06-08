@@ -28,8 +28,17 @@ const STAGES = [
 const AddEntryBody = z.object({
   entryDate: z.string(),
   stage: z.enum(STAGES).default('other'),
+  stageLabel: z.string().trim().max(50).optional(),
   note: z.string().max(2000).default(''),
-  images: z.array(z.string()).max(9).default([]),
+  images: z.array(z.string()).min(1, '每条成长记录都需要上传配图').max(9),
+}).superRefine((body, ctx) => {
+  if (body.stage === 'other' && !body.stageLabel?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['stageLabel'],
+      message: '选择其他阶段时，请填写阶段名称',
+    });
+  }
 });
 
 const UpdateJournalBody = z.object({
@@ -83,6 +92,7 @@ export const POST = handler(async (req) => {
       journalId: r.journal!.id,
       entryDate: new Date(body.entryDate),
       stage: body.stage,
+      stageLabel: body.stage === 'other' ? body.stageLabel || null : null,
       note: body.note,
       images: stringifyJson(body.images),
       orderIdx,
@@ -99,6 +109,7 @@ export const POST = handler(async (req) => {
     id: entry.id,
     entryDate: entry.entryDate.toISOString(),
     stage: entry.stage,
+    stageLabel: entry.stageLabel ?? undefined,
     note: entry.note,
     images: body.images,
     orderIdx: entry.orderIdx,

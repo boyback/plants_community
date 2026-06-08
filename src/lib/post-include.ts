@@ -7,6 +7,7 @@ export function postInclude(opts?: { withJournalEntries?: boolean }) {
     ? {
         entries: {
           orderBy: [{ entryDate: 'asc' as const }, { orderIdx: 'asc' as const }],
+          include: { _count: { select: { likes: true, comments: true } } },
         },
         species: { select: { id: true, slug: true, name: true } },
       }
@@ -15,6 +16,7 @@ export function postInclude(opts?: { withJournalEntries?: boolean }) {
         entries: {
           orderBy: [{ entryDate: 'asc' as const }, { orderIdx: 'asc' as const }],
           take: 5,
+          include: { _count: { select: { likes: true, comments: true } } },
         },
         species: { select: { id: true, slug: true, name: true } },
         _count: { select: { entries: true } },

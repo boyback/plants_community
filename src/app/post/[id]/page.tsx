@@ -1,9 +1,15 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { PostActions } from "@/components/post/PostActions";
 import { MobileActionBar } from "@/components/post/MobileActionBar";
-import { JournalTimeline } from "@/components/post/JournalTimeline";
+import {
+  JournalChronoTimeline,
+  JournalImageThumbStrip,
+  type JournalChronoEntry,
+  type JournalTimelineImage,
+} from "@/components/post/JournalChronoTimeline";
 import { PostAdminMenu } from "@/components/post/PostAdminMenu";
 import { Avatar } from "@/components/ui/Avatar";
 import { Icon } from "@/components/ui/Icon";
@@ -20,6 +26,8 @@ import { parseJsonArray } from "@/lib/api";
 import { jsonLdScript, postJsonLd, breadcrumbJsonLd } from "@/lib/jsonld";
 import { PostBody } from "@/components/post/PostBody";
 import { CommentSection } from "@/components/post/CommentSection";
+import { STAGE_META as JOURNAL_STAGE_META } from "@/lib/journal";
+import { cn } from "@/lib/utils";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://plantcommunity.cn";
@@ -107,7 +115,7 @@ export default async function PostDetailPage({
       ...postInclude({ withJournalEntries: true }),
       comments: {
         where: { parentId: null, deleted: false },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: "asc" },
         take: 50,
         include: {
           author: {
@@ -118,6 +126,7 @@ export default async function PostDetailPage({
               badges: { include: { badge: true } },
             },
           },
+          journalEntry: true,
           replies: {
             where: { deleted: false },
             orderBy: { createdAt: "asc" },
@@ -128,6 +137,20 @@ export default async function PostDetailPage({
                     select: { posts: true, followers: true, following: true },
                   },
                   badges: { include: { badge: true } },
+                },
+              },
+              replies: {
+                where: { deleted: false },
+                orderBy: { createdAt: "asc" },
+                include: {
+                  author: {
+                    include: {
+                      _count: {
+                        select: { posts: true, followers: true, following: true },
+                      },
+                      badges: { include: { badge: true } },
+                    },
+                  },
                 },
               },
             },
@@ -143,6 +166,42 @@ export default async function PostDetailPage({
     .catch(() => null);
 
   const me = await getCurrentUser();
+  if (postRaw.journal?.entries?.length) {
+    const entryIds = postRaw.journal.entries.map((entry) => entry.id);
+    const entryCommentCounts = await prisma.comment.groupBy({
+      by: ['journalEntryId'],
+      where: {
+        journalEntryId: { in: entryIds },
+        parentId: null,
+        deleted: false,
+      },
+      _count: { _all: true },
+    });
+    const entryCommentCountMap = new Map<string, number>();
+    entryCommentCounts.forEach((item) => {
+      if (item.journalEntryId) entryCommentCountMap.set(item.journalEntryId, item._count._all);
+    });
+    (postRaw.journal.entries as Array<(typeof postRaw.journal.entries)[number] & { _count?: { likes?: number; comments?: number } }>).forEach((entry) => {
+      entry._count = {
+        ...(entry._count ?? {}),
+        comments: entryCommentCountMap.get(entry.id) ?? 0,
+      };
+    });
+  }
+
+  if (me && postRaw.journal?.entries?.length) {
+    const likedEntryRows = await prisma.journalEntryLike.findMany({
+      where: {
+        userId: me.id,
+        journalEntryId: { in: postRaw.journal.entries.map((entry) => entry.id) },
+      },
+      select: { journalEntryId: true },
+    });
+    const likedEntryIds = new Set(likedEntryRows.map((row) => row.journalEntryId));
+    (postRaw.journal.entries as Array<(typeof postRaw.journal.entries)[number] & { liked?: boolean }>).forEach((entry) => {
+      entry.liked = likedEntryIds.has(entry.id);
+    });
+  }
   const post = serializePost(postRaw, undefined, undefined, me);
   const collectCount = await prisma.postCollect.count({
     where: { postId: post.id },
@@ -280,6 +339,22 @@ export default async function PostDetailPage({
   const communityEvents = communityEventsRaw.map((p) => serializePost(p));
 
   const postUrl = `${SITE_URL}/post/${post.id}`;
+  const journalChronoEntries = post.type === "journal" && post.journal?.entries
+    ? makeJournalChronoEntries(post)
+    : [];
+  const journalPlant = postRaw.journal?.userPlantId
+    ? await prisma.userPlant.findUnique({
+        where: { id: postRaw.journal.userPlantId },
+        select: {
+          id: true,
+          nickname: true,
+          acquiredAt: true,
+          cover: true,
+          note: true,
+        },
+      })
+    : null;
+  const journalCompareFallback = post.cover ?? post.images?.[0] ?? post.species?.cover ?? "";
   const cover = post.cover
     ? post.cover.startsWith("http")
       ? post.cover
@@ -306,10 +381,10 @@ export default async function PostDetailPage({
   ]);
 
   return (
-    <AppShell showFloatingAi={false} showLeftRail={false}>
+    <AppShell showFloatingAi={false} showLeftRail={false} className="!max-w-[1280px]">
       {jsonLdScript([ld, breadcrumb])}
 
-      <div className="mx-auto grid w-full max-w-[1180px] gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="mx-auto grid w-full max-w-7xl gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-5">
           <article className="overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-sm">
             <div className="border-b border-leaf-100/80 px-5 py-4 md:px-7">
@@ -340,10 +415,12 @@ export default async function PostDetailPage({
 
               <div className="flex items-start gap-4">
                 <div className="min-w-0 flex-1">
-                  <h1 className="text-[24px] font-bold leading-snug text-ink-950 md:text-[30px]">
-                    {post.title}
-                  </h1>
-                  <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-500">
+                  {post.type !== "journal" && (
+                    <h1 className="text-[24px] font-bold leading-snug text-ink-950 md:text-[30px]">
+                      {post.title}
+                    </h1>
+                  )}
+                  <div className={post.type === "journal" ? "flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-500" : "mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-500"}>
                     <span>{formatDateTime(post.createdAt)}</span>
                     {post.updatedAt && post.updatedAt !== post.createdAt && (
                       <span>编辑于 {formatDateTime(post.updatedAt)}</span>
@@ -369,7 +446,7 @@ export default async function PostDetailPage({
                 </div>
               </div>
 
-              {post.tags.length > 0 && (
+              {post.type !== "journal" && post.tags.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {post.tags.map((t) => (
                     <Link
@@ -384,7 +461,7 @@ export default async function PostDetailPage({
               )}
             </div>
 
-            <div className="px-5 py-5 md:px-7 md:py-6">
+            <div className="px-5 pb-5 pt-7 md:px-7 md:pb-6 md:pt-8">
               {REVIEW_FILTER_ENABLED &&
                 me?.id === post.author.id &&
                 postRaw.reviewStatus !== "published" && (
@@ -406,11 +483,20 @@ export default async function PostDetailPage({
                   </div>
                 )}
 
-              <PostBody
-                post={post}
-                livePhotoMap={livePhotoMap}
-                initialAttending={attending}
-              />
+              {post.type === "journal" && post.journal ? (
+                <JournalPlantDetailContent
+                  post={post}
+                  speciesDetail={speciesDetail}
+                  plant={journalPlant}
+                  entries={journalChronoEntries}
+                />
+              ) : (
+                <PostBody
+                  post={post}
+                  livePhotoMap={livePhotoMap}
+                  initialAttending={attending}
+                />
+              )}
             </div>
 
             <PostActions
@@ -421,10 +507,6 @@ export default async function PostDetailPage({
             />
           </article>
 
-          {post.type === "journal" && post.journal && (
-            <JournalTimeline post={post} />
-          )}
-
           <CommentSection post={post} authorPendants={commentAuthorPendants} />
         </div>
 
@@ -434,6 +516,8 @@ export default async function PostDetailPage({
             related={related}
             sameGenusSpecies={sameGenusSpecies}
             communityEvents={communityEvents}
+            journalEntries={journalChronoEntries}
+            journalCompareFallback={journalCompareFallback}
           />
         </aside>
       </div>
@@ -447,17 +531,203 @@ export default async function PostDetailPage({
   );
 }
 
+function makeJournalChronoEntries(post: Post): JournalChronoEntry[] {
+  return [...(post.journal?.entries ?? [])]
+    .sort((a, b) => {
+      const byDate = new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime();
+      return byDate !== 0 ? byDate : b.orderIdx - a.orderIdx;
+    })
+    .map((entry) => {
+      const meta = JOURNAL_STAGE_META[entry.stage] ?? JOURNAL_STAGE_META.other;
+      const date = new Date(entry.entryDate);
+      return {
+        id: entry.id,
+        postId: post.id,
+        postTitle: post.title,
+        dateIso: entry.entryDate,
+        dateLabel: formatDateOnly(date),
+        yearLabel: String(date.getFullYear()),
+        monthDayLabel: monthDay(date),
+        stageLabel: entry.stage === "other" ? entry.stageLabel || meta.zh : meta.zh,
+        stageIcon: meta.emoji,
+        stageClassName: meta.color,
+        note: entry.note,
+        images: entry.images,
+        likes: entry.likes,
+        comments: entry.comments,
+        liked: entry.liked,
+      };
+    });
+}
+
+function JournalPlantDetailContent({
+  post,
+  speciesDetail,
+  plant,
+  entries,
+}: {
+  post: Post;
+  speciesDetail: SpeciesRailItem | null;
+  plant: { id: string; nickname: string; acquiredAt: Date; cover?: string | null; note?: string | null } | null;
+  entries: JournalChronoEntry[];
+}) {
+  const journalStartDate = post.journal?.startDate ? new Date(post.journal.startDate) : new Date(post.createdAt);
+  const entriesAsc = [...entries].sort(
+    (a, b) => new Date(a.dateIso).getTime() - new Date(b.dateIso).getTime()
+  );
+  const entriesDesc = [...entriesAsc].reverse();
+  const firstEntry = entriesAsc[0] ?? null;
+  const latestEntry = entriesDesc[0] ?? null;
+  const timelineImages: JournalTimelineImage[] = entriesAsc.flatMap((entry) =>
+    entry.images.map((image) => ({
+      image,
+      entryId: entry.id,
+      dateLabel: entry.dateLabel,
+      stageLabel: entry.stageLabel,
+    })),
+  );
+  const cover = firstEntry?.images[0] ?? plant?.cover ?? post.cover ?? post.images?.[0] ?? post.species?.cover ?? speciesDetail?.cover ?? "";
+  const nickname = plant?.nickname ?? post.journal?.subjectName ?? post.title;
+  const acquiredAt = plant?.acquiredAt ?? journalStartDate;
+  const speciesLabel = speciesDetail?.name ?? post.journal?.speciesName ?? post.species?.name ?? post.board.name;
+  const speciesHrefValue = speciesDetail ? speciesHref(speciesDetail) : post.board.level === "species" ? `/board/${post.board.path.map((item) => item.slug).join("/")}` : "/plants";
+  const stageAnchors = entriesAsc.map((entry) => ({
+    key: entry.id,
+    label: entry.stageLabel,
+    icon: entry.stageIcon,
+    entryId: entry.id,
+    dateLabel: entry.dateLabel,
+  }));
+
+  return (
+    <div className="space-y-5">
+      <section className="grid gap-5 md:grid-cols-[220px,minmax(0,1fr)]">
+        <div className="relative aspect-square overflow-hidden rounded-lg bg-leaf-50 shadow-sm">
+          {cover ? (
+            <Image src={cover} alt={nickname} fill unoptimized className="object-cover" />
+          ) : (
+            <div className="grid h-full place-items-center text-leaf-700">
+              <Icon name="plants" size={38} />
+            </div>
+          )}
+        </div>
+
+        <div className="min-w-0 space-y-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-3xl font-bold text-ink-950">{nickname}</h2>
+                <Icon name="star" size={17} className="text-amber-500" fill="currentColor" />
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <Link
+                  href={speciesHrefValue}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-leaf-600 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-leaf-700"
+                >
+                  <Icon name="plants" size={13} />
+                  <span>{speciesLabel}</span>
+                </Link>
+                {post.tags.map((tag) => (
+                  <Link
+                    key={tag}
+                    href={`/topic/${encodeURIComponent(tag)}`}
+                    className="rounded-full bg-leaf-50 px-3 py-1 text-xs font-medium text-leaf-800 transition-colors hover:bg-leaf-100"
+                  >
+                    #{tag}
+                  </Link>
+                ))}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-5 text-sm text-ink-700">
+                <span>入手时间：{formatDateOnly(acquiredAt)}</span>
+                <span>养护时长：{formatDuration(acquiredAt, new Date())}</span>
+              </div>
+              {entries.length > 0 && (
+                <>
+                  <div className="mt-2 flex flex-wrap gap-5 text-sm text-ink-700">
+                    <TimelineSummaryItem label="开始时间" value={firstEntry ? firstEntry.dateLabel : formatDateOnly(acquiredAt)} />
+                    <TimelineSummaryItem label="结束时间" value={latestEntry ? latestEntry.dateLabel : "暂无"} />
+                    <TimelineSummaryItem label="总条数" value={`${entries.length}条`} />
+                  </div>
+                  <JournalImageThumbStrip images={timelineImages} />
+                </>
+              )}
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <h3 className="text-base font-bold text-ink-950">成长时间轴</h3>
+        </div>
+        {stageAnchors.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {stageAnchors.map((item) => (
+              <a
+                key={item.key}
+                href={`#journal-entry-${item.entryId}`}
+                title={`${item.dateLabel} ${item.label}`}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-leaf-100 bg-white px-3 text-xs font-semibold text-leaf-800 shadow-sm transition hover:border-leaf-200 hover:bg-leaf-50 hover:text-leaf-900"
+              >
+                <span>{item.icon}</span>
+                <span>{item.label}</span>
+              </a>
+            ))}
+          </div>
+        )}
+
+        <JournalChronoTimeline entries={entries} />
+      </section>
+    </div>
+  );
+}
+
+function TimelineSummaryItem({ label, value }: { label: string; value: string }) {
+  return (
+    <span>{label}：{value}</span>
+  );
+}
+
+function formatDateOnly(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function monthDay(date: Date) {
+  return `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function formatDuration(start: Date, end: Date) {
+  const days = Math.max(0, Math.floor((end.getTime() - start.getTime()) / 86_400_000));
+  if (days < 31) return `${Math.max(days, 1)}天`;
+  if (days < 365) return `${Math.max(1, Math.round(days / 30))}个月`;
+  const years = Math.floor(days / 365);
+  const months = Math.round((days % 365) / 30);
+  return months > 0 ? `${years}年${months}个月` : `${years}年`;
+}
+
 function PostDetailRightRail({
   post,
   related,
   sameGenusSpecies,
   communityEvents,
+  journalEntries,
+  journalCompareFallback,
 }: {
   post: Post;
   related: Post[];
   sameGenusSpecies: SpeciesRailItem[];
   communityEvents: Post[];
+  journalEntries: JournalChronoEntry[];
+  journalCompareFallback: string;
 }) {
+  const journalStartDate = post.journal?.startDate ? new Date(post.journal.startDate) : null;
+  const journalEntriesAsc = [...journalEntries].sort(
+    (a, b) => new Date(a.dateIso).getTime() - new Date(b.dateIso).getTime()
+  );
+  const firstEntry = journalEntriesAsc[0] ?? null;
+  const latestEntry = journalEntriesAsc[journalEntriesAsc.length - 1] ?? null;
+
   return (
     <>
       <SideCard title="作者信息">
@@ -498,6 +768,26 @@ function PostDetailRightRail({
           </Link>
         </div>
       </SideCard>
+
+      {post.type === "journal" && post.journal && (
+        <>
+          <SideCard title="成长对比">
+            <div className="grid grid-cols-[1fr_24px_1fr] items-center gap-2">
+              <CompareImage
+                date={firstEntry ? firstEntry.dateLabel : journalStartDate ? formatDateOnly(journalStartDate) : "开始"}
+                src={firstEntry?.images[0] ?? journalCompareFallback}
+              />
+              <Icon name="arrow-right" size={20} className="text-leaf-600" />
+              <CompareImage
+                date={latestEntry ? latestEntry.dateLabel : "暂无"}
+                src={latestEntry?.images[0] ?? journalCompareFallback}
+              />
+            </div>
+            <p className="mt-3 text-center text-xs leading-5 text-ink-500">从第一张记录到现在，这一路的变化都在这里。</p>
+          </SideCard>
+
+        </>
+      )}
 
       {related.length > 0 && (
         <SideCard title="相关帖子" footerHref="/board" footerLabel="查看更多">
@@ -564,6 +854,23 @@ function PostDetailRightRail({
       )}
 
     </>
+  );
+}
+
+function CompareImage({ date, src }: { date: string; src: string }) {
+  return (
+    <div>
+      <div className="mb-2 text-center text-[11px] text-ink-500">{date}</div>
+      <div className="relative aspect-square overflow-hidden rounded-lg bg-leaf-50">
+        {src ? (
+          <Image src={src} alt={date} fill unoptimized className="object-cover" />
+        ) : (
+          <div className="grid h-full place-items-center text-leaf-700">
+            <Icon name="plants" size={18} />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

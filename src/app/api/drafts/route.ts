@@ -24,7 +24,7 @@ export const GET = handler(async () => {
 const Body = z.object({
   id: z.string().optional(),
   title: z.string().default(''),
-  type: z.enum(['rich', 'short', 'vote', 'video', 'event']),
+  type: z.enum(['rich', 'short', 'vote', 'video', 'event', 'help', 'journal']),
   payload: z.unknown(),
 });
 

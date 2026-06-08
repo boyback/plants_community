@@ -15,6 +15,7 @@ import { PlainCommentComposer } from '@/components/post/PlainCommentComposer';
 import { buildCommentContentJson } from '@/lib/comment-content';
 
 type SortKey = 'new' | 'hot';
+type JournalEntryCommentTarget = NonNullable<Comment['journalEntryRef']>;
 
 export function CommentSection({
   post,
@@ -32,12 +33,41 @@ export function CommentSection({
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [journalTarget, setJournalTarget] = useState<JournalEntryCommentTarget | null>(null);
   const myBubble = equip.bubble ?? null;
+
+  useEffect(() => {
+    const handleJournalComment = (event: Event) => {
+      const detail = (event as CustomEvent<{ postId: string; comment: Comment }>).detail;
+      if (!detail || detail.postId !== post.id) return;
+      setComments((prev) => prev.some((item) => item.id === detail.comment.id) ? prev : [...prev, detail.comment]);
+      setSort('new');
+    };
+    window.addEventListener('journal-entry-comment-created', handleJournalComment);
+    return () => window.removeEventListener('journal-entry-comment-created', handleJournalComment);
+  }, [post.id]);
+
+  useEffect(() => {
+    const handleTargetSelected = (event: Event) => {
+      const detail = (event as CustomEvent<{ postId: string } & JournalEntryCommentTarget>).detail;
+      if (!detail || detail.postId !== post.id) return;
+      setJournalTarget({
+        id: detail.id,
+        dateLabel: detail.dateLabel,
+        stageLabel: detail.stageLabel,
+        note: detail.note,
+        image: detail.image,
+      });
+      setSort('new');
+    };
+    window.addEventListener('journal-entry-comment-target-selected', handleTargetSelected);
+    return () => window.removeEventListener('journal-entry-comment-target-selected', handleTargetSelected);
+  }, [post.id]);
 
   const sorted = useMemo(() => {
     const arr = [...comments];
     if (sort === 'new') {
-      arr.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      arr.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     } else {
       arr.sort((a, b) => b.likes - a.likes);
     }
@@ -52,10 +82,19 @@ export function CommentSection({
     try {
       const c = await api.post<Comment>(`/api/posts/${post.id}/comments`, {
         contentJson: buildCommentContentJson(text, commentImages),
+        journalEntryId: journalTarget?.id,
       });
-      setComments((prev) => [c, ...prev]);
+      setComments((prev) => [...prev, c]);
       setCommentText('');
       setCommentImages([]);
+      setJournalTarget(null);
+      if (c.journalEntryRef) {
+        window.dispatchEvent(
+          new CustomEvent('journal-entry-comment-created', {
+            detail: { postId: post.id, entryId: c.journalEntryRef.id, comment: c },
+          }),
+        );
+      }
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : t('detail.post.commentSendFail'));
     } finally {
@@ -75,19 +114,26 @@ export function CommentSection({
               pendant={equip.pendant ?? null}
               isVip={vip.isVip}
             />
-            <PlainCommentComposer
-              title="评论"
-              value={commentText}
-              onChange={setCommentText}
-              images={commentImages}
-              onImagesChange={setCommentImages}
-              onSubmit={submit}
-              placeholder="写下你的想法..."
-              submitLabel="发送"
-              submitting={submitting}
-              error={err}
-              className="min-w-0 flex-1"
-            />
+            <div className="min-w-0 flex-1 space-y-3">
+              {journalTarget && (
+                <JournalEntryCommentTargetBanner
+                  target={journalTarget}
+                  onClear={() => setJournalTarget(null)}
+                />
+              )}
+              <PlainCommentComposer
+                title={journalTarget ? '引用成长记录留言' : '评论'}
+                value={commentText}
+                onChange={setCommentText}
+                images={commentImages}
+                onImagesChange={setCommentImages}
+                onSubmit={submit}
+                placeholder={journalTarget ? `留言给 ${journalTarget.stageLabel}...` : '写下你的想法...'}
+                submitLabel="发送"
+                submitting={submitting}
+                error={err}
+              />
+            </div>
           </div>
         ) : (
           <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3 text-sm">
@@ -122,7 +168,7 @@ export function CommentSection({
               sort === 'new' ? 'bg-white text-leaf-800 shadow-sm' : 'text-ink-500 hover:text-leaf-800'
             )}
           >
-            {t('detail.post.commentsLatest')}
+            时间
           </button>
         </div>
       </div>
@@ -141,14 +187,8 @@ export function CommentSection({
               liked={!!likedMap[c.id]}
               onLike={() => setLikedMap((m) => ({ ...m, [c.id]: !m[c.id] }))}
               postId={post.id}
-              onReplyAdded={(reply) => {
-                setComments((prev) =>
-                  prev.map((item) =>
-                    item.id === c.id
-                      ? { ...item, replies: [...(item.replies ?? []), reply] }
-                      : item
-                  )
-                );
+              onReplyAdded={(parentId, reply) => {
+                setComments((prev) => addReplyToCommentTree(prev, parentId, reply));
               }}
               myBubble={user?.id === c.author.id ? myBubble : null}
               authorPendants={authorPendants}
@@ -158,6 +198,16 @@ export function CommentSection({
       </div>
     </div>
   );
+}
+
+function addReplyToCommentTree(comments: Comment[], parentId: string, reply: Comment): Comment[] {
+  return comments.map((comment) => {
+    if (comment.id === parentId) {
+      return { ...comment, replies: [...(comment.replies ?? []), reply] };
+    }
+    if (!comment.replies?.length) return comment;
+    return { ...comment, replies: addReplyToCommentTree(comment.replies, parentId, reply) };
+  });
 }
 
 function CommentItem({
@@ -175,15 +225,18 @@ function CommentItem({
   liked: boolean;
   onLike: () => void;
   postId: string;
-  onReplyAdded: (reply: Comment) => void;
+  onReplyAdded: (parentId: string, reply: Comment) => void;
   myBubble?: SkinItem | null;
   authorPendants: Record<string, SkinItem>;
 }) {
+  const { user } = useAuth();
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [replyImages, setReplyImages] = useState<string[]>([]);
   const [replySubmitting, setReplySubmitting] = useState(false);
   const [replyErr, setReplyErr] = useState<string | null>(null);
+  const [replyTarget, setReplyTarget] = useState<{ id: string; name: string } | null>(null);
+  const [repliesExpanded, setRepliesExpanded] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const bubbleMeta = myBubble?.meta as Record<string, unknown> | undefined;
   const bubbleStyle = bubbleMeta
@@ -199,13 +252,15 @@ function CommentItem({
     setReplySubmitting(true);
     setReplyErr(null);
     try {
+      const parentId = replyTarget?.id ?? comment.id;
       const reply = await api.post<Comment>(`/api/posts/${postId}/comments`, {
         contentJson: buildCommentContentJson(text, replyImages),
-        parentId: comment.id,
+        parentId,
       });
-      onReplyAdded(reply);
+      onReplyAdded(parentId, reply);
       setReplyText('');
       setReplyImages([]);
+      setReplyTarget(null);
       setReplyOpen(false);
     } catch (e) {
       setReplyErr(e instanceof ApiError ? e.message : '回复失败');
@@ -213,6 +268,18 @@ function CommentItem({
       setReplySubmitting(false);
     }
   };
+
+  const openReplyComposer = (target?: { id: string; name: string }) => {
+    if (!user) {
+      window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+      return;
+    }
+    setReplyTarget(target ?? null);
+    setReplyOpen(true);
+  };
+  const replies = comment.replies ?? [];
+  const visibleReplies = repliesExpanded ? replies : replies.slice(0, 3);
+  const hiddenRepliesCount = Math.max(0, replies.length - visibleReplies.length);
 
   return (
     <div className="p-5">
@@ -233,7 +300,13 @@ function CommentItem({
             <div className="flex flex-wrap items-center justify-end gap-1.5 text-xs">
               <button
                 type="button"
-                onClick={() => setReplyOpen((o) => !o)}
+                onClick={() => {
+                  if (replyOpen && !replyTarget) {
+                    setReplyOpen(false);
+                  } else {
+                    openReplyComposer();
+                  }
+                }}
                 className="grid h-7 w-7 place-items-center rounded-md text-leaf-700/70 transition-colors hover:bg-leaf-50 hover:text-leaf-700"
                 aria-label="回复"
                 aria-expanded={replyOpen}
@@ -265,6 +338,7 @@ function CommentItem({
             )}
             style={myBubble && myBubble.slug !== 'bubble-default' ? bubbleStyle : undefined}
           >
+            {comment.journalEntryRef && <JournalEntryCommentRef refInfo={comment.journalEntryRef} />}
             <RichTextView
               json={comment.contentJson}
               html={comment.content}
@@ -288,7 +362,7 @@ function CommentItem({
                 images={replyImages}
                 onImagesChange={setReplyImages}
                 onSubmit={submitReply}
-                placeholder={`回复 ${comment.author.name}...`}
+                placeholder={`回复 ${replyTarget?.name ?? comment.author.name}...`}
                 submitLabel="发送"
                 submitting={replySubmitting}
                 error={replyErr}
@@ -298,15 +372,26 @@ function CommentItem({
             </div>
           </div>
 
-          {comment.replies && comment.replies.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2 rounded-xl bg-leaf-50/70 p-3">
-              {comment.replies.map((r) => (
+          {replies.length > 0 && (
+            <div className="mt-3 space-y-2 rounded-xl bg-leaf-50/70 p-3">
+              {visibleReplies.map((r) => (
                 <ReplyItem
                   key={r.id}
                   reply={r}
                   pendant={authorPendants[r.author.id] ?? null}
+                  authorPendants={authorPendants}
+                  onReplyTarget={openReplyComposer}
                 />
               ))}
+              {hiddenRepliesCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setRepliesExpanded(true)}
+                  className="inline-flex h-8 items-center rounded-lg px-3 text-xs font-semibold text-leaf-700 transition hover:bg-white hover:text-leaf-900"
+                >
+                  展开剩余 {hiddenRepliesCount} 条评论
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -315,15 +400,80 @@ function CommentItem({
   );
 }
 
+function JournalEntryCommentRef({ refInfo }: { refInfo: NonNullable<Comment['journalEntryRef']> }) {
+  return (
+    <a
+      href={`#journal-entry-${refInfo.id}`}
+      className="mb-2 flex max-w-xl gap-2 rounded-lg border border-leaf-100 bg-leaf-50/70 p-2 text-left transition hover:border-leaf-200 hover:bg-leaf-50"
+    >
+      {refInfo.image ? (
+        <img src={refInfo.image} alt="" className="h-12 w-12 shrink-0 rounded-md object-cover" />
+      ) : (
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-md bg-white text-leaf-700">
+          <Icon name="plants" size={18} />
+        </span>
+      )}
+      <span className="min-w-0">
+        <span className="block text-xs font-semibold text-leaf-800">
+          引用成长记录：{refInfo.dateLabel} · {refInfo.stageLabel}
+        </span>
+        {refInfo.note && <span className="mt-0.5 line-clamp-1 block text-[11px] text-ink-500">{refInfo.note}</span>}
+      </span>
+    </a>
+  );
+}
+
+function JournalEntryCommentTargetBanner({
+  target,
+  onClear,
+}: {
+  target: JournalEntryCommentTarget;
+  onClear: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-leaf-100 bg-white p-2 shadow-sm">
+      <a href={`#journal-entry-${target.id}`} className="flex min-w-0 flex-1 gap-2">
+        {target.image ? (
+          <img src={target.image} alt="" className="h-12 w-12 shrink-0 rounded-md object-cover" />
+        ) : (
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700">
+            <Icon name="plants" size={18} />
+          </span>
+        )}
+        <span className="min-w-0">
+          <span className="block text-xs font-semibold text-leaf-800">
+            正在引用：{target.dateLabel} · {target.stageLabel}
+          </span>
+          {target.note && <span className="mt-0.5 line-clamp-1 block text-[11px] text-ink-500">{target.note}</span>}
+        </span>
+      </a>
+      <button
+        type="button"
+        onClick={onClear}
+        className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-ink-400 hover:bg-ink-50 hover:text-ink-700"
+        aria-label="取消引用"
+      >
+        <Icon name="close" size={14} />
+      </button>
+    </div>
+  );
+}
+
 function ReplyItem({
   reply,
   pendant,
+  authorPendants,
+  onReplyTarget,
 }: {
   reply: Comment;
   pendant?: SkinItem | null;
+  authorPendants: Record<string, SkinItem>;
+  onReplyTarget: (target: { id: string; name: string }) => void;
 }) {
+  const childReplies = reply.replies ?? [];
+
   return (
-    <article className="flex min-w-[260px] max-w-full flex-1 basis-[260px] gap-2 rounded-lg border border-leaf-100 bg-white px-3 py-2 text-xs">
+    <article className="flex w-full gap-2 rounded-lg border border-leaf-100 bg-white px-3 py-2 text-xs">
       <Link href={`/user/${reply.author.id}`}>
         <UserAvatar
           src={reply.author.avatar}
@@ -333,7 +483,7 @@ function ReplyItem({
           showFestival={false}
         />
       </Link>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1.5">
             <Link href={`/user/${reply.author.id}`} className="font-medium text-leaf-700">
@@ -343,7 +493,17 @@ function ReplyItem({
             <span className="text-leaf-700/60">{formatNumber(reply.author.posts)} 帖</span>
             <CommentBadges badges={reply.author.badges} compact />
           </div>
-          <span className="shrink-0 text-leaf-700/60">{formatFullDateTime(reply.createdAt)}</span>
+          <span className="flex shrink-0 items-center gap-2 text-leaf-700/60">
+            <span>{formatFullDateTime(reply.createdAt)}</span>
+            <button
+              type="button"
+              onClick={() => onReplyTarget({ id: reply.id, name: reply.author.name })}
+              className="inline-flex h-6 items-center gap-1 rounded-md px-2 text-leaf-700/70 transition-colors hover:bg-leaf-50 hover:text-leaf-700"
+            >
+              <Icon name="comment" size={12} />
+              回复
+            </button>
+          </span>
         </div>
         <RichTextView
           json={reply.contentJson}
@@ -352,6 +512,19 @@ function ReplyItem({
           size="sm"
           className="comment-rich-text mt-0.5"
         />
+        {childReplies.length > 0 && (
+          <div className="mt-2 space-y-2 border-l border-leaf-100 pl-3">
+            {childReplies.map((child) => (
+              <ReplyItem
+                key={child.id}
+                reply={child}
+                pendant={authorPendants[child.author.id] ?? null}
+                authorPendants={authorPendants}
+                onReplyTarget={onReplyTarget}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </article>
   );

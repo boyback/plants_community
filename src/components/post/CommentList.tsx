@@ -63,6 +63,8 @@ function CommentItem({
 }) {
   const { user } = useAuth();
   const [replyOpen, setReplyOpen] = useState(false);
+  const [replyTarget, setReplyTarget] = useState<{ id: string; name: string } | null>(null);
+  const [repliesExpanded, setRepliesExpanded] = useState(false);
   const [liked, setLiked] = useState(false);
 
   // 气泡样式
@@ -83,6 +85,10 @@ function CommentItem({
       // ignore
     }
   };
+  const replies = comment.replies ?? [];
+  const visibleReplies = repliesExpanded ? replies : replies.slice(0, 3);
+  const hiddenRepliesCount = Math.max(0, replies.length - visibleReplies.length);
+  const replyParentId = replyTarget?.id ?? comment.id;
 
   return (
     <div className="border-b border-leaf-100 last:border-b-0">
@@ -130,7 +136,10 @@ function CommentItem({
               </button>
               <button
                 type="button"
-                onClick={() => setReplyOpen(!replyOpen)}
+                onClick={() => {
+                  setReplyTarget(null);
+                  setReplyOpen(!replyOpen);
+                }}
                 className="grid h-7 w-7 place-items-center rounded-md text-leaf-700/70 transition-colors hover:bg-leaf-50 hover:text-leaf-700"
                 aria-label="回复"
                 aria-expanded={replyOpen}
@@ -149,23 +158,41 @@ function CommentItem({
             >
               <div className="min-h-0 overflow-hidden">
                 <CommentReplyInput
-                  commentId={comment.id}
+                  commentId={replyParentId}
                   postId={postId}
-                  replyTo={comment.author.name}
+                  replyTo={replyTarget?.name ?? comment.author.name}
+                  prefixTarget={replyTarget?.name}
                   onSubmit={(reply) => {
-                    onReplyAdded?.(comment.id, reply);
+                    onReplyAdded?.(replyParentId, reply);
                     setReplyOpen(false);
+                    setReplyTarget(null);
                   }}
                 />
               </div>
             </div>
 
             {/* 子回复列表 */}
-            {comment.replies && comment.replies.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-2 rounded-none bg-leaf-50/60 p-2">
-                {comment.replies.map((r) => (
-                  <ReplyItem key={r.id} reply={r} />
+            {replies.length > 0 && (
+              <div className="mt-2 space-y-2 rounded-none bg-leaf-50/60 p-2">
+                {visibleReplies.map((r) => (
+                  <ReplyItem
+                    key={r.id}
+                    reply={r}
+                    onReply={() => {
+                      setReplyTarget({ id: r.id, name: r.author.name });
+                      setReplyOpen(true);
+                    }}
+                  />
                 ))}
+                {hiddenRepliesCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setRepliesExpanded(true)}
+                    className="inline-flex h-7 items-center rounded-md px-2 text-[11px] font-semibold text-leaf-700 transition hover:bg-white hover:text-leaf-900"
+                  >
+                    展开剩余 {hiddenRepliesCount} 条评论
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -175,9 +202,9 @@ function CommentItem({
   );
 }
 
-function ReplyItem({ reply }: { reply: Comment }) {
+function ReplyItem({ reply, onReply }: { reply: Comment; onReply: () => void }) {
   return (
-    <article className="min-w-[220px] max-w-full flex-1 basis-[220px] rounded-lg border border-leaf-100 bg-white px-3 py-2 text-[11px]">
+    <article className="w-full rounded-lg border border-leaf-100 bg-white px-3 py-2 text-[11px]">
       <Link href={`/user/${reply.author.id}`} className="font-medium text-leaf-700 hover:text-leaf-600">
         {reply.author.name}
       </Link>
@@ -189,6 +216,16 @@ function ReplyItem({ reply }: { reply: Comment }) {
         size="sm"
         className="mt-0.5"
       />
+      <div className="mt-1 flex justify-end">
+        <button
+          type="button"
+          onClick={onReply}
+          className="inline-flex h-6 items-center gap-1 rounded-md px-2 text-leaf-700/70 transition-colors hover:bg-leaf-50 hover:text-leaf-700"
+        >
+          <Icon name="comment" size={12} />
+          回复
+        </button>
+      </div>
     </article>
   );
 }
@@ -197,13 +234,14 @@ interface CommentReplyInputProps {
   commentId: string;
   postId: string;
   replyTo?: string;
+  prefixTarget?: string;
   onSubmit: (reply: Comment) => void;
 }
 
 /**
  * 评论回复输入组件（纯文本）
  */
-export function CommentReplyInput({ commentId, postId, replyTo, onSubmit }: CommentReplyInputProps) {
+export function CommentReplyInput({ commentId, postId, replyTo, prefixTarget, onSubmit }: CommentReplyInputProps) {
   const [replyText, setReplyText] = useState('');
   const [replyImages, setReplyImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);

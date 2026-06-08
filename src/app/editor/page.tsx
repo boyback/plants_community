@@ -31,6 +31,7 @@ function EditorPageInner() {
   const { user, loading: authLoading } = useAuth();
   const { t } = useI18n();
   const [drafts, setDrafts] = useState<Draft[]>([]);
+  const requestedType = toPostType(searchParams.get("type"));
 
   const loadDrafts = async () => {
     if (!user) return;
@@ -69,6 +70,7 @@ function EditorPageInner() {
     <AppShell showFloatingAi={false}>
       <PostComposer
         initialValue={{
+          type: requestedType,
           categorySlug: searchParams.get("category") ?? searchParams.get("board") ?? "",
           genusSlug: searchParams.get("genus") ?? "",
           speciesSlug: searchParams.get("species") ?? "",
@@ -91,4 +93,11 @@ function EditorPageInner() {
       />
     </AppShell>
   );
+}
+
+function toPostType(value: string | null): PostType | undefined {
+  if (!value) return undefined;
+  return ['rich', 'short', 'vote', 'video', 'event', 'help', 'journal'].includes(value)
+    ? (value as PostType)
+    : undefined;
 }

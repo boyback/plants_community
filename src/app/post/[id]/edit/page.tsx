@@ -87,8 +87,10 @@ export default async function PostEditPage({ params }: { params: { id: string } 
                 subjectName: post.journal.subjectName,
                 startDate: toDateInput(post.journal.startDate),
                 entries: post.journal.entries.map((entry) => ({
+                  id: entry.id,
                   entryDate: toDateInput(entry.entryDate),
                   stage: entry.stage,
+                  stageLabel: entry.stageLabel ?? '',
                   note: entry.note,
                   images: parseJsonArray(entry.images),
                 })),

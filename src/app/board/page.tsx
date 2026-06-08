@@ -295,18 +295,6 @@ function BoardFilterPanel({
 
   return (
     <StickyBoardFilter>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-base font-bold text-ink-900">板块筛选</h2>
-          <p className="mt-1 text-xs text-leaf-700/60">
-            {currentPath || kindLabel(selectedKind)}
-          </p>
-        </div>
-        <span className="rounded-full bg-leaf-50 px-3 py-1 text-xs text-ink-500">
-          已收录 <b className="text-ink-900">{formatNumber(allPosts)}</b> 篇帖子
-        </span>
-      </div>
-
       <div className="space-y-3">
         <FilterRow label="类型">
           <FilterChip href={boardHref({ sort: selectedSort })} active={selectedKind === 'all' && !selectedBoard}>
@@ -400,6 +388,12 @@ function BoardFilterPanel({
             ))}
           </FilterRow>
         )}
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div></div>
+          <span className="rounded-full bg-leaf-50 px-4 py-1 text-xs text-ink-500">
+            已收录 <b className="text-ink-900">{formatNumber(allPosts)}</b> 篇帖子
+          </span>
+        </div>
       </div>
     </StickyBoardFilter>
   );

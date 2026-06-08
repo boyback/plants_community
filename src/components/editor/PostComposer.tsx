@@ -18,7 +18,6 @@ import { api, ApiError } from "@/lib/client-api";
 import { toast } from "@/components/ui/Toast";
 import { emptyJournalDraft, type JournalDraft } from "@/components/post/JournalEditor";
 import { PostTypeBadge } from "@/components/ui/PostTypeBadge";
-import { FieldRow } from "@/components/editor/post-form/FieldRow";
 import { PostContentFields } from "@/components/editor/post-form/PostContentFields";
 import type { PostDraft } from "@/components/editor/post-form/types";
 import { cn } from "@/lib/utils";
@@ -62,6 +61,7 @@ const typeOptions: Array<{ type: PostType; label: string; icon: IconName }> = [
   { type: "help", label: "提问帖", icon: "info" },
   { type: "vote", label: "投票帖", icon: "vote" },
   { type: "video", label: "视频", icon: "video" },
+  { type: "event", label: "活动帖", icon: "event" },
 ];
 
 const visibilityOptions = [
@@ -146,6 +146,13 @@ export function PostComposer({
     });
   };
 
+  const clearJournalValidationErrors = () => {
+    setValidationErrors((prev) => {
+      const next = new Set([...prev].filter((key) => !key.startsWith("journal")));
+      return next.size === prev.size ? prev : next;
+    });
+  };
+
   const onBoardChange = (selection: BoardSelection) => {
     setCategorySlug(selection.categorySlug);
     setGenusSlug(selection.genusSlug);
@@ -178,13 +185,7 @@ export function PostComposer({
     cover,
   });
 
-  const hasContent = () => {
-    if (type === "rich" || type === "event") {
-      const j = contentJson as { content?: unknown[] } | null;
-      return !!j && Array.isArray(j.content) && j.content.length > 0;
-    }
-    return !!content.trim();
-  };
+  const hasRichContent = () => countTextFromJson(contentJson) > 0 || contentImages.length > 0;
 
   const loadDraftIntoForm = (d: PostDraft) => {
     const p = (d.payload as any) ?? {};
@@ -225,51 +226,80 @@ export function PostComposer({
     const errors = new Set<string>();
     if (!title.trim()) errors.add("title");
     if (!type) errors.add("type");
-    if (!hasContent()) errors.add("content");
     if (!genusSlug && !categorySlug && !speciesSlug) errors.add("board");
     if (tags.length === 0) errors.add("tags");
+    if (type === "rich" && !hasRichContent()) errors.add("richContent");
+    if (type === "short" && !content.trim()) errors.add("shortContent");
+    if (type === "help" && !content.trim()) errors.add("helpContent");
+    if (type === "video") {
+      if (!content.trim()) errors.add("videoContent");
+      if (!videoUrl.trim()) errors.add("videoUrl");
+    }
+    if (type === "vote") {
+      if (!content.trim()) errors.add("voteContent");
+      if (voteOptions.filter((x) => x.trim()).length < 2) errors.add("voteOptions");
+      if (!voteDeadline) errors.add("voteDeadline");
+    }
+    if (type === "event") {
+      if (!hasRichContent()) errors.add("eventContent");
+      if (!eventLocation.trim()) errors.add("eventLocation");
+      if (!eventStartAt) errors.add("eventStartAt");
+    }
+    if (type === "journal") {
+      if (!speciesSlug) errors.add("journalSpecies");
+      if (!journal.subjectName.trim()) errors.add("journalName");
+      if (!journal.startDate) errors.add("journalDate");
+      if (!journal.entries.length) errors.add("journalEntries");
+      journal.entries.forEach((entry, index) => {
+        if (isEdit && entry.id) return;
+        if (!entry.entryDate) errors.add(`journalEntryDate:${index}`);
+        if (!entry.stage) errors.add(`journalEntryStage:${index}`);
+        if (entry.stage === "other" && !entry.stageLabel?.trim()) errors.add(`journalEntryStageLabel:${index}`);
+        if (entry.images.length === 0) errors.add(`journalEntryImages:${index}`);
+        if (!entry.note.trim()) errors.add(`journalEntryNote:${index}`);
+      });
+    }
     return errors;
   };
 
   const validate = () => {
     const errors = getRequiredErrors();
-    if (errors.has("title")) {
-      toast.error(t("editor.errors.titleRequired"));
-    }
-    if (errors.has("board")) {
-      toast.error(t("editor.chooseBoard"));
-    }
-    if (errors.has("content")) {
-      toast.error(t("editor.errors.contentRequired"));
-    }
-    if (errors.has("tags")) {
-      toast.error("请至少添加一个话题");
-    }
-    if (type === "video" && !videoUrl.trim()) {
-      errors.add("content");
-      toast.error(t("editor.errors.videoUrlRequired"));
-    }
-    if (type === "vote" && voteOptions.filter((x) => x.trim()).length < 2) {
-      errors.add("content");
-      toast.error(t("editor.errors.voteOptionsMin"));
-    }
-    if (type === "vote" && !voteDeadline) {
-      errors.add("content");
-      toast.error(t("editor.voteDeadline"));
-    }
-    if (type === "event" && (!eventLocation.trim() || !eventStartAt)) {
-      errors.add("content");
-      toast.error(t("editor.event"));
-    }
-    if (type === "journal") {
-      if (!journal.subjectName.trim()) errors.add("content");
-      if (!journal.startDate) errors.add("content");
-      if (!journal.entries.length) errors.add("content");
-      if (journal.entries.find((e) => !e.entryDate)) errors.add("content");
-      if (errors.has("content")) toast.error(t("editor.errors.contentRequired"));
-    }
     setValidationErrors(errors);
+    const message = firstValidationMessage(errors);
+    if (message) toast.error(message);
     return errors.size === 0;
+  };
+
+  const firstValidationMessage = (errors: Set<string>) => {
+    const ordered: Array<[string, string]> = [
+      ["title", t("editor.errors.titleRequired")],
+      ["type", "请选择帖子类型"],
+      ["richContent", "图文帖需要填写正文，或至少插入一张图片"],
+      ["shortContent", "纯文字帖需要填写正文内容"],
+      ["helpContent", "提问帖需要描述问题现象、环境或已尝试的方法"],
+      ["videoContent", "视频帖需要补充一段视频说明"],
+      ["videoUrl", t("editor.errors.videoUrlRequired")],
+      ["voteContent", "投票帖需要填写投票说明"],
+      ["voteOptions", t("editor.errors.voteOptionsMin")],
+      ["voteDeadline", "请选择投票截止时间"],
+      ["eventContent", "活动帖需要填写活动介绍"],
+      ["eventLocation", "请填写活动地点"],
+      ["eventStartAt", "请选择活动开始时间"],
+      ["journalSpecies", "成长记录需要选择具体品种"],
+      ["journalName", "请填写成长记录的植物昵称"],
+      ["journalDate", "请选择成长记录的起始日期"],
+      ["journalEntries", "请至少添加一条成长记录"],
+      ["board", t("editor.chooseBoard")],
+      ["tags", "请至少添加一个话题"],
+    ];
+    const exact = ordered.find(([key]) => errors.has(key));
+    if (exact) return exact[1];
+    if ([...errors].some((key) => key.startsWith("journalEntryDate:"))) return "请补全成长记录的日期";
+    if ([...errors].some((key) => key.startsWith("journalEntryStage:"))) return "请选择成长记录的阶段";
+    if ([...errors].some((key) => key.startsWith("journalEntryStageLabel:"))) return "选择其他阶段时，请填写阶段名称";
+    if ([...errors].some((key) => key.startsWith("journalEntryImages:"))) return "每条成长记录都需要上传配图";
+    if ([...errors].some((key) => key.startsWith("journalEntryNote:"))) return "请填写成长记录的心得";
+    return null;
   };
 
   const submit = async () => {
@@ -306,8 +336,10 @@ export function PostComposer({
           subjectName: journal.subjectName.trim(),
           startDate: new Date(journal.startDate).toISOString(),
           entries: journal.entries.map((e) => ({
+            ...(e.id ? { id: e.id } : {}),
             entryDate: new Date(e.entryDate).toISOString(),
-            stage: e.stage,
+            stage: e.stage || undefined,
+            stageLabel: e.stage === "other" ? e.stageLabel?.trim() : undefined,
             note: e.note,
             images: e.images,
           })),
@@ -345,6 +377,7 @@ export function PostComposer({
 
   return (
     <Form.Root
+      noValidate
       onInvalidCapture={() => setValidationErrors(getRequiredErrors())}
       onSubmit={(event) => {
         event.preventDefault();
@@ -360,50 +393,16 @@ export function PostComposer({
         )}
       >
         <section className="flex min-h-[calc(100dvh-221px)] min-w-0 flex-col gap-4 lg:min-h-[calc(100dvh-157px)]">
-          <header className="px-1">
-            <div className="flex items-center gap-2 text-sm text-ink-500">
-              <span>社区</span>
-              <span>/</span>
-              <span>{isEdit ? "编辑帖子" : "发布帖子"}</span>
-            </div>
             <div className="mt-3 flex items-end justify-between gap-3">
               <div>
-                <h1 className="text-2xl font-bold text-ink-950">{isEdit ? "编辑帖子" : "发布新帖子"}</h1>
+                <h1 className="text-2xl font-bold text-ink-950">{isEdit ? "编辑帖子" : "新建帖子"}</h1>
                 <p className="mt-1 text-sm text-ink-500">分享你的多肉种植经验、心得或美图吧</p>
               </div>
               {isEdit && <PostTypeBadge type={type} />}
             </div>
-          </header>
 
           <div className="flex flex-1 flex-col rounded-xl border border-leaf-100 bg-white p-5 shadow-sm">
-            <Form.Field name="title" serverInvalid={validationErrors.has("title")}>
-              <Form.Label className="mb-1.5 block text-sm font-semibold text-ink-800">
-                <span className="text-rose-500">*</span> 帖子标题
-              </Form.Label>
-              <Form.Control asChild>
-                <Input
-                  required
-                  value={title}
-                  error={validationErrors.has("title")}
-                  onChange={(e) => {
-                    setTitle(e.target.value);
-                    if (e.target.value.trim()) clearValidationError("title");
-                  }}
-                  placeholder="银冠玉养护记录 | 从单头到爆仔的 3 年变化"
-                  maxLength={50}
-                  showCount
-                />
-              </Form.Control>
-              <Form.Message
-                match="valueMissing"
-                forceMatch={validationErrors.has("title")}
-                className="mt-1.5 block text-xs text-rose-600"
-              >
-                请输入帖子标题
-              </Form.Message>
-            </Form.Field>
-
-            <Form.Field name="type" serverInvalid={validationErrors.has("type")} className="mt-5">
+            <Form.Field name="type" serverInvalid={validationErrors.has("type")}>
               <Form.Label className="mb-2 block text-sm font-semibold text-ink-800">
                 <span className="text-rose-500">*</span> 帖子类型
               </Form.Label>
@@ -432,30 +431,42 @@ export function PostComposer({
                 请选择帖子类型
               </Form.Message>
             </Form.Field>
-
-            <Form.Field name="content" serverInvalid={validationErrors.has("content")} className="mt-5">
-              <Form.Control
-                value={hasContent() ? "ok" : ""}
-                required
-                readOnly
-                tabIndex={-1}
-                aria-hidden
-                className="sr-only"
-              />
+            <Form.Field name="title" serverInvalid={validationErrors.has("title")} className="mt-5">
+              <Form.Label className="mb-1.5 block text-sm font-semibold text-ink-800">
+                <span className="text-rose-500">*</span> 帖子标题
+              </Form.Label>
+              <Form.Control asChild>
+                <Input
+                  required
+                  value={title}
+                  error={validationErrors.has("title")}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    if (e.target.value.trim()) clearValidationError("title");
+                  }}
+                  placeholder="银冠玉养护记录 | 从单头到爆仔的 3 年变化"
+                  maxLength={50}
+                  showCount
+                />
+              </Form.Control>
+              <Form.Message
+                match="valueMissing"
+                forceMatch={validationErrors.has("title")}
+                className="mt-1.5 block text-xs text-rose-600"
+              >
+                请输入帖子标题
+              </Form.Message>
+            </Form.Field>
+            <div className="mt-5">
               <PostContentFields
                 type={type}
                 t={t}
                 content={content}
-                invalid={validationErrors.has("content")}
-                onContentChange={(value) => {
-                  setContent(value);
-                  if (value.trim()) clearValidationError("content");
-                }}
+                validationErrors={validationErrors}
+                onClearValidationError={clearValidationError}
+                onContentChange={setContent}
                 contentJson={contentJson}
-                onContentJsonChange={(value) => {
-                  setContentJson(value);
-                  clearValidationError("content");
-                }}
+                onContentJsonChange={setContentJson}
                 videoUrl={videoUrl}
                 onVideoUrlChange={setVideoUrl}
                 voteOptions={voteOptions}
@@ -472,17 +483,10 @@ export function PostComposer({
                 journal={journal}
                 onJournalChange={(value) => {
                   setJournal(value);
-                  clearValidationError("content");
+                  clearJournalValidationErrors();
                 }}
               />
-              <Form.Message
-                match="valueMissing"
-                forceMatch={validationErrors.has("content")}
-                className="mt-1.5 block text-xs text-rose-600"
-              >
-                请输入正文内容
-              </Form.Message>
-            </Form.Field>
+            </div>
 
             <div ref={settingsRef} className="mt-5 border-t border-solid border-leaf-200 pt-5 scroll-mt-24">
               <PostSettingsCard
@@ -490,7 +494,7 @@ export function PostComposer({
                 onCoverChange={setCover}
                 boardSelection={{ categorySlug, genusSlug, speciesSlug }}
                 onBoardChange={onBoardChange}
-                boardInvalid={validationErrors.has("board") && !categorySlug}
+                boardInvalid={(validationErrors.has("board") && !categorySlug) || validationErrors.has("journalSpecies")}
                 autoSelectFirst={!isEdit}
                 visibility={visibility}
                 onVisibilityChange={setVisibility}
@@ -761,17 +765,6 @@ function PostSettingsCard({
           />
         </div>
 
-        <div className="grid gap-3 py-4 md:grid-cols-[150px_minmax(0,1fr)]">
-          <div>
-            <div className="text-sm font-semibold text-ink-800">参与设置</div>
-            <div className="mt-1 text-xs leading-5 text-ink-500">控制互动入口。</div>
-          </div>
-          <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-700">
-            <CheckLine label="允许评论" />
-            <CheckLine label="允许点赞" />
-            <CheckLine label="允许收藏" />
-          </div>
-        </div>
       </div>
     </section>
   );

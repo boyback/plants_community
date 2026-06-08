@@ -37,6 +37,7 @@ import type {
 } from './types';
 import { parseJsonArray } from './api';
 import { parseSpeciesGallery } from './species-gallery';
+import { STAGE_META } from './journal';
 
 // ------------ User ------------
 
@@ -485,15 +486,19 @@ export function serializePost(p: AnyPost, userVoted?: boolean, userVotedOptionId
   };
 }
 
-function serializeJournalEntry(e: DBJournalEntry): JournalEntry {
+function serializeJournalEntry(e: DBJournalEntry & { _count?: { likes?: number; comments?: number }; liked?: boolean }): JournalEntry {
   return {
     id: e.id,
     entryDate: e.entryDate.toISOString(),
     stage: e.stage as JournalStage,
+    stageLabel: e.stageLabel ?? undefined,
     note: e.note,
     images: parseJsonArray(e.images),
     orderIdx: e.orderIdx,
     createdAt: e.createdAt.toISOString(),
+    likes: e._count?.likes ?? 0,
+    comments: e._count?.comments ?? 0,
+    liked: Boolean(e.liked),
   };
 }
 
@@ -534,18 +539,36 @@ function serializeJournal(
 
 type CommentWithAuthor = DBComment & {
   author: UserWithRelations;
-  replies?: (DBComment & { author: UserWithRelations })[];
+  journalEntry?: (DBJournalEntry & { _count?: { likes?: number; comments?: number } }) | null;
+  replies?: CommentWithAuthor[];
 };
 
 export function serializeComment(c: CommentWithAuthor): Comment {
+  const refStage = c.journalEntry
+    ? c.journalEntry.stage === 'other'
+      ? c.journalEntry.stageLabel || STAGE_META.other.zh
+      : STAGE_META[c.journalEntry.stage as JournalStage]?.zh ?? c.journalEntry.stage
+    : '';
+  const refImages = c.journalEntry ? parseJsonArray(c.journalEntry.images) : [];
+
   return {
     id: c.id,
+    parentId: c.parentId,
     author: serializeUser(c.author),
     content: c.content,
     contentJson: parseRichJson(c.contentJson),
     contentText: c.contentText ?? undefined,
     createdAt: c.createdAt.toISOString(),
     likes: c.likes,
+    journalEntryRef: c.journalEntry
+      ? {
+          id: c.journalEntry.id,
+          dateLabel: c.journalEntry.entryDate.toISOString().slice(0, 10),
+          stageLabel: refStage,
+          note: c.journalEntry.note || undefined,
+          image: refImages[0],
+        }
+      : undefined,
     replies: c.replies?.map((r) => serializeComment(r)),
   };
 }

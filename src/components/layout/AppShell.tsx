@@ -24,7 +24,7 @@ type NavItem = {
 
 const primaryNav: NavItem[] = [
   { href: '/', label: '首页', icon: 'home' },
-  { href: '/editor?type=journal', label: '成长时间轴', icon: 'event' },
+  { href: '/plant-archives', label: '植物档案', icon: 'plants' },
   { href: '/ranking', label: '排行榜', icon: 'trophy' },
   { href: '/plants/favorites', label: '收藏夹', icon: 'heart' },
   { href: '/user/me', label: '关注列表', icon: 'heart' },

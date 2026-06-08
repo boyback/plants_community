@@ -12,6 +12,7 @@ import { postNeedsReview } from '@/lib/post-review';
 import { firePushToBaidu } from '@/lib/baidu-push';
 import { sortPostsForPins, type PinSortTarget } from '@/lib/post-pins';
 import { incrementSpeciesDailyStat } from '@/lib/species-daily-stats';
+import { createUserPlantCode } from '@/lib/user-plant-code';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://plantcommunity.cn';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
@@ -213,15 +214,15 @@ const JournalEntryInput = z.object({
       'pest',
       'watering',
       'other',
-    ])
-    .default('other'),
-  note: z.string().max(2000).default(''),
-  images: z.array(z.string()).max(50).default([]),
+    ]),
+  stageLabel: z.string().trim().max(50).optional(),
+  note: z.string().trim().min(1, '每条成长记录都需要填写心得').max(2000),
+  images: z.array(z.string()).min(1, '每条成长记录都需要上传配图').max(9).default([]),
 });
 
 const CreateBody = z
   .object({
-    type: z.enum(['rich', 'short', 'vote', 'video', 'event', 'journal']),
+    type: z.enum(['rich', 'short', 'vote', 'video', 'event', 'help', 'journal']),
     // 板块定位(任一)
     categorySlug: z.string().optional(),
     genusSlug: z.string().optional(),
@@ -338,6 +339,7 @@ export const POST = handler(async (req) => {
   const permMap: Record<typeof body.type, Permission> = {
     rich: 'post:rich',
     short: 'post:short',
+    help: 'post:short',
     video: 'post:video',
     vote: 'post:vote',
     event: 'post:event',
@@ -355,9 +357,12 @@ export const POST = handler(async (req) => {
   }
 
   const resolved = await resolveBoardIds(body);
-  
   if (!resolved.ok) return fail(400, resolved.error);
   const { ids: resolvedIds } = resolved;
+  const finalIds = resolvedIds;
+  if (body.type === 'journal' && !finalIds.speciesId) {
+    return fail(400, '成长记录需要选择具体品种');
+  }
 
   const cover = body.cover ?? null;
 
@@ -377,68 +382,123 @@ export const POST = handler(async (req) => {
     content: stored.html,
   });
 
-  const created = await prisma.post.create({
-    data: {
-      type: body.type,
-      title: body.title,
-      content: stored.html,
-      contentJson: stored.json || null,
-      contentText: stored.text,
-      cover,
-      images: stringifyJson(body.images ?? []),
-      videoUrl: body.videoUrl ?? null,
-      tags: stringifyJson(body.tags ?? []),
-      boardId: resolvedIds.boardId,
-      genusId: resolvedIds.genusId,
-      speciesId: resolvedIds.speciesId,
-      authorId: me.id,
-      ...(REVIEW_FILTER_ENABLED && {
-        reviewStatus: needsReview ? 'pending' : 'published',
-      }),
-      ...(body.vote && {
-        vote: {
-          create: {
-            question: body.vote.question,
-            multi: body.vote.multi,
-            deadline: new Date(body.vote.deadline),
-            options: {
-              create: body.vote.options.map((label, i) => ({
-                label,
-                orderIdx: i,
-              })),
+  const created = await prisma.$transaction(async (tx) => {
+    const journalSpeciesId = body.journal ? body.journal.speciesId ?? finalIds.speciesId : null;
+    let userPlantId: string | null = null;
+
+    if (body.type === 'journal' && body.journal && journalSpeciesId) {
+      const startDate = new Date(body.journal.startDate);
+      const species = await tx.species.findUnique({
+        where: { id: journalSpeciesId },
+        select: { cover: true },
+      });
+      const latestEntry = [...body.journal.entries].sort(
+        (a, b) => new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime(),
+      )[0];
+      const currentStage = latestEntry?.stage ?? 'growing';
+      const existingPlant = await tx.userPlant.findFirst({
+        where: {
+          ownerId: me.id,
+          speciesId: journalSpeciesId,
+          nickname: body.journal.subjectName,
+          acquiredAt: startDate,
+          journal: null,
+        },
+        select: { id: true },
+      });
+      const plant = existingPlant
+        ? await tx.userPlant.update({
+            where: { id: existingPlant.id },
+            data: {
+              currentStage,
+              currentStageLabel: currentStage === 'other' ? latestEntry?.stageLabel || null : null,
+              cover: cover ?? species?.cover ?? null,
+              note: latestEntry?.note || null,
+            },
+            select: { id: true },
+          })
+        : await tx.userPlant.create({
+            data: {
+              ownerId: me.id,
+              speciesId: journalSpeciesId,
+              code: await createUserPlantCode(tx, me.id, body.journal.subjectName, startDate),
+              nickname: body.journal.subjectName,
+              acquiredAt: startDate,
+              currentStage,
+              currentStageLabel: currentStage === 'other' ? latestEntry?.stageLabel || null : null,
+              cover: cover ?? species?.cover ?? null,
+              note: latestEntry?.note || null,
+            },
+            select: { id: true },
+          });
+      userPlantId = plant.id;
+    }
+
+    return tx.post.create({
+      data: {
+        type: body.type,
+        title: body.title,
+        content: stored.html,
+        contentJson: stored.json || null,
+        contentText: stored.text,
+        cover,
+        images: stringifyJson(body.images ?? []),
+        videoUrl: body.videoUrl ?? null,
+        tags: stringifyJson(body.tags ?? []),
+        boardId: finalIds.boardId,
+        genusId: finalIds.genusId,
+        speciesId: finalIds.speciesId,
+        authorId: me.id,
+        ...(REVIEW_FILTER_ENABLED && {
+          reviewStatus: needsReview ? 'pending' : 'published',
+        }),
+        ...(body.vote && {
+          vote: {
+            create: {
+              question: body.vote.question,
+              multi: body.vote.multi,
+              deadline: new Date(body.vote.deadline),
+              options: {
+                create: body.vote.options.map((label, i) => ({
+                  label,
+                  orderIdx: i,
+                })),
+              },
             },
           },
-        },
-      }),
-      ...(body.event && {
-        event: {
-          create: {
-            location: body.event.location,
-            startAt: new Date(body.event.startAt),
-            endAt: new Date(body.event.endAt ?? body.event.startAt),
-          },
-        },
-      }),
-      ...(body.journal && {
-        journal: {
-          create: {
-            subjectName: body.journal.subjectName,
-            startDate: new Date(body.journal.startDate),
-            speciesId: body.journal.speciesId ?? resolvedIds.speciesId ?? null,
-            entries: {
-              create: body.journal.entries.map((e, i) => ({
-                entryDate: new Date(e.entryDate),
-                stage: e.stage,
-                note: e.note,
-                images: stringifyJson(e.images),
-                orderIdx: i,
-              })),
+        }),
+        ...(body.event && {
+          event: {
+            create: {
+              location: body.event.location,
+              startAt: new Date(body.event.startAt),
+              endAt: new Date(body.event.endAt ?? body.event.startAt),
             },
           },
-        },
-      }),
-    },
-    include: postInclude(),
+        }),
+        ...(body.journal && {
+          journal: {
+            create: {
+              subjectName: body.journal.subjectName,
+              userPlantId,
+              startDate: new Date(body.journal.startDate),
+              speciesId: journalSpeciesId,
+              entries: {
+                create: body.journal.entries.map((e, i) => ({
+                  entryDate: new Date(e.entryDate),
+                  stage: e.stage,
+                  stageLabel: e.stage === 'other' ? e.stageLabel || null : null,
+                  note: e.note,
+                  images: stringifyJson(e.images),
+                  orderIdx: i,
+                })),
+              },
+            },
+          },
+        }),
+      },
+      include: postInclude(),
+    });
   });
 
   await emitEvent({ kind: 'post_create', userId: me.id, postId: created.id });
@@ -446,7 +506,7 @@ export const POST = handler(async (req) => {
   // 待审核帖不推百度(避免推了一个未公开页面)
   if (!needsReview) {
     firePushToBaidu(`${SITE_URL}/post/${created.id}`);
-    await incrementSpeciesDailyStat(resolvedIds.speciesId, 'posts');
+    await incrementSpeciesDailyStat(finalIds.speciesId, 'posts');
   }
 
   return serializePost(created);

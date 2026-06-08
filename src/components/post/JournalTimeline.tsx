@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import { ImageGallery } from '@/components/ui/ImageGallery';
 import { api, ApiError } from '@/lib/client-api';
 import { toast } from '@/components/ui/Toast';
-import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { useAuth } from '@/context/AuthContext';
 
 interface Props {
@@ -22,7 +21,6 @@ export function JournalTimeline({ post }: Props) {
   const isAuthor = user?.id === post.author.id;
   const [entries, setEntries] = useState<JournalEntry[]>(post.journal?.entries ?? []);
   const [adding, setAdding] = useState(false);
-  const [editing, setEditing] = useState<JournalEntry | null>(null);
 
   if (!post.journal) return null;
 
@@ -77,9 +75,6 @@ export function JournalTimeline({ post }: Props) {
               startDate={post.journal!.startDate}
               isFirst={i === 0}
               isLast={i === sorted.length - 1}
-              isAuthor={isAuthor}
-              onEdit={() => setEditing(e)}
-              onDelete={() => handleDelete(e)}
             />
           ))}
         </ol>
@@ -97,18 +92,6 @@ export function JournalTimeline({ post }: Props) {
         />
       )}
 
-      {editing && (
-        <EditEntryDialog
-          postId={post.id}
-          entry={editing}
-          onClose={() => setEditing(null)}
-          onUpdated={(updated) => {
-            setEntries(entries.map(e => e.id === updated.id ? updated : e));
-            setEditing(null);
-            toast.success('已更新');
-          }}
-        />
-      )}
     </section>
   );
 }
@@ -118,19 +101,14 @@ function EntryNode({
   startDate,
   isFirst,
   isLast,
-  isAuthor,
-  onEdit,
-  onDelete,
 }: {
   entry: JournalEntry;
   startDate: string;
   isFirst: boolean;
   isLast: boolean;
-  isAuthor: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
 }) {
-  const meta = STAGE_META[entry.stage];
+  const meta = STAGE_META[entry.stage] || STAGE_META.other;
+  const stageText = entry.stage === 'other' && entry.stageLabel ? entry.stageLabel : meta.zh;
   const date = new Date(entry.entryDate);
   const start = new Date(startDate);
   const day = Math.floor(
@@ -164,32 +142,8 @@ function EntryNode({
               meta.color
             )}
           >
-            {meta.emoji} {meta.zh}
+            {meta.emoji} {stageText}
           </span>
-          {isAuthor && (
-            <div className="ml-auto flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                type="button"
-                className="text-xs text-leaf-700 hover:text-leaf-900 hover:underline"
-                onClick={onEdit}
-              >
-                编辑
-              </button>
-              <ConfirmPopover
-                title="确定删除这条记录？"
-                confirmText="删除"
-                danger
-                onConfirm={onDelete}
-              >
-                <button
-                  type="button"
-                  className="text-xs text-rose-600 hover:text-rose-700 hover:underline"
-                >
-                  删除
-                </button>
-              </ConfirmPopover>
-            </div>
-          )}
         </div>
         {entry.note && (
           <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-ink-800/90">
@@ -216,6 +170,7 @@ function AddEntryDialog({
   const today = new Date().toISOString().slice(0, 10);
   const [entryDate, setEntryDate] = useState(today);
   const [stage, setStage] = useState<JournalStage>('growing');
+  const [stageLabel, setStageLabel] = useState('');
   const [note, setNote] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [imgInput, setImgInput] = useState('');
@@ -224,6 +179,8 @@ function AddEntryDialog({
 
   const submit = async () => {
     if (!entryDate) return setErr('请选择日期');
+    if (stage === 'other' && !stageLabel.trim()) return setErr('选择其他阶段时，请填写阶段名称');
+    if (images.length === 0) return setErr('每条成长记录都需要上传配图');
     setBusy(true);
     setErr('');
     try {
@@ -232,6 +189,7 @@ function AddEntryDialog({
         {
           entryDate: new Date(entryDate).toISOString(),
           stage,
+          stageLabel: stage === 'other' ? stageLabel.trim() : undefined,
           note,
           images,
         }
@@ -272,7 +230,11 @@ function AddEntryDialog({
               <select
                 className="input"
                 value={stage}
-                onChange={(e) => setStage(e.target.value as JournalStage)}
+                onChange={(e) => {
+                  const next = e.target.value as JournalStage;
+                  setStage(next);
+                  if (next !== 'other') setStageLabel('');
+                }}
               >
                 {ALL_STAGES.map((s) => (
                   <option key={s} value={s}>
@@ -282,6 +244,20 @@ function AddEntryDialog({
               </select>
             </label>
           </div>
+          {stage === 'other' && (
+            <label className="block">
+              <div className="mb-1 text-xs text-leaf-700/80">
+                <span className="text-rose-500">*</span> 其他阶段
+              </div>
+              <input
+                className="input"
+                value={stageLabel}
+                onChange={(e) => setStageLabel(e.target.value)}
+                maxLength={50}
+                placeholder="例如：服盆、控养、修根"
+              />
+            </label>
+          )}
           <label className="block">
             <div className="mb-1 text-xs text-leaf-700/80">心得</div>
             <textarea
@@ -293,7 +269,9 @@ function AddEntryDialog({
             />
           </label>
           <div>
-            <div className="mb-1 text-xs text-leaf-700/80">图片(选填)</div>
+            <div className="mb-1 text-xs text-leaf-700/80">
+              <span className="text-rose-500">*</span> 图片
+            </div>
             <div className="flex gap-2">
               <input
                 className="input flex-1"
@@ -369,6 +347,7 @@ function EditEntryDialog({
 }) {
   const [entryDate, setEntryDate] = useState(entry.entryDate.slice(0, 10));
   const [stage, setStage] = useState<JournalStage>(entry.stage);
+  const [stageLabel, setStageLabel] = useState(entry.stageLabel ?? '');
   const [note, setNote] = useState(entry.note);
   const [images, setImages] = useState<string[]>(entry.images);
   const [imgInput, setImgInput] = useState('');
@@ -377,6 +356,7 @@ function EditEntryDialog({
 
   const submit = async () => {
     if (!entryDate) return setErr('请选择日期');
+    if (stage === 'other' && !stageLabel.trim()) return setErr('选择其他阶段时，请填写阶段名称');
     setBusy(true);
     setErr('');
     try {
@@ -385,6 +365,7 @@ function EditEntryDialog({
         {
           entryDate: new Date(entryDate).toISOString(),
           stage,
+          stageLabel: stage === 'other' ? stageLabel.trim() : undefined,
           note,
           images,
         }
@@ -393,6 +374,7 @@ function EditEntryDialog({
         ...entry,
         entryDate: new Date(entryDate).toISOString(),
         stage,
+        stageLabel: stage === 'other' ? stageLabel.trim() : undefined,
         note,
         images,
       });
@@ -431,7 +413,11 @@ function EditEntryDialog({
               <select
                 className="input"
                 value={stage}
-                onChange={(e) => setStage(e.target.value as JournalStage)}
+                onChange={(e) => {
+                  const next = e.target.value as JournalStage;
+                  setStage(next);
+                  if (next !== 'other') setStageLabel('');
+                }}
               >
                 {ALL_STAGES.map((s) => (
                   <option key={s} value={s}>
@@ -441,6 +427,20 @@ function EditEntryDialog({
               </select>
             </label>
           </div>
+          {stage === 'other' && (
+            <label className="block">
+              <div className="mb-1 text-xs text-leaf-700/80">
+                <span className="text-rose-500">*</span> 其他阶段
+              </div>
+              <input
+                className="input"
+                value={stageLabel}
+                onChange={(e) => setStageLabel(e.target.value)}
+                maxLength={50}
+                placeholder="例如：服盆、控养、修根"
+              />
+            </label>
+          )}
           <label className="block">
             <div className="mb-1 text-xs text-leaf-700/80">心得</div>
             <textarea

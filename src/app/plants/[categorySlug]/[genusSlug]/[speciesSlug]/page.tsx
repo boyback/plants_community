@@ -5,6 +5,8 @@ import { notFound } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { SpeciesDetailActions } from '@/components/species/SpeciesDetailActions';
 import { SpeciesContributionButton } from '@/components/species/SpeciesContributionButton';
+import { SpeciesCareVotePanel } from '@/components/species/SpeciesCareVotePanel';
+import { SpeciesRatingPanel } from '@/components/species/SpeciesRatingPanel';
 import { SpeciesGalleryWall } from '@/components/species/SpeciesGalleryWall';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -117,7 +119,7 @@ export default async function PlantSpeciesPage({
     prisma.species.findMany({
       where: { genusId: species.genusId, id: { not: species.id } },
       include: { _count: { select: { posts: true, ratings: true, collects: true } } },
-      orderBy: [{ collects: { _count: 'desc' } }, { posts: { _count: 'desc' } }, { ratingCount: 'desc' }, { name: 'asc' }],
+      orderBy: [{ posts: { _count: 'desc' } }, { name: 'asc' }],
       take: 6,
     }),
     getTaxonomy(),
@@ -189,32 +191,64 @@ export default async function PlantSpeciesPage({
     { name: species.genus.name, url: `${SITE_URL}/plants/${params.categorySlug}/${params.genusSlug}` },
     { name: full.name, url: speciesUrl },
   ]);
+  const care = getCareProfile(full);
 
   return (
     <AppShell showFloatingAi={false} className="!max-w-[1280px]">
       {jsonLdScript([...speciesLd, breadcrumbLd])}
+      <SpeciesDetailActions
+        species={{
+          id: params.speciesSlug,
+          speciesId: full.id,
+          name: full.name,
+          url: `/plants/${params.categorySlug}/${params.genusSlug}/${params.speciesSlug}`,
+          collected: initiallyCollected,
+          collectTotal,
+          compared: initiallyCompared,
+        }}
+      />
       <div className="mx-auto w-full max-w-7xl space-y-4 pb-24 pt-[18px]">
+        <PlantBreadcrumb path={full.path} />
         <TaxonomyPanel taxonomy={taxonomy} current={params} />
 
-        <div className="grid gap-5 xl:grid-cols-[clamp(280px,22vw,340px)_minmax(0,1fr)]">
-          <RightActionRail
-            params={params}
-            full={full}
-            boardName={species.genus.board?.name ?? ''}
-            genusName={species.genus.name}
-            metrics={metrics}
-            relatedSpecies={relatedSpecies}
-            contributors={contributors}
-            contributorTotal={contributorTotal}
-            collectTotal={collectTotal}
-            initiallyCollected={initiallyCollected}
-            initiallyCompared={initiallyCompared}
-          />
-
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)]">
           <main className="min-w-0 space-y-3">
             <DetailHero
               full={full}
+              boardName={species.genus.board?.name ?? ''}
+              genusName={species.genus.name}
               galleryItems={galleryItems}
+              metrics={metrics}
+              collectTotal={collectTotal}
+            />
+
+            <SpeciesCareVotePanel
+              speciesId={full.id}
+              defaults={{
+                light: full.light || care.light,
+                idealTemperature: full.idealTemperature || care.idealTemperature,
+                watering: full.watering || care.watering,
+                hardiness: full.hardiness || care.minTemperature,
+                growthSpeed: full.growthSpeed || care.growthSpeed,
+                humidity: full.humidity || care.humidity,
+              }}
+              profile={{
+                light: care.light,
+                temperature: care.idealTemperature,
+                watering: care.watering,
+                hardiness: care.minTemperature,
+                humidity: care.humidity,
+                ventilation: '良好通风',
+                soil: care.soil,
+                repotCycle: '1-2年',
+                growthSeason: full.growthType || care.growthSpeed,
+                fertilizer: full.difficulty >= 4 ? '少量薄肥' : '生长期薄肥',
+                location: '阳台/露台',
+                blooming: full.blooming || '春末-夏初',
+                dormancy: care.summerDormancy === '不明显' ? '轻微休眠' : `${care.summerDormancy}休眠`,
+                fruiting: '秋季',
+                propagation: '播种、扦插',
+              }}
             />
 
             <InfoCards
@@ -229,6 +263,14 @@ export default async function PlantSpeciesPage({
               params={params}
             />
           </main>
+
+          <RightActionRail
+            params={params}
+            full={full}
+            relatedSpecies={relatedSpecies}
+            contributors={contributors}
+            contributorTotal={contributorTotal}
+          />
         </div>
       </div>
     </AppShell>
@@ -267,23 +309,9 @@ function TaxonomyPanel({
 }) {
   const currentBoard = taxonomy.find((board) => board.slug === current.categorySlug);
   const currentGenus = currentBoard?.genera.find((genus) => genus.slug === current.genusSlug);
-  const currentSpecies = currentGenus?.species.find((item) => item.slug === current.speciesSlug);
-  const total = taxonomy.reduce((sum, board) => sum + board.genera.reduce((n, genus) => n + genus.species.length, 0), 0);
 
   return (
     <section className="rounded-[6px] border border-leaf-100 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-base font-bold text-ink-900">植物分类体系</h2>
-          <p className="mt-1 text-xs text-leaf-700/60">
-            {[currentBoard?.name, currentGenus?.name, currentSpecies?.name].filter(Boolean).join(' / ')}
-          </p>
-        </div>
-        <span className="rounded-full bg-leaf-50 px-3 py-1 text-xs text-ink-500">
-          已收录 <b className="text-ink-900">{formatNumber(total)}</b> 种
-        </span>
-      </div>
-
       <div className="space-y-3">
         <TaxonomyFilterRow label="科">
           {taxonomy.map((board) => (
@@ -339,6 +367,43 @@ function TaxonomyPanel({
   );
 }
 
+function PlantBreadcrumb({
+  path,
+}: {
+  path: { level: 'category' | 'genus' | 'species'; slug: string; name: string }[];
+}) {
+  const href = (index: number) => {
+    const slugs = path.slice(0, index + 1).map((p) => p.slug);
+    return '/plants/' + slugs.map(encodeURIComponent).join('/');
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 text-xs text-leaf-700/70">
+      <Link href="/plants" className="hover:text-leaf-700">
+        植物图鉴
+      </Link>
+      {path.map((p, i) => {
+        const isLast = i === path.length - 1;
+        const isCategory = p.level === 'category';
+        return (
+          <span key={`${p.level}-${p.slug}`} className="contents">
+            <Icon name="arrow-right" size={12} />
+            {isLast || isCategory ? (
+              <span className={isLast ? 'text-ink-700' : 'text-leaf-700/60'}>
+                {p.name}
+              </span>
+            ) : (
+              <Link href={href(i)} className="hover:text-leaf-700">
+                {p.name}
+              </Link>
+            )}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 function TaxonomyFilterRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2 text-xs">
@@ -372,10 +437,18 @@ function TaxonomyChip({
 
 function DetailHero({
   full,
+  boardName,
+  genusName,
   galleryItems,
+  metrics,
+  collectTotal,
 }: {
   full: FullSpecies;
+  boardName: string;
+  genusName: string;
   galleryItems: NonNullable<FullSpecies['galleryItems']>;
+  metrics: DetailMetrics;
+  collectTotal: number;
 }) {
   return (
     <section className="overflow-hidden rounded-[6px] border border-leaf-100 bg-white shadow-sm">
@@ -389,6 +462,41 @@ function DetailHero({
           className="object-cover"
           style={{ objectPosition: full.coverPosition ?? 'center center' }}
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink-900/85 via-ink-900/35 to-transparent" />
+
+        <div className="absolute inset-x-0 bottom-0 p-4 text-white md:p-5">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+            <div className="min-w-0 self-end">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-bold md:text-3xl">{full.name}</h1>
+                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-leaf-600 text-white">
+                  <Icon name="check" size={12} />
+                </span>
+              </div>
+              {full.latinName && <p className="mt-1 text-sm italic text-white/80">{full.latinName}</p>}
+              <p className="mt-1 text-xs text-white/70">{boardName} · {genusName}</p>
+              {full.description && (
+                <p className="mt-3 line-clamp-2 text-sm leading-6 text-white/90 md:line-clamp-3">
+                  {full.description}
+                </p>
+              )}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <SidebarTag icon="plants" text={full.growthType ?? '易养护'} />
+                <SidebarTag icon="trophy" text="观赏性强" />
+                <SidebarTag icon="star" text="经典品种" />
+              </div>
+            </div>
+
+            <div className="min-w-0 self-end">
+              <div className="grid grid-cols-2 gap-2">
+                <SidebarStat label="收藏人数" value={compactNumber(collectTotal)} icon="bookmark" />
+                <SidebarStat label="玩家记录" value={metrics.journalsText} icon="camera" />
+                <SidebarStat label="热度指数" value={metrics.heatText} icon="star" />
+                <SidebarStat label="最近热度" value={`↑ ${metrics.recentGrowth}%`} icon="arrow-right" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <GalleryBlock speciesName={full.name} items={galleryItems} />
@@ -418,7 +526,7 @@ function GalleryBlock({
 
 function SidebarTag({ icon, text }: { icon: IconName; text: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-leaf-50 px-3 py-1 text-xs font-medium text-leaf-800">
+    <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-xs font-medium text-white">
       <Icon name={icon} size={12} />
       {text}
     </span>
@@ -427,12 +535,12 @@ function SidebarTag({ icon, text }: { icon: IconName; text: string }) {
 
 function SidebarStat({ label, value, icon }: { label: string; value: string; icon: IconName }) {
   return (
-    <div className="rounded-[6px] bg-ink-50 p-3">
-      <div className="flex items-center justify-between gap-2 text-[11px] text-ink-500">
+    <div className="rounded-[6px] border border-white/15 bg-white/15 p-3 text-white shadow-sm">
+      <div className="flex items-center justify-between gap-2 text-[11px] text-white/70">
         <span>{label}</span>
         <Icon name={icon} size={13} />
       </div>
-      <div className="mt-2 text-xl font-bold text-ink-900">{value}</div>
+      <div className="mt-2 text-xl font-bold">{value}</div>
     </div>
   );
 }
@@ -440,88 +548,28 @@ function SidebarStat({ label, value, icon }: { label: string; value: string; ico
 function RightActionRail({
   params,
   full,
-  boardName,
-  genusName,
-  metrics,
   relatedSpecies,
   contributors,
   contributorTotal,
-  collectTotal,
-  initiallyCollected,
-  initiallyCompared,
 }: {
   params: { categorySlug: string; genusSlug: string; speciesSlug: string };
   full: FullSpecies;
-  boardName: string;
-  genusName: string;
-  metrics: DetailMetrics;
   relatedSpecies: Array<any>;
   contributors: Array<{ id: string; name: string; avatar: string }>;
   contributorTotal: number;
-  collectTotal: number;
-  initiallyCollected: boolean;
-  initiallyCompared: boolean;
 }) {
   const visibleContributors = contributors.slice(0, 11);
   const hiddenContributorCount = Math.max(0, contributorTotal - visibleContributors.length);
-  const care = getCareProfile(full);
 
   return (
     <aside className="space-y-4 xl:sticky xl:top-20 xl:self-start">
       <section className="rounded-[6px] border border-leaf-100 bg-white p-4 shadow-sm">
-        <div className="flex items-start gap-3">
-          <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[6px] bg-leaf-50">
-            <Image src={full.cover} alt={full.name} fill className="object-cover" unoptimized />
-          </span>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 className="truncate text-xl font-bold text-ink-900">{full.name}</h1>
-              <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-leaf-600 text-white">
-                <Icon name="check" size={12} />
-              </span>
-            </div>
-            {full.latinName && <p className="mt-1 line-clamp-2 text-xs italic text-ink-500">{full.latinName}</p>}
-            <p className="mt-1 text-xs text-ink-500">{boardName} · {genusName}</p>
-          </div>
+        <div className="flex items-center gap-2">
+          <img src="/icons/plants_difficulty_medal.svg" alt="" className="h-5 w-5" />
+          <h2 className="font-bold text-ink-900">难度评分</h2>
         </div>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          <SidebarTag icon="plants" text={full.growthType ?? '易养护'} />
-          <SidebarTag icon="trophy" text="观赏性强" />
-          <SidebarTag icon="star" text="经典品种" />
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <SidebarStat label="收藏人数" value={metrics.favoritesText} icon="heart" />
-          <SidebarStat label="玩家记录" value={metrics.journalsText} icon="camera" />
-          <SidebarStat label="热度指数" value={metrics.heatText} icon="star" />
-          <SidebarStat label="最近热度" value={`↑ ${metrics.recentGrowth}%`} icon="arrow-right" />
-        </div>
-
-        <div className="mt-4 border-t border-leaf-50 pt-3">
-          <SpeciesDetailActions
-            species={{
-              id: params.speciesSlug,
-              speciesId: full.id,
-              name: full.name,
-              url: `/plants/${params.categorySlug}/${params.genusSlug}/${params.speciesSlug}`,
-              collected: initiallyCollected,
-              collectTotal,
-              compared: initiallyCompared,
-            }}
-          />
-        </div>
-      </section>
-
-      <section className="rounded-[6px] border border-leaf-100 bg-white p-4 shadow-sm">
-        <h2 className="font-bold text-ink-900">养护参数</h2>
-        <div className="mt-4 space-y-3">
-          <CareMeter label="光照" value={care.light} percent={care.lightPercent} icon="star" compact />
-          <CareMeter label="温度" value={care.temperature} percent={care.temperaturePercent} icon="settings" compact />
-          <CareMeter label="浇水" value={care.watering} percent={care.wateringPercent} icon="plants" compact />
-          <CareMeter label="难度" value={`${full.difficulty}/5`} percent={full.difficulty * 20} icon="trophy" compact />
-          <CareMeter label="生长速度" value={care.growthSpeed} percent={care.growthSpeedPercent} icon="arrow-right" compact />
-          <CareMeter label="夏眠" value={care.summerDormancy} percent={care.summerDormancyPercent} icon="info" compact />
+        <div className="mt-4">
+          <SpeciesRatingPanel speciesId={full.id} fallbackAvg={full.difficulty} />
         </div>
       </section>
 
@@ -559,29 +607,67 @@ function RightActionRail({
       </section>
 
       <section className="rounded-[6px] border border-leaf-100 bg-white p-4 shadow-sm">
-        <SectionHead title="同属品种推荐" href={`/plants/${params.categorySlug}/${params.genusSlug}/${params.speciesSlug}`} />
-        <div className="max-h-[296px] space-y-3 overflow-hidden">
-          {relatedSpecies.slice(0, 4).map((item) => (
-            <Link
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-ink-800">同属其他品种</h2>
+          <Link
+            href={`/plants/${params.categorySlug}/${params.genusSlug}`}
+            className="text-[11px] text-leaf-700 hover:underline"
+          >
+            查看全部 →
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {relatedSpecies.map((item) => (
+            <RelatedSpeciesCard
               key={item.id}
+              item={item}
               href={`/plants/${params.categorySlug}/${params.genusSlug}/${item.slug}`}
-              className="group flex items-center gap-3 rounded-[6px] border border-leaf-100 bg-white p-2 transition hover:bg-leaf-50"
-            >
-              <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[6px] bg-leaf-50">
-                <Image src={item.cover} alt={item.name} fill className="object-cover transition group-hover:scale-105" unoptimized />
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold text-ink-800">{item.name}</span>
-                <span className="mt-1 block text-xs text-ink-500">同属 · 热度 {formatNumber(item._count?.posts ?? 0)}</span>
-              </span>
-            </Link>
+            />
           ))}
           {relatedSpecies.length === 0 && (
-            <div className="rounded-[6px] bg-leaf-50 px-3 py-2 text-xs text-leaf-800">当前同属下暂无其他品种</div>
+            <div className="col-span-2 rounded-[6px] bg-leaf-50 px-3 py-2 text-xs text-leaf-800">当前同属下暂无其他品种</div>
           )}
         </div>
       </section>
     </aside>
+  );
+}
+
+function RelatedSpeciesCard({
+  item,
+  href,
+}: {
+  item: any;
+  href: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group block overflow-hidden rounded-lg border border-leaf-100 bg-white transition-shadow hover:shadow-md"
+    >
+      <div className="relative aspect-square overflow-hidden bg-leaf-50">
+        <Image
+          src={item.cover}
+          alt={item.name}
+          fill
+          sizes="160px"
+          className="object-cover transition-transform group-hover:scale-105"
+          unoptimized
+        />
+        <div className="absolute left-1 top-1 rounded-full bg-white/85 px-1.5 py-0 text-[9px] text-leaf-700">
+          {'★'.repeat(Math.max(1, Math.min(5, item.difficulty ?? 1)))}
+        </div>
+      </div>
+      <div className="p-2">
+        <div className="truncate text-[12px] font-medium text-ink-800 group-hover:text-leaf-700">
+          {item.name}
+        </div>
+        <div className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-leaf-700/60">
+          <span className="min-w-0 truncate italic">{item.latinName}</span>
+          <span className="shrink-0">📝 {item._count?.posts ?? 0}</span>
+        </div>
+      </div>
+    </Link>
   );
 }
 
@@ -640,47 +726,19 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function CareMeter({
-  label,
-  value,
-  percent,
-  icon,
-  compact,
-}: {
-  label: string;
-  value: string;
-  percent: number;
-  icon: IconName;
-  compact?: boolean;
-}) {
-  return (
-    <div>
-      <div className={cn('mb-1 flex items-start justify-between gap-3 text-xs', compact && 'gap-2')}>
-        <span className="inline-flex items-center gap-1 text-ink-600">
-          <Icon name={icon} size={13} />
-          {label}
-        </span>
-        <span className={cn('font-medium text-ink-800', compact ? 'max-w-[150px] text-right leading-5' : 'text-right')}>{value}</span>
-      </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-leaf-50">
-        <div className="h-full rounded-full bg-leaf-600" style={{ width: `${Math.min(100, Math.max(8, percent))}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function RiskLine({ tone, text }: { tone: 'rose' | 'amber' | 'leaf'; text: string }) {
-  const cls = tone === 'rose' ? 'bg-rose-50 text-rose-700' : tone === 'amber' ? 'bg-amber-50 text-amber-700' : 'bg-leaf-50 text-leaf-700';
-  return <div className={cn('rounded-[6px] px-3 py-2 text-xs font-medium', cls)}>{text}</div>;
-}
-
 function getCareProfile(full: FullSpecies) {
   const light = full.light || '充足阳光';
   const watering = full.watering || '干透浇透';
   const hardiness = full.hardiness || '5°C';
   const growthType = full.growthType ?? '';
+  const riskText = full.riskTips.join(' ');
   const hasSummerDormancy = /冬型|夏眠|休眠/.test(growthType);
   const isFastGrowth = /夏型|中间型|快/.test(growthType);
+  const diseasePest = !riskText
+    ? '不明显'
+    : /严重|高发|易发|黑腐|介壳|根粉|蚧壳|病虫/.test(riskText)
+      ? '明显'
+      : '轻微';
 
   return {
     light,
@@ -694,6 +752,7 @@ function getCareProfile(full: FullSpecies) {
     growthSpeedPercent: isFastGrowth ? 76 : 56,
     summerDormancy: full.summerDormancy || (hasSummerDormancy ? '明显' : '不明显'),
     summerDormancyPercent: hasSummerDormancy ? 78 : 32,
+    diseasePest,
     idealTemperature: full.idealTemperature || '15-28°C',
     minTemperature: full.minTemperature || hardiness,
     maxTemperature: full.maxTemperature || '35°C',

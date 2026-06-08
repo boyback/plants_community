@@ -15,6 +15,7 @@ const Body = z.object({
   content: z.string().optional(),
   contentJson: z.unknown().optional(),
   parentId: z.string().optional(),
+  journalEntryId: z.string().optional(),
 });
 
 function pickPostId(req: Request) {
@@ -44,9 +45,18 @@ export const POST = handler(async (req) => {
 
   const post = await prisma.post.findUnique({
     where: { id: postId },
-    select: { id: true, authorId: true, title: true },
+    select: { id: true, authorId: true, title: true, journal: { select: { id: true } } },
   });
   if (!post) return fail(404, '帖子不存在');
+
+  if (body.journalEntryId) {
+    if (!post.journal) return fail(400, '该帖子不是成长记录帖');
+    const entry = await prisma.journalEntry.findUnique({
+      where: { id: body.journalEntryId },
+      select: { journalId: true },
+    });
+    if (!entry || entry.journalId !== post.journal.id) return fail(400, '成长记录无效');
+  }
 
   if (body.parentId) {
     const parent = await prisma.comment.findUnique({
@@ -64,6 +74,7 @@ export const POST = handler(async (req) => {
       contentJson: stored.json || null,
       contentText: stored.text,
       parentId: body.parentId ?? null,
+      journalEntryId: body.parentId ? null : body.journalEntryId ?? null,
     },
     include: {
       author: {
@@ -72,6 +83,7 @@ export const POST = handler(async (req) => {
           badges: { include: { badge: true } },
         },
       },
+      journalEntry: true,
     },
   });
 

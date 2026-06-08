@@ -2,10 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Icon, type IconName } from '@/components/ui/Icon';
+import { FloatingActionRail } from '@/components/ui/FloatingActionRail';
 import { toast } from '@/components/ui/Toast';
 import { api, ApiError } from '@/lib/client-api';
-import { cn } from '@/lib/utils';
 
 type SpeciesActionItem = {
   id: string;
@@ -77,51 +76,27 @@ export function SpeciesDetailActions({ species }: { species: SpeciesActionItem }
   };
 
   return (
-    <div className="grid grid-cols-3 gap-2 text-center text-xs">
-      <ActionIcon
-        icon="heart"
-        label={collected ? `已收藏 ${collectTotal}` : `收藏 ${collectTotal}`}
-        active={collected}
-        onClick={toggleFavorite}
-        disabled={collectBusy}
-      />
-      <ActionIcon icon="link" label={compared ? '已对比' : '对比'} active={compared} onClick={toggleCompare} disabled={compareBusy} />
-      <ActionIcon icon="share" label="分享" onClick={share} />
-    </div>
-  );
-}
-
-function ActionIcon({
-  icon,
-  label,
-  active,
-  onClick,
-  disabled,
-}: {
-  icon: IconName;
-  label: string;
-  active?: boolean;
-  onClick: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        'grid gap-1 rounded-xl p-2 text-ink-700 transition hover:bg-leaf-50 disabled:cursor-not-allowed disabled:opacity-60',
-        active && icon === 'heart' && 'bg-rose-50 text-rose-500',
-        active && icon !== 'heart' && 'bg-leaf-50 text-leaf-800',
-      )}
-    >
-      <Icon
-        name={icon}
-        size={18}
-        className="mx-auto"
-        fill={active && icon === 'heart' ? 'currentColor' : 'none'}
-      />
-      <span>{label}</span>
-    </button>
+    <FloatingActionRail
+      items={[
+        { icon: 'share', label: '分享', onClick: share },
+        {
+          icon: 'bookmark',
+          label: collected ? '已收藏' : '收藏',
+          count: collectTotal,
+          active: collected,
+          activeCls: 'bg-amber-50 text-amber-600',
+          onClick: toggleFavorite,
+          disabled: collectBusy,
+        },
+        {
+          icon: 'link',
+          label: compared ? '已对比' : '对比',
+          active: compared,
+          activeCls: 'bg-leaf-50 text-leaf-800',
+          onClick: toggleCompare,
+          disabled: compareBusy,
+        },
+      ]}
+    />
   );
 }

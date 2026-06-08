@@ -545,6 +545,7 @@ function EntryItem({ entry, meta }: { entry: any; meta: any }) {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
+  const stageText = entry.stage === 'other' && entry.stageLabel ? entry.stageLabel : meta.zh;
   return (
     <div className="space-y-1">
       <div className="flex items-start gap-2">
@@ -553,7 +554,7 @@ function EntryItem({ entry, meta }: { entry: any; meta: any }) {
           <div className="flex items-center gap-2 text-[11px]">
             <span className="font-medium text-ink-800">{yyyy}/{mm}/{dd}</span>
             <span className={cn('rounded px-1.5 py-0.5 text-[10px] border', meta.color)}>
-              {meta.emoji} {meta.zh}
+              {meta.emoji} {stageText}
             </span>
           </div>
           {entry.note && (

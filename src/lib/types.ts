@@ -26,10 +26,14 @@ export interface JournalEntry {
   id: string;
   entryDate: string; // ISO
   stage: JournalStage;
+  stageLabel?: string;
   note: string;
   images: string[];
   orderIdx: number;
   createdAt: string;
+  likes: number;
+  comments: number;
+  liked: boolean;
 }
 
 export interface JournalInfo {
@@ -158,6 +162,7 @@ export interface SpeciesFull extends Board {
 
 export interface Comment {
   id: string;
+  parentId?: string | null;
   author: User;
   /** sanitized HTML(渲染缓存) */
   content: string;
@@ -167,6 +172,13 @@ export interface Comment {
   contentText?: string;
   createdAt: string;
   likes: number;
+  journalEntryRef?: {
+    id: string;
+    dateLabel: string;
+    stageLabel: string;
+    note?: string;
+    image?: string;
+  };
   replies?: Comment[];
 }
 
