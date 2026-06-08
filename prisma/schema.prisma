@@ -109,21 +109,21 @@ model User {
   events            EventAttendee[]
 
   // 新增关系
-  pointsLedger         PointsLedger[]
-  expLedger            ExpLedger[]
-  activityLedger       ActivityLedger[]
-  monthlyStats         MonthlyActivity[]
-  taskProgress         TaskProgress[]
-  rewardClaims         ActivityRewardClaim[]
-  productsListed       Product[]             @relation("ProductSeller")
-  marketListingsListed MarketListing[]       @relation("MarketListingSeller")
-  marketListingComments MarketListingComment[]
+  pointsLedger              PointsLedger[]
+  expLedger                 ExpLedger[]
+  activityLedger            ActivityLedger[]
+  monthlyStats              MonthlyActivity[]
+  taskProgress              TaskProgress[]
+  rewardClaims              ActivityRewardClaim[]
+  productsListed            Product[]                  @relation("ProductSeller")
+  marketListingsListed      MarketListing[]            @relation("MarketListingSeller")
+  marketListingComments     MarketListingComment[]
   marketListingItemCollects MarketListingItemCollect[]
-  ordersAsBuyer        Order[]               @relation("OrderBuyer")
-  ordersAsSeller       Order[]               @relation("OrderSeller")
-  payments             Payment[]
-  ownedSkins           UserSkin[]
-  vipOrders            VipOrder[]
+  ordersAsBuyer             Order[]                    @relation("OrderBuyer")
+  ordersAsSeller            Order[]                    @relation("OrderSeller")
+  payments                  Payment[]
+  ownedSkins                UserSkin[]
+  vipOrders                 VipOrder[]
 
   // 拍卖 / 地址簿
   addresses           Address[]
@@ -133,11 +133,11 @@ model User {
   auctionParticipants AuctionParticipant[] @relation("AuctionParticipantUser")
 
   // 关注板块(可跨三级:科/属/品种)
-  boardFollows        BoardFollow[]
-  moderatorScopes     ModeratorScope[]
+  boardFollows         BoardFollow[]
+  moderatorScopes      ModeratorScope[]
   speciesContributions SpeciesContribution[]
   // 历史字段:管理员曾可对单个用户覆盖功能权限;新逻辑使用 RolePermissionOverride.
-  permissionOverrides UserPermissionOverride[]
+  permissionOverrides  UserPermissionOverride[]
 
   // 相册
   albums        Album[]
@@ -559,7 +559,7 @@ model Journal {
   // 关联品种(可选;若关联,可继承品种封面 / 难度等)
   speciesId   String?
   // 关联用户自己的植物档案(可选;一个植株只能对应一个生命周期帖)
-  userPlantId String? @unique
+  userPlantId String?          @unique
   // 起始日(种植/到家/萌芽起算日)
   startDate   DateTime
   // 结束日(死亡 / 送人 / 自然结束;空表示仍在养)
@@ -568,29 +568,29 @@ model Journal {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
-  post    Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
-  species Species?       @relation(fields: [speciesId], references: [id])
-  userPlant UserPlant?   @relation(fields: [userPlantId], references: [id], onDelete: SetNull)
-  entries JournalEntry[]
+  post      Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  species   Species?       @relation(fields: [speciesId], references: [id])
+  userPlant UserPlant?     @relation(fields: [userPlantId], references: [id], onDelete: SetNull)
+  entries   JournalEntry[]
 
   @@index([speciesId])
   @@map("journals")
 }
 
 model JournalEntry {
-  id        String       @id @default(cuid())
-  journalId String
-  entryDate DateTime
-  stage     JournalStage @default(other)
+  id         String       @id @default(cuid())
+  journalId  String
+  entryDate  DateTime
+  stage      JournalStage @default(other)
   stageLabel String?      @db.VarChar(50) // stage=other 时的自定义阶段名
-  note      String       @db.Text // 心得文本(纯文本/简单 markdown)
+  note       String       @db.Text // 心得文本(纯文本/简单 markdown)
   // MySQL TEXT 不允许默认值,空 JSON 在应用层兜底为 "[]"
-  images    String       @db.Text // JSON array,封面或多张图
-  orderIdx  Int          @default(0) // 同日多条时的次序
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  images     String       @db.Text // JSON array,封面或多张图
+  orderIdx   Int          @default(0) // 同日多条时的次序
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
 
-  journal Journal @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  journal  Journal            @relation(fields: [journalId], references: [id], onDelete: Cascade)
   comments Comment[]
   likes    JournalEntryLike[]
 
@@ -599,23 +599,23 @@ model JournalEntry {
 }
 
 model UserPlant {
-  id         String          @id @default(cuid())
-  ownerId    String
-  speciesId  String
-  code       String          @unique
-  nickname   String
-  acquiredAt DateTime
-  status     UserPlantStatus @default(healthy)
-  currentStage JournalStage @default(growing)
-  currentStageLabel String? @db.VarChar(50)
-  cover      String?
-  note       String?         @db.Text
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
+  id                String          @id @default(cuid())
+  ownerId           String
+  speciesId         String
+  code              String          @unique
+  nickname          String
+  acquiredAt        DateTime
+  status            UserPlantStatus @default(healthy)
+  currentStage      JournalStage    @default(growing)
+  currentStageLabel String?         @db.VarChar(50)
+  cover             String?
+  note              String?         @db.Text
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
-  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  species  Species   @relation(fields: [speciesId], references: [id], onDelete: Cascade)
-  journal  Journal?
+  owner   User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  species Species  @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+  journal Journal?
 
   @@index([ownerId, updatedAt])
   @@index([speciesId])
@@ -625,17 +625,17 @@ model UserPlant {
 // ============== 评论 ==============
 
 model Comment {
-  id          String   @id @default(cuid())
-  postId      String
-  authorId    String
-  parentId    String?
+  id             String   @id @default(cuid())
+  postId         String
+  authorId       String
+  parentId       String?
   journalEntryId String?
   // 富文本三套字段
-  content     String   @db.Text // 已 sanitize 的 HTML
-  contentJson String?  @db.Text // ProseMirror JSON 字符串
-  contentText String?  @db.Text // 纯文本(用于通知预览)
-  likes       Int      @default(0)
-  createdAt   DateTime @default(now())
+  content        String   @db.Text // 已 sanitize 的 HTML
+  contentJson    String?  @db.Text // ProseMirror JSON 字符串
+  contentText    String?  @db.Text // 纯文本(用于通知预览)
+  likes          Int      @default(0)
+  createdAt      DateTime @default(now())
 
   // 软删除:管理员可删评论;前台过滤 deleted=false
   deleted      Boolean   @default(false)
@@ -643,11 +643,11 @@ model Comment {
   deletedBy    String? // 管理员 id
   deleteReason String?   @db.Text
 
-  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author  User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post         Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author       User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
   journalEntry JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
-  parent  Comment?  @relation("Replies", fields: [parentId], references: [id])
-  replies Comment[] @relation("Replies")
+  parent       Comment?      @relation("Replies", fields: [parentId], references: [id])
+  replies      Comment[]     @relation("Replies")
 
   @@index([postId, createdAt])
   @@index([journalEntryId])
@@ -862,36 +862,36 @@ model Product {
 }
 
 model MarketListing {
-  id          String              @id @default(cuid())
-  sellerId    String
-  title       String
-  category    String
-  genusId     String?
-  speciesId   String?
-  shipFrom    String
-  tags        String?             @db.Text
-  description String?             @db.Text
-  tradeMode   MarketTradeMode     @default(platform_escrow)
-  tradeModes  String?             @db.Text // JSON array, allowed trade modes
-  externalUrl String?             @db.Text
-  contactNote String?             @db.Text
-  cover       String
-  minPrice    Int
-  maxPrice    Int
-  itemCount   Int                 @default(0)
-  viewCount   Int                 @default(0)
-  commentCount Int                @default(0)
-  status      MarketListingStatus @default(on_sale)
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  id           String              @id @default(cuid())
+  sellerId     String
+  title        String
+  category     String
+  genusId      String?
+  speciesId    String?
+  shipFrom     String
+  tags         String?             @db.Text
+  description  String?             @db.Text
+  tradeMode    MarketTradeMode     @default(platform_escrow)
+  tradeModes   String?             @db.Text // JSON array, allowed trade modes
+  externalUrl  String?             @db.Text
+  contactNote  String?             @db.Text
+  cover        String
+  minPrice     Int
+  maxPrice     Int
+  itemCount    Int                 @default(0)
+  viewCount    Int                 @default(0)
+  commentCount Int                 @default(0)
+  status       MarketListingStatus @default(on_sale)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
-  seller  User                 @relation("MarketListingSeller", fields: [sellerId], references: [id])
-  genus   Genus?               @relation("MarketListingGenus", fields: [genusId], references: [id])
-  species Species?             @relation(fields: [speciesId], references: [id])
-  items   MarketListingItem[]
-  taxons  MarketListingTaxon[]
+  seller   User                   @relation("MarketListingSeller", fields: [sellerId], references: [id])
+  genus    Genus?                 @relation("MarketListingGenus", fields: [genusId], references: [id])
+  species  Species?               @relation(fields: [speciesId], references: [id])
+  items    MarketListingItem[]
+  taxons   MarketListingTaxon[]
   comments MarketListingComment[]
-  orders  Order[]
+  orders   Order[]
 
   @@index([sellerId, status, createdAt])
   @@index([genusId])
@@ -935,27 +935,27 @@ model MarketListingTaxon {
 }
 
 model MarketListingItem {
-  id          String           @id @default(cuid())
-  listingId   String
-  title       String
-  price       Int
-  stock       Int              @default(1)
-  soldCount   Int              @default(0)
-  collectCount Int             @default(0)
-  cover       String
-  images      String           @db.Text
-  description String           @db.Text
-  taxons      String?          @db.Text
-  tags        String?          @db.Text
+  id           String           @id @default(cuid())
+  listingId    String
+  title        String
+  price        Int
+  stock        Int              @default(1)
+  soldCount    Int              @default(0)
+  collectCount Int              @default(0)
+  cover        String
+  images       String           @db.Text
+  description  String           @db.Text
+  taxons       String?          @db.Text
+  tags         String?          @db.Text
   mainHeadSize String?
   overallSize  String?
   potDiameter  String?
-  status      MarketItemStatus @default(on_sale)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  status       MarketItemStatus @default(on_sale)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
-  listing MarketListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  orders  Order[]
+  listing  MarketListing              @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  orders   Order[]
   collects MarketListingItemCollect[]
 
   @@index([listingId, status])
@@ -1637,18 +1637,18 @@ model Species {
   tips       String @db.Text // JSON array
 
   // 额外图鉴字段
-  blooming     String? // 花期
-  originRegion String? // 原产地
-  growthType   String? // 夏型 / 冬型 / 中间型
-  growthSpeed  String? // 生长速度
-  summerDormancy String? // 夏眠程度
+  blooming         String? // 花期
+  originRegion     String? // 原产地
+  growthType       String? // 夏型 / 冬型 / 中间型
+  growthSpeed      String? // 生长速度
+  summerDormancy   String? // 夏眠程度
   lightRequirement String? // 光照需求
   idealTemperature String? // 适宜温度
-  minTemperature String? // 最低温度
-  maxTemperature String? // 最高温度
-  humidity String? // 适宜湿度
-  soil String? // 配土建议
-  riskTips String? @db.Text // JSON array,官方风险提示
+  minTemperature   String? // 最低温度
+  maxTemperature   String? // 最高温度
+  humidity         String? // 适宜湿度
+  soil             String? // 配土建议
+  riskTips         String? @db.Text // JSON array,官方风险提示
 
   // 用户打分汇总(由 SpeciesRating 触发更新)
   ratingSum   Int @default(0) // 所有打分之和
@@ -1664,8 +1664,8 @@ model Species {
   collects       SpeciesCollect[]
   compares       SpeciesCompare[]
   userPlants     UserPlant[]
-  similarities   SpeciesSimilarity[] @relation("SpeciesSimilaritySource")
-  similarTo      SpeciesSimilarity[] @relation("SpeciesSimilarityTarget")
+  similarities   SpeciesSimilarity[]   @relation("SpeciesSimilaritySource")
+  similarTo      SpeciesSimilarity[]   @relation("SpeciesSimilarityTarget")
   dailyStats     SpeciesDailyStat[]
   journals       Journal[]
   contestEntries ContestEntry[]
@@ -1710,13 +1710,13 @@ model SpeciesCompare {
 }
 
 model SpeciesSimilarity {
-  id              String   @id @default(cuid())
-  speciesId       String
+  id               String   @id @default(cuid())
+  speciesId        String
   similarSpeciesId String
-  score           Int      @default(80)
-  reason          String?  @db.Text
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  score            Int      @default(80)
+  reason           String?  @db.Text
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   species        Species @relation("SpeciesSimilaritySource", fields: [speciesId], references: [id], onDelete: Cascade)
   similarSpecies Species @relation("SpeciesSimilarityTarget", fields: [similarSpeciesId], references: [id], onDelete: Cascade)
