@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
-import { fail, handler, stringifyJson } from '@/lib/api';
+import { fail, handler, parseJsonArray, stringifyJson } from '@/lib/api';
 import { requireUser, getCurrentUser } from '@/lib/auth';
 import { serializePost } from '@/lib/serializers';
 import { postInclude } from '@/lib/post-include';
@@ -9,6 +9,7 @@ import { postNeedsReview } from '@/lib/post-review';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
 import { ALL_STAGES, STAGE_META } from '@/lib/journal';
 import { createUserPlantCode } from '@/lib/user-plant-code';
+import { AlbumSyncInput, collectAlbumSyncImages, syncPostImagesToAlbum } from '@/lib/album-sync';
 
 export const dynamic = 'force-dynamic';
 
@@ -151,6 +152,7 @@ const PatchBody = z.object({
   vote: VotePatch.optional(),
   event: EventPatch.optional(),
   journal: JournalPatch.optional(),
+  albumSync: AlbumSyncInput,
 });
 
 export const PATCH = handler(async (req) => {
@@ -195,6 +197,7 @@ export const PATCH = handler(async (req) => {
     });
   }
 
+  const finalImageList = body.images ?? parseJsonArray(post.images);
   const finalImages = body.images ?? null;
   const finalVideoUrl = body.videoUrl !== undefined ? body.videoUrl : post.videoUrl;
   const finalCover =
@@ -213,6 +216,15 @@ export const PATCH = handler(async (req) => {
   const finalBoardIds = boardIds.ids;
   if (post.type === 'journal' && body.journal && !(body.journal.speciesId ?? finalBoardIds?.speciesId ?? post.speciesId)) {
     return fail(400, '成长记录需要选择具体品种');
+  }
+
+  if (body.albumSync?.mode === 'existing') {
+    if (!body.albumSync.albumId) return fail(400, '请选择要追加的相册');
+    const album = await prisma.album.findFirst({
+      where: { id: body.albumSync.albumId, userId: me.id },
+      select: { id: true },
+    });
+    if (!album) return fail(400, '只能同步到自己的相册');
   }
 
   await prisma.$transaction(async (tx) => {
@@ -397,6 +409,20 @@ export const PATCH = handler(async (req) => {
         });
       }
     }
+
+    await syncPostImagesToAlbum({
+      tx,
+      sync: body.albumSync,
+      userId: me.id,
+      postId: id,
+      postTitle: body.title ?? post.title,
+      cover: finalCover,
+      images: collectAlbumSyncImages({
+        cover: finalCover,
+        images: finalImageList,
+        journal: body.journal,
+      }),
+    });
   });
 
   return { ok: true, needsReview };

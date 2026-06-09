@@ -20,6 +20,7 @@ import { emptyJournalDraft, type JournalDraft } from "@/components/post/JournalE
 import { PostTypeBadge } from "@/components/ui/PostTypeBadge";
 import { PostContentFields } from "@/components/editor/post-form/PostContentFields";
 import type { PostDraft } from "@/components/editor/post-form/types";
+import { AlbumImagePickerDialog } from "@/components/editor/AlbumImagePickerDialog";
 import { cn } from "@/lib/utils";
 
 export interface PostComposerInitialValue {
@@ -69,6 +70,15 @@ const visibilityOptions = [
   { value: "private", label: "仅自己可见" },
 ];
 
+type AlbumSyncMode = "none" | "new" | "existing";
+
+type MineAlbumOption = {
+  id: string;
+  title: string;
+  isPublic: boolean;
+  imageCount: number;
+};
+
 export function PostComposer({
   mode = "create",
   initialValue,
@@ -110,6 +120,15 @@ export function PostComposer({
   const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
   const settingsRef = useRef<HTMLDivElement | null>(null);
   const [isAtPageBottom, setIsAtPageBottom] = useState(false);
+  const [albumPickerMode, setAlbumPickerMode] = useState<"insert" | "cover" | null>(null);
+  const [albumSyncMode, setAlbumSyncMode] = useState<AlbumSyncMode>("none");
+  const [albumSyncAlbumId, setAlbumSyncAlbumId] = useState("");
+  const [albumSyncTitle, setAlbumSyncTitle] = useState("");
+  const [albumSyncDescription, setAlbumSyncDescription] = useState("");
+  const [syncCoverAsAlbumCover, setSyncCoverAsAlbumCover] = useState(false);
+  const [mineAlbums, setMineAlbums] = useState<MineAlbumOption[]>([]);
+  const [loadingMineAlbums, setLoadingMineAlbums] = useState(false);
+  const [hasLoadedMineAlbums, setHasLoadedMineAlbums] = useState(false);
 
   const contentImages = useMemo(() => extractImagesFromJson(contentJson), [contentJson]);
   const textCount = useMemo(() => {
@@ -136,6 +155,22 @@ export function PostComposer({
       window.removeEventListener("resize", updateBottomState);
     };
   }, []);
+
+  useEffect(() => {
+    if (albumSyncMode !== "existing" || hasLoadedMineAlbums || loadingMineAlbums) return;
+    setLoadingMineAlbums(true);
+    api
+      .get<{ items: MineAlbumOption[] }>("/api/albums/mine")
+      .then((data) => {
+        setMineAlbums(data.items);
+        setAlbumSyncAlbumId((current) => current || data.items[0]?.id || "");
+      })
+      .catch((error) => {
+        toast.error(error instanceof ApiError ? error.message : "读取晒图相册失败");
+      })
+      .finally(() => setLoadingMineAlbums(false));
+    setHasLoadedMineAlbums(true);
+  }, [albumSyncMode, hasLoadedMineAlbums, loadingMineAlbums]);
 
   const clearValidationError = (key: string) => {
     setValidationErrors((prev) => {
@@ -186,6 +221,17 @@ export function PostComposer({
   });
 
   const hasRichContent = () => countTextFromJson(contentJson) > 0 || contentImages.length > 0;
+
+  const handleAlbumImagesPicked = (urls: string[]) => {
+    if (albumPickerMode === "cover") {
+      setCover(urls[0] ?? "");
+      return;
+    }
+    if (albumPickerMode === "insert") {
+      setContentJson((current: unknown) => appendImagesToRichJson(current, urls));
+      clearValidationError(type === "event" ? "eventContent" : "richContent");
+    }
+  };
 
   const loadDraftIntoForm = (d: PostDraft) => {
     const p = (d.payload as any) ?? {};
@@ -306,6 +352,17 @@ export function PostComposer({
     if (!validate()) return;
     const isRich = type === "rich" || type === "event";
     const images = Array.from(new Set(isRich ? contentImages : []));
+    const syncImages = Array.from(new Set([...(cover ? [cover] : []), ...images, ...getJournalImageUrls(journal)]));
+    if (albumSyncMode !== "none") {
+      if (syncImages.length === 0) {
+        toast.error("当前帖子还没有可同步到晒图广场的图片");
+        return;
+      }
+      if (albumSyncMode === "existing" && !albumSyncAlbumId) {
+        toast.error("请选择要追加的晒图相册");
+        return;
+      }
+    }
     const boardPayload = speciesSlug ? { speciesSlug } : genusSlug ? { genusSlug } : { categorySlug };
     const body: any = {
       ...(isEdit ? {} : { type }),
@@ -343,6 +400,17 @@ export function PostComposer({
             note: e.note,
             images: e.images,
           })),
+        },
+      }),
+      ...(albumSyncMode !== "none" && {
+        albumSync: {
+          mode: albumSyncMode,
+          ...(albumSyncMode === "existing" && { albumId: albumSyncAlbumId }),
+          ...(albumSyncMode === "new" && {
+            title: albumSyncTitle.trim() || undefined,
+            description: albumSyncDescription.trim() || undefined,
+          }),
+          syncCoverAsAlbumCover,
         },
       }),
     };
@@ -488,10 +556,25 @@ export function PostComposer({
               />
             </div>
 
+            {(type === "rich" || type === "event") && (
+              <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-leaf-100 bg-leaf-50/40 px-3 py-2">
+                <button
+                  type="button"
+                  className="btn-outline h-9 bg-white !px-3 text-sm"
+                  onClick={() => setAlbumPickerMode("insert")}
+                >
+                  <Icon name="image" size={14} />
+                  从我的晒图插入图片
+                </button>
+                <span className="text-xs text-ink-500">只可选择自己的晒图图片，插入后帖子会保留图片地址快照。</span>
+              </div>
+            )}
+
             <div ref={settingsRef} className="mt-5 border-t border-solid border-leaf-200 pt-5 scroll-mt-24">
               <PostSettingsCard
                 cover={cover}
                 onCoverChange={setCover}
+                onPickAlbumCover={() => setAlbumPickerMode("cover")}
                 boardSelection={{ categorySlug, genusSlug, speciesSlug }}
                 onBoardChange={onBoardChange}
                 boardInvalid={(validationErrors.has("board") && !categorySlug) || validationErrors.has("journalSpecies")}
@@ -502,6 +585,20 @@ export function PostComposer({
                 tagInvalid={validationErrors.has("tags")}
                 onTagsChange={onTagChange}
                 embedded
+              />
+              <AlbumSyncSettings
+                mode={albumSyncMode}
+                onModeChange={setAlbumSyncMode}
+                albums={mineAlbums}
+                loadingAlbums={loadingMineAlbums}
+                albumId={albumSyncAlbumId}
+                onAlbumIdChange={setAlbumSyncAlbumId}
+                title={albumSyncTitle}
+                onTitleChange={setAlbumSyncTitle}
+                description={albumSyncDescription}
+                onDescriptionChange={setAlbumSyncDescription}
+                syncCoverAsAlbumCover={syncCoverAsAlbumCover}
+                onSyncCoverAsAlbumCoverChange={setSyncCoverAsAlbumCover}
               />
             </div>
 
@@ -537,6 +634,13 @@ export function PostComposer({
           />
         </aside>
       </div>
+
+      <AlbumImagePickerDialog
+        open={albumPickerMode !== null}
+        mode={albumPickerMode ?? "insert"}
+        onClose={() => setAlbumPickerMode(null)}
+        onConfirm={handleAlbumImagesPicked}
+      />
 
       <div className="fixed inset-x-0 bottom-16 z-40 border-t border-leaf-100 bg-white/95 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur lg:bottom-0">
         <div
@@ -639,6 +743,7 @@ function EditorTypePicker({
 function PostSettingsCard({
   cover,
   onCoverChange,
+  onPickAlbumCover,
   boardSelection,
   onBoardChange,
   boardInvalid,
@@ -652,6 +757,7 @@ function PostSettingsCard({
 }: {
   cover: string;
   onCoverChange: (cover: string) => void;
+  onPickAlbumCover: () => void;
   boardSelection: BoardSelection;
   onBoardChange: (selection: BoardSelection) => void;
   boardInvalid: boolean;
@@ -688,6 +794,10 @@ function PostSettingsCard({
               <div className="font-semibold text-ink-700">更换封面</div>
               <div>建议尺寸 16:9，支持 JPG/PNG</div>
             </div>
+            <button type="button" className="btn-outline h-9 bg-white !px-3 text-sm" onClick={onPickAlbumCover}>
+              <Icon name="image" size={14} />
+              从我的晒图设封面
+            </button>
           </div>
         </div>
 
@@ -770,6 +880,182 @@ function PostSettingsCard({
   );
 }
 
+function AlbumSyncSettings({
+  mode,
+  onModeChange,
+  albums,
+  loadingAlbums,
+  albumId,
+  onAlbumIdChange,
+  title,
+  onTitleChange,
+  description,
+  onDescriptionChange,
+  syncCoverAsAlbumCover,
+  onSyncCoverAsAlbumCoverChange,
+}: {
+  mode: AlbumSyncMode;
+  onModeChange: (mode: AlbumSyncMode) => void;
+  albums: MineAlbumOption[];
+  loadingAlbums: boolean;
+  albumId: string;
+  onAlbumIdChange: (id: string) => void;
+  title: string;
+  onTitleChange: (title: string) => void;
+  description: string;
+  onDescriptionChange: (description: string) => void;
+  syncCoverAsAlbumCover: boolean;
+  onSyncCoverAsAlbumCoverChange: (value: boolean) => void;
+}) {
+  const selectedAlbum = albums.find((album) => album.id === albumId) ?? null;
+  const [albumSearch, setAlbumSearch] = useState("");
+  const visibleAlbums = albums.filter((album) => {
+    const keyword = albumSearch.trim().toLowerCase();
+    if (!keyword) return true;
+    return `${album.title} ${album.id}`.toLowerCase().includes(keyword);
+  });
+
+  return (
+    <section className="mt-5 border-t border-leaf-200 pt-5">
+      <h2 className="text-base font-bold text-ink-900">同步到晒图广场</h2>
+      <div className="mt-4 divide-y divide-leaf-100 border-y border-leaf-100">
+        <div className="grid gap-3 py-4 md:grid-cols-[150px_minmax(0,1fr)]">
+          <div>
+            <div className="text-sm font-semibold text-ink-800">同步方式</div>
+            <div className="mt-1 text-xs leading-5 text-ink-500">把本次帖子中的图片同步到你的晒图相册。</div>
+          </div>
+          <div className="space-y-3">
+            <div className="inline-grid w-full max-w-[420px] grid-cols-3 gap-1 rounded-lg border border-leaf-200 bg-leaf-50/60 p-1">
+              {[
+                { value: "none", label: "不同步" },
+                { value: "new", label: "新建相册" },
+                { value: "existing", label: "追加已有" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => onModeChange(option.value as AlbumSyncMode)}
+                  className={cn(
+                    "h-9 rounded-md px-3 text-sm font-semibold transition",
+                    mode === option.value
+                      ? "bg-white text-leaf-800 shadow-sm"
+                      : "text-ink-500 hover:bg-white/70 hover:text-ink-800",
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs leading-5 text-ink-500">
+              帖子会保留图片 URL 快照；将来删除相册，不会直接清空帖子里的图片。
+            </p>
+          </div>
+        </div>
+
+        {mode === "new" && (
+          <div className="grid gap-3 py-4 md:grid-cols-[150px_minmax(0,1fr)]">
+            <div>
+              <div className="text-sm font-semibold text-ink-800">新相册信息</div>
+              <div className="mt-1 text-xs leading-5 text-ink-500">标题可留空，系统会按帖子标题生成。</div>
+            </div>
+            <div className="w-[420px] max-w-full space-y-3">
+              <Input
+                value={title}
+                onChange={(event) => onTitleChange(event.target.value)}
+                placeholder="相册标题"
+                maxLength={50}
+                showCount
+              />
+              <textarea
+                value={description}
+                onChange={(event) => onDescriptionChange(event.target.value)}
+                placeholder="相册描述，可选"
+                maxLength={500}
+                className="input min-h-[86px] w-full resize-y"
+              />
+            </div>
+          </div>
+        )}
+
+        {mode === "existing" && (
+          <div className="grid gap-3 py-4 md:grid-cols-[150px_minmax(0,1fr)]">
+            <div>
+              <div className="text-sm font-semibold text-ink-800">目标相册</div>
+              <div className="mt-1 text-xs leading-5 text-ink-500">只能追加到你自己的相册，并自动跳过重复图片。</div>
+            </div>
+            <div className="space-y-2">
+              <Input
+                value={albumSearch}
+                onChange={(event) => setAlbumSearch(event.target.value)}
+                placeholder={loadingAlbums ? "相册加载中..." : "搜索相册"}
+                disabled={loadingAlbums || albums.length === 0}
+                wrapperClassName="w-[360px] max-w-full"
+              />
+              {visibleAlbums.length > 0 && (
+                <div className="grid max-h-52 w-[420px] max-w-full gap-2 overflow-y-auto rounded-lg border border-leaf-100 bg-leaf-50/40 p-2">
+                  {visibleAlbums.map((album) => {
+                    const active = album.id === albumId;
+                    return (
+                      <button
+                        key={album.id}
+                        type="button"
+                        onClick={() => onAlbumIdChange(album.id)}
+                        className={cn(
+                          "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition",
+                          active
+                            ? "border-leaf-400 bg-white text-leaf-800 shadow-sm"
+                            : "border-transparent bg-white/70 text-ink-700 hover:border-leaf-200 hover:bg-white",
+                        )}
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-semibold">{album.title}</span>
+                          <span className="mt-0.5 block text-xs text-ink-400">
+                            {album.imageCount} 张{album.isPublic ? "" : " · 私密"}
+                          </span>
+                        </span>
+                        {active && <Icon name="check" size={14} className="text-leaf-700" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {!loadingAlbums && albums.length === 0 && (
+                <p className="text-xs text-ink-400">还没有可追加的晒图相册，可以改为新建相册。</p>
+              )}
+              {!loadingAlbums && albums.length > 0 && visibleAlbums.length === 0 && (
+                <p className="text-xs text-ink-400">没有匹配的相册。</p>
+              )}
+              {selectedAlbum && !selectedAlbum.isPublic && (
+                <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-700">
+                  目标相册是私密相册；如果帖子公开发布，图片仍会出现在帖子里。
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {mode !== "none" && (
+          <label className="grid cursor-pointer gap-3 py-4 md:grid-cols-[150px_minmax(0,1fr)]">
+            <div>
+              <div className="text-sm font-semibold text-ink-800">相册封面</div>
+              <div className="mt-1 text-xs leading-5 text-ink-500">默认用同步图片中的第一张。</div>
+            </div>
+            <span className="inline-flex items-center gap-2 text-sm text-ink-700">
+              <input
+                type="checkbox"
+                checked={syncCoverAsAlbumCover}
+                onChange={(event) => onSyncCoverAsAlbumCoverChange(event.target.checked)}
+                className="h-4 w-4 rounded accent-leaf-600"
+              />
+              同步使用帖子封面作为相册封面
+            </span>
+          </label>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function CheckLine({ label }: { label: string }) {
   return (
     <label className="flex items-center gap-2">
@@ -795,6 +1081,31 @@ function extractImagesFromJson(json: unknown): string[] {
   };
   traverse(json);
   return images;
+}
+
+function appendImagesToRichJson(json: unknown, urls: string[]): unknown {
+  const doc = cloneDoc(json);
+  const content = Array.isArray(doc.content) ? doc.content : [];
+  doc.content = [
+    ...content,
+    ...urls.map((url) => ({
+      type: "image",
+      attrs: { src: url },
+    })),
+    { type: "paragraph" },
+  ];
+  return doc;
+}
+
+function cloneDoc(json: unknown): { type: string; content?: unknown[] } {
+  if (json && typeof json === "object" && (json as { type?: string }).type === "doc") {
+    return JSON.parse(JSON.stringify(json)) as { type: string; content?: unknown[] };
+  }
+  return { type: "doc", content: [] };
+}
+
+function getJournalImageUrls(journal: JournalDraft): string[] {
+  return journal.entries.flatMap((entry) => entry.images ?? []).filter(Boolean);
 }
 
 function countTextFromJson(json: unknown): number {

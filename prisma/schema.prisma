@@ -427,10 +427,11 @@ model Post {
   species   Species? @relation(fields: [speciesId], references: [id])
 
   // 帖子类型扩展
-  vote    Vote?
-  event   Event?
-  help    HelpRequest?
-  journal Journal?
+  vote         Vote?
+  event        Event?
+  help         HelpRequest?
+  journal      Journal?
+  sourceAlbums Album[]      @relation("PostSourceAlbums")
 
   comments Comment[]
   likes    PostLike[]
@@ -2048,25 +2049,28 @@ model TopicRanking {
 // ============================================================
 
 model Album {
-  id          String   @id @default(cuid())
-  userId      String // 相册主人
-  title       String // 相册标题
-  description String?  @db.Text // 相册描述
-  cover       String? // 封面图 URL（默认取第一张图）
-  isPublic    Boolean  @default(true) // 是否公开
-  viewCount   Int      @default(0) // 浏览数
-  likeCount   Int      @default(0) // 点赞数（冗余字段）
-  imageCount  Int      @default(0) // 图片数（冗余字段）
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String // 相册主人
+  sourcePostId String? // 从帖子同步创建时记录来源
+  title        String // 相册标题
+  description  String?  @db.Text // 相册描述
+  cover        String? // 封面图 URL（默认取第一张图）
+  isPublic     Boolean  @default(true) // 是否公开
+  viewCount    Int      @default(0) // 浏览数
+  likeCount    Int      @default(0) // 点赞数（冗余字段）
+  imageCount   Int      @default(0) // 图片数（冗余字段）
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourcePost     Post?          @relation("PostSourceAlbums", fields: [sourcePostId], references: [id], onDelete: SetNull)
   images         AlbumImage[]
   likes          AlbumLike[]
   comments       AlbumComment[]
   contestEntries ContestEntry[]
 
   @@index([userId])
+  @@index([sourcePostId])
   @@index([isPublic, createdAt])
   @@map("albums")
 }

@@ -11,7 +11,7 @@ interface DialogProps {
   title: string;
   children: React.ReactNode;
   actions?: React.ReactNode;
-  maxWidth?: 'sm' | 'md' | 'lg';
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 /**
@@ -22,6 +22,7 @@ export function Dialog({ open, onClose, title, children, actions, maxWidth = 'md
     sm: 'max-w-sm',
     md: 'max-w-md',
     lg: 'max-w-lg',
+    xl: 'max-w-3xl',
   }[maxWidth];
 
   return (

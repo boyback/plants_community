@@ -13,6 +13,7 @@ import { firePushToBaidu } from '@/lib/baidu-push';
 import { sortPostsForPins, type PinSortTarget } from '@/lib/post-pins';
 import { incrementSpeciesDailyStat } from '@/lib/species-daily-stats';
 import { createUserPlantCode } from '@/lib/user-plant-code';
+import { AlbumSyncInput, collectAlbumSyncImages, syncPostImagesToAlbum } from '@/lib/album-sync';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://plantcommunity.cn';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
@@ -258,6 +259,7 @@ const CreateBody = z
         entries: z.array(JournalEntryInput).max(50).default([]),
       })
       .optional(),
+    albumSync: AlbumSyncInput,
   })
   .superRefine((data, ctx) => {
     if (!data.categorySlug && !data.genusSlug && !data.speciesSlug && !data.boardSlug)
@@ -364,6 +366,15 @@ export const POST = handler(async (req) => {
     return fail(400, '成长记录需要选择具体品种');
   }
 
+  if (body.albumSync?.mode === 'existing') {
+    if (!body.albumSync.albumId) return fail(400, '请选择要追加的相册');
+    const album = await prisma.album.findFirst({
+      where: { id: body.albumSync.albumId, userId: me.id },
+      select: { id: true },
+    });
+    if (!album) return fail(400, '只能同步到自己的相册');
+  }
+
   const cover = body.cover ?? null;
 
   const isRich = body.type === 'rich' || body.type === 'event';
@@ -434,7 +445,7 @@ export const POST = handler(async (req) => {
       userPlantId = plant.id;
     }
 
-    return tx.post.create({
+    const createdPost = await tx.post.create({
       data: {
         type: body.type,
         title: body.title,
@@ -499,6 +510,22 @@ export const POST = handler(async (req) => {
       },
       include: postInclude(),
     });
+
+    await syncPostImagesToAlbum({
+      tx,
+      sync: body.albumSync,
+      userId: me.id,
+      postId: createdPost.id,
+      postTitle: createdPost.title,
+      cover,
+      images: collectAlbumSyncImages({
+        cover,
+        images: body.images ?? [],
+        journal: body.journal,
+      }),
+    });
+
+    return createdPost;
   });
 
   await emitEvent({ kind: 'post_create', userId: me.id, postId: created.id });
