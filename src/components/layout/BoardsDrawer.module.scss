@@ -1,0 +1,82 @@
+@keyframes slide-in-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+
+/* Generated from src/components/layout/BoardsDrawer.tsx. Keep component-local styles here. */.r_60fbb771{display:flex}.r_34516836{cursor:pointer}.r_3960ffc2{align-items:center}.r_8ef2268e{justify-content:space-between}.r_77a2a20e{gap:8px}.r_0e17f2bd{padding-left:12px;padding-right:12px}.r_e7ee55ac{padding-top:10px;padding-bottom:10px}.r_fc7473ca{font-size:14px;line-height:20px}
+
+
+/* Recovered utility rules referenced by this CSS module. */
+.r_7bc55599{position:fixed}
+.r_7f79a1d3{left:224px}
+.r_317cfdc3{top:60px}
+.r_db5a366a{z-index:100}
+.r_99d72c7f{display:none}
+.r_85547d94{height:calc(100vh - 72px)}
+.r_55cf6e03{width:640px}
+.r_779cfef1{max-width:calc(100vw - 240px)}
+.r_2cd02d11{overflow:hidden}
+.r_4e8fcc18{border-top-right-radius:16px;border-bottom-right-radius:16px}
+.r_ca6bcd4b{border-width:1px}
+.r_696c4c24{border-left-width:0}
+.r_88b684d2{--tw-border-opacity:1;border-color:rgb(var(--leaf-100)/var(--tw-border-opacity))}
+.r_5e10cdb8{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity))}
+.r_14e46609{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}
+.r_3eb153dc{display:flex}
+.r_7b7df044{inset:0}
+.r_7116b85f{z-index:200}
+@media (min-width:1024px){.r_a327049c{display:none}}
+.r_da4dbfbc{position:absolute}
+.r_50ca6ba5{cursor:default}
+.r_8158623f{background-color:rgb(var(--ink-900)/.5)}
+.r_62905785{--tw-backdrop-blur:blur(2px);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}
+.r_d89972fe{position:relative}
+.r_a1012364{margin-left:0}
+.r_668b21aa{height:100%}
+.r_3c8a6ed4{width:88%}
+.r_c79ccc8a{max-width:720px}
+.r_8dddea07{flex-direction:column}
+.r_36e579c0{flex:1 1 0%}
+.r_65fdbade{border-bottom-width:1px}
+.r_f0faeb26{padding-left:16px;padding-right:16px}
+.r_1b2d54a3{padding-top:12px;padding-bottom:12px}
+.r_4ee73492{font-size:16px;line-height:24px}
+.r_e83a7042{font-weight:600}
+.r_399e11a5{--tw-text-opacity:1;color:rgb(var(--ink-800)/var(--tw-text-opacity))}
+.r_0c5e9137{border-radius:0}
+.r_cd009d7d{padding:6px}
+.r_6c4cc49e{color:rgb(var(--leaf-700)/.6)}
+.r_5756b7b4:hover{--tw-bg-opacity:1;background-color:rgb(var(--leaf-50)/var(--tw-bg-opacity))}
+.r_9825203a:hover{--tw-text-opacity:1;color:rgb(var(--leaf-700)/var(--tw-text-opacity))}
+.r_84789e8a{width:160px}
+.r_012fbd12{flex-shrink:0}
+.r_92bf82f4{overflow-y:auto}
+.r_5ceb636b{border-right-width:1px}
+.r_38748e06{border-color:rgb(var(--leaf-100)/.6)}
+.r_660d2eff{padding-top:4px;padding-bottom:4px}
+.r_359090c2{font-size:12px;line-height:16px}
+.r_3353f144{color:rgb(var(--leaf-700)/.5)}
+.r_7ebecbb6{--tw-bg-opacity:1;background-color:rgb(var(--leaf-50)/var(--tw-bg-opacity))}
+.r_2689f395{font-weight:500}
+.r_5f6a59f1{--tw-text-opacity:1;color:rgb(var(--leaf-700)/var(--tw-text-opacity))}
+.r_7e0b7cdf{min-width:0}
+.r_f283ea9b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r_1dc571a3{font-size:10px}
+.r_8e63407b{padding:16px}
+.r_1bb88326{margin-bottom:12px}
+.r_b7012bb2{align-items:baseline}
+.r_90665ca6{font-style:italic}
+.r_d058ca6d{font-size:11px}
+.r_61357c0c{padding-top:48px;padding-bottom:48px}
+.r_ca6bf630{text-align:center}
+.r_f3c543ad{display:grid}
+.r_8e75e3db{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:640px){.r_ab1b20c2{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.r_64292b1c { }
+.r_ceb69a6b{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}
+.r_a5c39c39:hover{--tw-border-opacity:1;border-color:rgb(var(--leaf-300)/var(--tw-border-opacity))}
+.r_64292b1c:hover .r_0eb80431{--tw-text-opacity:1;color:rgb(var(--leaf-700)/var(--tw-text-opacity))}
+.r_15e1b1f4{margin-top:2px}
+.r_b6b02c0e{margin-top:4px}
+.r_86843cf1{justify-content:center}
+
+
+/* Recovered utility rules referenced by this CSS module. */
+.r_a2a3392c{animation:slide-in-left .18s ease-out}

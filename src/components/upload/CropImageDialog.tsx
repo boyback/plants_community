@@ -1,7 +1,12 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import Cropper, { type Area } from 'react-easy-crop';
+import Cropper, { type Area } from "react-easy-crop";
+import { useBodyScrollLock } from '@/lib/hooks/useBodyScrollLock';
+import styles from './CropImageDialog.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface Props {
   src: string;
@@ -12,15 +17,17 @@ interface Props {
 }
 
 const ASPECT_PRESETS = [
-  { label: '自由', value: null },
-  { label: '1:1', value: 1 },
-  { label: '4:3', value: 4 / 3 },
-  { label: '3:4', value: 3 / 4 },
-  { label: '16:9', value: 16 / 9 },
-  { label: '9:16', value: 9 / 16 },
-];
+{ label: '自由', value: null },
+{ label: "1:1", value: 1 },
+{ label: "4:3", value: 4 / 3 },
+{ label: "3:4", value: 3 / 4 },
+{ label: "16:9", value: 16 / 9 },
+{ label: "9:16", value: 9 / 16 }];
+
 
 export function CropImageDialog({ src, onCancel, onConfirm, outputSize }: Props) {
+  useBodyScrollLock(true);
+
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [areaPx, setAreaPx] = useState<Area | null>(null);
@@ -48,7 +55,7 @@ export function CropImageDialog({ src, onCancel, onConfirm, outputSize }: Props)
     setBusy(true);
     setErr('');
     try {
-      if (!areaPx) { setErr('请先调整裁剪框'); return; }
+      if (!areaPx) {setErr('请先调整裁剪框');return;}
       const url = await cropImage(src, areaPx, rotation, flipH, flipV, false, outputSize);
       onConfirm(url);
     } catch (e) {
@@ -59,31 +66,31 @@ export function CropImageDialog({ src, onCancel, onConfirm, outputSize }: Props)
   };
 
   const onSkip = () => {
-    if (rotation === 0 && !flipH && !flipV) { onConfirm(src); return; }
+    if (rotation === 0 && !flipH && !flipV) {onConfirm(src);return;}
     setBusy(true);
-    cropImage(src, { x: 0, y: 0, width: 9999, height: 9999 }, rotation, flipH, flipV, true)
-      .then((url) => onConfirm(url))
-      .catch(() => onConfirm(src))
-      .finally(() => setBusy(false));
+    cropImage(src, { x: 0, y: 0, width: 9999, height: 9999 }, rotation, flipH, flipV, true).
+    then((url) => onConfirm(url)).
+    catch(() => onConfirm(src)).
+    finally(() => setBusy(false));
   };
 
   const hasTransform = rotation !== 0 || flipH || flipV;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onCancel}>
+    <div className={cx(styles.r_7bc55599, styles.r_7b7df044, styles.r_181b2866, styles.r_60fbb771, styles.r_3960ffc2, styles.r_86843cf1, styles.r_db1c7bcb, styles.r_8e63407b)} onClick={onCancel}>
       <div
-        className="card flex max-h-[95vh] w-full max-w-lg flex-col overflow-hidden p-0"
-        onClick={(e) => e.stopPropagation()}
-      >
+        className={cx(styles.r_60fbb771, styles.r_b1d62136, styles.r_6da6a3c3, styles.r_6199866f, styles.r_8dddea07, styles.r_2cd02d11, styles.r_8a539c7f)}
+        onClick={(e) => e.stopPropagation()}>
+
         {/* 标题栏 */}
-        <div className="flex items-center justify-between border-b border-leaf-100 px-4 py-3">
-          <h3 className="text-base font-semibold">✂️ 裁剪图片</h3>
-          <button type="button" onClick={onCancel} className="text-leaf-700/70 hover:text-leaf-700">×</button>
+        <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_65fdbade, styles.r_88b684d2, styles.r_f0faeb26, styles.r_1b2d54a3)}>
+          <h3 className={cx(styles.r_4ee73492, styles.r_e83a7042)}>✂️ 裁剪图片</h3>
+          <button type="button" onClick={onCancel} className={cx(styles.r_69335b95, styles.r_9825203a)}>×</button>
         </div>
 
         {/* 裁剪区 */}
-        <div className="relative flex items-center justify-center w-full flex-shrink-0 bg-black/90 py-4">
-          <div className="relative" style={{ width: '75px', height: '75px' }}>
+        <div className={cx(styles.r_d89972fe, styles.r_60fbb771, styles.r_3960ffc2, styles.r_86843cf1, styles.r_6da6a3c3, styles.r_2074a75b, styles.r_d45d5957, styles.r_cb11fec3)}>
+          <div className={styles.r_d89972fe} style={{ width: '75px', height: '75px' }}>
             <style>{`
               .crop-area { touch-action: none; }
               .crop-area .CropArea__cropArea {
@@ -91,7 +98,7 @@ export function CropImageDialog({ src, onCancel, onConfirm, outputSize }: Props)
                 box-shadow: 0 0 0 9999em rgba(0,0,0,0.5) !important;
               }
             `}</style>
-            <div className="crop-area h-full w-full">
+            <div className={cx("crop-area", styles.r_668b21aa, styles.r_6da6a3c3)}>
               <Cropper
                 image={src}
                 crop={crop}
@@ -103,46 +110,46 @@ export function CropImageDialog({ src, onCancel, onConfirm, outputSize }: Props)
                 restrictPosition={true}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
-                onCropComplete={onCropComplete}
-              />
+                onCropComplete={onCropComplete} />
+
             </div>
-            {areaPx && (
-              <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 rounded bg-black/60 px-2 py-1 text-[10px] text-white/80 tabular-nums whitespace-nowrap">
+            {areaPx &&
+            <div className={cx(styles.r_da4dbfbc, styles.r_76b1b75b, styles.r_e632769a, styles.r_efaa0701, styles.r_07389a77, styles.r_db1c7bcb, styles.r_d5eab218, styles.r_660d2eff, styles.r_1dc571a3, styles.r_201d4d37, styles.r_3032cae0, styles.r_e82ae8be)}>
                 {Math.round(areaPx.width)} × {Math.round(areaPx.height)}
               </div>
-            )}
+            }
           </div>
         </div>
 
         {/* 工具栏 */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 text-xs">
-          <div className="space-y-3">
+        <div className={cx(styles.r_36e579c0, styles.r_92bf82f4, styles.r_f0faeb26, styles.r_1b2d54a3, styles.r_359090c2)}>
+          <div className={styles.r_6ed543e2}>
             {/* 提示 */}
-            <div className="rounded-lg bg-leaf-50/60 px-3 py-2 text-[11px] leading-5 text-leaf-700/80">
+            <div className={cx(styles.r_5f22e64f, styles.r_a8a62ca4, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_d058ca6d, styles.r_7054e276, styles.r_21d33c50)}>
               💡 拖动裁剪框移动位置；拖动<strong>四角或四边</strong>调整大小；裁剪框不会超出图片范围
             </div>
 
             {/* 旋转 */}
             <div>
-              <div className="mb-1.5 text-leaf-700/70">旋转</div>
-              <div className="flex gap-2">
+              <div className={cx(styles.r_d7c1392c, styles.r_69335b95)}>旋转</div>
+              <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
                 <button
                   type="button"
                   onClick={() => setRotation((r) => (r - 90) % 360)}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-leaf-200 bg-white py-2.5 text-leaf-700 transition-colors hover:border-leaf-400 hover:bg-leaf-50 active:scale-95"
-                >
+                  className={cx(styles.r_60fbb771, styles.r_36e579c0, styles.r_3960ffc2, styles.r_86843cf1, styles.r_58284b4e, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_691861bc, styles.r_5e10cdb8, styles.r_e7ee55ac, styles.r_5f6a59f1, styles.r_ceb69a6b, styles.r_0a7c2f87, styles.r_5756b7b4, styles.r_fd156e61)}>
+
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M1 4v6h6" />
                     <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
                   </svg>
-                  <span className="text-xs">左转 90°</span>
+                  <span className={styles.r_359090c2}>左转 90°</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setRotation((r) => (r + 90) % 360)}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-leaf-200 bg-white py-2.5 text-leaf-700 transition-colors hover:border-leaf-400 hover:bg-leaf-50 active:scale-95"
-                >
-                  <span className="text-xs">右转 90°</span>
+                  className={cx(styles.r_60fbb771, styles.r_36e579c0, styles.r_3960ffc2, styles.r_86843cf1, styles.r_58284b4e, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_691861bc, styles.r_5e10cdb8, styles.r_e7ee55ac, styles.r_5f6a59f1, styles.r_ceb69a6b, styles.r_0a7c2f87, styles.r_5756b7b4, styles.r_fd156e61)}>
+
+                  <span className={styles.r_359090c2}>右转 90°</span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M23 4v6h-6" />
                     <path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10" />
@@ -153,83 +160,83 @@ export function CropImageDialog({ src, onCancel, onConfirm, outputSize }: Props)
 
             {/* 镜像翻转 */}
             <div>
-              <div className="mb-1.5 text-leaf-700/70">镜像翻转</div>
-              <div className="flex gap-2">
+              <div className={cx(styles.r_d7c1392c, styles.r_69335b95)}>镜像翻转</div>
+              <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
                 <button
                   type="button"
                   onClick={() => setFlipH((f) => !f)}
-                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border py-2.5 transition-all active:scale-95 ${
-                    flipH
-                      ? 'border-leaf-500 bg-leaf-500 text-white shadow-sm'
-                      : 'border-leaf-200 bg-white text-leaf-700 hover:border-leaf-400 hover:bg-leaf-50'
-                  }`}
-                >
+                  className={cx(styles.r_60fbb771, styles.r_36e579c0, styles.r_3960ffc2, styles.r_86843cf1, styles.r_58284b4e, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_e7ee55ac, styles.r_0fe7d7d8, styles.r_fd156e61, `${
+                  flipH ? cx(styles.r_d3b27cd9, styles.r_45499621, styles.r_72a4c7cd, styles.r_438b2237) : cx(styles.r_691861bc, styles.r_5e10cdb8, styles.r_5f6a59f1, styles.r_0a7c2f87, styles.r_5756b7b4)}`)
+
+
+                  }>
+
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M8 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h3" />
                     <path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3" />
                     <line x1="12" y1="20" x2="12" y2="4" />
                   </svg>
-                  <span className="text-xs">左右翻转</span>
+                  <span className={styles.r_359090c2}>左右翻转</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setFlipV((f) => !f)}
-                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border py-2.5 transition-all active:scale-95 ${
-                    flipV
-                      ? 'border-leaf-500 bg-leaf-500 text-white shadow-sm'
-                      : 'border-leaf-200 bg-white text-leaf-700 hover:border-leaf-400 hover:bg-leaf-50'
-                  }`}
-                >
+                  className={cx(styles.r_60fbb771, styles.r_36e579c0, styles.r_3960ffc2, styles.r_86843cf1, styles.r_58284b4e, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_e7ee55ac, styles.r_0fe7d7d8, styles.r_fd156e61, `${
+                  flipV ? cx(styles.r_d3b27cd9, styles.r_45499621, styles.r_72a4c7cd, styles.r_438b2237) : cx(styles.r_691861bc, styles.r_5e10cdb8, styles.r_5f6a59f1, styles.r_0a7c2f87, styles.r_5756b7b4)}`)
+
+
+                  }>
+
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M3 8V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v3" />
                     <path d="M3 16v3c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-3" />
                     <line x1="4" y1="12" x2="20" y2="12" />
                   </svg>
-                  <span className="text-xs">上下翻转</span>
+                  <span className={styles.r_359090c2}>上下翻转</span>
                 </button>
               </div>
             </div>
 
             {/* 比例 */}
             <div>
-              <div className="mb-1.5 text-leaf-700/70">裁剪比例</div>
-              <div className="flex flex-wrap gap-1.5">
-                {ASPECT_PRESETS.map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => { setAspect(item.value); setCustomW(''); setCustomH(''); }}
-                    className={`rounded-full px-2.5 py-1 transition-colors ${
-                      aspect === item.value && !customW && !customH
-                        ? 'bg-leaf-500 text-white'
-                        : 'bg-leaf-50 text-leaf-700 hover:bg-leaf-100'
-                    }`}
-                  >
+              <div className={cx(styles.r_d7c1392c, styles.r_69335b95)}>裁剪比例</div>
+              <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_58284b4e)}>
+                {ASPECT_PRESETS.map((item) =>
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => {setAspect(item.value);setCustomW('');setCustomH('');}}
+                  className={cx(styles.r_ac204c10, styles.r_0b91436d, styles.r_660d2eff, styles.r_ceb69a6b, `${
+                  aspect === item.value && !customW && !customH ? cx(styles.r_45499621, styles.r_72a4c7cd) : cx(styles.r_7ebecbb6, styles.r_5f6a59f1, styles.r_2efc423a)}`)
+
+
+                  }>
+
                     {item.label}
                   </button>
-                ))}
+                )}
               </div>
-              <div className="mt-2 flex items-center gap-1.5">
+              <div className={cx(styles.r_50d0d216, styles.r_60fbb771, styles.r_3960ffc2, styles.r_58284b4e)}>
                 <input
                   type="number" min="1" max="100"
                   value={customW}
-                  onChange={(e) => { setCustomW(e.target.value); setAspect(null); }}
+                  onChange={(e) => {setCustomW(e.target.value);setAspect(null);}}
                   placeholder="宽"
-                  className="w-16 rounded-lg border border-ink-200 px-2 py-1 text-center text-[11px]"
-                />
-                <span className="text-leaf-700/50">:</span>
+                  className={cx(styles.r_baceed34, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_d5eab218, styles.r_660d2eff, styles.r_ca6bf630, styles.r_d058ca6d)} />
+
+                <span className={styles.r_3353f144}>:</span>
                 <input
                   type="number" min="1" max="100"
                   value={customH}
-                  onChange={(e) => { setCustomH(e.target.value); setAspect(null); }}
+                  onChange={(e) => {setCustomH(e.target.value);setAspect(null);}}
                   placeholder="高"
-                  className="w-16 rounded-lg border border-ink-200 px-2 py-1 text-center text-[11px]"
-                />
+                  className={cx(styles.r_baceed34, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_d5eab218, styles.r_660d2eff, styles.r_ca6bf630, styles.r_d058ca6d)} />
+
                 <button
                   type="button" onClick={applyCustomAspect}
                   disabled={!customW || !customH}
-                  className="rounded-lg bg-leaf-500 px-2 py-1 text-[10px] text-white hover:bg-leaf-600 disabled:opacity-50"
-                >
+                  className={cx(styles.r_5f22e64f, styles.r_45499621, styles.r_d5eab218, styles.r_660d2eff, styles.r_1dc571a3, styles.r_72a4c7cd, styles.r_24f5f8c9, styles.r_b29d8adb)}>
+
                   应用
                 </button>
               </div>
@@ -237,65 +244,65 @@ export function CropImageDialog({ src, onCancel, onConfirm, outputSize }: Props)
 
             {/* 缩放 - 进度条 */}
             <div>
-              <div className="mb-1 flex items-center justify-between text-leaf-700/70">
+              <div className={cx(styles.r_65281709, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_69335b95)}>
                 <span>缩放</span>
-                <span className="tabular-nums">{zoom.toFixed(1)}x</span>
+                <span className={styles.r_3032cae0}>{zoom.toFixed(1)}x</span>
               </div>
               <input
                 type="range" min="1" max="3" step="0.05"
                 value={zoom}
                 onChange={(e) => setZoom(Number(e.target.value))}
-                className="w-full accent-leaf-500"
-              />
-              <div className="mt-0.5 flex justify-between text-[10px] text-leaf-700/50">
+                className={cx(styles.r_6da6a3c3, styles.r_5f66c7c0)} />
+
+              <div className={cx(styles.r_15e1b1f4, styles.r_60fbb771, styles.r_8ef2268e, styles.r_1dc571a3, styles.r_3353f144)}>
                 <span>1x</span>
                 <span>3x</span>
               </div>
             </div>
 
-            {err && <div className="rounded-lg bg-rose-50 px-3 py-2 text-rose-600">{err}</div>}
+            {err && <div className={cx(styles.r_5f22e64f, styles.r_0759a0f1, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_595fceba)}>{err}</div>}
           </div>
         </div>
 
         {/* 底部按钮 */}
-        <div className="flex items-center justify-between border-t border-leaf-100 px-4 py-3">
-          <div className="text-[11px]">
-            {hasTransform ? (
-              <button
-                type="button"
-                onClick={() => { setRotation(0); setFlipH(false); setFlipV(false); }}
-                className="text-rose-600 hover:underline"
-              >
+        <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_b950dda2, styles.r_88b684d2, styles.r_f0faeb26, styles.r_1b2d54a3)}>
+          <div className={styles.r_d058ca6d}>
+            {hasTransform ?
+            <button
+              type="button"
+              onClick={() => {setRotation(0);setFlipH(false);setFlipV(false);}}
+              className={cx(styles.r_595fceba, styles.r_f673f4a7)}>
+
                 重置变换
-              </button>
-            ) : (
-              <span className="text-leaf-700/60">拖拽裁剪框调整区域</span>
-            )}
+              </button> :
+
+            <span className={styles.r_6c4cc49e}>拖拽裁剪框调整区域</span>
+            }
           </div>
-          <div className="flex gap-2">
-            <button type="button" onClick={onCancel} className="btn-outline !text-xs" disabled={busy}>
+          <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
+            <button type="button" onClick={onCancel} className={styles.r_dd702538} disabled={busy}>
               取消
             </button>
-            <button type="button" onClick={onSkip} className="rounded-lg border border-ink-200 px-3 py-2 text-xs hover:bg-ink-50" disabled={busy}>
+            <button type="button" onClick={onSkip} className={cx(styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_5399e21f)} disabled={busy}>
               跳过裁剪
             </button>
-            <button type="button" onClick={onConfirmClick} disabled={busy || !areaPx} className="btn-primary !text-xs">
+            <button type="button" onClick={onConfirmClick} disabled={busy || !areaPx} className={styles.r_dd702538}>
               {busy ? '处理中…' : '确认裁剪'}
             </button>
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 async function cropImage(
-  imageSrc: string, area: Area, rotation: number,
-  flipH: boolean, flipV: boolean, transformOnly = false,
-  outputSize?: number
-): Promise<string> {
+imageSrc: string, area: Area, rotation: number,
+flipH: boolean, flipV: boolean, transformOnly = false,
+outputSize?: number)
+: Promise<string> {
   const img = await loadImage(imageSrc);
-  const rad = (rotation * Math.PI) / 180;
+  const rad = rotation * Math.PI / 180;
   const absSin = Math.abs(Math.sin(rad));
   const absCos = Math.abs(Math.cos(rad));
   const imgW = img.naturalWidth;

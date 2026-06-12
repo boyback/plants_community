@@ -1,14 +1,18 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
-import { getSpeciesGalleryUrls } from '@/lib/species-gallery';
+import { getSpeciesGalleryUrls } from "@/lib/species-gallery";
 import { ContributionReviewActions } from './ContributionReviewActions';
+import styles from './page.module.scss';
+import { cx } from '@/lib/style-utils';
 
-export const dynamic = 'force-dynamic';
+
+
+export const dynamic = "force-dynamic";
 
 const statusLabels: Record<string, string> = {
   pending: '待审核',
   approved: '已通过',
-  rejected: '已拒绝',
+  rejected: '已拒绝'
 };
 
 const typeLabels: Record<string, string> = {
@@ -18,81 +22,81 @@ const typeLabels: Record<string, string> = {
   morphology: '形态特征',
   growth_image: '成长变化图片',
   gallery_image: '图集图片',
-  similar_species: '相似品种建议',
+  similar_species: '相似品种建议'
 };
 
 export default async function SpeciesContributionsPage({
-  searchParams,
-}: {
-  searchParams: { status?: string; page?: string };
-}) {
+  searchParams
+
+
+}: {searchParams: {status?: string;page?: string;};}) {
   const status = searchParams.status ?? 'pending';
   const page = Math.max(1, Number(searchParams.page) || 1);
   const pageSize = 30;
   const where = status === 'all' ? {} : { status: status as 'pending' | 'approved' | 'rejected' };
 
   const [items, total] = await Promise.all([
-    prisma.speciesContribution.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      include: {
-        user: { select: { id: true, name: true } },
-        species: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            cover: true,
-            gallery: true,
-            genus: { select: { slug: true, board: { select: { slug: true } } } },
-          },
-        },
-      },
-    }),
-    prisma.speciesContribution.count({ where }),
-  ]);
+  prisma.speciesContribution.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+    include: {
+      user: { select: { id: true, name: true } },
+      species: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          cover: true,
+          gallery: true,
+          genus: { select: { slug: true, board: { select: { slug: true } } } }
+        }
+      }
+    }
+  }),
+  prisma.speciesContribution.count({ where })]
+  );
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-start justify-between gap-4">
+    <div className={styles.r_3e7ce58d}>
+      <div className={cx(styles.r_60fbb771, styles.r_60541e1e, styles.r_8ef2268e, styles.r_0c3bc985)}>
         <div>
-          <h1 className="text-2xl font-bold text-ink-900">图鉴贡献审核</h1>
-          <p className="mt-1 text-xs text-ink-500">共 {total} 条 · 第 {page}/{totalPages} 页</p>
-          <p className="mt-1 text-xs text-amber-700">“写入并通过”会把图片追加到图集、养护经验追加到 tips、资料纠错按字段白名单写入官方资料；历史相似品种建议仅做审核记录。</p>
+          <h1 className={cx(styles.r_3febee09, styles.r_69450ef1, styles.r_4ddaa618)}>图鉴贡献审核</h1>
+          <p className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_7b89cd85)}>共 {total} 条 · 第 {page}/{totalPages} 页</p>
+          <p className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_85d79ebf)}>“写入并通过”会把图片追加到图集、养护经验追加到 tips、资料纠错按字段白名单写入官方资料；历史相似品种建议仅做审核记录。</p>
         </div>
-        <Link href="/admin/species" className="rounded-lg border border-ink-200 px-3 py-2 text-xs hover:bg-ink-50">
+        <Link href="/admin/species" className={cx(styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_5399e21f)}>
           返回品种数据
         </Link>
       </div>
 
-      <div className="flex flex-wrap gap-2 text-xs">
-        {['pending', 'approved', 'rejected', 'all'].map((item) => (
-          <Link
-            key={item}
-            href={{ query: { status: item } }}
-            className={`rounded-full border px-3 py-1.5 ${
-              status === item ? 'border-leaf-600 bg-leaf-50 text-leaf-800' : 'border-ink-200 text-ink-600 hover:bg-ink-50'
-            }`}
-          >
+      <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_77a2a20e, styles.r_359090c2)}>
+        {['pending', 'approved', 'rejected', 'all'].map((item) =>
+        <Link
+          key={item}
+          href={{ query: { status: item } }}
+          className={cx(styles.r_ac204c10, styles.r_ca6bcd4b, styles.r_0e17f2bd, styles.r_ec0091ee, `${
+          status === item ? cx(styles.r_3bd65fe8, styles.r_7ebecbb6, styles.r_e7eab4cb) : cx(styles.r_7ae4c063, styles.r_02eb621e, styles.r_5399e21f)}`)
+          }>
+
             {item === 'all' ? '全部' : statusLabels[item]}
           </Link>
-        ))}
+        )}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
-        <table className="w-full text-xs">
-          <thead className="bg-ink-50 text-ink-600">
+      <div className={cx(styles.r_2cd02d11, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_358505cf, styles.r_5e10cdb8)}>
+        <table className={cx(styles.r_6da6a3c3, styles.r_359090c2)}>
+          <thead className={cx(styles.r_ce27a834, styles.r_02eb621e)}>
             <tr>
-              <th className="px-3 py-2 text-left">品种</th>
-              <th className="px-3 py-2 text-left">类型</th>
-              <th className="px-3 py-2 text-left">内容</th>
-              <th className="px-3 py-2 text-left">用户</th>
-              <th className="px-3 py-2 text-left">状态</th>
-              <th className="px-3 py-2 text-right">操作</th>
+              <th className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_2eba0d65)}>品种</th>
+              <th className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_2eba0d65)}>类型</th>
+              <th className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_2eba0d65)}>内容</th>
+              <th className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_2eba0d65)}>用户</th>
+              <th className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_2eba0d65)}>状态</th>
+              <th className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_308fc069)}>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -109,156 +113,156 @@ export default async function SpeciesContributionsPage({
                 similarName?: string;
                 similarSpeciesId?: string;
               };
-              const href = item.species.genus.board
-                ? `/plants/${item.species.genus.board.slug}/${item.species.genus.slug}/${item.species.slug}`
-                : '/plants';
+              const href = item.species.genus.board ?
+              `/plants/${item.species.genus.board.slug}/${item.species.genus.slug}/${item.species.slug}` :
+              '/plants';
               return (
-                <tr key={item.id} className="border-t border-ink-100 align-top hover:bg-ink-50/50">
-                  <td className="px-3 py-3">
-                    <Link href={href} target="_blank" className="font-medium text-ink-800 hover:underline">
+                <tr key={item.id} className={cx(styles.r_b950dda2, styles.r_358505cf, styles.r_10e0e527, styles.r_d9a085ef)}>
+                  <td className={cx(styles.r_0e17f2bd, styles.r_1b2d54a3)}>
+                    <Link href={href} target="_blank" className={cx(styles.r_2689f395, styles.r_399e11a5, styles.r_f673f4a7)}>
                       {item.species.name}
                     </Link>
-                    <div className="mt-1 font-mono text-[10px] text-ink-400">{item.species.id}</div>
+                    <div className={cx(styles.r_b6b02c0e, styles.r_0e65706b, styles.r_1dc571a3, styles.r_66a36c90)}>{item.species.id}</div>
                   </td>
-                  <td className="px-3 py-3 text-ink-700">{typeLabels[item.type] ?? item.type}</td>
-                  <td className="max-w-xl px-3 py-3">
+                  <td className={cx(styles.r_0e17f2bd, styles.r_1b2d54a3, styles.r_eb6abb1f)}>{typeLabels[item.type] ?? item.type}</td>
+                  <td className={cx(styles.r_9ef2b581, styles.r_0e17f2bd, styles.r_1b2d54a3)}>
                     <ContributionPayloadView payload={payload} type={item.type} />
-                    <div className="mt-1 text-[10px] text-ink-400">{item.createdAt.toLocaleString('zh-CN')}</div>
+                    <div className={cx(styles.r_b6b02c0e, styles.r_1dc571a3, styles.r_66a36c90)}>{item.createdAt.toLocaleString("zh-CN")}</div>
                   </td>
-                  <td className="px-3 py-3">
-                    <Link href={`/user/${item.user.id}`} target="_blank" className="text-ink-700 hover:underline">
+                  <td className={cx(styles.r_0e17f2bd, styles.r_1b2d54a3)}>
+                    <Link href={`/user/${item.user.id}`} target="_blank" className={cx(styles.r_eb6abb1f, styles.r_f673f4a7)}>
                       {item.user.name}
                     </Link>
                   </td>
-                  <td className="px-3 py-3">{statusLabels[item.status]}</td>
-                  <td className="px-3 py-3 text-right">
+                  <td className={cx(styles.r_0e17f2bd, styles.r_1b2d54a3)}>{statusLabels[item.status]}</td>
+                  <td className={cx(styles.r_0e17f2bd, styles.r_1b2d54a3, styles.r_308fc069)}>
                     <ContributionReviewActions
                       id={item.id}
                       disabled={item.status !== 'pending'}
-                      images={['image', 'growth_image', 'gallery_image'].includes(item.type) ? payload.images : undefined}
-                      existingImages={['image', 'growth_image', 'gallery_image'].includes(item.type) ? [item.species.cover, ...getSpeciesGalleryUrls(item.species.gallery)] : undefined}
-                    />
+                      images={['image', "growth_image", 'gallery_image'].includes(item.type) ? payload.images : undefined}
+                      existingImages={['image', "growth_image", 'gallery_image'].includes(item.type) ? [item.species.cover, ...getSpeciesGalleryUrls(item.species.gallery)] : undefined} />
+
                   </td>
-                </tr>
-              );
+                </tr>);
+
             })}
-            {items.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-3 py-12 text-center text-ink-500">
+            {items.length === 0 &&
+            <tr>
+                <td colSpan={6} className={cx(styles.r_0e17f2bd, styles.r_61357c0c, styles.r_ca6bf630, styles.r_7b89cd85)}>
                   暂无投稿
                 </td>
               </tr>
-            )}
+            }
           </tbody>
         </table>
       </div>
 
-      <div className="flex justify-center gap-1 text-xs">
-        {page > 1 && (
-          <Link href={{ query: { ...searchParams, page: String(page - 1) } }} className="rounded border border-ink-200 px-3 py-1 hover:bg-ink-50">
+      <div className={cx(styles.r_60fbb771, styles.r_86843cf1, styles.r_44ee8ba0, styles.r_359090c2)}>
+        {page > 1 &&
+        <Link href={{ query: { ...searchParams, page: String(page - 1) } }} className={cx(styles.r_07389a77, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_660d2eff, styles.r_5399e21f)}>
             上一页
           </Link>
-        )}
-        <span className="px-3 py-1 text-ink-500">{page} / {totalPages}</span>
-        {page < totalPages && (
-          <Link href={{ query: { ...searchParams, page: String(page + 1) } }} className="rounded border border-ink-200 px-3 py-1 hover:bg-ink-50">
+        }
+        <span className={cx(styles.r_0e17f2bd, styles.r_660d2eff, styles.r_7b89cd85)}>{page} / {totalPages}</span>
+        {page < totalPages &&
+        <Link href={{ query: { ...searchParams, page: String(page + 1) } }} className={cx(styles.r_07389a77, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_660d2eff, styles.r_5399e21f)}>
             下一页
           </Link>
-        )}
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 function ContributionPayloadView({
   payload,
-  type,
-}: {
-  payload: {
-    content?: string;
-    fieldName?: string;
-    suggestedValue?: string;
-    reason?: string;
-    season?: string;
-    images?: string[];
-    note?: string;
-    stage?: string;
-    similarName?: string;
-  };
-  type: string;
-}) {
+  type
+
+
+
+
+
+
+
+
+
+
+
+
+
+}: {payload: {content?: string;fieldName?: string;suggestedValue?: string;reason?: string;season?: string;images?: string[];note?: string;stage?: string;similarName?: string;};type: string;}) {
   if (type === 'image' && payload.images?.length) {
     return (
-      <div className="space-y-2 rounded-lg bg-ink-50 px-3 py-2">
-        <div className="grid grid-cols-4 gap-2">
-          {payload.images.slice(0, 8).map((url) => (
-            <a key={url} href={url} target="_blank" className="block overflow-hidden rounded bg-white">
+      <div className={cx(styles.r_6f7e013d, styles.r_5f22e64f, styles.r_ce27a834, styles.r_0e17f2bd, styles.r_03b4dd7f)}>
+        <div className={cx(styles.r_f3c543ad, styles.r_32aac21b, styles.r_77a2a20e)}>
+          {payload.images.slice(0, 8).map((url) =>
+          <a key={url} href={url} target="_blank" className={cx(styles.r_0214b4b3, styles.r_2cd02d11, styles.r_07389a77, styles.r_5e10cdb8)}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt="" className="h-20 w-full object-cover" />
+              <img src={url} alt="" className={cx(styles.r_0a769880, styles.r_6da6a3c3, styles.r_7d85d0c2)} />
             </a>
-          ))}
+          )}
         </div>
-        {payload.note && <div className="whitespace-pre-wrap break-words text-ink-700">{payload.note}</div>}
-      </div>
-    );
+        {payload.note && <div className={cx(styles.r_a2edcb1a, styles.r_170cee3f, styles.r_eb6abb1f)}>{payload.note}</div>}
+      </div>);
+
   }
 
-  if ((type === 'growth_image' || type === 'gallery_image') && payload.images?.length) {
+  if ((type === "growth_image" || type === 'gallery_image') && payload.images?.length) {
     return (
-      <div className="space-y-2 rounded-lg bg-ink-50 px-3 py-2">
-        {payload.stage && <div className="text-ink-700"><span className="text-ink-500">阶段：</span>{payload.stage}</div>}
-        <div className="grid grid-cols-4 gap-2">
-          {payload.images.slice(0, 8).map((url) => (
-            <a key={url} href={url} target="_blank" className="block overflow-hidden rounded bg-white">
+      <div className={cx(styles.r_6f7e013d, styles.r_5f22e64f, styles.r_ce27a834, styles.r_0e17f2bd, styles.r_03b4dd7f)}>
+        {payload.stage && <div className={styles.r_eb6abb1f}><span className={styles.r_7b89cd85}>阶段：</span>{payload.stage}</div>}
+        <div className={cx(styles.r_f3c543ad, styles.r_32aac21b, styles.r_77a2a20e)}>
+          {payload.images.slice(0, 8).map((url) =>
+          <a key={url} href={url} target="_blank" className={cx(styles.r_0214b4b3, styles.r_2cd02d11, styles.r_07389a77, styles.r_5e10cdb8)}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt="" className="h-20 w-full object-cover" />
+              <img src={url} alt="" className={cx(styles.r_0a769880, styles.r_6da6a3c3, styles.r_7d85d0c2)} />
             </a>
-          ))}
+          )}
         </div>
-        {payload.note && <div className="whitespace-pre-wrap break-words text-ink-700">{payload.note}</div>}
-      </div>
-    );
+        {payload.note && <div className={cx(styles.r_a2edcb1a, styles.r_170cee3f, styles.r_eb6abb1f)}>{payload.note}</div>}
+      </div>);
+
   }
 
   if (type === 'correction') {
     return (
-      <div className="space-y-1 rounded-lg bg-ink-50 px-3 py-2 text-ink-700">
-        <div><span className="text-ink-500">字段：</span>{payload.fieldName ?? '-'}</div>
-        <div><span className="text-ink-500">建议值：</span>{payload.suggestedValue ?? '-'}</div>
-        {payload.reason && <div className="whitespace-pre-wrap break-words"><span className="text-ink-500">原因：</span>{payload.reason}</div>}
-      </div>
-    );
+      <div className={cx(styles.r_da7c36cd, styles.r_5f22e64f, styles.r_ce27a834, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_eb6abb1f)}>
+        <div><span className={styles.r_7b89cd85}>字段：</span>{payload.fieldName ?? "-"}</div>
+        <div><span className={styles.r_7b89cd85}>建议值：</span>{payload.suggestedValue ?? "-"}</div>
+        {payload.reason && <div className={cx(styles.r_a2edcb1a, styles.r_170cee3f)}><span className={styles.r_7b89cd85}>原因：</span>{payload.reason}</div>}
+      </div>);
+
   }
 
   if (type === 'care_tip') {
     return (
-      <div className="space-y-1 rounded-lg bg-ink-50 px-3 py-2 text-ink-700">
-        {payload.season && <div><span className="text-ink-500">场景：</span>{payload.season}</div>}
-        <div className="whitespace-pre-wrap break-words">{payload.content ?? '-'}</div>
-      </div>
-    );
+      <div className={cx(styles.r_da7c36cd, styles.r_5f22e64f, styles.r_ce27a834, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_eb6abb1f)}>
+        {payload.season && <div><span className={styles.r_7b89cd85}>场景：</span>{payload.season}</div>}
+        <div className={cx(styles.r_a2edcb1a, styles.r_170cee3f)}>{payload.content ?? "-"}</div>
+      </div>);
+
   }
 
   if (type === 'morphology') {
     return (
-      <div className="rounded-lg bg-ink-50 px-3 py-2 text-ink-700">
-        <div className="whitespace-pre-wrap break-words">{payload.content ?? '-'}</div>
-      </div>
-    );
+      <div className={cx(styles.r_5f22e64f, styles.r_ce27a834, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_eb6abb1f)}>
+        <div className={cx(styles.r_a2edcb1a, styles.r_170cee3f)}>{payload.content ?? "-"}</div>
+      </div>);
+
   }
 
   if (type === 'similar_species') {
     return (
-      <div className="space-y-1 rounded-lg bg-ink-50 px-3 py-2 text-ink-700">
-        <div><span className="text-ink-500">相似品种：</span>{payload.similarName ?? '-'}</div>
-        {payload.reason && <div className="whitespace-pre-wrap break-words"><span className="text-ink-500">理由：</span>{payload.reason}</div>}
-      </div>
-    );
+      <div className={cx(styles.r_da7c36cd, styles.r_5f22e64f, styles.r_ce27a834, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_eb6abb1f)}>
+        <div><span className={styles.r_7b89cd85}>相似品种：</span>{payload.similarName ?? "-"}</div>
+        {payload.reason && <div className={cx(styles.r_a2edcb1a, styles.r_170cee3f)}><span className={styles.r_7b89cd85}>理由：</span>{payload.reason}</div>}
+      </div>);
+
   }
 
   return (
-    <div className="whitespace-pre-wrap break-words rounded-lg bg-ink-50 px-3 py-2 text-ink-700">
+    <div className={cx(styles.r_a2edcb1a, styles.r_170cee3f, styles.r_5f22e64f, styles.r_ce27a834, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_eb6abb1f)}>
       {payload.content ?? JSON.stringify(payload)}
-    </div>
-  );
+    </div>);
+
 }

@@ -1,0 +1,20 @@
+/* Generated from src/components/ui/Tooltip.tsx. Keep component-local styles here. */.r_1faa3b06{z-index:99999}.r_9945b3fd{max-width:300px}.r_07389a77{border-radius:4px}.r_01d0b06c{--tw-bg-opacity:1;background-color:rgb(var(--ink-800)/var(--tw-bg-opacity))}.r_d5eab218{padding-left:8px;padding-right:8px}.r_660d2eff{padding-top:4px;padding-bottom:4px}.r_359090c2{font-size:12px;line-height:16px}.r_72a4c7cd{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity))}.r_06bbb431{--tw-shadow:0 10px 15px -3px #0000001a,0 4px 6px -4px #0000001a;--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color),0 4px 6px -4px var(--tw-shadow-color)}.r_06bbb431{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.r_df37b1fd{outline:2px solid #0000;outline-offset:2px}
+
+
+/* Recovered utility rules referenced by this CSS module. */
+.r_bb0c4bfc{display:inline-block}
+.r_135ae073{fill:rgb(var(--ink-800)/1)}
+
+
+/* Local repair rules for migrated CSS module references. */
+.r_2089b774[data-state='closed']{animation-duration:.15s;animation-fill-mode:both}
+.r_a9faa555[data-state='open']{animation-duration:.15s;animation-fill-mode:both}
+.r_0bc7c6cf[data-state='closed']{opacity:0}
+.r_33b203f5[data-state='open']{opacity:1}
+.r_26698b65[data-state='closed']{--tw-scale-x:.95;--tw-scale-y:.95;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}
+.r_3424811d[data-state='open']{--tw-scale-x:.95;--tw-scale-y:.95;animation-name:rysZoomIn;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(1) scaleY(1)}
+@keyframes rysZoomIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+
+.r_2203ce39[data-state='delayed-open']{animation-duration:.15s;animation-fill-mode:both}
+.r_8c31578a[data-state='delayed-open']{opacity:1}
+.r_28721945[data-state='delayed-open']{animation-name:rysZoomIn}

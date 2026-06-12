@@ -4,6 +4,10 @@ import { useColorTheme } from '@/context/ColorThemeContext';
 import { Icon } from '@/components/ui/Icon';
 import { useHoverOpen } from '@/lib/hooks/useHoverOpen';
 import { cn } from '@/lib/utils';
+import styles from './ColorThemeSwitcher.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 /**
  * 配色主题切换器(头部用)
@@ -11,76 +15,76 @@ import { cn } from '@/lib/utils';
  * - 12 主题色板 + 明/暗模式切换
  * - 选中后立即生效,保存 localStorage
  */
-export function ColorThemeSwitcher({ className }: { className?: string }) {
+export function ColorThemeSwitcher({ className }: {className?: string;}) {
   const { theme, meta, setTheme, themes } = useColorTheme();
   const { open, bind, close } = useHoverOpen();
 
   return (
-    <div className={cn('relative inline-block', className)} {...bind}>
+    <div className={cn(cx(styles.r_d89972fe, styles.r_bb0c4bfc), className)} {...bind}>
       <button
         type="button"
         title={`主题:${meta.name}`}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="inline-flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-xl px-2.5 text-sm font-semibold text-ink-800 transition hover:bg-leaf-50 hover:text-leaf-900"
-      >
+        className={cx(styles.r_52083e7d, styles.r_426b8b75, styles.r_28ae52cc, styles.r_3960ffc2, styles.r_86843cf1, styles.r_58284b4e, styles.r_a217b4ea, styles.r_0b91436d, styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5, styles.r_56bf8ae8, styles.r_5756b7b4, styles.r_5eca0425)}>
+
         <Icon name="palette" size={17} />
-        <span className="hidden sm:inline">主题</span>
+        <span className={cx(styles.r_99d72c7f, styles.r_ee3c1259)}>主题</span>
       </button>
 
-      {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-[300px] overflow-hidden rounded-2xl border border-leaf-100 bg-white p-3 shadow-card">
-          <div className="mb-2 text-xs font-semibold text-ink-800">配色主题</div>
+      {open &&
+      <div className={cx(styles.r_da4dbfbc, styles.r_d8cdcad2, styles.r_5e8a03e0, styles.r_181b2866, styles.r_50d0d216, styles.r_06950372, styles.r_2cd02d11, styles.r_68f2db62, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_eb6e8b88, styles.r_21b12502)}>
+          <div className={cx(styles.r_a77ed4d9, styles.r_359090c2, styles.r_e83a7042, styles.r_399e11a5)}>配色主题</div>
 
-          <div className="grid max-h-[420px] grid-cols-2 gap-1.5 overflow-y-auto pr-0.5">
+          <div className={cx(styles.r_f3c543ad, styles.r_c6a5b744, styles.r_8e75e3db, styles.r_58284b4e, styles.r_92bf82f4, styles.r_1811324b)}>
             {themes.map((t) => {
-              const active = t.key === theme;
-              return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => {
-                    setTheme(t.key);
-                    close();
-                  }}
-                  className={cn(
-                    'group flex flex-col items-start gap-1 rounded-xl border-2 p-2 text-left transition-all',
-                    active
-                      ? 'border-leaf-500 bg-leaf-50/60'
-                      : 'border-leaf-100 hover:border-leaf-300'
-                  )}
-                >
+            const active = t.key === theme;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => {
+                  setTheme(t.key);
+                  close();
+                }}
+                className={cn(cx(styles.r_64292b1c, styles.r_60fbb771, styles.r_8dddea07, styles.r_60541e1e, styles.r_44ee8ba0, styles.r_a217b4ea, styles.r_65935df5, styles.r_7660b450, styles.r_2eba0d65, styles.r_0fe7d7d8),
+
+                active ? cx(styles.r_d3b27cd9, styles.r_a8a62ca4) : cx(styles.r_88b684d2, styles.r_a5c39c39)
+
+
+                )}>
+
                   <div
-                    className="flex h-5 w-full items-center overflow-hidden rounded-md ring-1 ring-black/5"
-                    style={{ background: t.swatch.bg }}
-                  >
+                  className={cx(styles.r_60fbb771, styles.r_cd0d9c51, styles.r_6da6a3c3, styles.r_3960ffc2, styles.r_2cd02d11, styles.r_421ac2be, styles.r_3daca9af, styles.r_1e4905f7)}
+                  style={{ background: t.swatch.bg }}>
+
                     <span
-                      className="block h-full w-1/2"
-                      style={{ background: t.swatch.primary }}
-                    />
+                    className={cx(styles.r_0214b4b3, styles.r_668b21aa, styles.r_b7ce0d2f)}
+                    style={{ background: t.swatch.primary }} />
+
                   </div>
-                  <div className="flex w-full items-center justify-between">
-                    <span className="truncate text-xs font-medium text-ink-800">
+                  <div className={cx(styles.r_60fbb771, styles.r_6da6a3c3, styles.r_3960ffc2, styles.r_8ef2268e)}>
+                    <span className={cx(styles.r_f283ea9b, styles.r_359090c2, styles.r_2689f395, styles.r_399e11a5)}>
                       {t.logoEmoji} {t.name}
                     </span>
-                    {active && (
-                      <span className="grid h-3.5 w-3.5 shrink-0 place-items-center rounded-full bg-leaf-500 text-[9px] text-white">
+                    {active &&
+                  <span className={cx(styles.r_f3c543ad, styles.r_7fc7f732, styles.r_bf600f8e, styles.r_012fbd12, styles.r_67d66567, styles.r_ac204c10, styles.r_45499621, styles.r_e0988086, styles.r_72a4c7cd)}>
                         ✓
                       </span>
-                    )}
+                  }
                   </div>
-                  <div className="flex w-full items-center justify-between text-[10px] text-leaf-700/70">
-                    <span className="truncate">{t.desc}</span>
-                    <span className="ml-1 shrink-0 rounded bg-leaf-50/80 px-1 text-[9px] text-leaf-700/60">
+                  <div className={cx(styles.r_60fbb771, styles.r_6da6a3c3, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_1dc571a3, styles.r_69335b95)}>
+                    <span className={styles.r_f283ea9b}>{t.desc}</span>
+                    <span className={cx(styles.r_f58b0257, styles.r_012fbd12, styles.r_07389a77, styles.r_d2717103, styles.r_d8e0e382, styles.r_e0988086, styles.r_6c4cc49e)}>
                       {t.vibe}
                     </span>
                   </div>
-                </button>
-              );
-            })}
+                </button>);
+
+          })}
           </div>
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }

@@ -4,22 +4,26 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FloatingActionRail } from '@/components/ui/FloatingActionRail';
 import type { Post } from '@/lib/types';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/components/ui/Toast';
 import { useI18n } from '@/i18n/I18nContext';
+import styles from './PostActions.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 export function PostActions({
   post,
   initialLiked = false,
   initialCollected = false,
-  initialCollectedTotal = 0,
-}: {
-  post: Post;
-  initialLiked?: boolean;
-  initialCollected?: boolean;
-  initialCollectedTotal?: number;
-}) {
+  initialCollectedTotal = 0
+
+
+
+
+
+}: {post: Post;initialLiked?: boolean;initialCollected?: boolean;initialCollectedTotal?: number;}) {
   const { user } = useAuth();
   const { t } = useI18n();
   const router = useRouter();
@@ -39,7 +43,7 @@ export function PostActions({
   const toggleLike = async () => {
     if (!ensureLogin()) return;
     try {
-      const res = await api.post<{ liked: boolean; total: number }>(
+      const res = await api.post<{liked: boolean;total: number;}>(
         `/api/posts/${post.id}/like`
       );
       setLiked(res.liked);
@@ -52,7 +56,7 @@ export function PostActions({
   const toggleCollect = async () => {
     if (!ensureLogin()) return;
     try {
-      const res = await api.post<{ collected: boolean; total: number }>(
+      const res = await api.post<{collected: boolean;total: number;}>(
         `/api/posts/${post.id}/collect`
       );
       setSaved(res.collected);
@@ -84,7 +88,7 @@ export function PostActions({
         targetType: 'post',
         targetId: post.id,
         reason: 'user_report',
-        detail: text,
+        detail: text
       });
       toast.success('举报已提交');
     } catch (e) {
@@ -99,26 +103,26 @@ export function PostActions({
   return (
     <FloatingActionRail
       items={[
-        { icon: 'share', label: '分享', onClick: () => share('link') },
-        {
-          icon: 'bookmark',
-          label: '收藏',
-          count: collects,
-          active: saved,
-          activeCls: 'bg-amber-50 text-amber-600',
-          onClick: toggleCollect,
-        },
-        {
-          icon: 'thumbs-up',
-          label: '点赞',
-          count: likes,
-          active: liked,
-          activeCls: 'bg-rose-50 text-rose-600',
-          onClick: toggleLike,
-        },
-        { icon: 'comment', label: '评论', count: post.comments, onClick: scrollToComments },
-        { icon: 'alert', label: '举报', onClick: report },
-      ]}
-    />
-  );
+      { icon: 'share', label: '分享', onClick: () => share('link') },
+      {
+        icon: 'bookmark',
+        label: '收藏',
+        count: collects,
+        active: saved,
+        activeCls: cx(styles.r_67d2289d, styles.r_47d65ecb),
+        onClick: toggleCollect
+      },
+      {
+        icon: "thumbs-up",
+        label: '点赞',
+        count: likes,
+        active: liked,
+        activeCls: cx(styles.r_0759a0f1, styles.r_595fceba),
+        onClick: toggleLike
+      },
+      { icon: 'comment', label: '评论', count: post.comments, onClick: scrollToComments },
+      { icon: 'alert', label: '举报', onClick: report }]
+      } />);
+
+
 }

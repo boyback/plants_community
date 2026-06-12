@@ -12,22 +12,26 @@ import { VipBadge } from '@/components/ui/VipBadge';
 import { Dialog } from '@/components/ui/Dialog';
 import { toast } from '@/components/ui/Toast';
 import { cn, formatDate, formatNumber, boardUrl, formatPrice } from '@/lib/utils';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import { LEVELS } from '@/lib/levels';
 import { useI18n } from '@/i18n/I18nContext';
 import type { Badge, Board, Post, User } from '@/lib/types';
+import styles from './UserPageClient.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 type TabKey =
-  | 'posts'
-  | 'comments'
-  | 'products'
-  | 'likes'
-  | 'collects'
-  | 'following'
-  | 'followers'
-  | 'followed-boards'
-  | 'badges'
-  | 'about';
+'posts' |
+'comments' |
+'products' |
+'likes' |
+'collects' |
+'following' |
+'followers' |
+"followed-boards" |
+'badges' |
+'about';
 
 type UserMarketProduct = {
   id: string;
@@ -68,18 +72,18 @@ type UserCommentItem = {
 
 type ProductFilter = 'all' | 'on_sale' | 'sold';
 
-const tabs: { key: TabKey; labelKey?: string; label?: string }[] = [
-  { key: 'posts', labelKey: 'user.tabs.posts' },
-  { key: 'comments', label: '评论' },
-  { key: 'products', label: '商品' },
-  { key: 'likes', labelKey: 'user.tabs.likes' },
-  { key: 'collects', labelKey: 'user.tabs.collects' },
-  { key: 'following', labelKey: 'user.tabs.following' },
-  { key: 'followers', labelKey: 'user.tabs.followers' },
-  { key: 'followed-boards', labelKey: 'user.tabs.followedBoards' },
-  { key: 'badges', labelKey: 'user.tabs.badges' },
-  { key: 'about', labelKey: 'user.tabs.about' },
-];
+const tabs: {key: TabKey;labelKey?: string;label?: string;}[] = [
+{ key: 'posts', labelKey: 'user.tabs.posts' },
+{ key: 'comments', label: '评论' },
+{ key: 'products', label: '商品' },
+{ key: 'likes', labelKey: 'user.tabs.likes' },
+{ key: 'collects', labelKey: 'user.tabs.collects' },
+{ key: 'following', labelKey: 'user.tabs.following' },
+{ key: 'followers', labelKey: 'user.tabs.followers' },
+{ key: "followed-boards", labelKey: 'user.tabs.followedBoards' },
+{ key: 'badges', labelKey: 'user.tabs.badges' },
+{ key: 'about', labelKey: 'user.tabs.about' }];
+
 
 export function UserPageClient({
   user,
@@ -92,36 +96,36 @@ export function UserPageClient({
   products,
   exp = 0,
   vip,
-  daysLeft,
-}: {
-  user: User;
-  isMe: boolean;
-  initialFollowed: boolean;
-  posts: Post[];
-  comments: UserCommentItem[];
-  likedPosts: Post[];
-  collectedPosts: Post[];
-  products: UserMarketProduct[];
-  exp?: number;
-  vip?: { isVip: boolean; lifetime: boolean; expireAt: string | null };
-  daysLeft?: number | null;
-}) {
+  daysLeft
+
+
+
+
+
+
+
+
+
+
+
+
+}: {user: User;isMe: boolean;initialFollowed: boolean;posts: Post[];comments: UserCommentItem[];likedPosts: Post[];collectedPosts: Post[];products: UserMarketProduct[];exp?: number;vip?: {isVip: boolean;lifetime: boolean;expireAt: string | null;};daysLeft?: number | null;}) {
   const { t } = useI18n();
   const [tab, setTab] = useState<TabKey>(() => {
     if (typeof window === 'undefined') return 'posts';
     const p = new URLSearchParams(window.location.search).get('tab');
     const allowed: TabKey[] = [
-      'posts', 'comments', 'products', 'likes', 'collects', 'following', 'followers',
-      'followed-boards', 'badges', 'about',
-    ];
+    'posts', 'comments', 'products', 'likes', 'collects', 'following', 'followers',
+    "followed-boards", 'badges', 'about'];
+
     // 支持旧 tab 名 following-boards
-    const normalized = p === 'following-boards' ? 'followed-boards' : p;
-    return allowed.includes(normalized as TabKey) ? (normalized as TabKey) : 'posts';
+    const normalized = p === "following-boards" ? "followed-boards" : p;
+    return allowed.includes(normalized as TabKey) ? normalized as TabKey : 'posts';
   });
   const [followed, setFollowed] = useState(initialFollowed);
   const [productFilter, setProductFilter] = useState<ProductFilter>('all');
   const [profilePrivacy, setProfilePrivacy] = useState<PrivacyState>(
-    user.privacy ?? { showFollowing: true, showFollowers: true },
+    user.privacy ?? { showFollowing: true, showFollowers: true }
   );
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -130,7 +134,7 @@ export function UserPageClient({
     const syncFromUrl = () => {
       const p = new URLSearchParams(window.location.search).get('tab');
       const allowed = tabs.map((item) => item.key);
-      const normalized = p === 'following-boards' ? 'followed-boards' : p;
+      const normalized = p === "following-boards" ? "followed-boards" : p;
       if (allowed.includes(normalized as TabKey)) {
         setTab(normalized as TabKey);
       }
@@ -153,14 +157,14 @@ export function UserPageClient({
   const expBase = currentDef?.expRequired ?? 0;
   const expCap = nextDef?.expRequired ?? expBase + 1000;
   const expPercent =
-    nextDef && expCap > expBase
-      ? Math.min(100, Math.max(0, Math.round(((exp - expBase) / (expCap - expBase)) * 100)))
-      : 100;
+  nextDef && expCap > expBase ?
+  Math.min(100, Math.max(0, Math.round((exp - expBase) / (expCap - expBase) * 100))) :
+  100;
 
   const toggleFollow = async () => {
     setBusy(true);
     try {
-      const r = await api.post<{ followed: boolean }>(`/api/users/${user.id}/follow`);
+      const r = await api.post<{followed: boolean;}>(`/api/users/${user.id}/follow`);
       setFollowed(r.followed);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
@@ -174,229 +178,229 @@ export function UserPageClient({
   return (
     <>
       {/* 封面 */}
-      <div className="relative mb-6 overflow-hidden rounded-2xl border border-leaf-100 bg-ink-900">
-        <div className="absolute inset-0 bg-gradient-to-br from-leaf-300 via-leaf-400 to-leaf-600">
+      <div className={cx(styles.r_d89972fe, styles.r_b6777c6d, styles.r_2cd02d11, styles.r_68f2db62, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_c8d2a7ca)}>
+        <div className={cx(styles.r_da4dbfbc, styles.r_7b7df044, styles.r_39b2e003, styles.r_f53e30fc, styles.r_5e958be6, styles.r_0a6f1c29)}>
           <Image
             src="https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=1600"
             alt=""
             fill
-            className="object-cover opacity-80"
-            unoptimized
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-ink-900/85 via-ink-900/35 to-ink-900/10" />
+            className={cx(styles.r_7d85d0c2, styles.r_714816ef)}
+            unoptimized />
+
+          <div className={cx(styles.r_da4dbfbc, styles.r_7b7df044, styles.r_79257b8c, styles.r_0bb032b9, styles.r_3e4c86d8, styles.r_391264db)} />
         </div>
-        <div className="relative z-10 flex min-h-[300px] flex-col justify-end gap-4 p-5 md:flex-row md:items-end">
-          <div className="shrink-0">
+        <div className={cx(styles.r_d89972fe, styles.r_236812d6, styles.r_60fbb771, styles.r_1ee35081, styles.r_8dddea07, styles.r_77c08e01, styles.r_0c3bc985, styles.r_c07e54fd, styles.r_4102dddf, styles.r_bf60a82f)}>
+          <div className={styles.r_012fbd12}>
             <Avatar src={user.avatar} alt={user.name} size={100} ring />
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
+            <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_77a2a20e)}>
               <h1
-                className={cn(
-                  'text-xl font-bold',
-                  vip?.isVip ? 'bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-300 bg-clip-text text-transparent' : 'text-white'
-                )}
-              >
+                className={cn(cx(styles.r_d5c9b000, styles.r_69450ef1),
+
+                vip?.isVip ? cx(styles.r_6ae7db2c, styles.r_cd3e6ea7, styles.r_0e9465c6, styles.r_db539fdb, styles.r_6c3c24f0, styles.r_f8c8e86d) : styles.r_72a4c7cd
+                )}>
+
                 {user.name}
               </h1>
-              <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-medium text-white ring-1 ring-white/20">
+              <span className={cx(styles.r_ac204c10, styles.r_990f052a, styles.r_d5eab218, styles.r_465609a2, styles.r_d058ca6d, styles.r_2689f395, styles.r_72a4c7cd, styles.r_3daca9af, styles.r_0cea1524)}>
                 Lv.{user.level} · {currentDef ? t(`levels.name.${currentDef.level}`) : ''}
               </span>
               {vip?.isVip && <VipBadge size="sm" lifetime={vip.lifetime} />}
             </div>
-            <p className="mt-1 text-sm text-white/80">{user.bio || t('user.noBio')}</p>
+            <p className={cx(styles.r_b6b02c0e, styles.r_fc7473ca, styles.r_201d4d37)}>{user.bio || t('user.noBio')}</p>
 
             {/* EXP 进度条 */}
-            {nextDef && (
-              <div className="mt-3 max-w-md">
-                <div className="flex items-baseline justify-between text-[11px] text-white/70">
+            {nextDef &&
+            <div className={cx(styles.r_eccd13ef, styles.r_9794ab45)}>
+                <div className={cx(styles.r_60fbb771, styles.r_b7012bb2, styles.r_8ef2268e, styles.r_d058ca6d, styles.r_ed24b98e)}>
                   <span>EXP {exp} / {expCap}</span>
                   <span>{t('user.expToNext', { level: nextDef.level, need: expCap - exp })}</span>
                 </div>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/20">
+                <div className={cx(styles.r_b6b02c0e, styles.r_095acb27, styles.r_2cd02d11, styles.r_ac204c10, styles.r_2cf6fd42)}>
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-leaf-200 to-leaf-400"
-                    style={{ width: `${expPercent}%` }}
-                  />
+                  className={cx(styles.r_668b21aa, styles.r_ac204c10, styles.r_6ae7db2c, styles.r_50f960a5, styles.r_529f8e24)}
+                  style={{ width: `${expPercent}%` }} />
+
                 </div>
               </div>
-            )}
+            }
 
-            <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-white/70">
+            <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_0c3bc985, styles.r_359090c2, styles.r_ed24b98e)}>
               <span>{t('user.joinedAt', { date: formatDate(user.joinedAt) })}</span>
               <span>·</span>
               <button
                 type="button"
                 onClick={() => selectTab('posts')}
-                className="hover:text-white"
-              >
-                <span className="font-semibold text-white">{user.posts}</span> {t('user.stats.posts')}
+                className={styles.r_b5a12a16}>
+
+                <span className={cx(styles.r_e83a7042, styles.r_72a4c7cd)}>{user.posts}</span> {t('user.stats.posts')}
               </button>
               <span>·</span>
               <button
                 type="button"
                 onClick={() => selectTab('followers')}
-                className="hover:text-white"
-              >
-                <span className="font-semibold text-white">{formatNumber(user.followers)}</span> {t('user.stats.followers')}
+                className={styles.r_b5a12a16}>
+
+                <span className={cx(styles.r_e83a7042, styles.r_72a4c7cd)}>{formatNumber(user.followers)}</span> {t('user.stats.followers')}
               </button>
               <span>·</span>
               <button
                 type="button"
                 onClick={() => selectTab('following')}
-                className="hover:text-white"
-              >
-                <span className="font-semibold text-white">{formatNumber(user.following)}</span> {t('user.stats.following')}
+                className={styles.r_b5a12a16}>
+
+                <span className={cx(styles.r_e83a7042, styles.r_72a4c7cd)}>{formatNumber(user.following)}</span> {t('user.stats.following')}
               </button>
-              {vip?.isVip && (
-                <span className="text-amber-100">
+              {vip?.isVip &&
+              <span className={styles.r_ae5ebb30}>
                   · 👑{' '}
-                  {vip.lifetime
-                    ? t('user.vip.lifetime')
-                    : daysLeft !== null && daysLeft !== undefined
-                    ? t('user.vip.remainDays', { days: daysLeft })
-                    : t('user.vip.member')}
+                  {vip.lifetime ?
+                t('user.vip.lifetime') :
+                daysLeft !== null && daysLeft !== undefined ?
+                t('user.vip.remainDays', { days: daysLeft }) :
+                t('user.vip.member')}
                 </span>
-              )}
+              }
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {isMe ? (
-              <>
+          <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_77a2a20e)}>
+            {isMe ?
+            <>
                 <button
-                  type="button"
-                  onClick={() => setPrivacyOpen(true)}
-                  className="btn-outline !border-white/40 !bg-white/10 !text-xs !text-white hover:!bg-white/20"
-                >
+                type="button"
+                onClick={() => setPrivacyOpen(true)}
+                className={cx(styles.r_2ed430b2, styles.r_86021721, styles.r_dd702538, styles.r_41a0398f, styles.r_1b08d87e)}>
+
                   {t('user.actions.privacy')}
                 </button>
                 <button
-                  type="button"
-                  className="btn-outline !border-white/40 !bg-white/10 !text-xs !text-white hover:!bg-white/20"
-                  disabled
-                  title={t('user.actions.editProfileUnavailable')}
-                >
+                type="button"
+                className={cx(styles.r_2ed430b2, styles.r_86021721, styles.r_dd702538, styles.r_41a0398f, styles.r_1b08d87e)}
+                disabled
+                title={t('user.actions.editProfileUnavailable')}>
+
                   <Icon name="edit" size={12} />
                   {t('user.actions.editProfile')}
                 </button>
-              </>
-            ) : (
-              <>
-                <Link href={`/messages?to=${user.id}`} className="btn-outline !border-white/40 !bg-white/10 !text-white hover:!bg-white/20">
+              </> :
+
+            <>
+                <Link href={`/messages?to=${user.id}`} className={cx(styles.r_2ed430b2, styles.r_86021721, styles.r_41a0398f, styles.r_1b08d87e)}>
                   <Icon name="message" size={14} />
                   {t('user.actions.message')}
                 </Link>
                 <button
-                  type="button"
-                  onClick={toggleFollow}
-                  disabled={busy}
-                  className={cn('btn', followed ? 'bg-white/15 text-white ring-1 ring-white/20 hover:bg-white/25' : 'btn-primary')}
-                >
+                type="button"
+                onClick={toggleFollow}
+                disabled={busy}
+                className={cn('btn', followed ? cx(styles.r_990f052a, styles.r_72a4c7cd, styles.r_3daca9af, styles.r_0cea1524, styles.r_74ef519b) : 'btn-primary')}>
+
                   {followed ? t('user.actions.unfollow') : t('user.actions.follow')}
                 </button>
               </>
-            )}
+            }
           </div>
         </div>
       </div>
 
-      <div className="mb-5 flex items-center gap-1 overflow-x-auto border-b border-leaf-100">
-        {tabs.map((item) => (
-          <button
-            key={item.key}
-            onClick={() => selectTab(item.key)}
-            className={cn(
-              'relative whitespace-nowrap px-4 py-2.5 text-sm transition-colors',
-              tab === item.key ? 'text-leaf-700 font-medium' : 'text-ink-700/60 hover:text-leaf-700'
-            )}
-          >
+      <div className={cx(styles.r_fb88ccaa, styles.r_60fbb771, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_1384f66f, styles.r_65fdbade, styles.r_88b684d2)}>
+        {tabs.map((item) =>
+        <button
+          key={item.key}
+          onClick={() => selectTab(item.key)}
+          className={cn(cx(styles.r_d89972fe, styles.r_e82ae8be, styles.r_f0faeb26, styles.r_e7ee55ac, styles.r_fc7473ca, styles.r_ceb69a6b),
+
+          tab === item.key ? cx(styles.r_5f6a59f1, styles.r_2689f395) : cx(styles.r_5fa66415, styles.r_9825203a)
+          )}>
+
             {item.label ?? t(item.labelKey!)}
-            {tab === item.key && (
-              <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-leaf-500" />
-            )}
+            {tab === item.key &&
+          <span className={cx(styles.r_da4dbfbc, styles.r_b6027879, styles.r_189f036c, styles.r_10db0d55, styles.r_ac204c10, styles.r_45499621)} />
+          }
           </button>
-        ))}
+        )}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_280px]">
-        <div className="min-w-0">
-          {tab === 'posts' &&
-            (posts.length > 0 ? (
-              <UserPostList posts={posts} />
-            ) : (
-              <Empty icon="🌱" title={t('user.empty.posts')} />
-            ))}
+      <div className={cx(styles.r_f3c543ad, styles.r_d7c83398, styles.r_0d304f90, styles.r_4c57394d)}>
+        <div className={styles.r_7e0b7cdf}>
+          {tab === 'posts' && (
+          posts.length > 0 ?
+          <UserPostList posts={posts} /> :
 
-          {tab === 'comments' &&
-            (comments.length > 0 ? (
-              <UserCommentList comments={comments} />
-            ) : (
-              <Empty icon="💬" title="暂无评论" />
-            ))}
+          <Empty icon="🌱" title={t('user.empty.posts')} />)
+          }
 
-          {tab === 'products' && (
-            <UserProductsTab
-              products={products}
-              filter={productFilter}
-              onFilterChange={setProductFilter}
-            />
-          )}
+          {tab === 'comments' && (
+          comments.length > 0 ?
+          <UserCommentList comments={comments} /> :
 
-          {tab === 'likes' &&
-            (likedPosts.length > 0 ? (
-              <UserPostList posts={likedPosts} />
-            ) : (
-              <Empty icon="❤️" title={t('user.empty.likes')} />
-            ))}
+          <Empty icon="💬" title="暂无评论" />)
+          }
 
-          {tab === 'collects' &&
-            (collectedPosts.length > 0 ? (
-              <UserPostList posts={collectedPosts} />
-            ) : (
-              <Empty icon="⭐" title={t('user.empty.collects')} />
-            ))}
+          {tab === 'products' &&
+          <UserProductsTab
+            products={products}
+            filter={productFilter}
+            onFilterChange={setProductFilter} />
 
-          {tab === 'following' && (
-            <FollowListTab userId={user.id} kind="following" isMe={isMe} />
-          )}
-          {tab === 'followers' && (
-            <FollowListTab userId={user.id} kind="followers" isMe={isMe} />
-          )}
-          {tab === 'followed-boards' && <FollowedBoardsTab isMe={isMe} />}
+          }
+
+          {tab === 'likes' && (
+          likedPosts.length > 0 ?
+          <UserPostList posts={likedPosts} /> :
+
+          <Empty icon="❤️" title={t('user.empty.likes')} />)
+          }
+
+          {tab === 'collects' && (
+          collectedPosts.length > 0 ?
+          <UserPostList posts={collectedPosts} /> :
+
+          <Empty icon="⭐" title={t('user.empty.collects')} />)
+          }
+
+          {tab === 'following' &&
+          <FollowListTab userId={user.id} kind="following" isMe={isMe} />
+          }
+          {tab === 'followers' &&
+          <FollowListTab userId={user.id} kind="followers" isMe={isMe} />
+          }
+          {tab === "followed-boards" && <FollowedBoardsTab isMe={isMe} />}
 
           {tab === 'badges' && <BadgeWall badges={user.badges} />}
 
           {tab === 'about' && <AboutTab user={user} />}
         </div>
 
-        <div className="space-y-5">
-          <div className="card p-4">
-            <div className="mb-3 text-sm font-semibold">{t('user.badges.featured')}</div>
-            <div className="grid grid-cols-4 gap-2">
-              {user.badges
-                .filter((b) => b.obtained)
-                .slice(0, 8)
-                .map((b) => (
-                  <div
-                    key={b.id}
-                    title={b.name}
-                    className="grid h-12 place-items-center rounded-lg border border-leaf-100 bg-leaf-50 text-2xl"
-                  >
+        <div className={styles.r_b43b4c08}>
+          <div className={styles.r_8e63407b}>
+            <div className={cx(styles.r_1bb88326, styles.r_fc7473ca, styles.r_e83a7042)}>{t('user.badges.featured')}</div>
+            <div className={cx(styles.r_f3c543ad, styles.r_32aac21b, styles.r_77a2a20e)}>
+              {user.badges.
+              filter((b) => b.obtained).
+              slice(0, 8).
+              map((b) =>
+              <div
+                key={b.id}
+                title={b.name}
+                className={cx(styles.r_f3c543ad, styles.r_508ebf85, styles.r_67d66567, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_7ebecbb6, styles.r_3febee09)}>
+
                     {b.icon}
                   </div>
-                ))}
+              )}
             </div>
             <button
               onClick={() => selectTab('badges')}
-              className="mt-3 w-full text-center text-[11px] text-leaf-700 hover:underline"
-            >
+              className={cx(styles.r_eccd13ef, styles.r_6da6a3c3, styles.r_ca6bf630, styles.r_d058ca6d, styles.r_5f6a59f1, styles.r_f673f4a7)}>
+
               {t('user.badges.viewAll')}
             </button>
           </div>
 
-          <div className="card p-4">
-            <div className="mb-3 text-sm font-semibold">{t('user.badges.activityData')}</div>
-            <div className="space-y-2 text-xs">
+          <div className={styles.r_8e63407b}>
+            <div className={cx(styles.r_1bb88326, styles.r_fc7473ca, styles.r_e83a7042)}>{t('user.badges.activityData')}</div>
+            <div className={cx(styles.r_6f7e013d, styles.r_359090c2)}>
               <StatRow label={t('user.stats.totalPosts')} value={String(user.posts)} />
               <StatRow label={t('user.stats.followers')} value={formatNumber(user.followers)} />
               <StatRow label={t('user.stats.following')} value={formatNumber(user.following)} />
@@ -405,30 +409,30 @@ export function UserPageClient({
           </div>
         </div>
       </div>
-      {isMe && (
-        <PrivacySettingsDialog
-          open={privacyOpen}
-          onClose={() => setPrivacyOpen(false)}
-          initialPrivacy={profilePrivacy}
-          onPrivacyChange={setProfilePrivacy}
-        />
-      )}
-    </>
-  );
+      {isMe &&
+      <PrivacySettingsDialog
+        open={privacyOpen}
+        onClose={() => setPrivacyOpen(false)}
+        initialPrivacy={profilePrivacy}
+        onPrivacyChange={setProfilePrivacy} />
+
+      }
+    </>);
+
 }
 
-function UserPostList({ posts }: { posts: Post[] }) {
+function UserPostList({ posts }: {posts: Post[];}) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-sm">
-      {posts.map((post, index) => (
-        <PostListItem
-          key={post.id}
-          post={post}
-          showDivider={index < posts.length - 1}
-        />
-      ))}
-    </div>
-  );
+    <div className={cx(styles.r_2cd02d11, styles.r_68f2db62, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_438b2237)}>
+      {posts.map((post, index) =>
+      <PostListItem
+        key={post.id}
+        post={post}
+        showDivider={index < posts.length - 1} />
+
+      )}
+    </div>);
+
 }
 
 type PrivacyState = {
@@ -440,13 +444,13 @@ function PrivacySettingsDialog({
   open,
   onClose,
   initialPrivacy,
-  onPrivacyChange,
-}: {
-  open: boolean;
-  onClose: () => void;
-  initialPrivacy: PrivacyState;
-  onPrivacyChange: (privacy: PrivacyState) => void;
-}) {
+  onPrivacyChange
+
+
+
+
+
+}: {open: boolean;onClose: () => void;initialPrivacy: PrivacyState;onPrivacyChange: (privacy: PrivacyState) => void;}) {
   const [privacy, setPrivacy] = useState<PrivacyState>(initialPrivacy);
   const [saving, setSaving] = useState<keyof PrivacyState | null>(null);
 
@@ -459,7 +463,7 @@ function PrivacySettingsDialog({
     setSaving(field);
     try {
       const r = await api.patch<PrivacyState>('/api/users/me/privacy', {
-        [field]: !privacy[field],
+        [field]: !privacy[field]
       });
       setPrivacy(r);
       onPrivacyChange(r);
@@ -473,35 +477,35 @@ function PrivacySettingsDialog({
 
   return (
     <Dialog open={open} onClose={onClose} title="隐私设置" maxWidth="lg">
-      <div className="space-y-4">
-        <p className="text-sm leading-6 text-leaf-700/75">
+      <div className={styles.r_3e7ce58d}>
+        <p className={cx(styles.r_fc7473ca, styles.r_18550d59, styles.r_23531fd3)}>
           控制其他用户能否看到你的社交关系列表。你自己始终可以看到完整信息。
         </p>
 
-        <div className="space-y-3">
+        <div className={styles.r_6ed543e2}>
           <PrivacyOptionRow
             icon="user"
             title="公开我的关注列表"
             subtitle="关闭后，其他人无法看到你关注了哪些用户。"
             checked={privacy.showFollowing}
             saving={saving === 'showFollowing'}
-            onChange={() => toggle('showFollowing')}
-          />
+            onChange={() => toggle('showFollowing')} />
+
           <PrivacyOptionRow
             icon="heart"
             title="公开我的粉丝列表"
             subtitle="关闭后，其他人无法看到谁关注了你。"
             checked={privacy.showFollowers}
             saving={saving === 'showFollowers'}
-            onChange={() => toggle('showFollowers')}
-          />
-          <div className="rounded-[6px] bg-leaf-50 px-3 py-2 text-[11px] leading-5 text-leaf-700/75">
+            onChange={() => toggle('showFollowers')} />
+
+          <div className={cx(styles.r_c10ff8c0, styles.r_7ebecbb6, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_d058ca6d, styles.r_7054e276, styles.r_23531fd3)}>
             关注数和粉丝数仍会公开展示，只隐藏具体用户列表；“关注的板块”始终仅自己可见。
           </div>
         </div>
       </div>
-    </Dialog>
-  );
+    </Dialog>);
+
 }
 
 function PrivacyOptionRow({
@@ -510,92 +514,92 @@ function PrivacyOptionRow({
   subtitle,
   checked,
   saving,
-  onChange,
-}: {
-  icon: 'user' | 'heart';
-  title: string;
-  subtitle: string;
-  checked: boolean;
-  saving: boolean;
-  onChange: () => void;
-}) {
+  onChange
+
+
+
+
+
+
+
+}: {icon: 'user' | 'heart';title: string;subtitle: string;checked: boolean;saving: boolean;onChange: () => void;}) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-[6px] border border-leaf-100 bg-white p-4">
-      <div className="flex min-w-0 items-center gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[6px] bg-leaf-50 text-leaf-700">
+    <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_0c3bc985, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_8e63407b)}>
+      <div className={cx(styles.r_60fbb771, styles.r_7e0b7cdf, styles.r_3960ffc2, styles.r_1004c0c3)}>
+        <span className={cx(styles.r_f3c543ad, styles.r_e7a768f9, styles.r_ae2181c7, styles.r_012fbd12, styles.r_67d66567, styles.r_c10ff8c0, styles.r_7ebecbb6, styles.r_5f6a59f1)}>
           <Icon name={icon} size={16} />
         </span>
-        <div className="min-w-0">
-          <div className="text-sm font-medium text-ink-800">{title}</div>
-          <div className="mt-0.5 text-xs leading-5 text-ink-500">{subtitle}</div>
+        <div className={styles.r_7e0b7cdf}>
+          <div className={cx(styles.r_fc7473ca, styles.r_2689f395, styles.r_399e11a5)}>{title}</div>
+          <div className={cx(styles.r_15e1b1f4, styles.r_359090c2, styles.r_7054e276, styles.r_7b89cd85)}>{subtitle}</div>
         </div>
       </div>
       <button
         type="button"
         onClick={onChange}
         disabled={saving}
-        className={cn(
-          'relative h-6 w-11 shrink-0 rounded-full transition-colors',
-          checked ? 'bg-leaf-500' : 'bg-ink-200',
-          saving && 'opacity-60',
+        className={cn(cx(styles.r_d89972fe, styles.r_f6fe9024, styles.r_edaba517, styles.r_012fbd12, styles.r_ac204c10, styles.r_ceb69a6b),
+
+        checked ? styles.r_45499621 : styles.r_ee1b532e,
+        saving && styles.r_f2868c22
         )}
-        aria-pressed={checked}
-      >
+        aria-pressed={checked}>
+
         <span
-          className={cn(
-            'absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
-            checked ? 'translate-x-5' : 'translate-x-0',
-          )}
-        />
+          className={cn(cx(styles.r_da4dbfbc, styles.r_58fcccb7, styles.r_1af92b74, styles.r_cd0d9c51, styles.r_72470489, styles.r_ac204c10, styles.r_5e10cdb8, styles.r_ed9d3d83, styles.r_eadef238),
+
+          checked ? styles.r_3cbbeaaa : styles.r_850292e4
+          )} />
+
       </button>
-    </div>
-  );
+    </div>);
+
 }
 
-function UserCommentList({ comments }: { comments: UserCommentItem[] }) {
+function UserCommentList({ comments }: {comments: UserCommentItem[];}) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-sm">
+    <div className={cx(styles.r_2cd02d11, styles.r_68f2db62, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_438b2237)}>
       {comments.map((comment, index) => {
-        const content = comment.contentText || stripRichText(comment.content) || '[图片]';
+        const content = comment.contentText || stripRichText(comment.content) || "[图片]";
         const postTitle = comment.post.title || comment.post.contentText || '无标题帖子';
         return (
           <Link
             key={comment.id}
             href={`/post/${comment.post.id}#comments`}
-            className={cn(
-              'block p-4 transition-colors hover:bg-leaf-50/60',
-              index < comments.length - 1 && 'border-b border-leaf-100',
-            )}
-          >
-            <div className="mb-2 flex items-center justify-between gap-3 text-[11px] text-leaf-700/65">
+            className={cn(cx(styles.r_0214b4b3, styles.r_8e63407b, styles.r_ceb69a6b, styles.r_80751c7f),
+
+            index < comments.length - 1 && cx(styles.r_65fdbade, styles.r_88b684d2)
+            )}>
+
+            <div className={cx(styles.r_a77ed4d9, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_1004c0c3, styles.r_d058ca6d, styles.r_bb87c54c)}>
               <span>{formatDate(comment.createdAt)}</span>
-              <span className="inline-flex items-center gap-1">
+              <span className={cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0)}>
                 <Icon name="heart" size={12} />
                 {formatNumber(comment.likes)}
               </span>
             </div>
-            <p className="line-clamp-2 text-sm leading-6 text-ink-800">{content}</p>
-            <div className="mt-2 flex min-w-0 items-center gap-2 rounded-[6px] bg-leaf-50 px-3 py-2 text-xs text-leaf-800">
-              <Icon name="comment" size={13} className="shrink-0 text-leaf-600" />
-              <span className="shrink-0 text-leaf-700/60">评论于</span>
-              <span className="min-w-0 truncate font-medium">{postTitle}</span>
+            <p className={cx(styles.r_054cb4e3, styles.r_fc7473ca, styles.r_18550d59, styles.r_399e11a5)}>{content}</p>
+            <div className={cx(styles.r_50d0d216, styles.r_60fbb771, styles.r_7e0b7cdf, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_c10ff8c0, styles.r_7ebecbb6, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_e7eab4cb)}>
+              <Icon name="comment" size={13} className={cx(styles.r_012fbd12, styles.r_b17d6a13)} />
+              <span className={cx(styles.r_012fbd12, styles.r_6c4cc49e)}>评论于</span>
+              <span className={cx(styles.r_7e0b7cdf, styles.r_f283ea9b, styles.r_2689f395)}>{postTitle}</span>
             </div>
-          </Link>
-        );
+          </Link>);
+
       })}
-    </div>
-  );
+    </div>);
+
 }
 
 function UserProductsTab({
   products,
   filter,
-  onFilterChange,
-}: {
-  products: UserMarketProduct[];
-  filter: ProductFilter;
-  onFilterChange: (filter: ProductFilter) => void;
-}) {
+  onFilterChange
+
+
+
+
+}: {products: UserMarketProduct[];filter: ProductFilter;onFilterChange: (filter: ProductFilter) => void;}) {
   const counts = useMemo(() => {
     const onSale = products.filter((item) => !isProductSold(item)).length;
     const sold = products.length - onSale;
@@ -609,112 +613,112 @@ function UserProductsTab({
   }, [filter, products]);
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex rounded-[6px] border border-leaf-100 bg-white p-1 text-xs shadow-sm">
+    <div className={styles.r_6ed543e2}>
+      <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_1004c0c3)}>
+        <div className={cx(styles.r_52083e7d, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_eb6a3cef, styles.r_359090c2, styles.r_438b2237)}>
           {[
-            { key: 'all' as const, label: '全部', count: counts.all },
-            { key: 'on_sale' as const, label: '在售', count: counts.on_sale },
-            { key: 'sold' as const, label: '已售', count: counts.sold },
-          ].map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => onFilterChange(item.key)}
-              className={cn(
-                'rounded-[6px] px-3 py-1.5 transition-colors',
-                filter === item.key
-                  ? 'bg-leaf-600 font-medium text-white'
-                  : 'text-ink-600 hover:bg-leaf-50 hover:text-leaf-700',
-              )}
-            >
+          { key: 'all' as const, label: '全部', count: counts.all },
+          { key: 'on_sale' as const, label: '在售', count: counts.on_sale },
+          { key: 'sold' as const, label: '已售', count: counts.sold }].
+          map((item) =>
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => onFilterChange(item.key)}
+            className={cn(cx(styles.r_c10ff8c0, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_ceb69a6b),
+
+            filter === item.key ? cx(styles.r_6bceb016, styles.r_2689f395, styles.r_72a4c7cd) : cx(styles.r_02eb621e, styles.r_5756b7b4, styles.r_9825203a)
+
+
+            )}>
+
               {item.label} {item.count}
             </button>
-          ))}
+          )}
         </div>
-        <span className="text-[11px] text-leaf-700/60">{filteredProducts.length} 个商品</span>
+        <span className={cx(styles.r_d058ca6d, styles.r_6c4cc49e)}>{filteredProducts.length} 个商品</span>
       </div>
 
-      {filteredProducts.length > 0 ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredProducts.map((product) => (
-            <UserProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      ) : (
-        <Empty icon="商品" title="暂无商品" />
-      )}
-    </div>
-  );
+      {filteredProducts.length > 0 ?
+      <div className={cx(styles.r_f3c543ad, styles.r_d7c83398, styles.r_1004c0c3, styles.r_e00ad816, styles.r_19d9b25e)}>
+          {filteredProducts.map((product) =>
+        <UserProductCard key={product.id} product={product} />
+        )}
+        </div> :
+
+      <Empty icon="商品" title="暂无商品" />
+      }
+    </div>);
+
 }
 
-function UserProductCard({ product }: { product: UserMarketProduct }) {
+function UserProductCard({ product }: {product: UserMarketProduct;}) {
   const images = product.images?.length ? product.images : [product.cover];
   const sold = isProductSold(product);
   const taxonLabels = product.taxons.map((taxon) => taxon.label).filter(Boolean);
 
   return (
-    <article className="flex h-[312px] min-w-0 flex-col overflow-hidden rounded-[6px] border border-leaf-100 bg-white transition-colors hover:border-leaf-300 hover:shadow-sm">
-      <Link href={product.url} className="block">
-        <div className="relative h-[160px] bg-leaf-50">
+    <article className={cx(styles.r_60fbb771, styles.r_2743d360, styles.r_7e0b7cdf, styles.r_8dddea07, styles.r_2cd02d11, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_ceb69a6b, styles.r_a5c39c39, styles.r_ab1dd417)}>
+      <Link href={product.url} className={styles.r_0214b4b3}>
+        <div className={cx(styles.r_d89972fe, styles.r_6903eb63, styles.r_7ebecbb6)}>
           <Image
             src={product.cover}
             alt={product.title}
             fill
             sizes="(min-width: 1280px) 300px, (min-width: 640px) 50vw, 100vw"
-            className="rounded-t-[6px] object-cover"
-            unoptimized
-          />
-          {images.length > 1 && (
-            <div className="absolute bottom-2 right-2 rounded-full bg-ink-900/70 px-2 py-0.5 text-[11px] font-medium text-white">
+            className={cx(styles.r_abbc99d9, styles.r_7d85d0c2)}
+            unoptimized />
+
+          {images.length > 1 &&
+          <div className={cx(styles.r_da4dbfbc, styles.r_f6babb33, styles.r_7b2d6393, styles.r_ac204c10, styles.r_95a04d1b, styles.r_d5eab218, styles.r_465609a2, styles.r_d058ca6d, styles.r_2689f395, styles.r_72a4c7cd)}>
               +{images.length - 1}
             </div>
-          )}
-          {sold && (
-            <span className="absolute left-2 top-2 rounded-[6px] bg-ink-900/75 px-2 py-0.5 text-[11px] font-medium text-white">
+          }
+          {sold &&
+          <span className={cx(styles.r_da4dbfbc, styles.r_d83be576, styles.r_9a2db8f9, styles.r_c10ff8c0, styles.r_272d24a2, styles.r_d5eab218, styles.r_465609a2, styles.r_d058ca6d, styles.r_2689f395, styles.r_72a4c7cd)}>
               已售
             </span>
-          )}
+          }
         </div>
       </Link>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-1.5 p-3">
+      <div className={cx(styles.r_60fbb771, styles.r_fb7302e5, styles.r_36e579c0, styles.r_8dddea07, styles.r_58284b4e, styles.r_eb6e8b88)}>
         <Link
           href={product.url}
-          className="line-clamp-2 min-h-[38px] text-[14px] font-semibold leading-[19px] text-ink-900 transition-colors hover:text-leaf-700"
-        >
+          className={cx(styles.r_054cb4e3, styles.r_ef52b116, styles.r_4d2392e8, styles.r_e83a7042, styles.r_4120bb12, styles.r_4ddaa618, styles.r_ceb69a6b, styles.r_9825203a)}>
+
           {product.title}
         </Link>
-        {product.description && (
-          <p className="line-clamp-1 text-xs leading-5 text-ink-500">
+        {product.description &&
+        <p className={cx(styles.r_f50e2015, styles.r_359090c2, styles.r_7054e276, styles.r_7b89cd85)}>
             {stripRichText(product.description)}
           </p>
-        )}
-        <div className="flex items-end justify-between gap-2">
-          <div className="text-[17px] font-bold leading-6 text-rose-600">{formatPrice(product.price)}</div>
-          <span className="shrink-0 text-[11px] text-leaf-700/70">
+        }
+        <div className={cx(styles.r_60fbb771, styles.r_6f27f4f7, styles.r_8ef2268e, styles.r_77a2a20e)}>
+          <div className={cx(styles.r_9669b98a, styles.r_69450ef1, styles.r_18550d59, styles.r_595fceba)}>{formatPrice(product.price)}</div>
+          <span className={cx(styles.r_012fbd12, styles.r_d058ca6d, styles.r_69335b95)}>
             {sold ? '已售' : `库存 ${product.stock}`}
           </span>
         </div>
-        {taxonLabels.length > 0 && (
-          <div className="flex max-h-[24px] flex-wrap gap-1 overflow-hidden">
-            {taxonLabels.slice(0, 2).map((label) => (
-              <span key={label} className="rounded-full bg-leaf-50 px-2 py-0.5 text-[11px] text-leaf-700">
+        {taxonLabels.length > 0 &&
+        <div className={cx(styles.r_60fbb771, styles.r_0c5f3b25, styles.r_1eb5c6df, styles.r_44ee8ba0, styles.r_2cd02d11)}>
+            {taxonLabels.slice(0, 2).map((label) =>
+          <span key={label} className={cx(styles.r_ac204c10, styles.r_7ebecbb6, styles.r_d5eab218, styles.r_465609a2, styles.r_d058ca6d, styles.r_5f6a59f1)}>
                 {label}
               </span>
-            ))}
+          )}
           </div>
-        )}
-        <div className="mt-auto flex items-center justify-between border-t border-leaf-100 pt-2 text-[11px] text-ink-500">
-          <span className="truncate">{product.shipFrom ? `发货地 ${product.shipFrom}` : formatDate(product.createdAt)}</span>
-          <span className="inline-flex shrink-0 items-center gap-2">
-            <span className="inline-flex items-center gap-1"><Icon name="eye" size={12} />{product.views}</span>
-            <span className="inline-flex items-center gap-1"><Icon name="message" size={12} />{product.comments}</span>
+        }
+        <div className={cx(styles.r_9953408a, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_b950dda2, styles.r_88b684d2, styles.r_f46b61a9, styles.r_d058ca6d, styles.r_7b89cd85)}>
+          <span className={styles.r_f283ea9b}>{product.shipFrom ? `发货地 ${product.shipFrom}` : formatDate(product.createdAt)}</span>
+          <span className={cx(styles.r_52083e7d, styles.r_012fbd12, styles.r_3960ffc2, styles.r_77a2a20e)}>
+            <span className={cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0)}><Icon name="eye" size={12} />{product.views}</span>
+            <span className={cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0)}><Icon name="message" size={12} />{product.comments}</span>
           </span>
         </div>
       </div>
-    </article>
-  );
+    </article>);
+
 }
 
 function isProductSold(product: UserMarketProduct) {
@@ -725,91 +729,91 @@ function stripRichText(html: string): string {
   return html.replace(/<[^>]*>/g, '').trim();
 }
 
-function StatRow({ label, value }: { label: string; value: string }) {
+function StatRow({ label, value }: {label: string;value: string;}) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-leaf-700/70">{label}</span>
-      <span className="font-medium text-ink-800">{value}</span>
-    </div>
-  );
+    <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e)}>
+      <span className={styles.r_69335b95}>{label}</span>
+      <span className={cx(styles.r_2689f395, styles.r_399e11a5)}>{value}</span>
+    </div>);
+
 }
 
-function BadgeWall({ badges }: { badges: Badge[] }) {
+function BadgeWall({ badges }: {badges: Badge[];}) {
   const { t } = useI18n();
   const obtained = badges.filter((b) => b.obtained);
   const locked = badges.filter((b) => !b.obtained);
-  const percent = badges.length > 0 ? Math.round((obtained.length / badges.length) * 100) : 0;
+  const percent = badges.length > 0 ? Math.round(obtained.length / badges.length * 100) : 0;
   return (
-    <div className="space-y-6">
+    <div className={styles.r_b3542e05}>
       <div>
-        <div className="mb-3 flex items-center justify-between">
-          <div className="text-sm font-semibold">{t('user.badges.obtainedCount', { n: obtained.length })}</div>
-          <div className="text-[11px] text-leaf-700/70">
+        <div className={cx(styles.r_1bb88326, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e)}>
+          <div className={cx(styles.r_fc7473ca, styles.r_e83a7042)}>{t('user.badges.obtainedCount', { n: obtained.length })}</div>
+          <div className={cx(styles.r_d058ca6d, styles.r_69335b95)}>
             {t('user.badges.completionRate', { percent })}
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
-          {obtained.map((b) => (
-            <BadgeCard key={b.id} badge={b} />
-          ))}
+        <div className={cx(styles.r_f3c543ad, styles.r_be2e831b, styles.r_1004c0c3, styles.r_898c0bcb, styles.r_38298f26)}>
+          {obtained.map((b) =>
+          <BadgeCard key={b.id} badge={b} />
+          )}
         </div>
       </div>
-      {locked.length > 0 && (
-        <div>
-          <div className="mb-3 text-sm font-semibold">{t('user.badges.lockedCount', { n: locked.length })}</div>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
-            {locked.map((b) => (
-              <BadgeCard key={b.id} badge={b} locked />
-            ))}
+      {locked.length > 0 &&
+      <div>
+          <div className={cx(styles.r_1bb88326, styles.r_fc7473ca, styles.r_e83a7042)}>{t('user.badges.lockedCount', { n: locked.length })}</div>
+          <div className={cx(styles.r_f3c543ad, styles.r_be2e831b, styles.r_1004c0c3, styles.r_898c0bcb, styles.r_38298f26)}>
+            {locked.map((b) =>
+          <BadgeCard key={b.id} badge={b} locked />
+          )}
           </div>
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
 
-function BadgeCard({ badge, locked }: { badge: Badge; locked?: boolean }) {
+function BadgeCard({ badge, locked }: {badge: Badge;locked?: boolean;}) {
   return (
     <div
-      className={cn(
-        'card flex flex-col items-center p-3 text-center transition-transform hover:-translate-y-0.5',
-        locked && 'opacity-50'
-      )}
-    >
+      className={cn(cx(styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_eb6e8b88, styles.r_ca6bf630, styles.r_eadef238, styles.r_0ca49668),
+
+      locked && styles.r_0b8c506a
+      )}>
+
       <div
-        className={cn(
-          'mb-2 grid h-14 w-14 place-items-center rounded-xl text-3xl',
-          locked ? 'bg-leaf-50 grayscale' : 'bg-gradient-to-br from-leaf-50 to-leaf-100'
-        )}
-      >
+        className={cn(cx(styles.r_a77ed4d9, styles.r_f3c543ad, styles.r_73a13409, styles.r_7e74e5fe, styles.r_67d66567, styles.r_a217b4ea, styles.r_751fb0d1),
+
+        locked ? styles.r_7ebecbb6 : cx(styles.r_39b2e003, styles.r_49a47a82, styles.r_6c2a384d)
+        )}>
+
         {badge.icon}
       </div>
-      <div className="text-xs font-medium text-ink-800">{badge.name}</div>
-      <div className="mt-0.5 text-[10px] leading-tight text-leaf-700/70">{badge.description}</div>
-    </div>
-  );
+      <div className={cx(styles.r_359090c2, styles.r_2689f395, styles.r_399e11a5)}>{badge.name}</div>
+      <div className={cx(styles.r_15e1b1f4, styles.r_1dc571a3, styles.r_e9fadafb, styles.r_69335b95)}>{badge.description}</div>
+    </div>);
+
 }
 
-function AboutTab({ user }: { user: User }) {
+function AboutTab({ user }: {user: User;}) {
   const { t } = useI18n();
   return (
-    <div className="card p-5 space-y-3 text-sm">
+    <div className={cx(styles.r_c07e54fd, styles.r_6ed543e2, styles.r_fc7473ca)}>
       <InfoRow label={t('user.info.username')} value={user.name} />
       <InfoRow label={t('user.info.userId')} value={user.id} />
       <InfoRow label={t('user.info.level')} value={`Lv.${user.level}`} />
       <InfoRow label={t('user.info.joinDate')} value={formatDate(user.joinedAt)} />
       <InfoRow label={t('user.info.bio')} value={user.bio ?? t('user.info.empty')} />
-    </div>
-  );
+    </div>);
+
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value }: {label: string;value: string;}) {
   return (
-    <div className="flex items-start gap-4 py-1.5">
-      <div className="w-24 shrink-0 text-xs text-leaf-700/70">{label}</div>
-      <div className="flex-1 text-ink-800">{value}</div>
-    </div>
-  );
+    <div className={cx(styles.r_60fbb771, styles.r_60541e1e, styles.r_0c3bc985, styles.r_ec0091ee)}>
+      <div className={cx(styles.r_69da7e4f, styles.r_012fbd12, styles.r_359090c2, styles.r_69335b95)}>{label}</div>
+      <div className={cx(styles.r_36e579c0, styles.r_399e11a5)}>{value}</div>
+    </div>);
+
 }
 
 /* ---------------- 关注 / 粉丝 Tab ---------------- */
@@ -817,12 +821,12 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function FollowListTab({
   userId,
   kind,
-  isMe,
-}: {
-  userId: string;
-  kind: 'following' | 'followers';
-  isMe: boolean;
-}) {
+  isMe
+
+
+
+
+}: {userId: string;kind: 'following' | 'followers';isMe: boolean;}) {
   const { t } = useI18n();
   const [list, setList] = useState<User[] | null>(null);
   const [total, setTotal] = useState(0);
@@ -832,86 +836,86 @@ function FollowListTab({
   useEffect(() => {
     setLoading(true);
     setBlocked(null);
-    api
-      .get<{ items: User[]; total: number }>(
-        `/api/users/${userId}/${kind}`
-      )
-      .then((r) => {
-        setList(r.items);
-        setTotal(r.total);
-      })
-      .catch((e) => {
-        if (e instanceof ApiError && e.status === 403) {
-          setBlocked(e.message);
-        } else {
-          setBlocked(e instanceof Error ? e.message : t('error.generic'));
-        }
-      })
-      .finally(() => setLoading(false));
+    api.
+    get<{items: User[];total: number;}>(
+      `/api/users/${userId}/${kind}`
+    ).
+    then((r) => {
+      setList(r.items);
+      setTotal(r.total);
+    }).
+    catch((e) => {
+      if (e instanceof ApiError && e.status === 403) {
+        setBlocked(e.message);
+      } else {
+        setBlocked(e instanceof Error ? e.message : t('error.generic'));
+      }
+    }).
+    finally(() => setLoading(false));
   }, [userId, kind, t]);
 
   if (loading) {
-    return <div className="py-10 text-center text-sm text-leaf-700/60">{t('common.loading')}</div>;
+    return <div className={cx(styles.r_1100bef6, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>{t('common.loading')}</div>;
   }
 
   if (blocked) {
     return (
-      <div className="card p-8 text-center">
-        <div className="text-4xl">🔒</div>
-        <div className="mt-3 text-base font-semibold text-ink-800">{blocked}</div>
-        <div className="mt-1 text-xs text-leaf-700/60">
+      <div className={cx(styles.r_845f5336, styles.r_ca6bf630)}>
+        <div className={styles.r_a95699d9}>🔒</div>
+        <div className={cx(styles.r_eccd13ef, styles.r_4ee73492, styles.r_e83a7042, styles.r_399e11a5)}>{blocked}</div>
+        <div className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_6c4cc49e)}>
           {kind === 'following' ? t('user.hidden.following') : t('user.hidden.followers')}
-          {isMe && (
-            <>
+          {isMe &&
+          <>
               <br />
-              <Link href="/settings/privacy" className="text-leaf-700 hover:underline">
+              <Link href="/settings/privacy" className={cx(styles.r_5f6a59f1, styles.r_f673f4a7)}>
                 {t('user.hidden.goToSettings')}
               </Link>
             </>
-          )}
+          }
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   if (!list || list.length === 0) {
     return (
       <Empty
         icon={kind === 'following' ? '🤝' : '👥'}
-        title={kind === 'following' ? t('user.empty.following') : t('user.empty.followers')}
-      />
-    );
+        title={kind === 'following' ? t('user.empty.following') : t('user.empty.followers')} />);
+
+
   }
 
   return (
     <>
-      <div className="mb-3 text-xs text-leaf-700/70">{t('user.totalCount', { n: total })}</div>
-      <ul className="space-y-2">
-        {list.map((u) => (
-          <li key={u.id} className="card flex items-center gap-3 p-3">
+      <div className={cx(styles.r_1bb88326, styles.r_359090c2, styles.r_69335b95)}>{t('user.totalCount', { n: total })}</div>
+      <ul className={styles.r_6f7e013d}>
+        {list.map((u) =>
+        <li key={u.id} className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_eb6e8b88)}>
             <Link href={`/user/${u.id}`}>
               <Avatar src={u.avatar} alt={u.name} size={44} />
             </Link>
-            <div className="min-w-0 flex-1">
+            <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
               <UserName user={u} size="sm" />
-              {u.bio && (
-                <div className="mt-0.5 line-clamp-1 text-[11px] text-leaf-700/70">{u.bio}</div>
-              )}
-              <div className="mt-1 text-[10px] text-leaf-700/60">
+              {u.bio &&
+            <div className={cx(styles.r_15e1b1f4, styles.r_f50e2015, styles.r_d058ca6d, styles.r_69335b95)}>{u.bio}</div>
+            }
+              <div className={cx(styles.r_b6b02c0e, styles.r_1dc571a3, styles.r_6c4cc49e)}>
                 Lv.{u.level} · {formatNumber(u.followers)} · {u.posts}
               </div>
             </div>
-            <Link href={`/user/${u.id}`} className="btn-outline !text-xs">{t('nav.myProfile')}</Link>
+            <Link href={`/user/${u.id}`} className={styles.r_dd702538}>{t('nav.myProfile')}</Link>
           </li>
-        ))}
+        )}
       </ul>
-    </>
-  );
+    </>);
+
 }
 
 /* ---------------- 关注的板块 Tab(仅自己可见) ---------------- */
 
-function FollowedBoardsTab({ isMe }: { isMe: boolean }) {
+function FollowedBoardsTab({ isMe }: {isMe: boolean;}) {
   const { t } = useI18n();
   const [list, setList] = useState<Board[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -921,53 +925,53 @@ function FollowedBoardsTab({ isMe }: { isMe: boolean }) {
       setLoading(false);
       return;
     }
-    api
-      .get<Board[]>('/api/boards/followed')
-      .then(setList)
-      .catch(() => setList([]))
-      .finally(() => setLoading(false));
+    api.
+    get<Board[]>('/api/boards/followed').
+    then(setList).
+    catch(() => setList([])).
+    finally(() => setLoading(false));
   }, [isMe]);
 
   if (!isMe) {
     return (
-      <div className="card p-8 text-center">
-        <div className="text-4xl">🔒</div>
-        <div className="mt-3 text-base font-semibold">{t('user.privateBoards')}</div>
-        <div className="mt-1 text-xs text-leaf-700/60">
+      <div className={cx(styles.r_845f5336, styles.r_ca6bf630)}>
+        <div className={styles.r_a95699d9}>🔒</div>
+        <div className={cx(styles.r_eccd13ef, styles.r_4ee73492, styles.r_e83a7042)}>{t('user.privateBoards')}</div>
+        <div className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_6c4cc49e)}>
           {t('user.privateBoardsHint')}
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   if (loading) {
-    return <div className="py-10 text-center text-sm text-leaf-700/60">{t('common.loading')}</div>;
+    return <div className={cx(styles.r_1100bef6, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>{t('common.loading')}</div>;
   }
   if (!list || list.length === 0) {
     return <Empty icon="⭐" title={t('user.empty.followedBoards')} desc={t('user.empty.followedBoardsHint')} />;
   }
 
   return (
-    <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
-      {list.map((b) => (
-        <li key={b.id}>
+    <ul className={cx(styles.r_f3c543ad, styles.r_d7c83398, styles.r_77a2a20e, styles.r_e4d6f343)}>
+      {list.map((b) =>
+      <li key={b.id}>
           <Link
-            href={boardUrl(b)}
-            className="card flex items-center gap-3 p-3 transition-shadow hover:shadow-md"
-          >
-            <span className="text-2xl shrink-0">{b.icon}</span>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-medium text-ink-800">{b.name}</div>
-              <div className="text-[10px] text-leaf-700/60">
+          href={boardUrl(b)}
+          className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_eb6e8b88, styles.r_b8627687, styles.r_9e85ac05)}>
+
+            <span className={cx(styles.r_3febee09, styles.r_012fbd12)}>{b.icon}</span>
+            <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
+              <div className={cx(styles.r_fc7473ca, styles.r_2689f395, styles.r_399e11a5)}>{b.name}</div>
+              <div className={cx(styles.r_1dc571a3, styles.r_6c4cc49e)}>
                 {b.path.map((p) => p.name).join(' · ')}
               </div>
             </div>
-            <span className="shrink-0 text-[11px] text-leaf-700/70">
+            <span className={cx(styles.r_012fbd12, styles.r_d058ca6d, styles.r_69335b95)}>
               📝 {b.posts}
             </span>
           </Link>
         </li>
-      ))}
-    </ul>
-  );
+      )}
+    </ul>);
+
 }

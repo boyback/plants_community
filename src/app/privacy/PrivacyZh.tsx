@@ -1,8 +1,11 @@
+import styles from './PrivacyZh.module.scss';
+import { cx } from '@/lib/style-utils';
+
 export function PrivacyZh() {
   return (
     <>
       <h1>肉友社 隐私政策</h1>
-      <p className="text-leaf-500">
+      <p className={styles.r_eb16169c}>
         最近更新日期:2026 年 05 月 07 日 · 生效日期:发布之日
       </p>
 
@@ -106,9 +109,9 @@ export function PrivacyZh() {
       </p>
 
       <hr />
-      <p className="text-xs text-leaf-500">
+      <p className={cx(styles.r_359090c2, styles.r_eb16169c)}>
         本政策为 Demo 版本,不构成法律意见。正式上线前请由合规/法律专业人士审阅修订。
       </p>
-    </>
-  );
+    </>);
+
 }

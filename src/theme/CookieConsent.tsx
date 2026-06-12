@@ -20,15 +20,19 @@ import {
   useEffect,
   useMemo,
   useState,
-  type ReactNode,
-} from 'react';
+  type ReactNode } from
+'react';
 import { useI18n } from '@/i18n/I18nContext';
+import styles from './CookieConsent.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 export type ConsentCategory =
-  | 'necessary' // 必要类 — 不可关闭
-  | 'preferences' // 功能类
-  | 'analytics' // 分析类
-  | 'advertising'; // 广告类
+'necessary' // 必要类 — 不可关闭
+| 'preferences' // 功能类
+| 'analytics' // 分析类
+| 'advertising'; // 广告类
 
 export interface Consent {
   necessary: true;
@@ -50,7 +54,7 @@ function defaultConsent(): Consent {
     analytics: false,
     advertising: false,
     version: VERSION,
-    decidedAt: new Date().toISOString(),
+    decidedAt: new Date().toISOString()
   };
 }
 
@@ -85,7 +89,7 @@ interface CookieContextValue {
 
 const CookieCtx = createContext<CookieContextValue | null>(null);
 
-export function CookieConsentProvider({ children }: { children: ReactNode }) {
+export function CookieConsentProvider({ children }: {children: ReactNode;}) {
   const [consent, setC] = useState<Consent | null>(null);
   const [decided, setDecided] = useState(false);
 
@@ -102,7 +106,7 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
       ...patch,
       necessary: true, // 永远为 true
       version: VERSION,
-      decidedAt: new Date().toISOString(),
+      decidedAt: new Date().toISOString()
     };
     writeConsent(merged);
     setC(merged);
@@ -119,8 +123,8 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
     <CookieCtx.Provider value={value}>
       {children}
       <CookieConsentBanner />
-    </CookieCtx.Provider>
-  );
+    </CookieCtx.Provider>);
+
 }
 
 export function useCookieConsent(): CookieContextValue {
@@ -130,7 +134,7 @@ export function useCookieConsent(): CookieContextValue {
       consent: null,
       decided: true,
       setConsent: () => {},
-      reopen: () => {},
+      reopen: () => {}
     };
   }
   return ctx;
@@ -142,11 +146,11 @@ function CookieConsentBanner() {
   const { decided, setConsent } = useCookieConsent();
   const { t } = useI18n();
   const [showCustomise, setShowCustomise] = useState(false);
-  const [choices, setChoices] = useState<Omit<Consent, 'necessary' | 'version' | 'decidedAt'> & { necessary: true }>({
+  const [choices, setChoices] = useState<Omit<Consent, 'necessary' | 'version' | 'decidedAt'> & {necessary: true;}>({
     necessary: true,
     preferences: true,
     analytics: false,
-    advertising: false,
+    advertising: false
   });
 
   if (decided) return null;
@@ -154,120 +158,120 @@ function CookieConsentBanner() {
   const acceptAll = () => setConsent({ preferences: true, analytics: true, advertising: true });
   const onlyNecessary = () => setConsent({ preferences: false, analytics: false, advertising: false });
   const savePreferences = () =>
-    setConsent({
-      preferences: choices.preferences,
-      analytics: choices.analytics,
-      advertising: choices.advertising,
-    });
+  setConsent({
+    preferences: choices.preferences,
+    analytics: choices.analytics,
+    advertising: choices.advertising
+  });
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur border-t border-leaf-100 shadow-[0_-4px_16px_rgba(0,0,0,0.04)]"
+      className={cx(styles.r_7bc55599, styles.r_3f6397bf, styles.r_189f036c, styles.r_181b2866, styles.r_f5ebd4d0, styles.r_0b2e8c28, styles.r_b950dda2, styles.r_88b684d2, styles.r_1ca9e4dc)}
       role="dialog"
-      aria-label={t('cookie.title') || 'Cookie 选项'}
-    >
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-3 px-4 py-4 lg:px-6 lg:flex-row lg:items-center">
-        {!showCustomise ? (
-          <>
-            <div className="flex-1 text-sm text-leaf-700">
-              <p className="mb-1">
+      aria-label={t('cookie.title') || 'Cookie 选项'}>
+
+      <div className={cx(styles.r_0e12dc7d, styles.r_60fbb771, styles.r_da310242, styles.r_8dddea07, styles.r_1004c0c3, styles.r_f0faeb26, styles.r_cb11fec3, styles.r_2499ab8d, styles.r_2adea12c, styles.r_cef36121)}>
+        {!showCustomise ?
+        <>
+            <div className={cx(styles.r_36e579c0, styles.r_fc7473ca, styles.r_5f6a59f1)}>
+              <p className={styles.r_65281709}>
                 🍪 <strong>{t('cookie.title') || '我们尊重你的 Cookie 偏好'}</strong>
               </p>
-              <p className="text-leaf-600 text-xs leading-relaxed">
+              <p className={cx(styles.r_b17d6a13, styles.r_359090c2, styles.r_6b189c6e)}>
                 {t('cookie.desc') ||
-                  '我们使用 Cookie 让肉友社正常运行并不断改进。必要类 Cookie 无法关闭;其他类别你可以自由选择。'}
+              '我们使用 Cookie 让肉友社正常运行并不断改进。必要类 Cookie 无法关闭;其他类别你可以自由选择。'}
                 {' '}
-                <a href="/cookies" className="underline hover:text-leaf-800">
+                <a href="/cookies" className={cx(styles.r_c82b67c8, styles.r_81be6435)}>
                   {t('cookie.readPolicy') || '阅读完整 Cookie 政策'}
                 </a>
               </p>
             </div>
-            <div className="flex shrink-0 flex-wrap gap-2">
+            <div className={cx(styles.r_60fbb771, styles.r_012fbd12, styles.r_1eb5c6df, styles.r_77a2a20e)}>
               <button
-                type="button"
-                className="btn-ghost h-9 text-xs"
-                onClick={() => setShowCustomise(true)}
-              >
+              type="button"
+              className={cx(styles.r_e7a768f9, styles.r_359090c2)}
+              onClick={() => setShowCustomise(true)}>
+
                 {t('cookie.customize') || '自定义'}
               </button>
               <button
-                type="button"
-                className="btn-ghost h-9 text-xs"
-                onClick={onlyNecessary}
-              >
+              type="button"
+              className={cx(styles.r_e7a768f9, styles.r_359090c2)}
+              onClick={onlyNecessary}>
+
                 {t('cookie.onlyNecessary') || '仅必需'}
               </button>
               <button
-                type="button"
-                className="btn-primary h-9 text-xs"
-                onClick={acceptAll}
-              >
+              type="button"
+              className={cx(styles.r_e7a768f9, styles.r_359090c2)}
+              onClick={acceptAll}>
+
                 {t('cookie.acceptAll') || '全部接受'}
               </button>
             </div>
-          </>
-        ) : (
-          <div className="w-full">
-            <div className="mb-2 flex items-center justify-between">
-              <div className="text-sm font-medium text-leaf-800">
+          </> :
+
+        <div className={styles.r_6da6a3c3}>
+            <div className={cx(styles.r_a77ed4d9, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e)}>
+              <div className={cx(styles.r_fc7473ca, styles.r_2689f395, styles.r_e7eab4cb)}>
                 {t('cookie.customizeTitle') || '选择 Cookie 类别'}
               </div>
               <button
-                type="button"
-                onClick={() => setShowCustomise(false)}
-                className="text-xs text-leaf-500 hover:text-leaf-700"
-                aria-label="back"
-              >
+              type="button"
+              onClick={() => setShowCustomise(false)}
+              className={cx(styles.r_359090c2, styles.r_eb16169c, styles.r_9825203a)}
+              aria-label="back">
+
                 ← {t('common.back') || '返回'}
               </button>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className={cx(styles.r_f3c543ad, styles.r_77a2a20e, styles.r_e00ad816)}>
               <CategoryRow
-                title={t('cookie.necessary') || '必要类'}
-                desc={t('cookie.necessaryDesc') || '登录、安全、支付等必备功能,无法关闭'}
-                checked
-                disabled
-              />
+              title={t('cookie.necessary') || '必要类'}
+              desc={t('cookie.necessaryDesc') || '登录、安全、支付等必备功能,无法关闭'}
+              checked
+              disabled />
+
               <CategoryRow
-                title={t('cookie.preferences') || '功能类'}
-                desc={t('cookie.preferencesDesc') || '记住语言、主题、发帖草稿等偏好'}
-                checked={choices.preferences}
-                onChange={(v) => setChoices((s) => ({ ...s, preferences: v }))}
-              />
+              title={t('cookie.preferences') || '功能类'}
+              desc={t('cookie.preferencesDesc') || '记住语言、主题、发帖草稿等偏好'}
+              checked={choices.preferences}
+              onChange={(v) => setChoices((s) => ({ ...s, preferences: v }))} />
+
               <CategoryRow
-                title={t('cookie.analytics') || '分析类'}
-                desc={t('cookie.analyticsDesc') || '匿名统计用于改进产品质量'}
-                checked={choices.analytics}
-                onChange={(v) => setChoices((s) => ({ ...s, analytics: v }))}
-              />
+              title={t('cookie.analytics') || '分析类'}
+              desc={t('cookie.analyticsDesc') || '匿名统计用于改进产品质量'}
+              checked={choices.analytics}
+              onChange={(v) => setChoices((s) => ({ ...s, analytics: v }))} />
+
               <CategoryRow
-                title={t('cookie.advertising') || '广告类'}
-                desc={t('cookie.advertisingDesc') || '本服务当前不投放广告,保留占位'}
-                checked={choices.advertising}
-                onChange={(v) => setChoices((s) => ({ ...s, advertising: v }))}
-              />
+              title={t('cookie.advertising') || '广告类'}
+              desc={t('cookie.advertisingDesc') || '本服务当前不投放广告,保留占位'}
+              checked={choices.advertising}
+              onChange={(v) => setChoices((s) => ({ ...s, advertising: v }))} />
+
             </div>
-            <div className="mt-3 flex justify-end gap-2">
+            <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_77c08e01, styles.r_77a2a20e)}>
               <button
-                type="button"
-                className="btn-ghost h-9 text-xs"
-                onClick={onlyNecessary}
-              >
+              type="button"
+              className={cx(styles.r_e7a768f9, styles.r_359090c2)}
+              onClick={onlyNecessary}>
+
                 {t('cookie.onlyNecessary') || '仅必需'}
               </button>
               <button
-                type="button"
-                className="btn-primary h-9 text-xs"
-                onClick={savePreferences}
-              >
+              type="button"
+              className={cx(styles.r_e7a768f9, styles.r_359090c2)}
+              onClick={savePreferences}>
+
                 {t('cookie.saveChoice') || '保存选择'}
               </button>
             </div>
           </div>
-        )}
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 function CategoryRow({
@@ -275,34 +279,34 @@ function CategoryRow({
   desc,
   checked,
   disabled,
-  onChange,
-}: {
-  title: string;
-  desc: string;
-  checked: boolean;
-  disabled?: boolean;
-  onChange?: (v: boolean) => void;
-}) {
+  onChange
+
+
+
+
+
+
+}: {title: string;desc: string;checked: boolean;disabled?: boolean;onChange?: (v: boolean) => void;}) {
   return (
     <label
-      className={[
-        'flex items-start gap-3 rounded-lg border p-3',
-        disabled
-          ? 'border-leaf-100 bg-leaf-50/50 text-leaf-500 cursor-not-allowed'
-          : 'border-leaf-100 hover:bg-leaf-50/60 cursor-pointer',
-      ].join(' ')}
-    >
+      className={[cx(styles.r_60fbb771, styles.r_60541e1e, styles.r_1004c0c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_eb6e8b88),
+
+      disabled ? cx(styles.r_88b684d2, styles.r_9ac94195, styles.r_eb16169c, styles.r_29b733e4) : cx(styles.r_88b684d2, styles.r_80751c7f, styles.r_34516836)].
+
+
+      join(' ')}>
+
       <input
         type="checkbox"
-        className="mt-0.5 h-4 w-4"
+        className={cx(styles.r_15e1b1f4, styles.r_11e59c6d, styles.r_dc7972eb)}
         checked={checked}
         disabled={disabled}
-        onChange={(e) => onChange?.(e.target.checked)}
-      />
-      <span className="flex-1">
-        <span className="block text-sm font-medium">{title}</span>
-        <span className="block text-xs text-leaf-500 mt-0.5">{desc}</span>
+        onChange={(e) => onChange?.(e.target.checked)} />
+
+      <span className={styles.r_36e579c0}>
+        <span className={cx(styles.r_0214b4b3, styles.r_fc7473ca, styles.r_2689f395)}>{title}</span>
+        <span className={cx(styles.r_0214b4b3, styles.r_359090c2, styles.r_eb16169c, styles.r_15e1b1f4)}>{desc}</span>
       </span>
-    </label>
-  );
+    </label>);
+
 }

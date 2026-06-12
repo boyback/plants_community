@@ -113,7 +113,7 @@ const JournalPatch = z.object({
         stage: z.string().optional(),
         stageLabel: z.string().trim().max(50).optional(),
         note: z.string().trim().max(2000).default(''),
-        images: z.array(z.string()).min(1, '每条成长记录都需要上传配图').max(9).default([]),
+        images: z.array(z.string()).min(1, '每条记录都需要上传配图').max(9).default([]),
       })
     )
     .max(50)
@@ -125,21 +125,21 @@ const JournalPatch = z.object({
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['entries', index, 'stage'],
-        message: '每条成长记录都需要选择阶段',
+        message: '每条记录都需要选择阶段',
       });
     }
     if (!entry.note.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['entries', index, 'note'],
-        message: '每条成长记录都需要填写心得',
+        message: '每条记录都需要填写心得',
       });
     }
   });
 });
 
 const PatchBody = z.object({
-  title: z.string().min(1).max(100).optional(),
+  title: z.string().min(1).max(500).optional(),
   content: z.unknown().optional(),
   contentJson: z.unknown().optional(),
   tags: z.array(z.string()).max(10).optional(),
@@ -177,6 +177,9 @@ export const PATCH = handler(async (req) => {
   if (!post) return fail(404, '帖子不存在');
   if (post.deleted) return fail(400, '帖子已删除');
   if (post.authorId !== me.id) return fail(403, '只能编辑自己的帖子');
+  if (post.type !== 'image' && post.type !== 'video' && body.title && body.title.length > 100) {
+    return fail(400, '帖子标题不能超过 100 字');
+  }
 
   if (post.type === 'vote' && body.vote && post.vote && post.vote._count.records > 0) {
     const nextOptions = cleanVoteOptions(body.vote.options);
@@ -199,9 +202,18 @@ export const PATCH = handler(async (req) => {
 
   const finalImageList = body.images ?? parseJsonArray(post.images);
   const finalImages = body.images ?? null;
+  if (post.type === 'image' && finalImageList.length === 0) {
+    return fail(400, '图文贴必须上传图片');
+  }
   const finalVideoUrl = body.videoUrl !== undefined ? body.videoUrl : post.videoUrl;
   const finalCover =
-    body.cover !== undefined ? body.cover : finalImages ? finalImages[0] ?? null : post.cover;
+    post.type === 'image' || post.type === 'video'
+      ? null
+      : body.cover !== undefined
+      ? body.cover
+      : finalImages
+      ? finalImages[0] ?? null
+      : post.cover;
   const finalContent = stored ? stored.html : post.content;
 
   const needsReview = postNeedsReview({
@@ -215,7 +227,7 @@ export const PATCH = handler(async (req) => {
   if (!boardIds.ok) return fail(400, boardIds.error);
   const finalBoardIds = boardIds.ids;
   if (post.type === 'journal' && body.journal && !(body.journal.speciesId ?? finalBoardIds?.speciesId ?? post.speciesId)) {
-    return fail(400, '成长记录需要选择具体品种');
+    return fail(400, '记录贴需要选择具体品种');
   }
 
   if (body.albumSync?.mode === 'existing') {
@@ -240,9 +252,9 @@ export const PATCH = handler(async (req) => {
         ...(body.tags !== undefined && { tags: stringifyJson(body.tags) }),
         ...(body.images !== undefined && {
           images: stringifyJson(body.images),
-          ...(body.cover === undefined && { cover: body.images[0] ?? null }),
+          ...(post.type !== 'image' && post.type !== 'video' && body.cover === undefined && { cover: body.images[0] ?? null }),
         }),
-        ...(body.cover !== undefined && { cover: body.cover }),
+        ...(post.type === 'image' || post.type === 'video' ? { cover: null } : body.cover !== undefined && { cover: body.cover }),
         ...(body.videoUrl !== undefined && { videoUrl: body.videoUrl }),
         ...(finalBoardIds && finalBoardIds),
         ...(REVIEW_FILTER_ENABLED && {

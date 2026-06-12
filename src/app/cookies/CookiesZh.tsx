@@ -1,8 +1,11 @@
+import styles from './CookiesZh.module.scss';
+import { cx } from '@/lib/style-utils';
+
 export function CookiesZh() {
   return (
     <>
       <h1>肉友社 Cookie 政策</h1>
-      <p className="text-leaf-500">
+      <p className={styles.r_eb16169c}>
         最近更新日期:2026 年 05 月 07 日 · 生效日期:发布之日
       </p>
 
@@ -83,7 +86,7 @@ export function CookiesZh() {
       </p>
 
       <hr />
-      <p className="text-xs text-leaf-500">Demo 版本,不构成法律意见。</p>
-    </>
-  );
+      <p className={cx(styles.r_359090c2, styles.r_eb16169c)}>Demo 版本,不构成法律意见。</p>
+    </>);
+
 }

@@ -1,8 +1,11 @@
+import styles from './CookiesJa.module.scss';
+import { cx } from '@/lib/style-utils';
+
 export function CookiesJa() {
   return (
     <>
       <h1>RouYou Cookie ポリシー</h1>
-      <p className="text-leaf-500">最終更新日:2026 年 5 月 7 日 · 発効日:公開日</p>
+      <p className={styles.r_eb16169c}>最終更新日:2026 年 5 月 7 日 · 発効日:公開日</p>
 
       <p>
         本ポリシーは、RouYou(以下「本サービス」)が Cookie および類似技術(localStorage、sessionStorage、ピクセルタグ等)をどのように使用するかを説明します。
@@ -76,7 +79,7 @@ export function CookiesJa() {
       <p>Cookie の利用方法についてご質問がある場合は <code>support@rouyou.example</code> までご連絡ください。</p>
 
       <hr />
-      <p className="text-xs text-leaf-500">Demo 版であり、法的助言を構成するものではありません。</p>
-    </>
-  );
+      <p className={cx(styles.r_359090c2, styles.r_eb16169c)}>Demo 版であり、法的助言を構成するものではありません。</p>
+    </>);
+
 }

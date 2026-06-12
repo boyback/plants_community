@@ -1,92 +1,92 @@
 import { HomeDashboard } from '@/components/home/HomeDashboard';
 import { prisma } from '@/lib/db';
-import { postInclude } from '@/lib/post-include';
+import { postInclude } from "@/lib/post-include";
 import { serializePost, serializeSkin } from '@/lib/serializers';
-import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
+import { REVIEW_FILTER_ENABLED } from "@/lib/feature-flags";
 import type { BannerItem } from '@/lib/types';
 import { jsonLdScript, websiteJsonLd, organizationJsonLd } from '@/lib/jsonld';
 import { getCurrentUser } from '@/lib/auth';
-import { sortPostsForPins } from '@/lib/post-pins';
-import { getHomeBannerImage, getHomeBannerTitle } from '@/lib/home-banners';
+import { sortPostsForPins } from "@/lib/post-pins";
+import { getHomeBannerImage, getHomeBannerTitle } from "@/lib/home-banners";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const [
-    postsRaw,
-    bannersRaw,
-    topicsRaw,
-    eventsRaw,
-    speciesCount,
-    marketCount,
-    journalCount,
-    postCount,
-    remindersRaw,
-    selectionRaw,
-    me,
-  ] = await Promise.all([
-    prisma.post.findMany({
-      where: {
-        deleted: false,
-        ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' } : {}),
-      },
-      orderBy: [{ hotScore: 'desc' }, { createdAt: 'desc' }],
-      take: 20,
-      include: postInclude(),
-    }),
-    prisma.banner.findMany({
-      where: { enabled: true },
-      orderBy: { orderIdx: 'asc' },
-    }),
-    prisma.topicRanking.findMany({
-      orderBy: [{ recent30dCount: 'desc' }, { postCount: 'desc' }],
-      take: 8,
-    }),
-    prisma.photoContest.findMany({
-      where: { status: { in: ['upcoming', 'active', 'voting'] } },
-      orderBy: [{ featured: 'desc' }, { startAt: 'desc' }],
-      take: 3,
-    }),
-    prisma.species.count(),
-    prisma.marketListing.count({ where: { status: 'on_sale' } }),
-    prisma.journal.count(),
-    prisma.post.count({
-      where: {
-        deleted: false,
-        ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' } : {}),
-      },
-    }),
-    prisma.species.findMany({
-      orderBy: [{ posts: { _count: 'desc' } }, { name: 'asc' }],
-      take: 3,
-      select: {
-        id: true,
-        name: true,
-        cover: true,
-        watering: true,
-        light: true,
-      },
-    }),
-    prisma.species.findMany({
-      orderBy: [{ posts: { _count: 'desc' } }, { orderIdx: 'asc' }, { name: 'asc' }],
-      take: 6,
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        latinName: true,
-        cover: true,
-        difficulty: true,
-        genus: {
-          select: {
-            slug: true,
-            board: { select: { slug: true } },
-          },
-        },
-      },
-    }),
-    getCurrentUser().catch(() => null),
-  ]);
+  postsRaw,
+  bannersRaw,
+  topicsRaw,
+  eventsRaw,
+  speciesCount,
+  marketCount,
+  journalCount,
+  postCount,
+  remindersRaw,
+  selectionRaw,
+  me] =
+  await Promise.all([
+  prisma.post.findMany({
+    where: {
+      deleted: false,
+      ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' } : {})
+    },
+    orderBy: [{ hotScore: 'desc' }, { createdAt: 'desc' }],
+    take: 20,
+    include: postInclude()
+  }),
+  prisma.banner.findMany({
+    where: { enabled: true },
+    orderBy: { orderIdx: 'asc' }
+  }),
+  prisma.topicRanking.findMany({
+    orderBy: [{ recent30dCount: 'desc' }, { postCount: 'desc' }],
+    take: 8
+  }),
+  prisma.photoContest.findMany({
+    where: { status: { in: ['upcoming', 'active', 'voting'] } },
+    orderBy: [{ featured: 'desc' }, { startAt: 'desc' }],
+    take: 3
+  }),
+  prisma.species.count(),
+  prisma.marketListing.count({ where: { status: 'on_sale' } }),
+  prisma.journal.count(),
+  prisma.post.count({
+    where: {
+      deleted: false,
+      ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' } : {})
+    }
+  }),
+  prisma.species.findMany({
+    orderBy: [{ posts: { _count: 'desc' } }, { name: 'asc' }],
+    take: 3,
+    select: {
+      id: true,
+      name: true,
+      cover: true,
+      watering: true,
+      light: true
+    }
+  }),
+  prisma.species.findMany({
+    orderBy: [{ posts: { _count: 'desc' } }, { orderIdx: 'asc' }, { name: 'asc' }],
+    take: 6,
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      latinName: true,
+      cover: true,
+      difficulty: true,
+      genus: {
+        select: {
+          slug: true,
+          board: { select: { slug: true } }
+        }
+      }
+    }
+  }),
+  getCurrentUser().catch(() => null)]
+  );
 
   const authorPendants = await getAuthorPendants(postsRaw);
   const posts = sortPostsForPins(
@@ -100,7 +100,7 @@ export default async function HomePage() {
     image: getHomeBannerImage(index, banner.image),
     link: banner.link,
     tint: banner.tint,
-    durationMs: banner.durationMs > 0 ? banner.durationMs : undefined,
+    durationMs: banner.durationMs > 0 ? banner.durationMs : undefined
   }));
 
   const topics = topicsRaw.map((topic, index) => {
@@ -108,7 +108,7 @@ export default async function HomePage() {
     return {
       tag: topic.tag,
       postCount: topic.postCount,
-      cover: post?.cover ?? post?.images?.[0] ?? null,
+      cover: post?.cover ?? post?.images?.[0] ?? null
     };
   });
 
@@ -117,7 +117,7 @@ export default async function HomePage() {
     speciesName: species.name,
     cover: species.cover,
     text: index === 0 ? `${species.watering} 💧` : index === 1 ? `${species.light} ☀️` : '观察叶片状态 ⚠️',
-    when: index === 0 ? '2 小时前' : index === 1 ? '昨天' : '2 天前',
+    when: index === 0 ? '2 小时前' : index === 1 ? '昨天' : '2 天前'
   }));
 
   const events = eventsRaw.map((event) => ({
@@ -127,7 +127,7 @@ export default async function HomePage() {
     status: event.status,
     startAt: event.startAt.toISOString(),
     endAt: event.endAt.toISOString(),
-    participantCount: event.participantCount,
+    participantCount: event.participantCount
   }));
 
   return (
@@ -143,7 +143,7 @@ export default async function HomePage() {
           speciesCount,
           marketCount,
           journalCount,
-          postCount,
+          postCount
         }}
         selections={selectionRaw.map((species) => ({
           id: species.id,
@@ -151,36 +151,36 @@ export default async function HomePage() {
           latinName: species.latinName,
           cover: species.cover,
           difficulty: species.difficulty,
-          href: species.genus.board
-            ? `/plants/${species.genus.board.slug}/${species.genus.slug}/${species.slug}`
-            : '/plants',
-        }))}
-      />
-    </>
-  );
+          href: species.genus.board ?
+          `/plants/${species.genus.board.slug}/${species.genus.slug}/${species.slug}` :
+          '/plants'
+        }))} />
+
+    </>);
+
 }
 
-async function getAuthorPendants(postsRaw: Array<{ author?: { id: string; equipPendantId?: string | null } | null }>) {
-  const pairs = postsRaw
-    .map((post) => ({ authorId: post.author?.id, pendantId: post.author?.equipPendantId }))
-    .filter((item): item is { authorId: string; pendantId: string } => Boolean(item.authorId && item.pendantId));
+async function getAuthorPendants(postsRaw: Array<{author?: {id: string;equipPendantId?: string | null;} | null;}>) {
+  const pairs = postsRaw.
+  map((post) => ({ authorId: post.author?.id, pendantId: post.author?.equipPendantId })).
+  filter((item): item is {authorId: string;pendantId: string;} => Boolean(item.authorId && item.pendantId));
   if (pairs.length === 0) return new Map<string, ReturnType<typeof serializeSkin>>();
 
   const skins = await prisma.skinItem.findMany({
-    where: { id: { in: [...new Set(pairs.map((item) => item.pendantId))] } },
+    where: { id: { in: [...new Set(pairs.map((item) => item.pendantId))] } }
   });
   const skinById = new Map(skins.map((skin) => [skin.id, serializeSkin(skin)]));
   return new Map(
-    pairs
-      .map((item) => [item.authorId, skinById.get(item.pendantId)] as const)
-      .filter((item): item is readonly [string, NonNullable<ReturnType<typeof serializeSkin>>] => Boolean(item[1]))
+    pairs.
+    map((item) => [item.authorId, skinById.get(item.pendantId)] as const).
+    filter((item): item is readonly [string, NonNullable<ReturnType<typeof serializeSkin>>] => Boolean(item[1]))
   );
 }
 
 function withAuthorPendant(
-  post: ReturnType<typeof serializePost>,
-  authorPendants: Map<string, ReturnType<typeof serializeSkin>>
-) {
+post: ReturnType<typeof serializePost>,
+authorPendants: Map<string, ReturnType<typeof serializeSkin>>)
+{
   const pendant = authorPendants.get(post.author.id);
   if (pendant) {
     post.author.equip = { ...(post.author.equip ?? {}), pendant };

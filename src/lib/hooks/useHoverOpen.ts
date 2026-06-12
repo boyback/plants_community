@@ -11,9 +11,9 @@ import { useCallback, useRef, useState } from 'react';
  *
  * 使用:
  *   const { open, bind, close } = useHoverOpen();
- *   <div {...bind} className="relative">
+ *   <div {...bind} className="panel">
  *     <button>...</button>
- *     {open && <div className="absolute">...</div>}
+ *     {open && <div className="popover">...</div>}
  *   </div>
  */
 export function useHoverOpen(closeDelayMs = 150) {

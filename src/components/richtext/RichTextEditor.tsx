@@ -3,8 +3,12 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import { useEffect } from 'react';
 import { Toolbar } from './Toolbar';
-import { getEditorExtensions } from '@/lib/tiptap-extensions';
+import { getEditorExtensions } from "@/lib/tiptap-extensions";
 import { cn } from '@/lib/utils';
+import styles from './RichTextEditor.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 /**
  * 富文本编辑器,基于 TipTap。
@@ -24,17 +28,17 @@ export function RichTextEditor({
   charLimit,
   minHeight = 200,
   className,
-  autoFocus,
-}: {
-  value?: unknown;
-  defaultValue?: unknown;
-  onChange?: (json: unknown) => void;
-  placeholder?: string;
-  charLimit?: number;
-  minHeight?: number;
-  className?: string;
-  autoFocus?: boolean;
-}) {
+  autoFocus
+
+
+
+
+
+
+
+
+
+}: {value?: unknown;defaultValue?: unknown;onChange?: (json: unknown) => void;placeholder?: string;charLimit?: number;minHeight?: number;className?: string;autoFocus?: boolean;}) {
   const editor = useEditor({
     extensions: getEditorExtensions({ placeholder, charLimit }),
     content: value ?? defaultValue ?? '',
@@ -44,12 +48,12 @@ export function RichTextEditor({
     },
     editorProps: {
       attributes: {
-        class: cn(
-          'prose-article rich-editor outline-none px-4 py-3 text-base leading-7 text-ink-800',
-          'focus:outline-none'
-        ),
-      },
-    },
+        class: cn(cx("prose-article", styles.r_a7e00547, styles.r_df37b1fd, styles.r_f0faeb26, styles.r_1b2d54a3, styles.r_4ee73492, styles.r_7eff2faf, styles.r_399e11a5), styles.r_55d048eb
+
+
+        )
+      }
+    }
   });
 
   // 受控:外部 value 变化时同步进编辑器(避免 onUpdate 死循环只在不一致时同步)
@@ -72,22 +76,22 @@ export function RichTextEditor({
 
   return (
     <div
-      className={cn(
-        'overflow-hidden border border-leaf-200 bg-white focus-within:border-leaf-400 focus-within:ring-2 focus-within:ring-leaf-100',
-        className
-      )}
-    >
+      className={cn(cx(styles.r_2cd02d11, styles.r_ca6bcd4b, styles.r_691861bc, styles.r_5e10cdb8, styles.r_b29d0e9b, styles.r_38f81f91, styles.r_cfc1a9b4),
+
+      className
+      )}>
+
       <Toolbar editor={editor} />
       <EditorContent
         editor={editor}
-        style={{ minHeight }}
-      />
-      <div className="flex items-center justify-between border-t border-leaf-100 bg-leaf-50/30 px-3 py-1.5 text-[10px] text-leaf-700/60">
+        style={{ minHeight }} />
+
+      <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_b950dda2, styles.r_88b684d2, styles.r_54720a96, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_1dc571a3, styles.r_6c4cc49e)}>
         <span>支持 Markdown 快捷键:**粗体** *斜体* # 标题 - 列表 &gt; 引用</span>
-        <span className={count > limit ? 'text-rose-500' : ''}>
+        <span className={count > limit ? styles.r_fa512798 : ''}>
           {count} / {limit}
         </span>
       </div>
-    </div>
-  );
+    </div>);
+
 }

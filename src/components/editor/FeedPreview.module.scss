@@ -1,0 +1,77 @@
+/* px-vw: off */
+
+.previewPanel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgb(var(--leaf-100));
+  border-radius: 12px;
+  background: #fff;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 16px rgba(16, 24, 40, 0.06);
+}
+
+.previewTitle {
+  margin: 0;
+  color: rgb(var(--ink-900));
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.previewList {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.viewportCard {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgb(var(--leaf-100));
+  border-radius: 8px;
+  background: rgb(var(--leaf-50) / 0.3);
+  padding: 12px;
+  contain: layout paint;
+}
+
+.viewportHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.viewportName {
+  color: rgb(var(--ink-700));
+  font-weight: 600;
+}
+
+.viewportSize {
+  color: rgb(var(--ink-700) / 0.55);
+}
+
+.viewportBody {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.previewCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  width: var(--preview-canvas-width);
+  transform-origin: top left;
+  transform: scale(var(--preview-scale));
+}
+
+.previewCard {
+  pointer-events: none;
+}

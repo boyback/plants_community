@@ -1,8 +1,11 @@
+import styles from './PrivacyJa.module.scss';
+import { cx } from '@/lib/style-utils';
+
 export function PrivacyJa() {
   return (
     <>
       <h1>RouYou プライバシーポリシー</h1>
-      <p className="text-leaf-500">最終更新日:2026 年 5 月 7 日 · 発効日:公開日</p>
+      <p className={styles.r_eb16169c}>最終更新日:2026 年 5 月 7 日 · 発効日:公開日</p>
 
       <p>
         RouYou(以下「当社」)は利用者のプライバシーを重視しています。本ポリシーは、当社が利用者の個人情報をどのように収集、利用、保存、共有、保護するか、
@@ -96,9 +99,9 @@ export function PrivacyJa() {
       </p>
 
       <hr />
-      <p className="text-xs text-leaf-500">
+      <p className={cx(styles.r_359090c2, styles.r_eb16169c)}>
         本ポリシーは Demo 版であり、法的助言を構成するものではありません。本番運用前に必ず専門家の確認を受けてください。
       </p>
-    </>
-  );
+    </>);
+
 }

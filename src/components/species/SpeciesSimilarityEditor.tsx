@@ -1,7 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
+import styles from './SpeciesSimilarityEditor.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 type SimilarityItem = {
   similarSpeciesId: string;
@@ -20,7 +24,7 @@ type SpeciesOption = {
   genusSlug: string;
 };
 
-export function SpeciesSimilarityEditor({ speciesId }: { speciesId?: string }) {
+export function SpeciesSimilarityEditor({ speciesId }: {speciesId?: string;}) {
   const [items, setItems] = useState<SimilarityItem[]>([]);
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState<SpeciesOption[]>([]);
@@ -34,23 +38,23 @@ export function SpeciesSimilarityEditor({ speciesId }: { speciesId?: string }) {
     if (!speciesId) return;
     let cancelled = false;
     setLoading(true);
-    api.get<Array<{ similarSpeciesId: string; score: number; reason: string | null; name: string; latinName: string }>>(`/api/admin/species/${speciesId}/similarities`)
-      .then((rows) => {
-        if (cancelled) return;
-        setItems(rows.map((row) => ({
-          similarSpeciesId: row.similarSpeciesId,
-          score: row.score,
-          reason: row.reason ?? '',
-          name: row.name,
-          latinName: row.latinName,
-        })));
-      })
-      .catch((e) => {
-        if (!cancelled) setErr(e instanceof ApiError ? e.message : '加载相似品种失败');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    api.get<Array<{similarSpeciesId: string;score: number;reason: string | null;name: string;latinName: string;}>>(`/api/admin/species/${speciesId}/similarities`).
+    then((rows) => {
+      if (cancelled) return;
+      setItems(rows.map((row) => ({
+        similarSpeciesId: row.similarSpeciesId,
+        score: row.score,
+        reason: row.reason ?? '',
+        name: row.name,
+        latinName: row.latinName
+      })));
+    }).
+    catch((e) => {
+      if (!cancelled) setErr(e instanceof ApiError ? e.message : '加载相似品种失败');
+    }).
+    finally(() => {
+      if (!cancelled) setLoading(false);
+    });
     return () => {
       cancelled = true;
     };
@@ -64,16 +68,16 @@ export function SpeciesSimilarityEditor({ speciesId }: { speciesId?: string }) {
     let cancelled = false;
     const timer = window.setTimeout(() => {
       setSearching(true);
-      api.get<SpeciesOption[]>(`/api/species?q=${encodeURIComponent(query.trim())}&limit=12&excludeId=${encodeURIComponent(speciesId)}`)
-        .then((rows) => {
-          if (!cancelled) setOptions(rows);
-        })
-        .catch(() => {
-          if (!cancelled) setOptions([]);
-        })
-        .finally(() => {
-          if (!cancelled) setSearching(false);
-        });
+      api.get<SpeciesOption[]>(`/api/species?q=${encodeURIComponent(query.trim())}&limit=12&excludeId=${encodeURIComponent(speciesId)}`).
+      then((rows) => {
+        if (!cancelled) setOptions(rows);
+      }).
+      catch(() => {
+        if (!cancelled) setOptions([]);
+      }).
+      finally(() => {
+        if (!cancelled) setSearching(false);
+      });
     }, 250);
     return () => {
       cancelled = true;
@@ -86,15 +90,15 @@ export function SpeciesSimilarityEditor({ speciesId }: { speciesId?: string }) {
   const addOption = (option: SpeciesOption) => {
     if (selectedIds.has(option.id)) return;
     setItems((prev) => [
-      ...prev,
-      {
-        similarSpeciesId: option.id,
-        score: 80,
-        reason: '',
-        name: option.name,
-        latinName: option.latinName,
-      },
-    ]);
+    ...prev,
+    {
+      similarSpeciesId: option.id,
+      score: 80,
+      reason: '',
+      name: option.name,
+      latinName: option.latinName
+    }]
+    );
     setQuery('');
     setOptions([]);
   };
@@ -109,8 +113,8 @@ export function SpeciesSimilarityEditor({ speciesId }: { speciesId?: string }) {
         items: items.map((item) => ({
           speciesId: item.similarSpeciesId,
           score: Number(item.score) || 80,
-          reason: item.reason.trim(),
-        })),
+          reason: item.reason.trim()
+        }))
       });
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : '保存相似品种失败');
@@ -120,73 +124,73 @@ export function SpeciesSimilarityEditor({ speciesId }: { speciesId?: string }) {
   };
 
   if (!speciesId) {
-    return <div className="rounded-lg bg-ink-50 px-3 py-2 text-xs text-ink-500">新建品种保存后再配置相似品种。</div>;
+    return <div className={cx(styles.r_5f22e64f, styles.r_ce27a834, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_7b89cd85)}>新建品种保存后再配置相似品种。</div>;
   }
 
   return (
-    <div className="space-y-3">
-      {err && <div className="rounded-lg bg-rose-50 px-3 py-2 text-rose-700">{err}</div>}
-      {loading && <div className="rounded-lg bg-ink-50 px-3 py-2 text-ink-500">加载中...</div>}
+    <div className={styles.r_6ed543e2}>
+      {err && <div className={cx(styles.r_5f22e64f, styles.r_0759a0f1, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_b54428d1)}>{err}</div>}
+      {loading && <div className={cx(styles.r_5f22e64f, styles.r_ce27a834, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_7b89cd85)}>加载中...</div>}
 
-      <div className="relative">
+      <div className={styles.r_d89972fe}>
         <input
-          className="w-full rounded-lg border border-ink-200 px-3 py-2"
+          className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="搜索中文名 / 拉丁名 / slug"
-        />
-        {(options.length > 0 || searching) && (
-          <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border border-ink-100 bg-white shadow-lg">
-            {searching && <div className="px-3 py-2 text-xs text-ink-500">搜索中...</div>}
-            {options.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                disabled={selectedIds.has(option.id)}
-                onClick={() => addOption(option)}
-                className="block w-full px-3 py-2 text-left hover:bg-leaf-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <div className="text-sm font-medium text-ink-800">{option.name}</div>
-                <div className="text-[11px] text-ink-500">{option.latinName} · {option.familySlug}/{option.genusSlug}</div>
+          placeholder="搜索中文名 / 拉丁名 / slug" />
+
+        {(options.length > 0 || searching) &&
+        <div className={cx(styles.r_da4dbfbc, styles.r_c78facc7, styles.r_d8cdcad2, styles.r_5e8a03e0, styles.r_145745bf, styles.r_b6b02c0e, styles.r_8aee2b07, styles.r_92bf82f4, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_358505cf, styles.r_5e10cdb8, styles.r_06bbb431)}>
+            {searching && <div className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_7b89cd85)}>搜索中...</div>}
+            {options.map((option) =>
+          <button
+            key={option.id}
+            type="button"
+            disabled={selectedIds.has(option.id)}
+            onClick={() => addOption(option)}
+            className={cx(styles.r_0214b4b3, styles.r_6da6a3c3, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_2eba0d65, styles.r_5756b7b4, styles.r_5f533b3a, styles.r_b29d8adb)}>
+
+                <div className={cx(styles.r_fc7473ca, styles.r_2689f395, styles.r_399e11a5)}>{option.name}</div>
+                <div className={cx(styles.r_d058ca6d, styles.r_7b89cd85)}>{option.latinName} · {option.familySlug}/{option.genusSlug}</div>
               </button>
-            ))}
+          )}
           </div>
-        )}
+        }
       </div>
 
-      <div className="space-y-2">
-        {items.map((item, index) => (
-          <div key={item.similarSpeciesId} className="grid grid-cols-[minmax(0,1fr)_80px_1.4fr_auto] gap-2 rounded-lg border border-ink-100 p-2">
-            <div className="min-w-0 rounded-lg bg-ink-50 px-3 py-2">
-              <div className="truncate text-sm font-medium text-ink-800">{item.name ?? item.similarSpeciesId}</div>
-              {item.latinName && <div className="truncate text-[11px] italic text-ink-500">{item.latinName}</div>}
+      <div className={styles.r_6f7e013d}>
+        {items.map((item, index) =>
+        <div key={item.similarSpeciesId} className={cx(styles.r_f3c543ad, styles.r_5abf8245, styles.r_77a2a20e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_358505cf, styles.r_7660b450)}>
+            <div className={cx(styles.r_7e0b7cdf, styles.r_5f22e64f, styles.r_ce27a834, styles.r_0e17f2bd, styles.r_03b4dd7f)}>
+              <div className={cx(styles.r_f283ea9b, styles.r_fc7473ca, styles.r_2689f395, styles.r_399e11a5)}>{item.name ?? item.similarSpeciesId}</div>
+              {item.latinName && <div className={cx(styles.r_f283ea9b, styles.r_d058ca6d, styles.r_90665ca6, styles.r_7b89cd85)}>{item.latinName}</div>}
             </div>
             <input
-              type="number"
-              min={1}
-              max={100}
-              className="rounded-lg border border-ink-200 px-3 py-2"
-              value={item.score}
-              onChange={(e) => setItems((prev) => prev.map((row, i) => i === index ? { ...row, score: Number(e.target.value) } : row))}
-            />
+            type="number"
+            min={1}
+            max={100}
+            className={cx(styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
+            value={item.score}
+            onChange={(e) => setItems((prev) => prev.map((row, i) => i === index ? { ...row, score: Number(e.target.value) } : row))} />
+
             <input
-              className="rounded-lg border border-ink-200 px-3 py-2"
-              value={item.reason}
-              onChange={(e) => setItems((prev) => prev.map((row, i) => i === index ? { ...row, reason: e.target.value } : row))}
-              placeholder="相似理由"
-            />
+            className={cx(styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
+            value={item.reason}
+            onChange={(e) => setItems((prev) => prev.map((row, i) => i === index ? { ...row, reason: e.target.value } : row))}
+            placeholder="相似理由" />
+
             <button
-              type="button"
-              onClick={() => setItems((prev) => prev.filter((_, i) => i !== index))}
-              className="rounded-lg border border-rose-200 px-2 py-1 text-rose-700 hover:bg-rose-50"
-            >
+            type="button"
+            onClick={() => setItems((prev) => prev.filter((_, i) => i !== index))}
+            className={cx(styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_959f4a9f, styles.r_d5eab218, styles.r_660d2eff, styles.r_b54428d1, styles.r_85cfcc24)}>
+
               删除
             </button>
           </div>
-        ))}
+        )}
       </div>
-      <div className="flex items-center justify-between gap-3">
-        <label className="inline-flex items-center gap-2 text-xs text-ink-600">
+      <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_1004c0c3)}>
+        <label className={cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_359090c2, styles.r_02eb621e)}>
           <input type="checkbox" checked={syncReverse} onChange={(e) => setSyncReverse(e.target.checked)} />
           同步双向关系
         </label>
@@ -194,11 +198,11 @@ export function SpeciesSimilarityEditor({ speciesId }: { speciesId?: string }) {
           type="button"
           disabled={saving}
           onClick={save}
-          className="rounded-lg bg-ink-800 px-3 py-2 text-white hover:bg-ink-700 disabled:opacity-60"
-        >
+          className={cx(styles.r_5f22e64f, styles.r_01d0b06c, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_72a4c7cd, styles.r_218d0c3a, styles.r_d463b664)}>
+
           {saving ? '保存中...' : '保存相似关系'}
         </button>
       </div>
-    </div>
-  );
+    </div>);
+
 }

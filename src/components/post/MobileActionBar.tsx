@@ -15,20 +15,24 @@ import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { cn, formatNumber } from '@/lib/utils';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import type { Post } from '@/lib/types';
+import styles from './MobileActionBar.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 export function MobileActionBar({
   post,
   initialLiked = false,
-  initialCollected = false,
-}: {
-  post: Post;
-  initialLiked?: boolean;
-  initialCollected?: boolean;
-}) {
+  initialCollected = false
+
+
+
+
+}: {post: Post;initialLiked?: boolean;initialCollected?: boolean;}) {
   const { user } = useAuth();
   const { t } = useI18n();
   const router = useRouter();
@@ -48,7 +52,7 @@ export function MobileActionBar({
   const toggleLike = async () => {
     if (!ensureLogin()) return;
     try {
-      const r = await api.post<{ liked: boolean; total: number }>(
+      const r = await api.post<{liked: boolean;total: number;}>(
         `/api/posts/${post.id}/like`
       );
       setLiked(r.liked);
@@ -61,7 +65,7 @@ export function MobileActionBar({
   const toggleCollect = async () => {
     if (!ensureLogin()) return;
     try {
-      const r = await api.post<{ collected: boolean }>(`/api/posts/${post.id}/collect`);
+      const r = await api.post<{collected: boolean;}>(`/api/posts/${post.id}/collect`);
       setSaved(r.collected);
     } catch (e) {
       console.warn(e instanceof ApiError ? e.message : 'op failed');
@@ -80,7 +84,7 @@ export function MobileActionBar({
     setShareOpen(false);
     // 简易 toast
     const el = document.createElement('div');
-    el.className = 'fixed bottom-24 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-ink-800 px-4 py-2 text-xs text-white shadow-lg';
+    el.className = cx(styles.r_7bc55599, styles.r_c81f89e1, styles.r_e632769a, styles.r_db5a366a, styles.r_efaa0701, styles.r_ac204c10, styles.r_01d0b06c, styles.r_f0faeb26, styles.r_03b4dd7f, styles.r_359090c2, styles.r_72a4c7cd, styles.r_06bbb431);
     el.textContent = t('detail.post.shareSuccess', { channel: t(`detail.post.shareChannels.${key}`) });
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 1800);
@@ -89,35 +93,35 @@ export function MobileActionBar({
   return (
     <>
       {/* 占位,避免内容被遮挡 */}
-      <div className="h-16 md:hidden" aria-hidden />
+      <div className={cx(styles.r_acaee621, styles.r_e477a6af)} aria-hidden />
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-leaf-100 bg-white/95 backdrop-blur md:hidden"
-           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="mx-auto flex max-w-[640px] items-center gap-1.5 px-3 py-2">
+      <div className={cx(styles.r_7bc55599, styles.r_3f6397bf, styles.r_189f036c, styles.r_0f2fff0a, styles.r_b950dda2, styles.r_88b684d2, styles.r_f5ebd4d0, styles.r_0b2e8c28, styles.r_e477a6af)}
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+        <div className={cx(styles.r_0e12dc7d, styles.r_60fbb771, styles.r_cb7721dc, styles.r_3960ffc2, styles.r_58284b4e, styles.r_0e17f2bd, styles.r_03b4dd7f)}>
           <BottomBtn
             icon="thumbs-up"
             label={formatNumber(likes)}
             active={liked}
-            activeCls="text-rose-500"
-            onClick={toggleLike}
-          />
+            activeCls={styles.r_fa512798}
+            onClick={toggleLike} />
+
           <BottomBtn
             icon="bookmark"
             label={saved ? t('detail.post.collected') : t('detail.post.collect')}
             active={saved}
-            activeCls="text-amber-500"
-            onClick={toggleCollect}
-          />
+            activeCls={styles.r_1dd48761}
+            onClick={toggleCollect} />
+
           <BottomBtn
             icon="comment"
             label={String(post.comments)}
-            onClick={scrollToComments}
-          />
+            onClick={scrollToComments} />
+
           <button
             type="button"
             onClick={() => setShareOpen(true)}
-            className="ml-auto rounded-full bg-leaf-500 px-4 py-2 text-xs font-medium text-white"
-          >
+            className={cx(styles.r_fb56d9cf, styles.r_ac204c10, styles.r_45499621, styles.r_f0faeb26, styles.r_03b4dd7f, styles.r_359090c2, styles.r_2689f395, styles.r_72a4c7cd)}>
+
             {t('detail.post.shareTo')}
           </button>
         </div>
@@ -126,32 +130,32 @@ export function MobileActionBar({
       <BottomSheet
         open={shareOpen}
         onClose={() => setShareOpen(false)}
-        title={t('detail.post.shareTo')}
-      >
-        <div className="grid grid-cols-3 gap-3 p-5">
+        title={t('detail.post.shareTo')}>
+
+        <div className={cx(styles.r_f3c543ad, styles.r_be2e831b, styles.r_1004c0c3, styles.r_c07e54fd)}>
           {([
-            { key: 'wechat', icon: 'message' },
-            { key: 'weibo', icon: 'globe' },
-            { key: 'link', icon: 'link' },
-          ] as const).map(({ key, icon }) => {
+          { key: 'wechat', icon: 'message' },
+          { key: 'weibo', icon: 'globe' },
+          { key: 'link', icon: 'link' }] as
+          const).map(({ key, icon }) => {
             return (
               <button
                 key={key}
                 type="button"
                 onClick={() => share(key)}
-                className="flex flex-col items-center gap-2 rounded-lg bg-leaf-50/60 p-4 text-ink-700 transition-colors hover:bg-leaf-100 hover:text-leaf-800"
-              >
-                <span className="grid h-10 w-10 place-items-center rounded-full bg-white text-leaf-700 shadow-sm">
+                className={cx(styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_5f22e64f, styles.r_a8a62ca4, styles.r_8e63407b, styles.r_eb6abb1f, styles.r_ceb69a6b, styles.r_2efc423a, styles.r_81be6435)}>
+
+                <span className={cx(styles.r_f3c543ad, styles.r_426b8b75, styles.r_d854e569, styles.r_67d66567, styles.r_ac204c10, styles.r_5e10cdb8, styles.r_5f6a59f1, styles.r_438b2237)}>
                   <Icon name={icon} size={18} />
                 </span>
-                <span className="text-xs">{t(`detail.post.shareChannels.${key}`)}</span>
-              </button>
-            );
+                <span className={styles.r_359090c2}>{t(`detail.post.shareChannels.${key}`)}</span>
+              </button>);
+
           })}
         </div>
       </BottomSheet>
-    </>
-  );
+    </>);
+
 }
 
 function BottomBtn({
@@ -159,25 +163,25 @@ function BottomBtn({
   label,
   onClick,
   active,
-  activeCls,
-}: {
-  icon: Parameters<typeof Icon>[0]['name'];
-  label: string;
-  onClick?: () => void;
-  active?: boolean;
-  activeCls?: string;
-}) {
+  activeCls
+
+
+
+
+
+
+}: {icon: Parameters<typeof Icon>[0]['name'];label: string;onClick?: () => void;active?: boolean;activeCls?: string;}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        'flex flex-col items-center gap-0.5 rounded-none px-3 py-1 text-[11px] transition-colors',
-        active ? activeCls : 'text-ink-700/80'
-      )}
-    >
+      className={cn(cx(styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_a3899220, styles.r_0c5e9137, styles.r_0e17f2bd, styles.r_660d2eff, styles.r_d058ca6d, styles.r_ceb69a6b),
+
+      active ? activeCls : styles.r_b85c981b
+      )}>
+
       <Icon name={icon} size={20} fill={active ? 'currentColor' : 'none'} />
-      <span className="leading-none">{label}</span>
-    </button>
-  );
+      <span className={styles.r_c2385a46}>{label}</span>
+    </button>);
+
 }

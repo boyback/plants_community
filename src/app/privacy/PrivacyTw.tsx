@@ -1,8 +1,11 @@
+import styles from './PrivacyTw.module.scss';
+import { cx } from '@/lib/style-utils';
+
 export function PrivacyTw() {
   return (
     <>
       <h1>肉友社 隱私政策</h1>
-      <p className="text-leaf-500">最近更新日期:2026 年 05 月 07 日 · 生效日期:發佈之日</p>
+      <p className={styles.r_eb16169c}>最近更新日期:2026 年 05 月 07 日 · 生效日期:發佈之日</p>
 
       <p>
         肉友社(以下簡稱「我們」)非常重視你的隱私。本政策說明我們如何蒐集、使用、儲存、共享與保護你的個人資訊,
@@ -96,9 +99,9 @@ export function PrivacyTw() {
       </p>
 
       <hr />
-      <p className="text-xs text-leaf-500">
+      <p className={cx(styles.r_359090c2, styles.r_eb16169c)}>
         本政策為 Demo 版本,不構成法律意見。正式上線前請由合規/法律專業人士審閱修訂。
       </p>
-    </>
-  );
+    </>);
+
 }

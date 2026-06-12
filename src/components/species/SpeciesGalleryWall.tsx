@@ -1,5 +1,9 @@
 import { ImageGallery } from '@/components/ui/ImageGallery';
-import { normalizeSpeciesGalleryCategory, type SpeciesGalleryItem } from '@/lib/species-gallery';
+import { normalizeSpeciesGalleryCategory, type SpeciesGalleryItem } from "@/lib/species-gallery";
+import styles from './SpeciesGalleryWall.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 function makeLabels(items: SpeciesGalleryItem[]) {
   return items.map((item) => {
@@ -8,26 +12,26 @@ function makeLabels(items: SpeciesGalleryItem[]) {
     if (!label && !note) return undefined;
     return {
       label,
-      note,
+      note
     };
   });
 }
 
 export function SpeciesGalleryWall({
-  items,
-}: {
-  speciesName: string;
-  items: SpeciesGalleryItem[];
-}) {
+  items
+
+
+
+}: {speciesName: string;items: SpeciesGalleryItem[];}) {
   const images = items.map((item) => item.url);
   const labels = makeLabels(items);
 
   if (images.length === 0) {
     return (
-      <div className="mt-4 grid min-h-[180px] place-items-center rounded-[6px] bg-leaf-50 text-sm text-ink-500">
+      <div className={cx(styles.r_0ab86672, styles.r_f3c543ad, styles.r_d013f83e, styles.r_67d66567, styles.r_c10ff8c0, styles.r_7ebecbb6, styles.r_fc7473ca, styles.r_7b89cd85)}>
         等待补充图集图片
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -35,8 +39,8 @@ export function SpeciesGalleryWall({
       images={images}
       equalCells
       labels={labels}
-      className="mt-4"
-      imageClassName="rounded-[6px]"
-    />
-  );
+      className={styles.r_0ab86672}
+      imageClassName={styles.r_c10ff8c0} />);
+
+
 }

@@ -1,0 +1,58 @@
+/* Generated from src/components/post/PostAdminMenu.tsx. Keep component-local styles here. */.r_f3c543ad{display:grid}.r_67d66567{place-items:center}.r_0c5e9137{border-radius:0}.r_ceb69a6b{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.r_3364420b:hover{--tw-text-opacity:1;color:rgb(var(--ink-700)/var(--tw-text-opacity))}.r_da4dbfbc{position:absolute}.r_5e8a03e0{top:100%}.r_181b2866{z-index:50}.r_f46b61a9{padding-top:8px}.r_b770696a{top:-6px}.r_6a60c09e{height:12px}.r_9cea0567{width:12px}.r_c74901da{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.r_c74901da{--tw-rotate:45deg}.r_dd8ce13a{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.r_d4f78465{border-left-width:1px}.r_b950dda2{border-top-width:1px}.r_88b684d2{--tw-border-opacity:1;border-color:rgb(var(--leaf-100)/var(--tw-border-opacity))}.r_5e10cdb8{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity))}.r_012fbd12{flex-shrink:0}.r_421ac2be{border-radius:6px}.r_0e17f2bd{padding-left:12px;padding-right:12px}.r_ec0091ee{padding-top:6px;padding-bottom:6px}.r_fc7473ca{font-size:14px;line-height:20px}.r_2689f395{font-weight:500}.r_5f533b3a:disabled{cursor:not-allowed}.r_d463b664:disabled{opacity:.6}.r_0214b4b3{display:block}.r_6da6a3c3{width:100%}.r_e82ae8be{white-space:nowrap}.r_ca6bf630{text-align:center}.r_359090c2{font-size:12px;line-height:16px}.r_5756b7b4:hover{--tw-bg-opacity:1;background-color:rgb(var(--leaf-50)/var(--tw-bg-opacity))}
+
+
+/* Recovered utility rules referenced by this CSS module. */
+.r_e632769a{left:50%}
+.r_efaa0701{--tw-translate-x:-50%;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));}
+.r_ed8a5df7{height:32px}
+.r_2bbcfc3b{width:32px}
+.r_d0a52b31{height:28px}
+.r_cbbf90f9{width:28px}
+.r_d89972fe{position:relative}
+.r_2f935d2e{width:-moz-max-content;width:max-content}
+.r_ca6bcd4b{border-width:1px}
+.r_660d2eff{padding-top:4px;padding-bottom:4px}
+.r_a739868a{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}
+.r_7bd3b5ea{margin-top:2px;margin-bottom:2px}
+.r_5ff6a729{--tw-border-opacity:1;border-color:rgb(var(--leaf-50)/var(--tw-border-opacity))}
+.r_fb56d9cf{margin-left:auto}
+.r_60fbb771{display:flex}
+.r_3960ffc2{align-items:center}
+.r_77a2a20e{gap:8px}
+.r_eb6abb1f{--tw-text-opacity:1;color:rgb(var(--ink-700)/var(--tw-text-opacity))}
+.r_6bceb016{--tw-bg-opacity:1;background-color:rgb(var(--leaf-600)/var(--tw-bg-opacity))}
+.r_72a4c7cd{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity))}
+.r_e269e58c:hover{--tw-bg-opacity:1;background-color:rgb(var(--leaf-700)/var(--tw-bg-opacity))}
+.r_3e7ce58d>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(16px*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(16px*var(--tw-space-y-reverse))}
+.r_6f7e013d>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(8px*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(8px*var(--tw-space-y-reverse))}
+.r_a8a62ca4{background-color:rgb(var(--leaf-50)/.6)}
+.r_eb6e8b88{padding:12px}
+.r_7b89cd85{--tw-text-opacity:1;color:rgb(107 114 128/var(--tw-text-opacity))}
+.r_7e0b7cdf{min-width:0}
+.r_5f6a59f1{--tw-text-opacity:1;color:rgb(var(--leaf-700)/var(--tw-text-opacity))}
+.r_81be6435:hover{--tw-text-opacity:1;color:rgb(var(--leaf-800)/var(--tw-text-opacity))}
+.r_f673f4a7:hover{text-decoration-line:underline}
+.r_170cee3f{overflow-wrap:break-word}
+.r_399e11a5{--tw-text-opacity:1;color:rgb(var(--ink-800)/var(--tw-text-opacity))}
+.r_451f34ab{word-break:break-all}
+.r_0e65706b{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace}
+.r_8ef2268e{justify-content:space-between}
+.r_1004c0c3{gap:12px}
+.r_03b4dd7f{padding-top:8px;padding-bottom:8px}
+.r_15e1b1f4{margin-top:2px}
+.r_595fceba{--tw-text-opacity:1;color:rgb(225 29 72/var(--tw-text-opacity))}
+.r_85cfcc24:hover{--tw-bg-opacity:1;background-color:rgb(255 241 242/var(--tw-bg-opacity))}
+
+
+/* Recovered utility rules referenced by this CSS module. */
+.r_66a36c90{--tw-text-opacity:1;color:rgb(156 163 175/var(--tw-text-opacity))}
+.r_9cab05a6:hover{--tw-bg-opacity:1;background-color:rgb(243 244 246/var(--tw-bg-opacity))}
+.r_7ae4c063{--tw-border-opacity:1;border-color:rgb(229 231 235/var(--tw-border-opacity))}
+.r_5399e21f:hover{--tw-bg-opacity:1;background-color:rgb(249 250 251/var(--tw-bg-opacity))}
+
+
+/* Local repair rules for migrated CSS module references. */
+.r_ad109e29{right:50%}.r_a3869832{--tw-translate-x:50%;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}
+
+.menuAlignRight{right:0}
+.menuArrowRight{right:12px}

@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import { useI18n } from '@/i18n/I18nContext';
 import { AddressForm, type AddressFormValue } from './AddressForm';
 import type { Address } from '@/lib/types';
+import styles from './AddressPicker.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 /**
  * 收件地址选择器(可在下单页 / 拍卖付款页等多处复用)。
@@ -25,25 +29,25 @@ import type { Address } from '@/lib/types';
  */
 
 export type AddressPickerValue =
-  | { mode: 'saved'; addressId: string }
-  | { mode: 'new'; form: AddressFormValue; asDefault?: boolean }
-  | { mode: 'once'; form: AddressFormValue }
-  | null;
+{mode: 'saved';addressId: string;} |
+{mode: 'new';form: AddressFormValue;asDefault?: boolean;} |
+{mode: 'once';form: AddressFormValue;} |
+null;
 
 const TABS = [
-  { key: 'saved', labelKey: 'addresses.picker.tabSaved' },
-  { key: 'new', labelKey: 'addresses.picker.tabNew' },
-  { key: 'once', labelKey: 'addresses.picker.tabOnce' },
-] as const;
+{ key: 'saved', labelKey: 'addresses.picker.tabSaved' },
+{ key: 'new', labelKey: 'addresses.picker.tabNew' },
+{ key: 'once', labelKey: 'addresses.picker.tabOnce' }] as
+const;
 type Tab = (typeof TABS)[number]['key'];
 
 export function AddressPicker({
   value,
-  onChange,
-}: {
-  value: AddressPickerValue;
-  onChange: (v: AddressPickerValue) => void;
-}) {
+  onChange
+
+
+
+}: {value: AddressPickerValue;onChange: (v: AddressPickerValue) => void;}) {
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>('saved');
   const [list, setList] = useState<Address[]>([]);
@@ -58,23 +62,23 @@ export function AddressPicker({
   // 拉地址簿
   useEffect(() => {
     setLoading(true);
-    api
-      .get<Address[]>('/api/addresses')
-      .then((r) => {
-        setList(r);
-        // 初始默认选中:默认地址(若有)
-        if (!savedSelected && r.length > 0) {
-          const def = r.find((x) => x.isDefault) ?? r[0];
-          setSavedSelected(def.id);
-          if (tab === 'saved') {
-            onChange({ mode: 'saved', addressId: def.id });
-          }
-        } else if (r.length === 0) {
-          setTab('new'); // 没地址自动进入新建
+    api.
+    get<Address[]>('/api/addresses').
+    then((r) => {
+      setList(r);
+      // 初始默认选中:默认地址(若有)
+      if (!savedSelected && r.length > 0) {
+        const def = r.find((x) => x.isDefault) ?? r[0];
+        setSavedSelected(def.id);
+        if (tab === 'saved') {
+          onChange({ mode: 'saved', addressId: def.id });
         }
-      })
-      .catch(() => null)
-      .finally(() => setLoading(false));
+      } else if (r.length === 0) {
+        setTab('new'); // 没地址自动进入新建
+      }
+    }).
+    catch(() => null).
+    finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -82,8 +86,8 @@ export function AddressPicker({
   const switchTab = (next: Tab) => {
     setTab(next);
     if (next === 'saved') {
-      if (savedSelected) onChange({ mode: 'saved', addressId: savedSelected });
-      else onChange(null);
+      if (savedSelected) onChange({ mode: 'saved', addressId: savedSelected });else
+      onChange(null);
     } else if (next === 'new') {
       onChange(newForm ? { mode: 'new', form: newForm, asDefault: newAsDefault } : null);
     } else {
@@ -93,140 +97,140 @@ export function AddressPicker({
 
   return (
     <div>
-      <div className="mb-3 flex items-center gap-1 rounded-full bg-leaf-50 p-1 text-xs">
-        {TABS.map((tabItem) => (
-          <button
-            key={tabItem.key}
-            type="button"
-            onClick={() => switchTab(tabItem.key)}
-            className={cn(
-              'flex-1 rounded-full px-3 py-1.5 transition-colors',
-              tab === tabItem.key
-                ? 'bg-white shadow-sm text-leaf-700 font-medium'
-                : 'text-ink-700/60 hover:text-leaf-700'
-            )}
-          >
+      <div className={cx(styles.r_1bb88326, styles.r_60fbb771, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_ac204c10, styles.r_7ebecbb6, styles.r_eb6a3cef, styles.r_359090c2)}>
+        {TABS.map((tabItem) =>
+        <button
+          key={tabItem.key}
+          type="button"
+          onClick={() => switchTab(tabItem.key)}
+          className={cn(cx(styles.r_36e579c0, styles.r_ac204c10, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_ceb69a6b),
+
+          tab === tabItem.key ? cx(styles.r_5e10cdb8, styles.r_438b2237, styles.r_5f6a59f1, styles.r_2689f395) : cx(styles.r_5fa66415, styles.r_9825203a)
+
+
+          )}>
+
             {t(tabItem.labelKey)}
           </button>
-        ))}
+        )}
       </div>
 
-      {tab === 'saved' && (
-        <div>
-          {loading ? (
-            <div className="py-6 text-center text-xs text-leaf-700/60">{t('addresses.picker.loading')}</div>
-          ) : list.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-leaf-200 bg-leaf-50/30 p-4 text-center text-xs text-leaf-700/70">
+      {tab === 'saved' &&
+      <div>
+          {loading ?
+        <div className={cx(styles.r_940911bf, styles.r_ca6bf630, styles.r_359090c2, styles.r_6c4cc49e)}>{t('addresses.picker.loading')}</div> :
+        list.length === 0 ?
+        <div className={cx(styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_54720a96, styles.r_8e63407b, styles.r_ca6bf630, styles.r_359090c2, styles.r_69335b95)}>
               {t('addresses.picker.noSaved')}
               <button
-                type="button"
-                className="ml-1 text-leaf-700 underline"
-                onClick={() => switchTab('new')}
-              >
+            type="button"
+            className={cx(styles.r_f58b0257, styles.r_5f6a59f1, styles.r_c82b67c8)}
+            onClick={() => switchTab('new')}>
+
                 {t('addresses.picker.createNow')}
               </button>
-            </div>
-          ) : (
-            <ul className="max-h-[280px] space-y-2 overflow-y-auto">
+            </div> :
+
+        <ul className={cx(styles.r_4bb3e3c3, styles.r_6f7e013d, styles.r_92bf82f4)}>
               {list.map((a) => {
-                const selected = savedSelected === a.id;
-                return (
-                  <li key={a.id}>
+            const selected = savedSelected === a.id;
+            return (
+              <li key={a.id}>
                     <button
-                      type="button"
-                      onClick={() => {
-                        setSavedSelected(a.id);
-                        onChange({ mode: 'saved', addressId: a.id });
-                      }}
-                      className={cn(
-                        'flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors',
-                        selected
-                          ? 'border-leaf-500 bg-leaf-50/60'
-                          : 'border-leaf-100 hover:border-leaf-300'
-                      )}
-                    >
+                  type="button"
+                  onClick={() => {
+                    setSavedSelected(a.id);
+                    onChange({ mode: 'saved', addressId: a.id });
+                  }}
+                  className={cn(cx(styles.r_60fbb771, styles.r_6da6a3c3, styles.r_60541e1e, styles.r_1004c0c3, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_eb6e8b88, styles.r_2eba0d65, styles.r_ceb69a6b),
+
+                  selected ? cx(styles.r_d3b27cd9, styles.r_a8a62ca4) : cx(styles.r_88b684d2, styles.r_a5c39c39)
+
+
+                  )}>
+
                       <span
-                        className={cn(
-                          'mt-1 grid h-4 w-4 shrink-0 place-items-center rounded-full border-2',
-                          selected ? 'border-leaf-500 bg-leaf-500 text-white' : 'border-leaf-200'
-                        )}
-                      >
-                        {selected && <span className="text-[8px]">●</span>}
+                    className={cn(cx(styles.r_b6b02c0e, styles.r_f3c543ad, styles.r_11e59c6d, styles.r_dc7972eb, styles.r_012fbd12, styles.r_67d66567, styles.r_ac204c10, styles.r_65935df5),
+
+                    selected ? cx(styles.r_d3b27cd9, styles.r_45499621, styles.r_72a4c7cd) : styles.r_691861bc
+                    )}>
+
+                        {selected && <span className={styles.r_05ef0977}>●</span>}
                       </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-baseline gap-2">
-                          <span className="text-sm font-medium">{a.name}</span>
-                          <span className="text-xs text-leaf-700/70">{a.phone}</span>
-                          {a.isDefault && (
-                            <span className="rounded-full bg-leaf-500 px-1.5 py-px text-[9px] font-medium text-white">
+                      <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
+                        <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_b7012bb2, styles.r_77a2a20e)}>
+                          <span className={cx(styles.r_fc7473ca, styles.r_2689f395)}>{a.name}</span>
+                          <span className={cx(styles.r_359090c2, styles.r_69335b95)}>{a.phone}</span>
+                          {a.isDefault &&
+                      <span className={cx(styles.r_ac204c10, styles.r_45499621, styles.r_45d82811, styles.r_c6e52cdb, styles.r_e0988086, styles.r_2689f395, styles.r_72a4c7cd)}>
                               {t('addresses.picker.defaultLabel')}
                             </span>
-                          )}
-                          {a.tag && (
-                            <span className="rounded-full bg-leaf-50 px-1.5 py-px text-[9px] text-leaf-700">
+                      }
+                          {a.tag &&
+                      <span className={cx(styles.r_ac204c10, styles.r_7ebecbb6, styles.r_45d82811, styles.r_c6e52cdb, styles.r_e0988086, styles.r_5f6a59f1)}>
                               {a.tag}
                             </span>
-                          )}
+                      }
                         </div>
-                        <div className="mt-0.5 line-clamp-2 text-[11px] text-leaf-700/80">
-                          {[a.province, a.city, a.district, a.detail]
-                            .filter(Boolean)
-                            .join(' ')}
+                        <div className={cx(styles.r_15e1b1f4, styles.r_054cb4e3, styles.r_d058ca6d, styles.r_21d33c50)}>
+                          {[a.province, a.city, a.district, a.detail].
+                      filter(Boolean).
+                      join(' ')}
                         </div>
                       </div>
                     </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      )}
+                  </li>);
 
-      {tab === 'new' && (
-        <div>
-          <p className="mb-3 text-[11px] text-leaf-700/70">
+          })}
+            </ul>
+        }
+        </div>
+      }
+
+      {tab === 'new' &&
+      <div>
+          <p className={cx(styles.r_1bb88326, styles.r_d058ca6d, styles.r_69335b95)}>
             {t('addresses.picker.newHint')}
           </p>
           <InlineForm
-            initial={newForm ?? undefined}
-            onChange={(v) => {
-              setNewForm(v);
-              onChange({ mode: 'new', form: v, asDefault: newAsDefault });
-            }}
-          />
-          <label className="mt-3 inline-flex items-center gap-2 text-xs">
+          initial={newForm ?? undefined}
+          onChange={(v) => {
+            setNewForm(v);
+            onChange({ mode: 'new', form: v, asDefault: newAsDefault });
+          }} />
+
+          <label className={cx(styles.r_eccd13ef, styles.r_52083e7d, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_359090c2)}>
             <input
-              type="checkbox"
-              checked={newAsDefault}
-              onChange={(e) => {
-                const v = e.target.checked;
-                setNewAsDefault(v);
-                if (newForm) onChange({ mode: 'new', form: newForm, asDefault: v });
-              }}
-              className="h-4 w-4 accent-leaf-500"
-            />
+            type="checkbox"
+            checked={newAsDefault}
+            onChange={(e) => {
+              const v = e.target.checked;
+              setNewAsDefault(v);
+              if (newForm) onChange({ mode: 'new', form: newForm, asDefault: v });
+            }}
+            className={cx(styles.r_11e59c6d, styles.r_dc7972eb, styles.r_5f66c7c0)} />
+
             {t('addresses.picker.alsoSetDefault')}
           </label>
         </div>
-      )}
+      }
 
-      {tab === 'once' && (
-        <div>
-          <p className="mb-3 text-[11px] text-leaf-700/70">
+      {tab === 'once' &&
+      <div>
+          <p className={cx(styles.r_1bb88326, styles.r_d058ca6d, styles.r_69335b95)}>
             {t('addresses.picker.onceHint')}
           </p>
           <InlineForm
-            initial={onceForm ?? undefined}
-            onChange={(v) => {
-              setOnceForm(v);
-              onChange({ mode: 'once', form: v });
-            }}
-          />
+          initial={onceForm ?? undefined}
+          onChange={(v) => {
+            setOnceForm(v);
+            onChange({ mode: 'once', form: v });
+          }} />
+
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
 
 /**
@@ -234,11 +238,11 @@ export function AddressPicker({
  */
 function InlineForm({
   initial,
-  onChange,
-}: {
-  initial?: AddressFormValue;
-  onChange: (v: AddressFormValue) => void;
-}) {
+  onChange
+
+
+
+}: {initial?: AddressFormValue;onChange: (v: AddressFormValue) => void;}) {
   const { t } = useI18n();
   const [v, setV] = useState<AddressFormValue>({
     name: initial?.name ?? '',
@@ -246,60 +250,60 @@ function InlineForm({
     province: initial?.province ?? '',
     city: initial?.city ?? '',
     district: initial?.district ?? '',
-    detail: initial?.detail ?? '',
+    detail: initial?.detail ?? ''
   });
 
-  const update = <K extends keyof AddressFormValue>(k: K, val: AddressFormValue[K]) => {
+  const update = <K extends keyof AddressFormValue,>(k: K, val: AddressFormValue[K]) => {
     const next = { ...v, [k]: val };
     setV(next);
     onChange(next);
   };
 
   return (
-    <div className="space-y-2.5">
-      <div className="grid grid-cols-2 gap-2">
+    <div className={styles.r_14dd497e}>
+      <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_77a2a20e)}>
         <input
           className="input"
           placeholder={t('addresses.picker.inlineName')}
           value={v.name}
-          onChange={(e) => update('name', e.target.value)}
-        />
+          onChange={(e) => update('name', e.target.value)} />
+
         <input
           className="input"
           inputMode="tel"
           placeholder={t('addresses.picker.inlinePhone')}
           value={v.phone}
-          onChange={(e) => update('phone', e.target.value)}
-        />
+          onChange={(e) => update('phone', e.target.value)} />
+
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className={cx(styles.r_f3c543ad, styles.r_be2e831b, styles.r_77a2a20e)}>
         <input
           className="input"
           placeholder={t('addresses.picker.inlineProvince')}
           value={v.province ?? ''}
-          onChange={(e) => update('province', e.target.value)}
-        />
+          onChange={(e) => update('province', e.target.value)} />
+
         <input
           className="input"
           placeholder={t('addresses.picker.inlineCity')}
           value={v.city ?? ''}
-          onChange={(e) => update('city', e.target.value)}
-        />
+          onChange={(e) => update('city', e.target.value)} />
+
         <input
           className="input"
           placeholder={t('addresses.picker.inlineDistrict')}
           value={v.district ?? ''}
-          onChange={(e) => update('district', e.target.value)}
-        />
+          onChange={(e) => update('district', e.target.value)} />
+
       </div>
       <textarea
-        className="input min-h-[60px]"
+        className={styles.r_a4197e87}
         placeholder={t('addresses.picker.inlineDetail')}
         value={v.detail}
-        onChange={(e) => update('detail', e.target.value)}
-      />
-    </div>
-  );
+        onChange={(e) => update('detail', e.target.value)} />
+
+    </div>);
+
 }
 
 /** 把 AddressPickerValue 转成下单 API 的 body 字段 */
@@ -310,20 +314,20 @@ export function pickerValueToOrderBody(v: AddressPickerValue): Record<string, un
     return {
       ...formToOrderFields(v.form),
       saveAddress: true,
-      saveAsDefault: v.asDefault ?? false,
+      saveAsDefault: v.asDefault ?? false
     };
   }
   return formToOrderFields(v.form);
 }
 
 function formToOrderFields(form: AddressFormValue) {
-  const detail = [form.province, form.city, form.district, form.detail]
-    .filter(Boolean)
-    .join(' ');
+  const detail = [form.province, form.city, form.district, form.detail].
+  filter(Boolean).
+  join(' ');
   return {
     shipName: form.name,
     shipPhone: form.phone,
-    shipAddress: detail || form.detail,
+    shipAddress: detail || form.detail
   };
 }
 
@@ -332,9 +336,9 @@ function formToOrderFields(form: AddressFormValue) {
  * 可选传入 translator,用于本地化错误消息;不传则返回中文兜底。
  */
 export function validateAddressPicker(
-  v: AddressPickerValue,
-  translator?: (key: string) => string
-): string | null {
+v: AddressPickerValue,
+translator?: (key: string) => string)
+: string | null {
   const tr = translator ?? ((k: string) => DEFAULT_ZH_ERRORS[k] ?? k);
   if (!v) return tr('addresses.picker.errNoSelect');
   if (v.mode === 'saved') return null;
@@ -349,7 +353,7 @@ const DEFAULT_ZH_ERRORS: Record<string, string> = {
   'addresses.picker.errNoSelect': '请选择或填写收货地址',
   'addresses.picker.errName': '请填写收件人姓名',
   'addresses.picker.errPhone': '请填写联系电话',
-  'addresses.picker.errDetail': '请填写详细地址',
+  'addresses.picker.errDetail': '请填写详细地址'
 };
 
 // 导出 AddressForm 供 AddressPicker 内部用

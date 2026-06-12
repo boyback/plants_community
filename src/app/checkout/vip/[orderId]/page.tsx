@@ -6,11 +6,15 @@ import { useParams, useRouter } from 'next/navigation';
 import { Shell } from '@/components/layout/Shell';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import { cn, countdown, formatPrice } from '@/lib/utils';
 import { toast } from '@/components/ui/Toast';
 import type { Payment } from '@/lib/types';
 import { PaymentQr, type PayChannel } from '@/components/payment/PaymentQr';
+import styles from './page.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 type Channel = PayChannel;
 
@@ -25,7 +29,7 @@ interface VipOrderInfo {
 }
 
 export default function VipCheckoutPage() {
-  const params = useParams<{ orderId: string }>();
+  const params = useParams<{orderId: string;}>();
   const router = useRouter();
   const { user, loading: authLoading, refresh } = useAuth();
   const { t } = useI18n();
@@ -50,15 +54,15 @@ export default function VipCheckoutPage() {
     setCreating(true);
     setErr(null);
     setAbandoned(false);
-    api
-      .post<Payment>('/api/payments', {
-        bizType: 'vip',
-        bizId: params.orderId,
-        channel,
-      })
-      .then(setPayment)
-      .catch((e) => setErr(e instanceof ApiError ? e.message : t('checkout.createFail')))
-      .finally(() => setCreating(false));
+    api.
+    post<Payment>('/api/payments', {
+      bizType: 'vip',
+      bizId: params.orderId,
+      channel
+    }).
+    then(setPayment).
+    catch((e) => setErr(e instanceof ApiError ? e.message : t('checkout.createFail'))).
+    finally(() => setCreating(false));
   }, [authLoading, user, params?.orderId, channel, router, regenTick]);
 
   useEffect(() => {
@@ -94,8 +98,8 @@ export default function VipCheckoutPage() {
             }
           }
         } catch {
-          /* ignore */
-        }
+
+          /* ignore */}
       }, 1500);
     }, 4000);
     const tick = setInterval(() => setNow(Date.now()), 1000);
@@ -127,129 +131,129 @@ export default function VipCheckoutPage() {
 
   return (
     <Shell>
-      <div className="mx-auto max-w-2xl card overflow-hidden">
-        <div className="bg-gradient-to-br from-amber-300 via-yellow-200 to-amber-300 p-6 text-amber-900">
-          <h1 className="text-xl font-bold">{t('checkout.vip.pageTitle')}</h1>
-          <p className="mt-1 text-xs opacity-80">{t('checkout.vip.pageSubtitle')}</p>
+      <div className={cx(styles.r_0e12dc7d, styles.r_2cc8041e, styles.r_2cd02d11)}>
+        <div className={cx(styles.r_39b2e003, styles.r_96b881c8, styles.r_f61dcff4, styles.r_db539fdb, styles.r_0478c89a, styles.r_67e74965)}>
+          <h1 className={cx(styles.r_d5c9b000, styles.r_69450ef1)}>{t('checkout.vip.pageTitle')}</h1>
+          <p className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_714816ef)}>{t('checkout.vip.pageSubtitle')}</p>
         </div>
 
-        <div className="p-6">
+        <div className={styles.r_0478c89a}>
           {/* 选择渠道 */}
-          <div className="mb-4 grid grid-cols-2 gap-3">
-            {(['wechat', 'alipay'] as Channel[]).map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setChannel(c)}
-                className={cn(
-                  'flex items-center gap-3 rounded-xl border-2 p-3 text-left transition-all',
-                  channel === c
-                    ? 'border-leaf-500 bg-leaf-50/60'
-                    : 'border-leaf-100 hover:border-leaf-300'
-                )}
-              >
-                <span className="text-2xl">{c === 'wechat' ? '💚' : '💙'}</span>
+          <div className={cx(styles.r_da019856, styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3)}>
+            {(['wechat', 'alipay'] as Channel[]).map((c) =>
+            <button
+              key={c}
+              type="button"
+              onClick={() => setChannel(c)}
+              className={cn(cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_a217b4ea, styles.r_65935df5, styles.r_eb6e8b88, styles.r_2eba0d65, styles.r_0fe7d7d8),
+
+              channel === c ? cx(styles.r_d3b27cd9, styles.r_a8a62ca4) : cx(styles.r_88b684d2, styles.r_a5c39c39)
+
+
+              )}>
+
+                <span className={styles.r_3febee09}>{c === 'wechat' ? '💚' : '💙'}</span>
                 <div>
-                  <div className="text-sm font-semibold">
+                  <div className={cx(styles.r_fc7473ca, styles.r_e83a7042)}>
                     {c === 'wechat' ? t('checkout.channelWechat') : t('checkout.channelAlipay')}
                   </div>
-                  <div className="text-[10px] text-leaf-700/70">
+                  <div className={cx(styles.r_1dc571a3, styles.r_69335b95)}>
                     {c === 'wechat' ? 'WeChat Pay' : 'Alipay'}
                   </div>
                 </div>
               </button>
-            ))}
-          </div>
-
-          <div className="grid place-items-center rounded-2xl bg-leaf-50/50 p-6">
-            {creating || !payment ? (
-              <div className="grid h-56 w-56 place-items-center rounded-xl border border-dashed border-leaf-200 bg-white text-xs text-leaf-700/60">
-                {t('checkout.generatingQr', {
-                  channel: channel === 'wechat' ? t('checkout.channelWechat') : t('checkout.channelAlipay'),
-                })}
-              </div>
-            ) : expired ? (
-              <div className="grid h-56 w-56 place-items-center rounded-xl border border-dashed border-leaf-200 bg-white">
-                <div className="text-3xl">⌛</div>
-                <div className="mt-2 text-xs text-leaf-700/70">{t('checkout.qrExpired')}</div>
-                <button
-                  type="button"
-                  onClick={() => setRegenTick((n) => n + 1)}
-                  className="mt-2 text-[11px] text-leaf-700 hover:underline"
-                >
-                  {t('checkout.qrRegenerate')}
-                </button>
-              </div>
-            ) : (
-              <PaymentQr
-                text={payment.qrcode ?? payment.payNo}
-                channel={channel}
-                status={payment.status}
-                scanning={payment.scanning ?? false}
-              />
             )}
           </div>
 
+          <div className={cx(styles.r_f3c543ad, styles.r_67d66567, styles.r_68f2db62, styles.r_9ac94195, styles.r_0478c89a)}>
+            {creating || !payment ?
+            <div className={cx(styles.r_f3c543ad, styles.r_4ead2714, styles.r_d16aae84, styles.r_67d66567, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_5e10cdb8, styles.r_359090c2, styles.r_6c4cc49e)}>
+                {t('checkout.generatingQr', {
+                channel: channel === 'wechat' ? t('checkout.channelWechat') : t('checkout.channelAlipay')
+              })}
+              </div> :
+            expired ?
+            <div className={cx(styles.r_f3c543ad, styles.r_4ead2714, styles.r_d16aae84, styles.r_67d66567, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_5e10cdb8)}>
+                <div className={styles.r_751fb0d1}>⌛</div>
+                <div className={cx(styles.r_50d0d216, styles.r_359090c2, styles.r_69335b95)}>{t('checkout.qrExpired')}</div>
+                <button
+                type="button"
+                onClick={() => setRegenTick((n) => n + 1)}
+                className={cx(styles.r_50d0d216, styles.r_d058ca6d, styles.r_5f6a59f1, styles.r_f673f4a7)}>
+
+                  {t('checkout.qrRegenerate')}
+                </button>
+              </div> :
+
+            <PaymentQr
+              text={payment.qrcode ?? payment.payNo}
+              channel={channel}
+              status={payment.status}
+              scanning={payment.scanning ?? false} />
+
+            }
+          </div>
+
           {payment && payment.status === 'pending' && !expired && (
-            abandoned ? (
-              <div className="mt-3 flex flex-col items-center gap-1 text-center">
-                <span className="text-[11px] text-amber-700">
+          abandoned ?
+          <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_ca6bf630)}>
+                <span className={cx(styles.r_d058ca6d, styles.r_85d79ebf)}>
                   {t('checkout.abandoned')}
                 </span>
                 <button
-                  type="button"
-                  onClick={() => setRegenTick((n) => n + 1)}
-                  className="text-[11px] text-leaf-700 underline hover:text-leaf-800"
-                >
+              type="button"
+              onClick={() => setRegenTick((n) => n + 1)}
+              className={cx(styles.r_d058ca6d, styles.r_5f6a59f1, styles.r_c82b67c8, styles.r_81be6435)}>
+
                   {t('checkout.regenerate')}
                 </button>
-              </div>
-            ) : (
-              <div className="mt-3 text-center text-xs text-leaf-700/70">
-                {t('checkout.qrExpiresIn', { time: countdown(remain) })}
-              </div>
-            )
-          )}
+              </div> :
 
-          {payment && (
-            <div className="mt-3 flex items-center justify-between text-sm">
-              <span className="text-leaf-700/70">{t('checkout.amount')}</span>
-              <span className="text-2xl font-bold text-rose-600">
+          <div className={cx(styles.r_eccd13ef, styles.r_ca6bf630, styles.r_359090c2, styles.r_69335b95)}>
+                {t('checkout.qrExpiresIn', { time: countdown(remain) })}
+              </div>)
+
+          }
+
+          {payment &&
+          <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_fc7473ca)}>
+              <span className={styles.r_69335b95}>{t('checkout.amount')}</span>
+              <span className={cx(styles.r_3febee09, styles.r_69450ef1, styles.r_595fceba)}>
                 {formatPrice(payment.amount)}
               </span>
             </div>
-          )}
+          }
 
           {/* 仅在 mock 回落时显示 Demo 按钮 */}
-          {payment && payment.status === 'pending' && !expired && payment.qrcode?.startsWith('mock://') && (
-            <div className="mt-4 rounded-xl bg-amber-50 p-3 text-center">
-              <div className="text-[11px] text-amber-700">
+          {payment && payment.status === 'pending' && !expired && payment.qrcode?.startsWith("mock://") &&
+          <div className={cx(styles.r_0ab86672, styles.r_a217b4ea, styles.r_67d2289d, styles.r_eb6e8b88, styles.r_ca6bf630)}>
+              <div className={cx(styles.r_d058ca6d, styles.r_85d79ebf)}>
                 <b>{t('checkout.demoTip')}</b>:{t('checkout.demoTipAuction')}
               </div>
               <button
-                type="button"
-                disabled={confirming}
-                onClick={mockConfirm}
-                className="btn mt-2 bg-amber-500 text-white hover:bg-amber-600 !text-xs"
-              >
+              type="button"
+              disabled={confirming}
+              onClick={mockConfirm}
+              className={cx(styles.r_50d0d216, styles.r_931bc423, styles.r_72a4c7cd, styles.r_7ee371ab, styles.r_dd702538)}>
+
                 {confirming ? t('checkout.processing') : t('checkout.mockConfirm')}
               </button>
             </div>
-          )}
+          }
 
-          {err && (
-            <div className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">
+          {err &&
+          <div className={cx(styles.r_eccd13ef, styles.r_5f22e64f, styles.r_0759a0f1, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_b54428d1)}>
               {err}
             </div>
-          )}
+          }
 
-          <div className="mt-4 text-center">
-            <Link href="/vip" className="text-xs text-leaf-700 hover:underline">
+          <div className={cx(styles.r_0ab86672, styles.r_ca6bf630)}>
+            <Link href="/vip" className={cx(styles.r_359090c2, styles.r_5f6a59f1, styles.r_f673f4a7)}>
               ← {t('nav.vipCenter')}
             </Link>
           </div>
         </div>
       </div>
-    </Shell>
-  );
+    </Shell>);
+
 }

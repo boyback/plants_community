@@ -3,9 +3,13 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { api } from '@/lib/client-api';
+import { api } from "@/lib/client-api";
 import { cn } from '@/lib/utils';
 import { useFeatureFlags } from '@/context/FeatureFlagsContext';
+import styles from './SystemBoardsCard.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface SystemBoardLite {
   id: string;
@@ -27,7 +31,7 @@ interface SystemMenuItem {
   orderIdx: number;
 }
 
-function parseMenuIcon(icon: string): { image?: string; emoji?: string } {
+function parseMenuIcon(icon: string): {image?: string;emoji?: string;} {
   try {
     const parsed = JSON.parse(icon);
     const first = Array.isArray(parsed) ? parsed[0] : parsed;
@@ -44,14 +48,14 @@ function parseMenuIcon(icon: string): { image?: string; emoji?: string } {
 let cachedBoards: SystemBoardLite[] | null = null;
 let cachePromise: Promise<SystemBoardLite[]> | null = null;
 
-export function SystemBoardsCard({ location = 'sidebar_left' }: { location?: 'sidebar_left' | 'sidebar_right' }) {
+export function SystemBoardsCard({ location = 'sidebar_left' }: {location?: 'sidebar_left' | 'sidebar_right';}) {
   const pathname = usePathname();
   const { systemMenus } = useFeatureFlags() as any;
   const [data, setData] = useState<SystemBoardLite[] | null>(cachedBoards);
 
   // 从 systemMenus 取卡片本身的标题/图标(管理员后台可改)
   const menuRow = systemMenus?.find(
-    (m: SystemMenuItem) => m.cardKey === 'card:system_boards' && m.location === location,
+    (m: SystemMenuItem) => m.cardKey === "card:system_boards" && m.location === location
   );
   const headerIcon = menuRow ? parseMenuIcon(menuRow.icon) : null;
 
@@ -61,19 +65,19 @@ export function SystemBoardsCard({ location = 'sidebar_left' }: { location?: 'si
       return;
     }
     if (!cachePromise) {
-      cachePromise = api
-        .get<SystemBoardLite[]>('/api/boards?kind=system')
-        .then((list) => {
-          cachedBoards = list || [];
-          return cachedBoards;
-        })
-        .catch(() => {
-          cachedBoards = [];
-          return [];
-        })
-        .finally(() => {
-          cachePromise = null;
-        });
+      cachePromise = api.
+      get<SystemBoardLite[]>('/api/boards?kind=system').
+      then((list) => {
+        cachedBoards = list || [];
+        return cachedBoards;
+      }).
+      catch(() => {
+        cachedBoards = [];
+        return [];
+      }).
+      finally(() => {
+        cachePromise = null;
+      });
     }
     cachePromise.then((list) => setData(list));
   }, []);
@@ -81,17 +85,17 @@ export function SystemBoardsCard({ location = 'sidebar_left' }: { location?: 'si
   if (!data || data.length === 0) return null;
 
   return (
-    <div className="rounded-none border border-leaf-100 bg-white overflow-hidden">
-      <div className="flex items-center gap-1 px-2 py-2.5 border-b border-leaf-100/60">
-        {headerIcon?.image ? (
-          <img src={headerIcon.image} width={32} height={32} alt="" className="object-contain shrink-0" />
-        ) : headerIcon?.emoji ? (
-          <span className="text-base shrink-0">{headerIcon.emoji}</span>
-        ) : null}
-        <span className="text-base font-bold text-ink-800">{menuRow?.name || '系统板块'}</span>
+    <div className={cx(styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_2cd02d11)}>
+      <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_d5eab218, styles.r_e7ee55ac, styles.r_65fdbade, styles.r_38748e06)}>
+        {headerIcon?.image ?
+        <img src={headerIcon.image} width={32} height={32} alt="" className={cx(styles.r_b1104f41, styles.r_012fbd12)} /> :
+        headerIcon?.emoji ?
+        <span className={cx(styles.r_4ee73492, styles.r_012fbd12)}>{headerIcon.emoji}</span> :
+        null}
+        <span className={cx(styles.r_4ee73492, styles.r_69450ef1, styles.r_399e11a5)}>{menuRow?.name || '系统板块'}</span>
       </div>
 
-      <div className="p-2 space-y-0.5">
+      <div className={cx(styles.r_7660b450, styles.r_e2eedc57)}>
         {data.map((b) => {
           const href = b.linkPath || `/board/${b.slug}`;
           const isActive = pathname === href || pathname?.startsWith(href + '/');
@@ -100,28 +104,28 @@ export function SystemBoardsCard({ location = 'sidebar_left' }: { location?: 'si
             <Link
               key={b.id}
               href={href}
-              className={cn(
-                'flex items-center gap-2 px-2 py-2 rounded-none text-sm transition-colors',
-                isActive
-                  ? 'bg-leaf-100 font-medium text-leaf-800'
-                  : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700',
-              )}
-            >
-              {isImageIcon ? (
-                <img src={b.icon} width={20} height={20} alt="" className="object-contain shrink-0" />
-              ) : b.icon ? (
-                <span className="text-base shrink-0">{b.icon}</span>
-              ) : (
-                <span className="text-base shrink-0">📌</span>
-              )}
-              <span className="truncate">{b.name}</span>
-              {b.posts > 0 && (
-                <span className="ml-auto shrink-0 text-[10px] text-leaf-700/40">{b.posts}</span>
-              )}
-            </Link>
-          );
+              className={cn(cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_d5eab218, styles.r_03b4dd7f, styles.r_0c5e9137, styles.r_fc7473ca, styles.r_ceb69a6b),
+
+              isActive ? cx(styles.r_f2b23104, styles.r_2689f395, styles.r_e7eab4cb) : cx(styles.r_399e11a5, styles.r_5756b7b4, styles.r_9825203a)
+
+
+              )}>
+
+              {isImageIcon ?
+              <img src={b.icon} width={20} height={20} alt="" className={cx(styles.r_b1104f41, styles.r_012fbd12)} /> :
+              b.icon ?
+              <span className={cx(styles.r_4ee73492, styles.r_012fbd12)}>{b.icon}</span> :
+
+              <span className={cx(styles.r_4ee73492, styles.r_012fbd12)}>📌</span>
+              }
+              <span className={styles.r_f283ea9b}>{b.name}</span>
+              {b.posts > 0 &&
+              <span className={cx(styles.r_fb56d9cf, styles.r_012fbd12, styles.r_1dc571a3, styles.r_4d094717)}>{b.posts}</span>
+              }
+            </Link>);
+
         })}
       </div>
-    </div>
-  );
+    </div>);
+
 }

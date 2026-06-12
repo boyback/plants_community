@@ -3,27 +3,30 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import type { ReactNode, SyntheticEvent } from 'react';
 import PhotoSwipe from 'photoswipe';
-import 'photoswipe/style.css';
 import {
   closestCenter,
   DndContext,
   PointerSensor,
   useSensor,
   useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core';
+  type DragEndEvent } from
+"@dnd-kit/core";
 import {
   arrayMove,
   rectSortingStrategy,
   SortableContext,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+  useSortable } from
+"@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Icon } from '@/components/ui/Icon';
-import { registerPhotoSwipeGalleryUi } from '@/lib/photoswipe-ui';
+import { registerPhotoSwipeGalleryUi } from "@/lib/photoswipe-ui";
 import { cn } from '@/lib/utils';
 import { useConcurrentUpload } from './useConcurrentUpload';
 import type { ConcurrentUploadingItem } from './useConcurrentUpload';
+import styles from './MultiImageUploadGrid.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface Props {
   value: string[];
@@ -51,12 +54,12 @@ export interface MultiImageUploadGridHandle {
 }
 
 type GridEntry =
-  | { type: 'uploaded'; key: string; url: string }
-  | { type: 'uploading'; key: string; id: string };
+{type: 'uploaded';key: string;url: string;} |
+{type: 'uploading';key: string;id: string;};
 
 const uploadedKey = (url: string) => `uploaded:${url}`;
 const uploadingKey = (id: string) => `uploading:${id}`;
-const keyToUploadedUrl = (key: string) => key.slice('uploaded:'.length);
+const keyToUploadedUrl = (key: string) => key.slice("uploaded:".length);
 
 interface ImageSize {
   width: number;
@@ -71,7 +74,7 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
   onUploadingChange,
   className,
   gridClassName,
-  tileClassName = 'h-[90px] w-[90px]',
+  tileClassName = cx(styles.r_4b4cc48e, styles.r_d524f8b8),
   tileImageClassName,
   addTileClassName,
   firstItemLabel,
@@ -81,7 +84,7 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
   squareAddButton = false,
   showCount = true,
   helpText,
-  helpTextClassName,
+  helpTextClassName
 }, ref) {
   const inputRef = useRef<HTMLInputElement>(null);
   const valueRef = useRef(value);
@@ -90,7 +93,7 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
   const [orderKeys, setOrderKeys] = useState<string[]>([]);
   const [imageSizes, setImageSizes] = useState<Record<string, ImageSize>>({});
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
   useEffect(() => {
@@ -99,17 +102,17 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
 
   const previewSlides = useMemo(
     () =>
-      value.map((src) => {
-        const size = imageSizes[src] || { width: 1600, height: 1066 };
-        return {
-          src,
-          msrc: src,
-          thumbnail: src,
-          width: size.width,
-          height: size.height,
-        };
-      }),
-    [imageSizes, value],
+    value.map((src) => {
+      const size = imageSizes[src] || { width: 1600, height: 1066 };
+      return {
+        src,
+        msrc: src,
+        thumbnail: src,
+        width: size.width,
+        height: size.height
+      };
+    }),
+    [imageSizes, value]
   );
 
   const handleImageLoad = useCallback((src: string, event: SyntheticEvent<HTMLImageElement>) => {
@@ -117,7 +120,7 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
     if (img.naturalWidth && img.naturalHeight) {
       setImageSizes((prev) => ({
         ...prev,
-        [src]: { width: img.naturalWidth, height: img.naturalHeight },
+        [src]: { width: img.naturalWidth, height: img.naturalHeight }
       }));
     }
   }, []);
@@ -134,12 +137,12 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
         tapAction: false,
         doubleTapAction: false,
         zoom: false,
-        closeOnVerticalDrag: false,
+        closeOnVerticalDrag: false
       } as any);
       registerPhotoSwipeGalleryUi(pswpRef.current);
       pswpRef.current.init();
     },
-    [previewSlides],
+    [previewSlides]
   );
 
   useEffect(() => {
@@ -153,18 +156,18 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
       orderKeysRef.current = nextKeys;
       setOrderKeys(nextKeys);
 
-      const nextValue = nextKeys
-        .filter((key) => key.startsWith('uploaded:'))
-        .map(keyToUploadedUrl);
+      const nextValue = nextKeys.
+      filter((key) => key.startsWith("uploaded:")).
+      map(keyToUploadedUrl);
       if (
-        nextValue.length !== valueRef.current.length ||
-        nextValue.some((url, index) => url !== valueRef.current[index])
-      ) {
+      nextValue.length !== valueRef.current.length ||
+      nextValue.some((url, index) => url !== valueRef.current[index]))
+      {
         valueRef.current = nextValue;
         onChange(nextValue);
       }
     },
-    [onChange],
+    [onChange]
   );
 
   const handleUploadedItem = useCallback(
@@ -172,18 +175,18 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
       const fromKey = uploadingKey(id);
       const toKey = uploadedKey(url);
       const current = orderKeysRef.current;
-      const next = current.includes(fromKey)
-        ? current.map((key) => (key === fromKey ? toKey : key))
-        : [...current, toKey];
+      const next = current.includes(fromKey) ?
+      current.map((key) => key === fromKey ? toKey : key) :
+      [...current, toKey];
       applyOrderedKeys(next);
     },
-    [applyOrderedKeys],
+    [applyOrderedKeys]
   );
 
   const validateFile = (file: File) => {
     const isHeic =
-      /\.(heic|heif)$/i.test(file.name) ||
-      /^image\/(heic|heif)$/i.test(file.type);
+    /\.(heic|heif)$/i.test(file.name) ||
+    /^image\/(heic|heif)$/i.test(file.type);
     if (!file.type.startsWith('image/') && !isHeic) {
       return '请选择图片文件';
     }
@@ -200,20 +203,20 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
     handleFiles,
     retryUpload,
     removeUploadingItem,
-    reorderUploadingItems,
+    reorderUploadingItems
   } = useConcurrentUpload({
     value,
     onChange,
     max,
     validateFile,
-    onUploadedItem: handleUploadedItem,
+    onUploadedItem: handleUploadedItem
   });
 
   useEffect(() => {
     const currentKeys = [
-      ...value.map(uploadedKey),
-      ...uploadingItems.map((item) => uploadingKey(item.id)),
-    ];
+    ...value.map(uploadedKey),
+    ...uploadingItems.map((item) => uploadingKey(item.id))];
+
     setOrderKeys((prev) => {
       const kept = prev.filter((key) => currentKeys.includes(key));
       const missing = currentKeys.filter((key) => !kept.includes(key));
@@ -231,20 +234,20 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
     openPicker: () => {
       if (remainingCount <= 0) return;
       inputRef.current?.click();
-    },
+    }
   }), [remainingCount]);
 
   const entries = useMemo<GridEntry[]>(() => {
     const uploadingById = new Map(uploadingItems.map((item) => [item.id, item]));
     const currentValue = valueRef.current;
     return orderKeys.reduce<GridEntry[]>((result, key) => {
-      if (key.startsWith('uploaded:')) {
+      if (key.startsWith("uploaded:")) {
         const url = keyToUploadedUrl(key);
         if (currentValue.includes(url)) result.push({ type: 'uploaded', key, url });
         return result;
       }
-      if (key.startsWith('uploading:')) {
-        const id = key.slice('uploading:'.length);
+      if (key.startsWith("uploading:")) {
+        const id = key.slice("uploading:".length);
         if (uploadingById.has(id)) result.push({ type: 'uploading', key, id });
         return result;
       }
@@ -256,12 +259,12 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
     (nextKeys: string[]) => {
       applyOrderedKeys(nextKeys);
       reorderUploadingItems(
-        nextKeys
-          .filter((key) => key.startsWith('uploading:'))
-          .map((key) => key.slice('uploading:'.length)),
+        nextKeys.
+        filter((key) => key.startsWith("uploading:")).
+        map((key) => key.slice("uploading:".length))
       );
     },
-    [applyOrderedKeys, reorderUploadingItems],
+    [applyOrderedKeys, reorderUploadingItems]
   );
 
   const handleDragEnd = useCallback(
@@ -274,7 +277,7 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
       if (oldIndex < 0 || newIndex < 0) return;
       applyDragOrder(arrayMove(current, oldIndex, newIndex));
     },
-    [applyDragOrder],
+    [applyDragOrder]
   );
 
   const handleRemoveUploaded = useCallback(
@@ -284,37 +287,37 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
       onChange(next);
       applyOrderedKeys(orderKeysRef.current.filter((key) => key !== uploadedKey(url)));
     },
-    [applyOrderedKeys, onChange],
+    [applyOrderedKeys, onChange]
   );
 
   return (
-    <div className={cn('space-y-2', className)}>
-      {showCount && (
-        <div className="text-right text-xs text-leaf-700/60">
+    <div className={cn(styles.r_6f7e013d, className)}>
+      {showCount &&
+      <div className={cx(styles.r_308fc069, styles.r_359090c2, styles.r_6c4cc49e)}>
           {value.length}/{max}
         </div>
-      )}
+      }
       <input
         ref={inputRef}
         type="file"
         multiple
         accept="image/jpeg,image/png,image/webp,image/gif,.heic,.heif"
-        className="hidden"
+        className={styles.r_99d72c7f}
         disabled={remainingCount === 0}
         onChange={(event) => {
           const files = event.currentTarget.files;
           if (files) void handleFiles(files);
           event.currentTarget.value = '';
-        }}
-      />
+        }} />
 
-      <div className={cn('grid', gridClassName ?? 'grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5')}>
+
+      <div className={cn(styles.r_f3c543ad, gridClassName ?? cx(styles.r_be2e831b, styles.r_77a2a20e, styles.r_898c0bcb, styles.r_74713240))}>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={entries.map((entry) => entry.key)} strategy={rectSortingStrategy}>
             {entries.map((entry, index) => {
-              const item = entry.type === 'uploading'
-                ? uploadingItems.find((uploadingItem) => uploadingItem.id === entry.id)
-                : null;
+              const item = entry.type === 'uploading' ?
+              uploadingItems.find((uploadingItem) => uploadingItem.id === entry.id) :
+              null;
               const url = entry.type === 'uploaded' ? entry.url : item?.url ?? item?.localUrl;
               if (!url || item === undefined) return null;
 
@@ -335,37 +338,37 @@ export const MultiImageUploadGrid = forwardRef<MultiImageUploadGridHandle, Props
                   onRetryUpload={retryUpload}
                   previewIndex={entry.type === 'uploaded' ? value.indexOf(entry.url) : -1}
                   onPreview={openPreview}
-                  onImageLoad={handleImageLoad}
-                />
-              );
+                  onImageLoad={handleImageLoad} />);
+
+
             })}
           </SortableContext>
         </DndContext>
 
-        {!hideAddButton && remainingCount > 0 && (!isUploading || showAddWhileUploading) && (
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className={cn(
-              'flex flex-col items-center justify-center gap-1 border border-dashed border-leaf-200 bg-leaf-50/30 text-xs transition-colors hover:border-leaf-400 hover:bg-leaf-50/50',
-              !squareTiles && !squareAddButton && 'rounded-md',
-              tileClassName,
-              addTileClassName,
-            )}
-          >
-            <Icon name="plus" size={16} className="text-leaf-600" />
-            <span className="text-[10px] text-leaf-700/70">图片</span>
+        {!hideAddButton && remainingCount > 0 && (!isUploading || showAddWhileUploading) &&
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className={cn(cx(styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_86843cf1, styles.r_44ee8ba0, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_54720a96, styles.r_359090c2, styles.r_ceb69a6b, styles.r_0a7c2f87, styles.r_98dc6304),
+
+          !squareTiles && !squareAddButton && styles.r_421ac2be,
+          tileClassName,
+          addTileClassName
+          )}>
+
+            <Icon name="plus" size={16} className={styles.r_b17d6a13} />
+            <span className={cx(styles.r_1dc571a3, styles.r_69335b95)}>图片</span>
           </button>
-        )}
+        }
       </div>
 
-      {helpText && (
-        <div className={cn('space-y-0.5 text-center text-[11px] text-leaf-700/50', helpTextClassName)}>
+      {helpText &&
+      <div className={cn(cx(styles.r_e2eedc57, styles.r_ca6bf630, styles.r_d058ca6d, styles.r_3353f144), helpTextClassName)}>
           {helpText}
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 });
 
 interface SortableUploadTileProps {
@@ -401,7 +404,7 @@ function SortableUploadTile({
   onRetryUpload,
   previewIndex,
   onPreview,
-  onImageLoad,
+  onImageLoad
 }: SortableUploadTileProps) {
   const {
     attributes,
@@ -409,7 +412,7 @@ function SortableUploadTile({
     setNodeRef,
     transform,
     transition,
-    isDragging,
+    isDragging
   } = useSortable({ id });
 
   return (
@@ -417,7 +420,7 @@ function SortableUploadTile({
       ref={setNodeRef}
       style={{
         transform: CSS.Transform.toString(transform),
-        transition,
+        transition
       }}
       {...attributes}
       {...listeners}
@@ -426,90 +429,90 @@ function SortableUploadTile({
         if ((event.target as HTMLElement).closest('button')) return;
         onPreview(previewIndex);
       }}
-      className={cn(
-        'group relative flex touch-none cursor-grab items-center justify-center overflow-hidden border bg-leaf-50/30 active:cursor-grabbing',
-        entry.type === 'uploading' ? 'border-dashed border-leaf-200' : 'border-leaf-100',
-        isDragging && 'z-30 opacity-60 shadow-lg',
-        !squareTiles && 'rounded-md',
-        tileClassName,
-      )}
-    >
+      className={cn(cx(styles.r_64292b1c, styles.r_d89972fe, styles.r_60fbb771, styles.r_51e5622e, styles.r_8d083852, styles.r_3960ffc2, styles.r_86843cf1, styles.r_2cd02d11, styles.r_ca6bcd4b, styles.r_54720a96, styles.r_d9bff91e),
+
+      entry.type === 'uploading' ? cx(styles.r_a29b7a64, styles.r_691861bc) : styles.r_88b684d2,
+      isDragging && cx(styles.r_0f2fff0a, styles.r_f2868c22, styles.r_06bbb431),
+      !squareTiles && styles.r_421ac2be,
+      tileClassName
+      )}>
+
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={url}
         alt=""
         draggable={false}
-        className={cn(
-          'absolute inset-0 h-full w-full object-cover',
-          item?.status === 'uploading' ? 'opacity-40' : 'opacity-100',
-          tileImageClassName,
+        className={cn(cx(styles.r_da4dbfbc, styles.r_7b7df044, styles.r_668b21aa, styles.r_6da6a3c3, styles.r_7d85d0c2),
+
+        item?.status === 'uploading' ? styles.r_2a2db466 : styles.r_3972e98d,
+        tileImageClassName
         )}
-        onLoad={(event) => onImageLoad(url, event)}
-      />
-      {entry.type === 'uploaded' ? (
-        <>
+        onLoad={(event) => onImageLoad(url, event)} />
+
+      {entry.type === 'uploaded' ?
+      <>
           <button
-            type="button"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={() => onRemoveUploaded(entry.url)}
-            className="absolute right-1 top-1 z-20 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-[11px] text-white opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
-            title="移除"
-          >
+          type="button"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => onRemoveUploaded(entry.url)}
+          className={cx(styles.r_da4dbfbc, styles.r_68d3fc19, styles.r_c55dcda2, styles.r_145745bf, styles.r_f3c543ad, styles.r_cd0d9c51, styles.r_72470489, styles.r_67d66567, styles.r_ac204c10, styles.r_db1c7bcb, styles.r_d058ca6d, styles.r_72a4c7cd, styles.r_3972e98d, styles.r_67d6184a, styles.r_527b812d, styles.r_ed9efdb6)}
+          title="移除">
+
             x
           </button>
-          {firstItemLabel && index === 0 && (
-            <span className="absolute bottom-1 left-1 bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+          {firstItemLabel && index === 0 &&
+        <span className={cx(styles.r_da4dbfbc, styles.r_57045bd8, styles.r_7971386c, styles.r_db1c7bcb, styles.r_45d82811, styles.r_465609a2, styles.r_1dc571a3, styles.r_72a4c7cd)}>
               {firstItemLabel}
             </span>
-          )}
-        </>
-      ) : item?.status === 'uploading' ? (
-        <>
+        }
+        </> :
+      item?.status === 'uploading' ?
+      <>
           <button
-            type="button"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={() => onRemoveUploading(item.id)}
-            className="absolute right-1 top-1 z-20 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-[11px] text-white"
-            title="取消上传"
-          >
-            x
-          </button>
-          <div className="relative z-10 flex flex-col items-center gap-1 text-white">
-            <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-            <span className="text-[10px]">上传中</span>
-          </div>
-        </>
-      ) : item?.status === 'uploaded' ? (
-        <button
           type="button"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={() => onRemoveUploading(item.id)}
-          className="absolute right-1 top-1 z-20 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-[11px] text-white"
-          title="移除"
-        >
+          className={cx(styles.r_da4dbfbc, styles.r_68d3fc19, styles.r_c55dcda2, styles.r_145745bf, styles.r_f3c543ad, styles.r_cd0d9c51, styles.r_72470489, styles.r_67d66567, styles.r_ac204c10, styles.r_db1c7bcb, styles.r_d058ca6d, styles.r_72a4c7cd)}
+          title="取消上传">
+
+            x
+          </button>
+          <div className={cx(styles.r_d89972fe, styles.r_236812d6, styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_72a4c7cd)}>
+            <div className={cx(styles.r_d0a52b31, styles.r_cbbf90f9, styles.r_afbdd13a, styles.r_ac204c10, styles.r_65935df5, styles.r_9c15994f, styles.r_9fd93a7d)} />
+            <span className={styles.r_1dc571a3}>上传中</span>
+          </div>
+        </> :
+      item?.status === 'uploaded' ?
+      <button
+        type="button"
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={() => onRemoveUploading(item.id)}
+        className={cx(styles.r_da4dbfbc, styles.r_68d3fc19, styles.r_c55dcda2, styles.r_145745bf, styles.r_f3c543ad, styles.r_cd0d9c51, styles.r_72470489, styles.r_67d66567, styles.r_ac204c10, styles.r_db1c7bcb, styles.r_d058ca6d, styles.r_72a4c7cd)}
+        title="移除">
+
           x
-        </button>
-      ) : item ? (
-        <div className="relative z-10 flex flex-col items-center gap-1 bg-black/45 px-2 py-1 text-white">
-          <span className="text-[10px]">失败</span>
+        </button> :
+      item ?
+      <div className={cx(styles.r_d89972fe, styles.r_236812d6, styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_9db85c5e, styles.r_d5eab218, styles.r_660d2eff, styles.r_72a4c7cd)}>
+          <span className={styles.r_1dc571a3}>失败</span>
           <button
-            type="button"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={() => void onRetryUpload(item)}
-            className="text-[10px] underline"
-          >
+          type="button"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => void onRetryUpload(item)}
+          className={cx(styles.r_1dc571a3, styles.r_c82b67c8)}>
+
             重试
           </button>
           <button
-            type="button"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={() => onRemoveUploading(item.id)}
-            className="text-[10px] underline"
-          >
+          type="button"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => onRemoveUploading(item.id)}
+          className={cx(styles.r_1dc571a3, styles.r_c82b67c8)}>
+
             移除
           </button>
-        </div>
-      ) : null}
-    </div>
-  );
+        </div> :
+      null}
+    </div>);
+
 }

@@ -23,7 +23,7 @@ export const POST = handler(async (req) => {
       journal: { select: { postId: true } },
     },
   });
-  if (!entry || entry.journal.postId !== postId) return fail(404, '成长记录不存在');
+  if (!entry || entry.journal.postId !== postId) return fail(404, '记录不存在');
 
   const existing = await prisma.journalEntryLike.findUnique({
     where: { userId_journalEntryId: { userId: me.id, journalEntryId: entryId } },

@@ -1,5 +1,5 @@
 /**
- * 成长日记帖子专用接口:
+ * 记录贴专用接口:
  *   POST   /api/posts/:id/journal      作者追加一条新事件
  *   PATCH  /api/posts/:id/journal      作者修改 journal 元信息(结束日 / endReason 等)
  */
@@ -30,7 +30,7 @@ const AddEntryBody = z.object({
   stage: z.enum(STAGES).default('other'),
   stageLabel: z.string().trim().max(50).optional(),
   note: z.string().max(2000).default(''),
-  images: z.array(z.string()).min(1, '每条成长记录都需要上传配图').max(9),
+  images: z.array(z.string()).min(1, '每条记录都需要上传配图').max(9),
 }).superRefine((body, ctx) => {
   if (body.stage === 'other' && !body.stageLabel?.trim()) {
     ctx.addIssue({
@@ -68,7 +68,7 @@ async function findOwnedJournal(
   if (post.deleted) return { error: '帖子已删除' };
   if (post.authorId !== userId) return { error: '只有作者能修改' };
   if (post.type !== 'journal' || !post.journal)
-    return { error: '该帖子不是成长日记类型' };
+    return { error: '该帖子不是记录贴类型' };
   return { journal: { id: post.journal.id } };
 }
 

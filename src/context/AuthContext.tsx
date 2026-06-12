@@ -6,10 +6,10 @@ import {
   useEffect,
   useState,
   ReactNode,
-  useCallback,
-} from 'react';
+  useCallback } from
+'react';
 import type { User, EquipState } from '@/lib/types';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 
 interface VipState {
   isVip: boolean;
@@ -38,8 +38,8 @@ interface AuthContextValue {
   pointsBalance: number;
   vip: VipState;
   equip: EquipState;
-  login: (name: string, password: string) => Promise<{ ok: boolean; msg?: string }>;
-  register: (name: string, password: string) => Promise<{ ok: boolean; msg?: string }>;
+  login: (name: string, password: string) => Promise<{ok: boolean;msg?: string;}>;
+  register: (name: string, password: string) => Promise<{ok: boolean;msg?: string;}>;
   logout: () => Promise<void>;
   signIn: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -58,18 +58,18 @@ export function AuthProvider({
   initialExpProgress = null,
   initialPointsBalance = 0,
   initialVip = DEFAULT_VIP,
-  initialEquip = {},
-}: {
-  children: ReactNode;
-  initialUser?: User | null;
-  initialSignInStreak?: number;
-  initialSignedInToday?: boolean;
-  initialExp?: number;
-  initialExpProgress?: ExpProgressInfo | null;
-  initialPointsBalance?: number;
-  initialVip?: VipState;
-  initialEquip?: EquipState;
-}) {
+  initialEquip = {}
+
+
+
+
+
+
+
+
+
+
+}: {children: ReactNode;initialUser?: User | null;initialSignInStreak?: number;initialSignedInToday?: boolean;initialExp?: number;initialExpProgress?: ExpProgressInfo | null;initialPointsBalance?: number;initialVip?: VipState;initialEquip?: EquipState;}) {
   const [user, setUser] = useState<User | null>(initialUser ?? null);
   const [loading, setLoading] = useState(!initialUser);
   const [signedInToday, setSignedInToday] = useState(initialSignedInToday);
@@ -117,8 +117,8 @@ export function AuthProvider({
   }, []);
 
   useEffect(() => {
-    if (!initialUser) refresh();
-    else setLoading(false);
+    if (!initialUser) refresh();else
+    setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -157,7 +157,7 @@ export function AuthProvider({
   };
 
   const signIn = async () => {
-    await api.post<{ signInStreak: number; signedInToday: boolean }>('/api/auth/signin');
+    await api.post<{signInStreak: number;signedInToday: boolean;}>('/api/auth/signin');
     await refresh();
   };
 
@@ -178,12 +178,12 @@ export function AuthProvider({
         register,
         logout,
         signIn,
-        refresh,
-      }}
-    >
+        refresh
+      }}>
+
       {children}
-    </AuthContext.Provider>
-  );
+    </AuthContext.Provider>);
+
 }
 
 export function useAuth() {

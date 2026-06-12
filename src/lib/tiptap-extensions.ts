@@ -201,25 +201,25 @@ const baseExtensions = [
   StarterKit.configure({
     heading: {
       levels: [1, 2, 3],
-      HTMLAttributes: { class: 'mt-5 mb-2 font-semibold text-ink-800' },
+      HTMLAttributes: { class: 'rte-heading' },
     },
     codeBlock: false,
-    horizontalRule: { HTMLAttributes: { class: 'my-4 border-leaf-100' } },
-    bulletList: { HTMLAttributes: { class: 'list-disc ml-5' } },
-    orderedList: { HTMLAttributes: { class: 'list-decimal ml-5' } },
+    horizontalRule: { HTMLAttributes: { class: 'rte-horizontal-rule' } },
+    bulletList: { HTMLAttributes: { class: 'rte-bullet-list' } },
+    orderedList: { HTMLAttributes: { class: 'rte-ordered-list' } },
     blockquote: {
       HTMLAttributes: {
-        class: 'border-l-4 border-leaf-300 bg-leaf-50/60 pl-3 py-1 italic text-ink-700/80 my-3',
+        class: 'rte-blockquote',
       },
     },
-    code: { HTMLAttributes: { class: 'rounded bg-leaf-50 px-1 py-0.5 text-[0.9em] text-leaf-700' } },
+    code: { HTMLAttributes: { class: 'rte-inline-code' } },
     link: false,
   } as never),
   Link.configure({
     openOnClick: false,
     autolink: true,
     HTMLAttributes: {
-      class: 'text-leaf-700 underline underline-offset-2',
+      class: 'rte-link',
       rel: 'noopener noreferrer nofollow',
       target: '_blank',
     },

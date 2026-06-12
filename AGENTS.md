@@ -7,7 +7,7 @@
 
 **肉友社** — 多肉植物爱好者中文社区
 
-- 技术栈:Next.js 14 + TypeScript + Tailwind CSS + Prisma + MySQL
+- 技术栈:Next.js 14 + TypeScript + Prisma + MySQL
 - 语言:中文(简体) + 繁体(5语 i18n 支持)
 - 仓库:github.com/boyback/plants_community (master 分支)
 - 生产:https://plantcommunity.cn
@@ -25,7 +25,8 @@
 
 ### 前端
 - Next.js 14 (App Router)
-- TypeScript + Tailwind CSS
+- TypeScript
+- Tailwind CSS 为历史遗留方案,后续新功能不再新增 Tailwind 响应式写法,逐步迁移下线
 - shadcn/ui 风格组件(@/components/ui)
 - Prisma (ORM, @prisma/client)
 
@@ -144,6 +145,18 @@ scripts/
 - AnnouncementCard / 反馈卡挂载(目前只有 footer 链接)
 
 ## 设计规范
+
+> 新增/重构前端页面优先遵循 `docs/FRONTEND_SIZE_SYSTEM.md`。
+> 项目目标:去掉 Tailwind 断点式响应和手写媒体查询,尺寸统一交给 px→vw 插件体系。
+
+### 尺寸体系
+- PC 设计稿基准:1920
+- H5 设计稿基准:375
+- 尺寸单位:源码按设计稿写 px,构建阶段通过插件转换为 vw
+- 不再新增 `sm:`/`md:`/`lg:`/`xl:`/`2xl:` 这类 Tailwind 断点响应式 class
+- 不再新增 `@media`、`window.innerWidth`、`ResizeObserver` 等用于模拟尺寸响应的布局逻辑
+- Tailwind CSS 仅作为历史兼容保留;新增模块禁止依赖 Tailwind 响应式体系,后续按模块迁移至普通 CSS/CSS Modules + px→vw
+- PC/H5 差异需要拆成明确的 PC/H5 容器或组件时,由页面状态/路由/业务容器决定,不要在组件内部混写断点规则
 
 ### 颜色
 - 主色:leaf-50~900(green系)

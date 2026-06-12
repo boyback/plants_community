@@ -2,9 +2,12 @@ import { useCallback, useEffect, useRef } from 'react';
 import { generateHTML } from '@tiptap/html';
 import { cn } from '@/lib/utils';
 import PhotoSwipe from 'photoswipe';
-import 'photoswipe/style.css';
-import { registerPhotoSwipeGalleryUi } from '@/lib/photoswipe-ui';
-import { getServerExtensions } from '@/lib/tiptap-extensions';
+import { registerPhotoSwipeGalleryUi } from "@/lib/photoswipe-ui";
+import { getServerExtensions } from "@/lib/tiptap-extensions";
+import styles from './RichTextView.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 export function RichTextView({
   json,
@@ -12,26 +15,26 @@ export function RichTextView({
   text,
   className,
   size = 'md',
-  withImageGalleryControls = false,
-}: {
-  json?: unknown;
-  html?: string;
-  text?: string;
-  className?: string;
-  size?: 'sm' | 'md' | 'lg';
-  withImageGalleryControls?: boolean;
-}) {
+  withImageGalleryControls = false
+
+
+
+
+
+
+
+}: {json?: unknown;html?: string;text?: string;className?: string;size?: 'sm' | 'md' | 'lg';withImageGalleryControls?: boolean;}) {
   const sizeCls =
-    size === 'sm'
-      ? 'text-sm leading-6'
-    : size === 'lg'
-      ? 'text-base leading-8'
-      : 'text-base leading-7';
+  size === 'sm' ? cx(styles.r_fc7473ca, styles.r_18550d59) :
+
+  size === 'lg' ? cx(styles.r_4ee73492, styles.r_c6b7e58a) : cx(styles.r_4ee73492, styles.r_7eff2faf);
+
+
 
   const containerRef = useRef<HTMLDivElement>(null);
   const pswpRef = useRef<PhotoSwipe | null>(null);
   const openPhotoSwipe = useCallback(
-    (index: number, images: Array<{ src: string; msrc: string; thumbnail: string; width: number; height: number }>) => {
+    (index: number, images: Array<{src: string;msrc: string;thumbnail: string;width: number;height: number;}>) => {
       if (pswpRef.current) {
         pswpRef.current.destroy();
       }
@@ -44,14 +47,14 @@ export function RichTextView({
         tapAction: false,
         doubleTapAction: false,
         zoom: false,
-        closeOnVerticalDrag: false,
+        closeOnVerticalDrag: false
       } as any);
       if (withImageGalleryControls) {
         registerPhotoSwipeGalleryUi(pswpRef.current);
       }
       pswpRef.current.init();
     },
-    [withImageGalleryControls],
+    [withImageGalleryControls]
   );
 
   useEffect(() => {
@@ -59,26 +62,26 @@ export function RichTextView({
 
     const container = containerRef.current;
     const getImages = () => {
-      return Array.from(container.querySelectorAll<HTMLImageElement>('img'))
-        .map((img) => {
-          const src = img.currentSrc || img.getAttribute('src') || '';
-          if (!src) return null;
-          return {
-            src,
-            msrc: src,
-            thumbnail: src,
-            width: img.naturalWidth || Number(img.getAttribute('width')) || 1600,
-            height: img.naturalHeight || Number(img.getAttribute('height')) || 1066,
-          };
-        })
-        .filter((item): item is { src: string; msrc: string; thumbnail: string; width: number; height: number } =>
-          Boolean(item),
-        );
+      return Array.from(container.querySelectorAll<HTMLImageElement>('img')).
+      map((img) => {
+        const src = img.currentSrc || img.getAttribute('src') || '';
+        if (!src) return null;
+        return {
+          src,
+          msrc: src,
+          thumbnail: src,
+          width: img.naturalWidth || Number(img.getAttribute('width')) || 1600,
+          height: img.naturalHeight || Number(img.getAttribute('height')) || 1066
+        };
+      }).
+      filter((item): item is {src: string;msrc: string;thumbnail: string;width: number;height: number;} =>
+      Boolean(item)
+      );
     };
 
     const imgs = Array.from(container.querySelectorAll<HTMLImageElement>('img'));
     imgs.forEach((img) => {
-      img.style.cursor = 'zoom-in';
+      img.style.cursor = "zoom-in";
     });
 
     const handleClick = (event: MouseEvent) => {
@@ -115,7 +118,7 @@ export function RichTextView({
     try {
       content = generateHTML(json as never, getServerExtensions());
     } catch {
-      content = '<p class="text-leaf-700/50">(暂无可显示内容)</p>';
+      content = styles.r_3353f144;
     }
   }
 
@@ -123,17 +126,17 @@ export function RichTextView({
   return (
     <div
       ref={containerRef}
-      className={cn('prose-article text-ink-800', sizeCls, className)}
-      dangerouslySetInnerHTML={{ __html: content }}
-    />
-  );
+      className={cn(cx("prose-article", styles.r_399e11a5), sizeCls, className)}
+      dangerouslySetInnerHTML={{ __html: content }} />);
+
+
 }
 
 function escape(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  return s.
+  replace(/&/g, '&amp;').
+  replace(/</g, '&lt;').
+  replace(/>/g, '&gt;').
+  replace(/"/g, '&quot;').
+  replace(/'/g, '&#39;');
 }

@@ -7,8 +7,12 @@
 
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
+import styles from './page.module.scss';
+import { cx } from '@/lib/style-utils';
 
-export const dynamic = 'force-dynamic';
+
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
   const today = new Date();
@@ -16,45 +20,45 @@ export default async function AdminDashboard() {
   const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
 
   const [
-    userTotal,
-    postTotal,
-    orderTotal,
-    reportPending,
-    bannedCount,
-    newUsersToday,
-    newPostsToday,
-    paidTodayAgg,
-    recentReports,
-  ] = await Promise.all([
-    prisma.user.count(),
-    prisma.post.count({ where: { deleted: false } }),
-    prisma.order.count(),
-    prisma.report.count({ where: { status: 'pending' } }),
-    prisma.user.count({ where: { bannedUntil: { gt: new Date() } } }),
-    prisma.user.count({ where: { joinedAt: { gte: today } } }),
-    prisma.post.count({ where: { createdAt: { gte: today }, deleted: false } }),
-    prisma.payment.aggregate({
-      _sum: { amount: true },
-      where: { status: 'paid', paidAt: { gte: today } },
-    }),
-    prisma.report.findMany({
-      where: { status: 'pending' },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      include: { reporter: { select: { id: true, name: true, avatar: true } } },
-    }),
-  ]);
+  userTotal,
+  postTotal,
+  orderTotal,
+  reportPending,
+  bannedCount,
+  newUsersToday,
+  newPostsToday,
+  paidTodayAgg,
+  recentReports] =
+  await Promise.all([
+  prisma.user.count(),
+  prisma.post.count({ where: { deleted: false } }),
+  prisma.order.count(),
+  prisma.report.count({ where: { status: 'pending' } }),
+  prisma.user.count({ where: { bannedUntil: { gt: new Date() } } }),
+  prisma.user.count({ where: { joinedAt: { gte: today } } }),
+  prisma.post.count({ where: { createdAt: { gte: today }, deleted: false } }),
+  prisma.payment.aggregate({
+    _sum: { amount: true },
+    where: { status: 'paid', paidAt: { gte: today } }
+  }),
+  prisma.report.findMany({
+    where: { status: 'pending' },
+    orderBy: { createdAt: 'desc' },
+    take: 5,
+    include: { reporter: { select: { id: true, name: true, avatar: true } } }
+  })]
+  );
 
   const paidTodayYuan = ((paidTodayAgg._sum.amount ?? 0) / 100).toFixed(2);
 
   return (
-    <div className="space-y-6">
+    <div className={styles.r_b3542e05}>
       <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="mt-1 text-xs text-ink-600">站点总览 · {new Date().toLocaleString('zh-CN')}</p>
+        <h1 className={cx(styles.r_3febee09, styles.r_69450ef1)}>Dashboard</h1>
+        <p className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_02eb621e)}>站点总览 · {new Date().toLocaleString("zh-CN")}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3, styles.r_74713240)}>
         <StatCard label="用户总数" value={userTotal} delta={newUsersToday} deltaLabel="今日新增" />
         <StatCard label="帖子总数" value={postTotal} delta={newPostsToday} deltaLabel="今日新增" />
         <StatCard label="订单总数" value={orderTotal} />
@@ -62,49 +66,49 @@ export default async function AdminDashboard() {
         <StatCard label="封禁用户" value={bannedCount} emphasis={bannedCount > 0 ? 'warn' : undefined} />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <section className="rounded-xl border border-ink-100 bg-white p-5">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold">🚨 待处理举报</h2>
-            <Link href="/admin/reports" className="text-xs text-ink-500 hover:text-ink-900">
+      <div className={cx(styles.r_f3c543ad, styles.r_d7c83398, styles.r_0c3bc985, styles.r_2f27a80e)}>
+        <section className={cx(styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_358505cf, styles.r_5e10cdb8, styles.r_c07e54fd)}>
+          <div className={cx(styles.r_1bb88326, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e)}>
+            <h2 className={cx(styles.r_fc7473ca, styles.r_e83a7042)}>🚨 待处理举报</h2>
+            <Link href="/admin/reports" className={cx(styles.r_359090c2, styles.r_7b89cd85, styles.r_ecb1dae8)}>
               查看全部({reportPending}) →
             </Link>
           </div>
-          {recentReports.length === 0 ? (
-            <div className="py-10 text-center text-xs text-ink-500">没有待处理举报 🎉</div>
-          ) : (
-            <ul className="space-y-2">
-              {recentReports.map((r) => (
-                <li
-                  key={r.id}
-                  className="flex items-center gap-3 rounded-lg border border-ink-100 p-3 text-xs"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="rounded bg-rose-50 px-1.5 py-0.5 text-[10px] text-rose-700">
+          {recentReports.length === 0 ?
+          <div className={cx(styles.r_1100bef6, styles.r_ca6bf630, styles.r_359090c2, styles.r_7b89cd85)}>没有待处理举报 🎉</div> :
+
+          <ul className={styles.r_6f7e013d}>
+              {recentReports.map((r) =>
+            <li
+              key={r.id}
+              className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_358505cf, styles.r_eb6e8b88, styles.r_359090c2)}>
+
+                  <div className={cx(styles.r_36e579c0, styles.r_7e0b7cdf)}>
+                    <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
+                      <span className={cx(styles.r_07389a77, styles.r_0759a0f1, styles.r_45d82811, styles.r_465609a2, styles.r_1dc571a3, styles.r_b54428d1)}>
                         {r.targetType}
                       </span>
-                      <span className="text-ink-800">{r.reason}</span>
+                      <span className={styles.r_399e11a5}>{r.reason}</span>
                     </div>
-                    <div className="mt-1 text-[10px] text-ink-500">
+                    <div className={cx(styles.r_b6b02c0e, styles.r_1dc571a3, styles.r_7b89cd85)}>
                       举报人 {r.reporter?.name ?? '匿名'} · {timeAgo(r.createdAt)}
                     </div>
                   </div>
                   <Link
-                    href={`/admin/reports?id=${r.id}`}
-                    className="rounded bg-ink-800 px-3 py-1 text-[10px] text-white hover:bg-ink-700"
-                  >
+                href={`/admin/reports?id=${r.id}`}
+                className={cx(styles.r_07389a77, styles.r_01d0b06c, styles.r_0e17f2bd, styles.r_660d2eff, styles.r_1dc571a3, styles.r_72a4c7cd, styles.r_218d0c3a)}>
+
                     处理
                   </Link>
                 </li>
-              ))}
+            )}
             </ul>
-          )}
+          }
         </section>
 
-        <section className="rounded-xl border border-ink-100 bg-white p-5">
-          <h2 className="mb-3 text-sm font-semibold">快速入口</h2>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+        <section className={cx(styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_358505cf, styles.r_5e10cdb8, styles.r_c07e54fd)}>
+          <h2 className={cx(styles.r_1bb88326, styles.r_fc7473ca, styles.r_e83a7042)}>快速入口</h2>
+          <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_77a2a20e, styles.r_359090c2)}>
             <QuickLink href="/admin/posts" emoji="📝" label="审核帖子" />
             <QuickLink href="/admin/users" emoji="👥" label="用户管理" />
             <QuickLink href="/admin/orders" emoji="📦" label="订单处理" />
@@ -114,8 +118,8 @@ export default async function AdminDashboard() {
           </div>
         </section>
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 function StatCard({
@@ -123,45 +127,45 @@ function StatCard({
   value,
   delta,
   deltaLabel,
-  emphasis,
-}: {
-  label: string;
-  value: number | string;
-  delta?: number;
-  deltaLabel?: string;
-  emphasis?: 'warn';
-}) {
+  emphasis
+
+
+
+
+
+
+}: {label: string;value: number | string;delta?: number;deltaLabel?: string;emphasis?: 'warn';}) {
   return (
-    <div className="rounded-xl border border-ink-100 bg-white p-4">
-      <div className="text-[11px] text-ink-500">{label}</div>
+    <div className={cx(styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_358505cf, styles.r_5e10cdb8, styles.r_8e63407b)}>
+      <div className={cx(styles.r_d058ca6d, styles.r_7b89cd85)}>{label}</div>
       <div
         className={
-          emphasis === 'warn'
-            ? 'mt-1 text-2xl font-bold text-rose-600'
-            : 'mt-1 text-2xl font-bold text-ink-800'
-        }
-      >
+        emphasis === 'warn' ? cx(styles.r_b6b02c0e, styles.r_3febee09, styles.r_69450ef1, styles.r_595fceba) : cx(styles.r_b6b02c0e, styles.r_3febee09, styles.r_69450ef1, styles.r_399e11a5)
+
+
+        }>
+
         {value}
       </div>
-      {typeof delta === 'number' && (
-        <div className="mt-1 text-[10px] text-leaf-700">
+      {typeof delta === 'number' &&
+      <div className={cx(styles.r_b6b02c0e, styles.r_1dc571a3, styles.r_5f6a59f1)}>
           {delta >= 0 ? '+' : ''}{delta} {deltaLabel}
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
 
-function QuickLink({ href, emoji, label }: { href: string; emoji: string; label: string }) {
+function QuickLink({ href, emoji, label }: {href: string;emoji: string;label: string;}) {
   return (
     <Link
       href={href}
-      className="flex items-center gap-2 rounded-lg border border-ink-100 px-3 py-2 hover:border-ink-300 hover:bg-ink-50"
-    >
+      className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_358505cf, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_00eba3fb, styles.r_5399e21f)}>
+
       <span>{emoji}</span>
       <span>{label}</span>
-    </Link>
-  );
+    </Link>);
+
 }
 
 function timeAgo(d: Date): string {

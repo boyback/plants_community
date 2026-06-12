@@ -2,17 +2,21 @@
 
 import { useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
+import styles from './SpeciesAiQuestionBox.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 export function SpeciesAiQuestionBox({
   speciesId,
   speciesName,
-  quickQuestions = [],
-}: {
-  speciesId: string;
-  speciesName: string;
-  quickQuestions?: string[];
-}) {
+  quickQuestions = []
+
+
+
+
+}: {speciesId: string;speciesName: string;quickQuestions?: string[];}) {
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
@@ -23,7 +27,7 @@ export function SpeciesAiQuestionBox({
     if (!q || busy) return;
     setBusy(true);
     try {
-      const res = await api.post<{ answer: string; source: string; model?: string }>(`/api/species/${speciesId}/ai`, { question: q });
+      const res = await api.post<{answer: string;source: string;model?: string;}>(`/api/species/${speciesId}/ai`, { question: q });
       setAnswer(res.answer);
     } catch (e) {
       setAnswer(e instanceof ApiError ? e.message : 'AI 暂时无法回答，请稍后再试。');
@@ -38,7 +42,7 @@ export function SpeciesAiQuestionBox({
     setAnswer('');
     setBusy(true);
     try {
-      const res = await api.post<{ answer: string; source: string; model?: string }>(`/api/species/${speciesId}/ai`, { question: q });
+      const res = await api.post<{answer: string;source: string;model?: string;}>(`/api/species/${speciesId}/ai`, { question: q });
       setAnswer(res.answer);
     } catch (e) {
       setAnswer(e instanceof ApiError ? e.message : 'AI 暂时无法回答，请稍后再试。');
@@ -48,56 +52,56 @@ export function SpeciesAiQuestionBox({
   };
 
   return (
-    <div className="mt-4">
-      {quickQuestions.length > 0 && (
-        <div className="mb-4 space-y-2">
-          {quickQuestions.map((question) => (
-            <button
-              key={question}
-              type="button"
-              onClick={() => void askQuick(question)}
-              className="flex w-full items-center gap-2 rounded-xl border border-leaf-100 bg-sand-50/80 px-4 py-3 text-left text-sm text-ink-700 hover:bg-leaf-50"
-            >
-              <Icon name="check-circle" size={13} className="text-ink-400" />
+    <div className={styles.r_0ab86672}>
+      {quickQuestions.length > 0 &&
+      <div className={cx(styles.r_da019856, styles.r_6f7e013d)}>
+          {quickQuestions.map((question) =>
+        <button
+          key={question}
+          type="button"
+          onClick={() => void askQuick(question)}
+          className={cx(styles.r_60fbb771, styles.r_6da6a3c3, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_a3ea7347, styles.r_f0faeb26, styles.r_1b2d54a3, styles.r_2eba0d65, styles.r_fc7473ca, styles.r_eb6abb1f, styles.r_5756b7b4)}>
+
+              <Icon name="check-circle" size={13} className={styles.r_66a36c90} />
               {question}
             </button>
-          ))}
+        )}
         </div>
-      )}
-      {!open ? (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="flex w-full items-center justify-between rounded-xl bg-leaf-600 px-3 py-2 text-xs font-semibold text-white hover:bg-leaf-700"
-        >
+      }
+      {!open ?
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={cx(styles.r_60fbb771, styles.r_6da6a3c3, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_a217b4ea, styles.r_6bceb016, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_e83a7042, styles.r_72a4c7cd, styles.r_e269e58c)}>
+
           问 AI 这个品种
           <Icon name="arrow-right" size={13} />
-        </button>
-      ) : (
-        <div className="space-y-2 rounded-xl border border-leaf-100 bg-white p-2">
+        </button> :
+
+      <div className={cx(styles.r_6f7e013d, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_7660b450)}>
           <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder={`问问 ${speciesName} 的养护问题`}
-            className="min-h-20 w-full resize-none rounded-lg bg-leaf-50 px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-leaf-300"
-            maxLength={300}
-          />
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setOpen(false)} className="rounded-lg px-3 py-1.5 text-xs text-ink-500 hover:bg-ink-50">
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder={`问问 ${speciesName} 的养护问题`}
+          className={cx(styles.r_3f2a1ff6, styles.r_6da6a3c3, styles.r_6aef3201, styles.r_5f22e64f, styles.r_7ebecbb6, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_df37b1fd, styles.r_0f3af40e, styles.r_177ce78a)}
+          maxLength={300} />
+
+          <div className={cx(styles.r_60fbb771, styles.r_77c08e01, styles.r_77a2a20e)}>
+            <button type="button" onClick={() => setOpen(false)} className={cx(styles.r_5f22e64f, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_359090c2, styles.r_7b89cd85, styles.r_5399e21f)}>
               收起
             </button>
             <button
-              type="button"
-              disabled={busy || !question.trim()}
-              onClick={() => void ask()}
-              className="rounded-lg bg-leaf-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-leaf-700 disabled:opacity-60"
-            >
+            type="button"
+            disabled={busy || !question.trim()}
+            onClick={() => void ask()}
+            className={cx(styles.r_5f22e64f, styles.r_6bceb016, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_359090c2, styles.r_e83a7042, styles.r_72a4c7cd, styles.r_e269e58c, styles.r_d463b664)}>
+
               {busy ? '回答中...' : '发送'}
             </button>
           </div>
-          {answer && <div className="rounded-lg bg-leaf-50 px-3 py-2 text-xs leading-5 text-ink-700">{answer}</div>}
+          {answer && <div className={cx(styles.r_5f22e64f, styles.r_7ebecbb6, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_7054e276, styles.r_eb6abb1f)}>{answer}</div>}
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function PlantsIndexPage() {
   const firstSpecies = await prisma.species.findFirst({
@@ -9,23 +9,23 @@ export default async function PlantsIndexPage() {
       genus: {
         board: {
           kind: 'family',
-          enabled: true,
-        },
-      },
+          enabled: true
+        }
+      }
     },
     orderBy: [
-      { genus: { board: { orderIdx: 'asc' } } },
-      { genus: { orderIdx: 'asc' } },
-      { orderIdx: 'asc' },
-      { name: 'asc' },
-    ],
+    { genus: { board: { orderIdx: 'asc' } } },
+    { genus: { orderIdx: 'asc' } },
+    { orderIdx: 'asc' },
+    { name: 'asc' }],
+
     include: {
       genus: {
         include: {
-          board: true,
-        },
-      },
-    },
+          board: true
+        }
+      }
+    }
   });
 
   if (!firstSpecies?.genus?.board) {

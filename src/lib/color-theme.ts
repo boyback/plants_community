@@ -5,7 +5,7 @@
  *   <html data-theme="forest" data-mode="light"> 控制 CSS 变量
  *   data-mode 在 dark 时另外加上 html.dark(便于以后写 dark: 选择器)
  *
- * 注意:所有 data-theme 值必须与 globals.css 中定义的 CSS 主题名严格一致。
+ * 注意:所有 data-theme 值必须与 globals.scss 中定义的 CSS 主题名严格一致。
  */
 
 export type ColorThemeKey =

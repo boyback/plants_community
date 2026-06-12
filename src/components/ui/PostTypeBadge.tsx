@@ -1,31 +1,36 @@
 import type { PostType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { I18nText } from '@/components/ui/I18nText';
+import styles from './PostTypeBadge.module.scss';
+import { cx } from '@/lib/style-utils';
 
-const META: Record<PostType, { emoji: string; color: string; zh: string }> = {
-  rich: { emoji: '📝', color: 'bg-leaf-50 text-leaf-700 border-leaf-100', zh: '富文本' },
-  short: { emoji: '💬', color: 'bg-sand-50 text-sand-300 border-sand-100', zh: '短内容' },
-  vote: { emoji: '🗳️', color: 'bg-amber-50 text-amber-700 border-amber-100', zh: '投票' },
-  video: { emoji: '🎬', color: 'bg-rose-50 text-rose-700 border-rose-100', zh: '视频' },
-  event: { emoji: '🎉', color: 'bg-violet-50 text-violet-700 border-violet-100', zh: '活动' },
-  help: { emoji: '🆘', color: 'bg-blue-50 text-blue-700 border-blue-100', zh: '求助' },
-  journal: { emoji: '📖', color: 'bg-emerald-50 text-emerald-700 border-emerald-100', zh: '成长日记' },
+
+
+const META: Record<PostType, {emoji: string;color: string;zh: string;}> = {
+  rich: { emoji: '📝', color: cx(styles.r_7ebecbb6, styles.r_5f6a59f1, styles.r_88b684d2), zh: '长文' },
+  image: { emoji: '🖼️', color: cx(styles.r_03bc2b4a, styles.r_4c52c236, styles.r_042063d7), zh: '图文' },
+  short: { emoji: '💬', color: cx(styles.r_c1ebae4b, styles.r_4a8233d4, styles.r_26e27727), zh: '短内容' },
+  vote: { emoji: '🗳️', color: cx(styles.r_67d2289d, styles.r_85d79ebf, styles.r_d85e2a6f), zh: '投票' },
+  video: { emoji: '🎬', color: cx(styles.r_0759a0f1, styles.r_b54428d1, styles.r_3d496065), zh: '视频' },
+  event: { emoji: '🎉', color: cx(styles.r_3b5cf6c0, styles.r_06fd2bc1, styles.r_5650c76d), zh: '活动' },
+  help: { emoji: '🆘', color: cx(styles.r_3cc00fe7, styles.r_65b7dd19, styles.r_59b06075), zh: '求助' },
+  journal: { emoji: '📖', color: cx(styles.r_d01e7232, styles.r_cf2c3db6, styles.r_38fd2470), zh: '记录贴' }
 };
 
-const FALLBACK = { emoji: '📄', color: 'bg-leaf-50 text-leaf-700 border-leaf-100', zh: '' };
+const FALLBACK = { emoji: '📄', color: cx(styles.r_7ebecbb6, styles.r_5f6a59f1, styles.r_88b684d2), zh: '' };
 
-export function PostTypeBadge({ type, className }: { type: PostType; className?: string }) {
+export function PostTypeBadge({ type, className }: {type: PostType;className?: string;}) {
   const m = META[type] ?? FALLBACK;
   return (
     <span
-      className={cn(
-        'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium',
-        m.color,
-        className
-      )}
-    >
+      className={cn(cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_ac204c10, styles.r_ca6bcd4b, styles.r_d5eab218, styles.r_465609a2, styles.r_d058ca6d, styles.r_2689f395),
+
+      m.color,
+      className
+      )}>
+
       <span aria-hidden>{m.emoji}</span>
       <I18nText k={`post.typeShort.${type}`} fallback={m.zh} />
-    </span>
-  );
+    </span>);
+
 }

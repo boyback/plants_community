@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { PostType } from '@/lib/types';
-import { Form } from 'radix-ui';
+import { Form } from "radix-ui";
 import { Icon } from '@/components/ui/Icon';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
@@ -9,6 +9,10 @@ import { RichTextEditor } from '@/components/richtext/RichTextEditor';
 import { JournalEditor, type JournalDraft } from '@/components/post/JournalEditor';
 import type { EditorT } from './types';
 import { cn } from '@/lib/utils';
+import styles from './PostContentFields.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface Props {
   type: PostType;
@@ -17,6 +21,8 @@ interface Props {
   onContentChange: (value: string) => void;
   contentJson: unknown;
   onContentJsonChange: (value: unknown) => void;
+  images: string[];
+  onImagesChange: (value: string[]) => void;
   videoUrl: string;
   onVideoUrlChange: (value: string) => void;
   voteOptions: string[];
@@ -43,6 +49,8 @@ export function PostContentFields({
   onContentChange,
   contentJson,
   onContentJsonChange,
+  images,
+  onImagesChange,
   videoUrl,
   onVideoUrlChange,
   voteOptions,
@@ -59,19 +67,52 @@ export function PostContentFields({
   journal,
   onJournalChange,
   validationErrors,
-  onClearValidationError,
+  onClearValidationError
 }: Props) {
+  if (type === 'image') {
+    const invalid = validationErrors.has('imageImages');
+    return (
+      <PostFormField
+        name="imageImages"
+        label="上传图片"
+        required
+        invalid={invalid}
+        message="图文贴需要至少上传一张图片"
+        hiddenValue={images.length > 0 ? 'ok' : ''}>
+
+        <UploadField
+          kind="image"
+          value={images}
+          onChange={(value) => {
+            onImagesChange(value);
+            if (value.length > 0) onClearValidationError('imageImages');
+          }}
+          max={9}
+          className={styles.r_c79ccc8a}
+          gridClassName={cn(cx(styles.r_be2e831b, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_d17ef2d9, styles.r_898c0bcb, styles.r_76f32b53),
+
+          invalid && cx(styles.r_959f4a9f, styles.r_fdae7b46, styles.r_16b1efa5, styles.r_6b7b677a)
+          )}
+          itemClassName={cx(styles.r_b59cd297, styles.r_421ac2be, styles.r_5e10cdb8)} />
+
+        <p className={cx(styles.r_50d0d216, styles.r_359090c2, styles.r_7054e276, styles.r_7b89cd85)}>
+          适合晒图、状态记录和简单分享；图文贴不单独设置封面图。
+        </p>
+      </PostFormField>);
+
+  }
+
   if (type === 'rich') {
     const invalid = validationErrors.has('richContent');
     return (
       <PostFormField
         name="richContent"
-        label="图文内容"
+        label="长文内容"
         required
         invalid={invalid}
-        message="图文帖需要填写正文，或至少插入一张图片"
-        hiddenValue={hasRichContent(contentJson) ? 'ok' : ''}
-      >
+        message="长文贴需要填写正文，或至少插入一张图片"
+        hiddenValue={hasRichContent(contentJson) ? 'ok' : ''}>
+
         <RichTextEditor
           value={contentJson}
           onChange={(value) => {
@@ -81,10 +122,10 @@ export function PostContentFields({
           placeholder={t('editor.placeholderRich')}
           minHeight={460}
           charLimit={20000}
-          className={cn("rounded-xl", invalid && "ring-2 ring-rose-100")}
-        />
-      </PostFormField>
-    );
+          className={cn(styles.r_a217b4ea, invalid && cx(styles.r_16b1efa5, styles.r_6b7b677a))} />
+
+      </PostFormField>);
+
   }
 
   if (type === 'short') {
@@ -94,7 +135,7 @@ export function PostContentFields({
         <Form.Control asChild>
           <Textarea
             required
-            className='min-h-[140px] !text-base leading-7'
+            className={cx(styles.r_ee15a477, styles.r_ab3a6ebd, styles.r_7eff2faf)}
             error={invalid}
             placeholder={t('editor.placeholderShort')}
             value={content}
@@ -103,11 +144,11 @@ export function PostContentFields({
               if (event.target.value.trim()) onClearValidationError('shortContent');
             }}
             maxLength={500}
-            showCount
-          />
+            showCount />
+
         </Form.Control>
-      </PostFormField>
-    );
+      </PostFormField>);
+
   }
 
   if (type === 'help') {
@@ -117,7 +158,7 @@ export function PostContentFields({
         <Form.Control asChild>
           <Textarea
             required
-            className='min-h-[140px] !text-base leading-7'
+            className={cx(styles.r_ee15a477, styles.r_ab3a6ebd, styles.r_7eff2faf)}
             error={invalid}
             placeholder="例如：叶片发软多久了、最近浇水/光照/通风情况、是否翻盆或用药。"
             value={content}
@@ -126,55 +167,38 @@ export function PostContentFields({
               if (event.target.value.trim()) onClearValidationError('helpContent');
             }}
             maxLength={2000}
-            showCount
-          />
+            showCount />
+
         </Form.Control>
-      </PostFormField>
-    );
+      </PostFormField>);
+
   }
 
   if (type === 'video') {
-    const contentInvalid = validationErrors.has('videoContent');
     const videoInvalid = validationErrors.has('videoUrl');
     return (
-      <>
-        <PostFormField name="videoContent" label="视频说明" required invalid={contentInvalid} message="请给视频补充一段说明">
-          <Form.Control asChild>
-            <Textarea
-              required
-              className='min-h-[100px] !text-base leading-7'
-              error={contentInvalid}
-              value={content}
-              onChange={(event) => {
-                onContentChange(event.target.value);
-                if (event.target.value.trim()) onClearValidationError('videoContent');
-              }}
-              placeholder={t('editor.placeholderShort')}
-            />
-          </Form.Control>
-        </PostFormField>
-        <PostFormField
-          name="videoUrl"
-          label={t('editor.video')}
-          required
-          invalid={videoInvalid}
-          message="请上传一个视频"
-          hiddenValue={videoUrl.trim()}
-          className="mt-4"
-        >
-          <UploadField
-            kind='video'
-            value={videoUrl ? [videoUrl] : []}
-            onChange={(arr) => {
-              const next = arr[0] ?? '';
-              onVideoUrlChange(next);
-              if (next) onClearValidationError('videoUrl');
-            }}
-            max={1}
-          />
-        </PostFormField>
-      </>
-    );
+      <PostFormField
+        name="videoUrl"
+        label={t('editor.video')}
+        required
+        invalid={videoInvalid}
+        message="请上传一个视频"
+        hiddenValue={videoUrl.trim()}>
+
+        <UploadField
+          kind="video"
+          value={videoUrl ? [videoUrl] : []}
+          onChange={(arr) => {
+            const next = arr[0] ?? '';
+            onVideoUrlChange(next);
+            if (next) onClearValidationError('videoUrl');
+          }}
+          max={1}
+          gridClassName={cn(videoInvalid && cx(styles.r_16b1efa5, styles.r_6b7b677a))}
+          itemClassName={cx(styles.r_25245f7e, styles.r_0595c69e)} />
+
+      </PostFormField>);
+
   }
 
   if (type === 'vote') {
@@ -188,15 +212,15 @@ export function PostContentFields({
           <Form.Control asChild>
             <Textarea
               required
-              className='min-h-[80px] !text-base leading-7'
+              className={cx(styles.r_dd9ce2a7, styles.r_ab3a6ebd, styles.r_7eff2faf)}
               error={contentInvalid}
               value={content}
               onChange={(event) => {
                 onContentChange(event.target.value);
                 if (event.target.value.trim()) onClearValidationError('voteContent');
               }}
-              placeholder={t('editor.voteQuestion')}
-            />
+              placeholder={t('editor.voteQuestion')} />
+
           </Form.Control>
         </PostFormField>
         <PostFormField
@@ -206,63 +230,63 @@ export function PostContentFields({
           invalid={optionsInvalid}
           message="请至少填写 2 个投票选项"
           hiddenValue={validOptions}
-          className="mt-4"
-        >
-          <div className='space-y-2'>
-            {voteOptionsLocked && (
-              <div className='rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-700'>
+          className={styles.r_0ab86672}>
+
+          <div className={styles.r_6f7e013d}>
+            {voteOptionsLocked &&
+            <div className={cx(styles.r_421ac2be, styles.r_67d2289d, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_85d79ebf)}>
                 已有人投票，投票选项不能再编辑。
               </div>
-            )}
-            {voteOptions.map((option, index) => (
-              <div key={index} className='flex gap-2'>
+            }
+            {voteOptions.map((option, index) =>
+            <div key={index} className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
                 <Input
-                  value={option}
-                  error={optionsInvalid}
-                  disabled={voteOptionsLocked}
-                  onChange={(event) => {
-                    const next = [...voteOptions];
-                    next[index] = event.target.value;
-                    onVoteOptionsChange(next);
-                    if (next.filter((item) => item.trim()).length >= 2) onClearValidationError('voteOptions');
-                  }}
-                  placeholder={`${t('editor.voteAddOption')} ${index + 1}`}
-                />
-                {voteOptions.length > 2 && (
-                  <button
-                    type='button'
-                    className='btn-outline !px-3'
-                    disabled={voteOptionsLocked}
-                    onClick={() => onVoteOptionsChange(voteOptions.filter((_, i) => i !== index))}
-                  >
-                    <Icon name='trash' size={14} />
-                  </button>
-                )}
-              </div>
-            ))}
-            {!voteOptionsLocked && voteOptions.length < 8 && (
+                value={option}
+                error={optionsInvalid}
+                disabled={voteOptionsLocked}
+                onChange={(event) => {
+                  const next = [...voteOptions];
+                  next[index] = event.target.value;
+                  onVoteOptionsChange(next);
+                  if (next.filter((item) => item.trim()).length >= 2) onClearValidationError('voteOptions');
+                }}
+                placeholder={`${t('editor.voteAddOption')} ${index + 1}`} />
+
+                {voteOptions.length > 2 &&
               <button
                 type='button'
-                className='btn-ghost !text-xs'
-                onClick={() => onVoteOptionsChange([...voteOptions, ''])}
-              >
+                className={styles.r_23b4e5ed}
+                disabled={voteOptionsLocked}
+                onClick={() => onVoteOptionsChange(voteOptions.filter((_, i) => i !== index))}>
+
+                    <Icon name='trash' size={14} />
+                  </button>
+              }
+              </div>
+            )}
+            {!voteOptionsLocked && voteOptions.length < 8 &&
+            <button
+              type='button'
+              className={styles.r_dd702538}
+              onClick={() => onVoteOptionsChange([...voteOptions, ''])}>
+
                 <Icon name='plus' size={14} />
                 {t('editor.voteAddOption')}
               </button>
-            )}
+            }
           </div>
         </PostFormField>
-        <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
+        <div className={cx(styles.r_0ab86672, styles.r_f3c543ad, styles.r_d7c83398, styles.r_0c3bc985, styles.r_e4d6f343)}>
           <Form.Field name="voteMulti">
-            <Form.Label className="mb-1.5 block text-sm font-semibold text-ink-800">{t('editor.voteMulti')}</Form.Label>
-            <label className='flex h-10 items-center gap-2 text-sm'>
+            <Form.Label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>{t('editor.voteMulti')}</Form.Label>
+            <label className={cx(styles.r_60fbb771, styles.r_426b8b75, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_fc7473ca)}>
               <Form.Control asChild>
                 <input
                   type='checkbox'
                   checked={voteMulti}
                   onChange={(event) => onVoteMultiChange(event.target.checked)}
-                  className='h-4 w-4 accent-leaf-500'
-                />
+                  className={cx(styles.r_11e59c6d, styles.r_dc7972eb, styles.r_5f66c7c0)} />
+
               </Form.Control>
               {t('editor.voteMulti')}
             </label>
@@ -271,19 +295,19 @@ export function PostContentFields({
             <Form.Control asChild>
               <Input
                 required
-                type='datetime-local'
+                type="datetime-local"
                 value={voteDeadline}
                 error={deadlineInvalid}
                 onChange={(event) => {
                   onVoteDeadlineChange(event.target.value);
                   if (event.target.value) onClearValidationError('voteDeadline');
-                }}
-              />
+                }} />
+
             </Form.Control>
           </PostFormField>
         </div>
-      </>
-    );
+      </>);
+
   }
 
   if (type === 'event') {
@@ -298,8 +322,8 @@ export function PostContentFields({
           required
           invalid={contentInvalid}
           message="请填写活动介绍"
-          hiddenValue={hasRichContent(contentJson) ? 'ok' : ''}
-        >
+          hiddenValue={hasRichContent(contentJson) ? 'ok' : ''}>
+
           <RichTextEditor
             value={contentJson}
             onChange={(value) => {
@@ -309,10 +333,10 @@ export function PostContentFields({
             placeholder={t('editor.event')}
             minHeight={460}
             charLimit={5000}
-            className={cn("rounded-xl", contentInvalid && "ring-2 ring-rose-100")}
-          />
+            className={cn(styles.r_a217b4ea, contentInvalid && cx(styles.r_16b1efa5, styles.r_6b7b677a))} />
+
         </PostFormField>
-        <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
+        <div className={cx(styles.r_0ab86672, styles.r_f3c543ad, styles.r_d7c83398, styles.r_0c3bc985, styles.r_e4d6f343)}>
           <PostFormField name="eventLocation" label={t('editor.eventLocation')} required invalid={locationInvalid} message="请填写活动地点">
             <Form.Control asChild>
               <Input
@@ -323,42 +347,42 @@ export function PostContentFields({
                   onEventLocationChange(event.target.value);
                   if (event.target.value.trim()) onClearValidationError('eventLocation');
                 }}
-                placeholder={t('editor.eventLocation')}
-              />
+                placeholder={t('editor.eventLocation')} />
+
             </Form.Control>
           </PostFormField>
           <PostFormField name="eventStartAt" label={t('editor.eventStartAt')} required invalid={startInvalid} message="请选择活动开始时间">
             <Form.Control asChild>
               <Input
                 required
-                type='datetime-local'
+                type="datetime-local"
                 value={eventStartAt}
                 error={startInvalid}
                 onChange={(event) => {
                   onEventStartAtChange(event.target.value);
                   if (event.target.value) onClearValidationError('eventStartAt');
-                }}
-              />
+                }} />
+
             </Form.Control>
           </PostFormField>
         </div>
-      </>
-    );
+      </>);
+
   }
 
   if (type === 'journal') {
     return (
       <PostFormField
         name="journalEntries"
-        label="成长记录"
+        label="记录贴"
         required
         invalid={validationErrors.has('journalEntries')}
-        message="请至少添加一条成长记录"
-        hiddenValue={journal.entries.length > 0 ? 'ok' : ''}
-      >
+        message="请至少添加一条记录"
+        hiddenValue={journal.entries.length > 0 ? 'ok' : ''}>
+
         <JournalEditor value={journal} onChange={onJournalChange} validationErrors={validationErrors} />
-      </PostFormField>
-    );
+      </PostFormField>);
+
   }
 
   return null;
@@ -372,44 +396,44 @@ function PostFormField({
   message,
   hiddenValue,
   className,
-  children,
-}: {
-  name: string;
-  label: ReactNode;
-  required?: boolean;
-  invalid?: boolean;
-  message?: string;
-  hiddenValue?: string;
-  className?: string;
-  children: ReactNode;
-}) {
+  children
+
+
+
+
+
+
+
+
+
+}: {name: string;label: ReactNode;required?: boolean;invalid?: boolean;message?: string;hiddenValue?: string;className?: string;children: ReactNode;}) {
   return (
     <Form.Field name={name} serverInvalid={invalid} className={className}>
-      <Form.Label className="mb-1.5 block text-sm font-semibold text-ink-800">
-        {required && <span className="text-rose-500">*</span>} {label}
+      <Form.Label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>
+        {required && <span className={styles.r_fa512798}>*</span>} {label}
       </Form.Label>
-      {hiddenValue !== undefined && (
-        <Form.Control
-          value={hiddenValue}
-          required={required}
-          readOnly
-          tabIndex={-1}
-          aria-hidden
-          className="sr-only"
-        />
-      )}
+      {hiddenValue !== undefined &&
+      <Form.Control
+        value={hiddenValue}
+        required={required}
+        readOnly
+        tabIndex={-1}
+        aria-hidden
+        className={styles.r_2daa8e5e} />
+
+      }
       {children}
-      {message && (
-        <Form.Message
-          match="valueMissing"
-          forceMatch={invalid}
-          className="mt-1.5 block text-xs text-rose-600"
-        >
+      {message &&
+      <Form.Message
+        match="valueMissing"
+        forceMatch={invalid}
+        className={cx(styles.r_aac62f0e, styles.r_0214b4b3, styles.r_359090c2, styles.r_595fceba)}>
+
           {message}
         </Form.Message>
-      )}
-    </Form.Field>
-  );
+      }
+    </Form.Field>);
+
 }
 
 function hasRichContent(json: unknown) {
@@ -422,7 +446,7 @@ function extractImagesFromJson(json: unknown): string[] {
     if (!node || typeof node !== 'object') return;
     const n = node as {
       type?: string;
-      attrs?: { src?: string } | null;
+      attrs?: {src?: string;} | null;
       content?: unknown[];
     };
     if (n.type === 'image' && typeof n.attrs?.src === 'string' && n.attrs.src) {
@@ -438,7 +462,7 @@ function countTextFromJson(json: unknown): number {
   let count = 0;
   const traverse = (node: unknown) => {
     if (!node || typeof node !== 'object') return;
-    const n = node as { text?: string; content?: unknown[] };
+    const n = node as {text?: string;content?: unknown[];};
     if (typeof n.text === 'string') count += n.text.trim().length;
     if (Array.isArray(n.content)) n.content.forEach(traverse);
   };

@@ -14,14 +14,18 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from './AuthContext';
+import styles from './RealtimeContext.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 type EventType =
-  | 'ready'
-  | 'ping'
-  | 'notification'
-  | 'message'
-  | 'notification.read'
-  | 'message.read';
+'ready' |
+'ping' |
+'notification' |
+'message' |
+'notification.read' |
+'message.read';
 
 export interface RealtimePayload {
   at: number;
@@ -39,14 +43,14 @@ interface RealtimeCtx {
 
 const Ctx = createContext<RealtimeCtx>({
   connected: false,
-  subscribe: () => () => {},
+  subscribe: () => () => {}
 });
 
 export function useRealtime() {
   return useContext(Ctx);
 }
 
-export function RealtimeProvider({ children }: { children: React.ReactNode }) {
+export function RealtimeProvider({ children }: {children: React.ReactNode;}) {
   const { user } = useAuth();
   const [connected, setConnected] = useState(false);
   const esRef = useRef<EventSource | null>(null);
@@ -105,7 +109,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
           try {
             const payload = JSON.parse((ev as MessageEvent).data) as RealtimePayload;
             handlersRef.current.get(type)?.forEach((fn) => {
-              try { fn(payload); } catch (err) { console.warn('[realtime handler]', err); }
+              try {fn(payload);} catch (err) {console.warn('realtime handler error', err);}
             });
           } catch (err) {
             console.warn('[realtime] parse failed', err);

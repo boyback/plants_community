@@ -9,9 +9,13 @@ import { PermissionGate } from '@/components/ui/PermissionGate';
 import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import { RichTextEditor } from '@/components/richtext/RichTextEditor';
 import { formatPrice } from '@/lib/utils';
+import styles from './page.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 const DEFAULT_CATEGORIES = ['工具', '肥料', '盆器', '盆土', '植物', '礼物'];
 
@@ -56,43 +60,43 @@ export default function NewAuctionPage() {
 
   const [boards, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   useEffect(() => {
-    api
-      .get<{ name: string; count: number }[]>('/api/market/boards')
-      .then((list) => {
-        const names = list.map((x) => x.name);
-        const merged = Array.from(new Set([...names, ...DEFAULT_CATEGORIES]));
-        setCategories(merged);
-      })
-      .catch(() => null);
+    api.
+    get<{name: string;count: number;}[]>('/api/market/boards').
+    then((list) => {
+      const names = list.map((x) => x.name);
+      const merged = Array.from(new Set([...names, ...DEFAULT_CATEGORIES]));
+      setCategories(merged);
+    }).
+    catch(() => null);
   }, []);
 
   if (authLoading) {
     return (
       <Shell>
-        <div className="py-10 text-center text-sm text-leaf-700/60">{t('common.loading')}</div>
-      </Shell>
-    );
+        <div className={cx(styles.r_1100bef6, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>{t('common.loading')}</div>
+      </Shell>);
+
   }
 
   if (!user) {
     return (
       <Shell>
-        <div className="card mx-auto max-w-md p-10 text-center">
-          <div className="text-4xl">🔨</div>
-          <div className="mt-3 text-lg font-semibold">{t('auction.create.loginRequired')}</div>
-          <Link href="/login?redirect=/auction/new" className="btn-primary mt-4 inline-flex">
+        <div className={cx(styles.r_0e12dc7d, styles.r_9794ab45, styles.r_a4d0f420, styles.r_ca6bf630)}>
+          <div className={styles.r_a95699d9}>🔨</div>
+          <div className={cx(styles.r_eccd13ef, styles.r_42536e69, styles.r_e83a7042)}>{t('auction.create.loginRequired')}</div>
+          <Link href="/login?redirect=/auction/new" className={cx(styles.r_0ab86672, styles.r_52083e7d)}>
             {t('nav.login')}
           </Link>
         </div>
-      </Shell>
-    );
+      </Shell>);
+
   }
 
   const submit = async () => {
     setErr(null);
     if (!title.trim()) return setErr(t('auction.create.titleRequired'));
     if (!cover.trim()) return setErr(t('auction.create.coverRequired'));
-    const j = descriptionJson as { content?: unknown[] } | null;
+    const j = descriptionJson as {content?: unknown[];} | null;
     if (!j || !Array.isArray(j.content) || j.content.length === 0) {
       return setErr(t('auction.create.descriptionRequired'));
     }
@@ -122,7 +126,7 @@ export default function NewAuctionPage() {
 
     setSubmitting(true);
     try {
-      const r = await api.post<{ id: string }>('/api/auctions', {
+      const r = await api.post<{id: string;}>('/api/auctions', {
         title,
         descriptionJson,
         category,
@@ -136,7 +140,7 @@ export default function NewAuctionPage() {
         depositAmount,
         startAt: startAtISO,
         endAt: endAtISO,
-        antiSnipeMinutes,
+        antiSnipeMinutes
       });
       toast.success(t('auction.create.success'));
       setTimeout(() => router.push(`/auction/${r.id}`), 800);
@@ -149,16 +153,16 @@ export default function NewAuctionPage() {
 
   return (
     <Shell>
-      <div className="mx-auto max-w-3xl">
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold">{t('auction.create.pageTitle')}</h1>
-          <p className="text-sm text-leaf-700/70">
+      <div className={cx(styles.r_0e12dc7d, styles.r_fa3f7111)}>
+        <div className={styles.r_da019856}>
+          <h1 className={cx(styles.r_3febee09, styles.r_69450ef1)}>{t('auction.create.pageTitle')}</h1>
+          <p className={cx(styles.r_fc7473ca, styles.r_69335b95)}>
             {t('auction.create.pageSubtitle')}
           </p>
         </div>
 
         <PermissionGate perm="market:sell">
-          <div className="card space-y-4 p-6">
+          <div className={cx(styles.r_3e7ce58d, styles.r_0478c89a)}>
             {/* 基础信息 */}
             <Section title="🪧">
               <Field label={t('auction.create.fieldTitle')}>
@@ -167,19 +171,19 @@ export default function NewAuctionPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder={t('auction.create.fieldTitlePlaceholder')}
-                  maxLength={80}
-                />
+                  maxLength={80} />
+
               </Field>
-              <div className="grid grid-cols-2 gap-3">
+              <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3)}>
                 <Field label={t('auction.create.fieldCategory')}>
                   <select
                     className="input"
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                  >
-                    {boards.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
+                    onChange={(e) => setCategory(e.target.value)}>
+
+                    {boards.map((c) =>
+                    <option key={c} value={c}>{c}</option>
+                    )}
                   </select>
                 </Field>
                 <Field label={t('auction.create.fieldCover')}>
@@ -187,16 +191,16 @@ export default function NewAuctionPage() {
                     className="input"
                     value={cover}
                     onChange={(e) => setCover(e.target.value)}
-                    placeholder="https://..."
-                  />
+                    placeholder="https://..." />
+
                 </Field>
               </div>
               <Field label={t('auction.create.fieldImages')}>
                 <textarea
-                  className="input min-h-[60px]"
+                  className={styles.r_a4197e87}
                   value={imagesText}
-                  onChange={(e) => setImagesText(e.target.value)}
-                />
+                  onChange={(e) => setImagesText(e.target.value)} />
+
               </Field>
               <Field label={t('auction.create.fieldDescription')}>
                 <RichTextEditor
@@ -204,28 +208,28 @@ export default function NewAuctionPage() {
                   onChange={setDescriptionJson}
                   placeholder={t('auction.create.fieldDescription')}
                   minHeight={180}
-                  charLimit={5000}
-                />
+                  charLimit={5000} />
+
               </Field>
               <Field label={t('auction.create.fieldTags')}>
-                <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-leaf-200 bg-white p-2">
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 rounded-full bg-leaf-100 px-2 py-0.5 text-xs text-leaf-700"
-                    >
+                <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_58284b4e, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_691861bc, styles.r_5e10cdb8, styles.r_7660b450)}>
+                  {tags.map((tag) =>
+                  <span
+                    key={tag}
+                    className={cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_ac204c10, styles.r_f2b23104, styles.r_d5eab218, styles.r_465609a2, styles.r_359090c2, styles.r_5f6a59f1)}>
+
                       #{tag}
                       <button
-                        type="button"
-                        onClick={() => setTags(tags.filter((x) => x !== tag))}
-                        className="text-leaf-600 hover:text-leaf-800"
-                      >
+                      type="button"
+                      onClick={() => setTags(tags.filter((x) => x !== tag))}
+                      className={cx(styles.r_b17d6a13, styles.r_81be6435)}>
+
                         ×
                       </button>
                     </span>
-                  ))}
+                  )}
                   <input
-                    className="flex-1 bg-transparent px-1 text-sm outline-none min-w-[120px]"
+                    className={cx(styles.r_36e579c0, styles.r_7f19cdf4, styles.r_d8e0e382, styles.r_fc7473ca, styles.r_df37b1fd, styles.r_a9ef791a)}
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -239,30 +243,30 @@ export default function NewAuctionPage() {
                       }
                     }}
                     placeholder={t('auction.create.fieldTagsPlaceholder')}
-                    disabled={tags.length >= 6}
-                  />
+                    disabled={tags.length >= 6} />
+
                 </div>
               </Field>
             </Section>
 
             {/* 价格设置 */}
             <Section title="💰">
-              <div className="grid grid-cols-2 gap-3">
+              <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3)}>
                 <Field label={t('auction.create.fieldStartPrice')}>
                   <input
                     className="input"
                     inputMode="decimal"
                     value={startPriceYuan}
-                    onChange={(e) => setStartPriceYuan(e.target.value)}
-                  />
+                    onChange={(e) => setStartPriceYuan(e.target.value)} />
+
                 </Field>
                 <Field label={t('auction.create.fieldMinIncrement')}>
                   <input
                     className="input"
                     inputMode="decimal"
                     value={minIncrementYuan}
-                    onChange={(e) => setMinIncrementYuan(e.target.value)}
-                  />
+                    onChange={(e) => setMinIncrementYuan(e.target.value)} />
+
                 </Field>
                 <Field label={t('auction.create.fieldBuyNow')}>
                   <input
@@ -270,8 +274,8 @@ export default function NewAuctionPage() {
                     inputMode="decimal"
                     value={buyNowYuan}
                     onChange={(e) => setBuyNowYuan(e.target.value)}
-                    placeholder="200"
-                  />
+                    placeholder="200" />
+
                 </Field>
                 <Field label={t('auction.create.fieldReserve')}>
                   <input
@@ -279,38 +283,38 @@ export default function NewAuctionPage() {
                     inputMode="decimal"
                     value={reserveYuan}
                     onChange={(e) => setReserveYuan(e.target.value)}
-                    placeholder={t('auction.reserveHint')}
-                  />
+                    placeholder={t('auction.reserveHint')} />
+
                 </Field>
                 <Field label={t('auction.create.fieldDeposit')}>
                   <input
                     className="input"
                     inputMode="decimal"
                     value={depositYuan}
-                    onChange={(e) => setDepositYuan(e.target.value)}
-                  />
+                    onChange={(e) => setDepositYuan(e.target.value)} />
+
                 </Field>
               </div>
             </Section>
 
             {/* 时间 */}
             <Section title="⏰">
-              <div className="grid grid-cols-2 gap-3">
+              <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3)}>
                 <Field label={t('auction.create.fieldStartAt')}>
                   <input
                     type="datetime-local"
                     className="input"
                     value={startAt}
-                    onChange={(e) => setStartAt(e.target.value)}
-                  />
+                    onChange={(e) => setStartAt(e.target.value)} />
+
                 </Field>
                 <Field label={t('auction.create.fieldEndAt')}>
                   <input
                     type="datetime-local"
                     className="input"
                     value={endAt}
-                    onChange={(e) => setEndAt(e.target.value)}
-                  />
+                    onChange={(e) => setEndAt(e.target.value)} />
+
                 </Field>
                 <Field label={t('auction.create.fieldAntiSnipe')}>
                   <input
@@ -319,27 +323,27 @@ export default function NewAuctionPage() {
                     min={0}
                     max={30}
                     value={antiSnipeMinutes}
-                    onChange={(e) => setAntiSnipeMinutes(Number(e.target.value) || 0)}
-                  />
-                  <div className="mt-1 text-[11px] text-leaf-700/60">
+                    onChange={(e) => setAntiSnipeMinutes(Number(e.target.value) || 0)} />
+
+                  <div className={cx(styles.r_b6b02c0e, styles.r_d058ca6d, styles.r_6c4cc49e)}>
                     {t('auction.antiSnipe', { n: antiSnipeMinutes })}
                   </div>
                 </Field>
               </div>
             </Section>
 
-            {err && (
-              <div className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{err}</div>
-            )}
+            {err &&
+            <div className={cx(styles.r_5f22e64f, styles.r_0759a0f1, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_b54428d1)}>{err}</div>
+            }
 
-            <div className="flex justify-end gap-2 border-t border-leaf-100 pt-4">
+            <div className={cx(styles.r_60fbb771, styles.r_77c08e01, styles.r_77a2a20e, styles.r_b950dda2, styles.r_88b684d2, styles.r_173fa8f0)}>
               <Link href="/auction" className="btn-outline">{t('common.cancel')}</Link>
               <button
                 type="button"
                 onClick={submit}
                 disabled={submitting}
-                className="btn-primary"
-              >
+                className="btn-primary">
+
                 <Icon name="check" size={14} />
                 {submitting ? t('auction.create.submitting') : t('auction.create.submit')}
               </button>
@@ -347,9 +351,9 @@ export default function NewAuctionPage() {
           </div>
         </PermissionGate>
 
-        <div className="mt-6 rounded-xl bg-leaf-50/60 p-4 text-[11px] text-leaf-700/70">
-          <div className="mb-1 font-medium text-leaf-700">📜 发布须知</div>
-          <ul className="ml-4 list-disc space-y-0.5">
+        <div className={cx(styles.r_31f25533, styles.r_a217b4ea, styles.r_a8a62ca4, styles.r_8e63407b, styles.r_d058ca6d, styles.r_69335b95)}>
+          <div className={cx(styles.r_65281709, styles.r_2689f395, styles.r_5f6a59f1)}>📜 发布须知</div>
+          <ul className={cx(styles.r_f242aff2, styles.r_1f33b438, styles.r_e2eedc57)}>
             <li>拍卖结束后,胜出者保证金自动抵扣到尾款,其余人退还等值积分</li>
             <li>已有出价的拍卖无法取消</li>
             <li>胜出者 24 小时内未付款,保证金没收</li>
@@ -357,24 +361,24 @@ export default function NewAuctionPage() {
           </ul>
         </div>
       </div>
-    </Shell>
-  );
+    </Shell>);
+
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: {title: string;children: React.ReactNode;}) {
   return (
     <section>
-      <h3 className="mb-2 text-sm font-semibold text-ink-800">{title}</h3>
-      <div className="space-y-3">{children}</div>
-    </section>
-  );
+      <h3 className={cx(styles.r_a77ed4d9, styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>{title}</h3>
+      <div className={styles.r_6ed543e2}>{children}</div>
+    </section>);
+
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: {label: string;children: React.ReactNode;}) {
   return (
     <div>
-      <label className="mb-1.5 block text-xs font-medium text-leaf-700/80">{label}</label>
+      <label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_359090c2, styles.r_2689f395, styles.r_21d33c50)}>{label}</label>
       {children}
-    </div>
-  );
+    </div>);
+
 }

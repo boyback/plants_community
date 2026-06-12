@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db';
 import { BoardsManager } from './BoardsManager';
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function AdminBoardsPage() {
   const boards = await prisma.board.findMany({
@@ -19,14 +19,14 @@ export default async function AdminBoardsPage() {
               latinName: true,
               cover: true,
               orderIdx: true,
-              _count: { select: { posts: true } },
-            },
+              _count: { select: { posts: true } }
+            }
           },
-          _count: { select: { posts: true } },
-        },
+          _count: { select: { posts: true } }
+        }
       },
-      _count: { select: { posts: true } },
-    },
+      _count: { select: { posts: true } }
+    }
   });
 
   return (
@@ -36,7 +36,7 @@ export default async function AdminBoardsPage() {
         slug: c.slug,
         name: c.name,
         latinName: c.latinName,
-        icons: JSON.parse(c.icons || '[]'),
+        icons: JSON.parse(c.icons || "[]"),
         cover: c.cover,
         kind: c.kind,
         enabled: c.enabled,
@@ -58,10 +58,10 @@ export default async function AdminBoardsPage() {
             latinName: s.latinName,
             cover: s.cover ?? '',
             orderIdx: s.orderIdx,
-            postsCount: s._count.posts,
-          })),
-        })),
-      }))}
-    />
-  );
+            postsCount: s._count.posts
+          }))
+        }))
+      }))} />);
+
+
 }

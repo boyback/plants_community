@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { toast } from '@/components/ui/Toast';
 import type { Post, PostAdminPermissions, PostPinScope } from '@/lib/types';
-import { api } from '@/lib/client-api';
+import { api } from "@/lib/client-api";
 import { cn } from '@/lib/utils';
 import { Dialog } from '@/components/ui/Dialog';
 import { BoardSelect, type BoardSelection } from '@/components/editor/BoardSelect';
@@ -14,8 +14,12 @@ import { PostLockDialog } from '@/components/post/PostLockDialog';
 import {
   isPostPinned,
   PostPinDialog,
-  type PostPinTarget,
-} from '@/components/post/PostPinDialog';
+  type PostPinTarget } from
+'@/components/post/PostPinDialog';
+import styles from './PostAdminMenu.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface PostAdminMenuProps {
   post: Post;
@@ -39,7 +43,7 @@ const EMPTY_PERMISSIONS: PostAdminPermissions = {
   canPin: false,
   canLock: false,
   canBan: false,
-  canReview: false,
+  canReview: false
 };
 
 function fallbackPermissions(post: Post, user?: PostAdminMenuProps['user']): PostAdminPermissions {
@@ -48,7 +52,7 @@ function fallbackPermissions(post: Post, user?: PostAdminMenuProps['user']): Pos
   const isSuperAdmin = user.isSuperAdmin === true;
   const isModerator = user.role === 'moderator';
   const isAdmin = user.role === 'admin';
-  const canEdit = isAuthor && ['rich', 'short', 'video', 'vote', 'event', 'journal', 'help'].includes(post.type);
+  const canEdit = isAuthor && ['rich', 'image', 'short', 'video', 'vote', 'event', 'journal', 'help'].includes(post.type);
   const canDelete = isAuthor || isModerator || isAdmin || isSuperAdmin;
   const canMove = isModerator || isAdmin || isSuperAdmin;
   const canPin = isModerator || isAdmin || isSuperAdmin;
@@ -63,7 +67,7 @@ function fallbackPermissions(post: Post, user?: PostAdminMenuProps['user']): Pos
     canPin,
     canLock,
     canBan,
-    canReview,
+    canReview
   };
 }
 
@@ -74,7 +78,7 @@ export function PostAdminMenu({
   buttonSize = 'sm',
   onChanged,
   onPostChanged,
-  onPostDeleted,
+  onPostDeleted
 }: PostAdminMenuProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -121,9 +125,9 @@ export function PostAdminMenu({
     if (!window.confirm('确定删除这篇帖子吗？此操作无法撤销。')) return;
     const reason = window.prompt('删除原因（可选）：') || '管理员删除';
     try {
-      await api.post<{ deletedId: string }>(`/api/posts/${post.id}/admin`, {
+      await api.post<{deletedId: string;}>(`/api/posts/${post.id}/admin`, {
         action: 'delete',
-        reason,
+        reason
       });
       toast.success('删除成功');
       setOpen(false);
@@ -147,7 +151,7 @@ export function PostAdminMenu({
         action: 'ban_user',
         userId: post.author.id,
         duration: Number(days),
-        reason,
+        reason
       });
       toast.success('封禁成功');
       setOpen(false);
@@ -176,7 +180,7 @@ export function PostAdminMenu({
     setLockSubmitting(true);
     try {
       const updatedPost = await api.post<Post>(`/api/posts/${post.id}/admin`, {
-        action: post.locked ? 'unlock' : 'lock',
+        action: post.locked ? 'unlock' : 'lock'
       });
       toast.success(post.locked ? '解锁成功' : '锁定成功');
       setLockOpen(false);
@@ -199,7 +203,7 @@ export function PostAdminMenu({
       const updatedPost = await api.post<Post>(`/api/posts/${post.id}/admin`, {
         action: pinned ? 'unpin' : 'pin',
         scope: target.scope,
-        targetId: target.targetId,
+        targetId: target.targetId
       });
       toast.success(pinned ? '取消置顶成功' : '置顶成功');
       if (onPostChanged) {
@@ -225,7 +229,7 @@ export function PostAdminMenu({
         action: 'move',
         categorySlug: moveSelection.categorySlug || undefined,
         genusSlug: moveSelection.genusSlug || undefined,
-        speciesSlug: moveSelection.speciesSlug || undefined,
+        speciesSlug: moveSelection.speciesSlug || undefined
       });
       toast.success('移帖成功');
       setMoveOpen(false);
@@ -242,15 +246,15 @@ export function PostAdminMenu({
   };
 
   const menuAlignClass =
-    align === 'center'
-      ? 'right-1/2 translate-x-1/2'
-      : 'right-0';
+  align === 'center' ? cx(styles.r_ad109e29, styles.r_a3869832) :
+
+  styles.menuAlignRight;
   const arrowClass =
-    align === 'center'
-      ? 'left-1/2 -translate-x-1/2'
-      : 'right-3';
+  align === 'center' ? cx(styles.r_e632769a, styles.r_efaa0701) :
+
+  styles.menuArrowRight;
   const buttonClass =
-    buttonSize === 'md' ? 'h-8 w-8' : 'h-7 w-7';
+  buttonSize === 'md' ? cx(styles.r_ed8a5df7, styles.r_2bbcfc3b) : cx(styles.r_d0a52b31, styles.r_cbbf90f9);
   const currentBoardLabel = formatCurrentBoardLabel(post);
   const targetBoardLabel = moveSelection.label || currentBoardLabel;
   const pinTargets = buildPinTargets(post, user?.isSuperAdmin === true);
@@ -258,72 +262,72 @@ export function PostAdminMenu({
   return (
     <>
       <div
-        className='relative'
+        className={styles.r_d89972fe}
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
-        }}
-      >
+        }}>
+
         <button
           type='button'
           onMouseEnter={() => setOpen(true)}
           onMouseLeave={() => setOpen(false)}
           onClick={() => setOpen((value) => !value)}
-          className={cn(
-            'grid place-items-center rounded-none text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-700',
-            buttonClass,
+          className={cn(cx(styles.r_f3c543ad, styles.r_67d66567, styles.r_0c5e9137, styles.r_66a36c90, styles.r_ceb69a6b, styles.r_9cab05a6, styles.r_3364420b),
+
+          buttonClass
           )}
           title='管理'
-          aria-label='管理'
-        >
+          aria-label='管理'>
+
           <Icon name='settings' size={buttonSize === 'md' ? 18 : 16} />
         </button>
 
-        {open && (
-          <div
-            role='menu'
-            className={cn('absolute top-full z-50 pt-2', menuAlignClass)}
-            onMouseEnter={() => setOpen(true)}
-            onMouseLeave={() => setOpen(false)}
-          >
-            <div className='relative w-max rounded-none border border-leaf-100 bg-white py-1 shadow-xl'>
+        {open &&
+        <div
+          role='menu'
+          className={cn(cx(styles.r_da4dbfbc, styles.r_5e8a03e0, styles.r_181b2866, styles.r_f46b61a9), menuAlignClass)}
+          onMouseEnter={() => setOpen(true)}
+          onMouseLeave={() => setOpen(false)}>
+
+            <div className={cx(styles.r_d89972fe, styles.r_2f935d2e, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_660d2eff, styles.r_a739868a)}>
               <div
-                className={cn(
-                  'absolute -top-[6px] h-3 w-3 rotate-45 transform border-l border-t border-leaf-100 bg-white',
-                  arrowClass,
-                )}
-              />
+              className={cn(cx(styles.r_da4dbfbc, styles.r_b770696a, styles.r_6a60c09e, styles.r_9cea0567, styles.r_c74901da, styles.r_dd8ce13a, styles.r_d4f78465, styles.r_b950dda2, styles.r_88b684d2, styles.r_5e10cdb8),
 
-              {permissions.canEdit && (
-                <MenuItem onClick={handleEdit}>编辑</MenuItem>
-              )}
+              arrowClass
+              )} />
 
-              {permissions.canMove && (
-                <MenuItem onClick={handleMove}>移帖</MenuItem>
-              )}
 
-              {permissions.canPin && (
-                <MenuItem onClick={handlePinManage}>置顶管理</MenuItem>
-              )}
+              {permissions.canEdit &&
+            <MenuItem onClick={handleEdit}>编辑</MenuItem>
+            }
 
-              {permissions.canLock && (
-                <MenuItem onClick={handleLockManage}>
+              {permissions.canMove &&
+            <MenuItem onClick={handleMove}>移帖</MenuItem>
+            }
+
+              {permissions.canPin &&
+            <MenuItem onClick={handlePinManage}>置顶管理</MenuItem>
+            }
+
+              {permissions.canLock &&
+            <MenuItem onClick={handleLockManage}>
                   {post.locked ? '解锁' : '锁定'}
                 </MenuItem>
-              )}
+            }
 
-              {permissions.canBan && (
-                <MenuItem onClick={handleBanUser}>封禁用户</MenuItem>
-              )}
+              {permissions.canBan &&
+            <MenuItem onClick={handleBanUser}>封禁用户</MenuItem>
+            }
 
-              {permissions.canDelete && <div className='my-0.5 border-t border-leaf-50' />}
+              {permissions.canDelete && <div className={cx(styles.r_7bd3b5ea, styles.r_b950dda2, styles.r_5ff6a729)} />}
 
-              {permissions.canDelete && (
-                <MenuItem danger onClick={handleDelete}>删除</MenuItem>
-              )}
+              {permissions.canDelete &&
+            <MenuItem danger onClick={handleDelete}>删除</MenuItem>
+            }
             </div>
           </div>
-        )}
+        }
       </div>
 
       <PostMoveDialog
@@ -339,8 +343,8 @@ export function PostAdminMenu({
         selection={moveSelection}
         submitting={moveSubmitting}
         onSelectionChange={setMoveSelection}
-        onConfirm={confirmMove}
-      />
+        onConfirm={confirmMove} />
+
 
       <PostLockDialog
         open={lockOpen}
@@ -353,8 +357,8 @@ export function PostAdminMenu({
         authorHref={`/user/${post.author.id}`}
         locked={post.locked === true}
         submitting={lockSubmitting}
-        onConfirm={confirmLock}
-      />
+        onConfirm={confirmLock} />
+
 
       <Dialog
         open={false}
@@ -364,68 +368,68 @@ export function PostAdminMenu({
         title='移帖'
         maxWidth='lg'
         actions={
-          <div className='ml-auto flex items-center gap-2'>
+        <div className={cx(styles.r_fb56d9cf, styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
             <button
-              type='button'
-              onClick={() => setMoveOpen(false)}
-              disabled={moveSubmitting}
-              className='rounded-md border border-ink-200 bg-white px-3 py-1.5 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-60'
-            >
+            type='button'
+            onClick={() => setMoveOpen(false)}
+            disabled={moveSubmitting}
+            className={cx(styles.r_421ac2be, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_5e10cdb8, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_fc7473ca, styles.r_2689f395, styles.r_eb6abb1f, styles.r_ceb69a6b, styles.r_5399e21f, styles.r_5f533b3a, styles.r_d463b664)}>
+
               取消
             </button>
             <button
-              type='button'
-              onClick={confirmMove}
-              disabled={moveSubmitting || (!moveSelection.categorySlug && !moveSelection.genusSlug && !moveSelection.speciesSlug)}
-              className='rounded-md bg-leaf-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-leaf-700 disabled:cursor-not-allowed disabled:opacity-60'
-            >
+            type='button'
+            onClick={confirmMove}
+            disabled={moveSubmitting || !moveSelection.categorySlug && !moveSelection.genusSlug && !moveSelection.speciesSlug}
+            className={cx(styles.r_421ac2be, styles.r_6bceb016, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_fc7473ca, styles.r_2689f395, styles.r_72a4c7cd, styles.r_ceb69a6b, styles.r_e269e58c, styles.r_5f533b3a, styles.r_d463b664)}>
+
               {moveSubmitting ? '移动中...' : '确认移帖'}
             </button>
           </div>
-        }
-      >
-        <div className='space-y-4'>
-          <div className='space-y-2 rounded-md bg-leaf-50/60 p-3 text-sm'>
-            <div className='flex gap-2'>
-              <span className='shrink-0 text-ink-500'>发帖人：</span>
+        }>
+
+        <div className={styles.r_3e7ce58d}>
+          <div className={cx(styles.r_6f7e013d, styles.r_421ac2be, styles.r_a8a62ca4, styles.r_eb6e8b88, styles.r_fc7473ca)}>
+            <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
+              <span className={cx(styles.r_012fbd12, styles.r_7b89cd85)}>发帖人：</span>
               <a
                 href={`/user/${post.author.id}`}
                 target='_blank'
                 rel='noreferrer'
-                className='min-w-0 font-medium text-leaf-700 hover:text-leaf-800 hover:underline'
-              >
+                className={cx(styles.r_7e0b7cdf, styles.r_2689f395, styles.r_5f6a59f1, styles.r_81be6435, styles.r_f673f4a7)}>
+
                 {post.author.name}
               </a>
             </div>
-            <div className='flex gap-2'>
-              <span className='shrink-0 text-ink-500'>帖子标题：</span>
-              <span className='min-w-0 break-words font-medium text-ink-800'>{post.title}</span>
+            <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
+              <span className={cx(styles.r_012fbd12, styles.r_7b89cd85)}>帖子标题：</span>
+              <span className={cx(styles.r_7e0b7cdf, styles.r_170cee3f, styles.r_2689f395, styles.r_399e11a5)}>{post.title}</span>
             </div>
-            <div className='flex gap-2'>
-              <span className='shrink-0 text-ink-500'>帖子 ID：</span>
+            <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
+              <span className={cx(styles.r_012fbd12, styles.r_7b89cd85)}>帖子 ID：</span>
               <a
                 href={`/post/${post.id}`}
                 target='_blank'
                 rel='noreferrer'
-                className='min-w-0 break-all font-mono text-xs text-leaf-700 hover:text-leaf-800 hover:underline'
-              >
+                className={cx(styles.r_7e0b7cdf, styles.r_451f34ab, styles.r_0e65706b, styles.r_359090c2, styles.r_5f6a59f1, styles.r_81be6435, styles.r_f673f4a7)}>
+
                 {post.id}
               </a>
             </div>
-            <div className='flex gap-2'>
-              <span className='shrink-0 text-ink-500'>现在的板块：</span>
-              <span className='min-w-0 font-medium text-ink-800'>{currentBoardLabel}</span>
+            <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
+              <span className={cx(styles.r_012fbd12, styles.r_7b89cd85)}>现在的板块：</span>
+              <span className={cx(styles.r_7e0b7cdf, styles.r_2689f395, styles.r_399e11a5)}>{currentBoardLabel}</span>
             </div>
-            <div className='flex gap-2'>
-              <span className='shrink-0 text-ink-500'>移动到：</span>
-              <span className='min-w-0 font-medium text-leaf-700'>{targetBoardLabel}</span>
+            <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
+              <span className={cx(styles.r_012fbd12, styles.r_7b89cd85)}>移动到：</span>
+              <span className={cx(styles.r_7e0b7cdf, styles.r_2689f395, styles.r_5f6a59f1)}>{targetBoardLabel}</span>
             </div>
           </div>
           <BoardSelect
             value={moveSelection}
             onChange={setMoveSelection}
-            placeholder='搜索并选择目标板块'
-          />
+            placeholder='搜索并选择目标板块' />
+
         </div>
       </Dialog>
 
@@ -441,8 +445,8 @@ export function PostAdminMenu({
         pins={post.pins ?? []}
         targets={pinTargets}
         busyKey={pinSubmittingKey}
-        onToggle={togglePin}
-      />
+        onToggle={togglePin} />
+
 
       <Dialog
         open={false}
@@ -450,87 +454,87 @@ export function PostAdminMenu({
           if (!pinSubmittingKey) setPinOpen(false);
         }}
         title='置顶管理'
-        maxWidth='lg'
-      >
-        <div className='space-y-4'>
-          <div className='space-y-2 rounded-md bg-leaf-50/60 p-3 text-sm'>
-            <div className='flex gap-2'>
-              <span className='shrink-0 text-ink-500'>发帖人：</span>
+        maxWidth='lg'>
+
+        <div className={styles.r_3e7ce58d}>
+          <div className={cx(styles.r_6f7e013d, styles.r_421ac2be, styles.r_a8a62ca4, styles.r_eb6e8b88, styles.r_fc7473ca)}>
+            <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
+              <span className={cx(styles.r_012fbd12, styles.r_7b89cd85)}>发帖人：</span>
               <a
                 href={`/user/${post.author.id}`}
                 target='_blank'
                 rel='noreferrer'
-                className='min-w-0 font-medium text-leaf-700 hover:text-leaf-800 hover:underline'
-              >
+                className={cx(styles.r_7e0b7cdf, styles.r_2689f395, styles.r_5f6a59f1, styles.r_81be6435, styles.r_f673f4a7)}>
+
                 {post.author.name}
               </a>
             </div>
-            <div className='flex gap-2'>
-              <span className='shrink-0 text-ink-500'>帖子标题：</span>
-              <span className='min-w-0 break-words font-medium text-ink-800'>{post.title}</span>
+            <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
+              <span className={cx(styles.r_012fbd12, styles.r_7b89cd85)}>帖子标题：</span>
+              <span className={cx(styles.r_7e0b7cdf, styles.r_170cee3f, styles.r_2689f395, styles.r_399e11a5)}>{post.title}</span>
             </div>
-            <div className='flex gap-2'>
-              <span className='shrink-0 text-ink-500'>帖子 ID：</span>
+            <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
+              <span className={cx(styles.r_012fbd12, styles.r_7b89cd85)}>帖子 ID：</span>
               <a
                 href={`/post/${post.id}`}
                 target='_blank'
                 rel='noreferrer'
-                className='min-w-0 break-all font-mono text-xs text-leaf-700 hover:text-leaf-800 hover:underline'
-              >
+                className={cx(styles.r_7e0b7cdf, styles.r_451f34ab, styles.r_0e65706b, styles.r_359090c2, styles.r_5f6a59f1, styles.r_81be6435, styles.r_f673f4a7)}>
+
                 {post.id}
               </a>
             </div>
           </div>
 
-          <div className='space-y-2'>
+          <div className={styles.r_6f7e013d}>
             {pinTargets.map((target) => {
               const pinned = isPinned(post, target);
               const loading = pinSubmittingKey === target.key;
               return (
                 <div
                   key={target.key}
-                  className='flex items-center justify-between gap-3 rounded-md border border-leaf-100 px-3 py-2'
-                >
-                  <div className='min-w-0'>
-                    <div className='text-sm font-medium text-ink-800'>{target.label}</div>
-                    <div className='mt-0.5 text-xs text-ink-500'>{target.description}</div>
+                  className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_1004c0c3, styles.r_421ac2be, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_0e17f2bd, styles.r_03b4dd7f)}>
+
+                  <div className={styles.r_7e0b7cdf}>
+                    <div className={cx(styles.r_fc7473ca, styles.r_2689f395, styles.r_399e11a5)}>{target.label}</div>
+                    <div className={cx(styles.r_15e1b1f4, styles.r_359090c2, styles.r_7b89cd85)}>{target.description}</div>
                   </div>
                   <button
                     type='button'
                     onClick={() => togglePin(target)}
                     disabled={Boolean(pinSubmittingKey)}
-                    className={cn(
-                      'shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
-                      pinned
-                        ? 'border border-ink-200 bg-white text-ink-700 hover:bg-ink-50'
-                        : 'bg-leaf-600 text-white hover:bg-leaf-700',
-                    )}
-                  >
+                    className={cn(cx(styles.r_012fbd12, styles.r_421ac2be, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_fc7473ca, styles.r_2689f395, styles.r_ceb69a6b, styles.r_5f533b3a, styles.r_d463b664),
+
+                    pinned ? cx(styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_5e10cdb8, styles.r_eb6abb1f, styles.r_5399e21f) : cx(styles.r_6bceb016, styles.r_72a4c7cd, styles.r_e269e58c)
+
+
+                    )}>
+
                     {loading ? '处理中...' : pinned ? '取消置顶' : '置顶'}
                   </button>
-                </div>
-              );
+                </div>);
+
             })}
           </div>
         </div>
       </Dialog>
-    </>
-  );
+    </>);
+
 }
 
 function getInitialBoardSelection(post: Post): BoardSelection {
   const path = post.board.path ?? [];
   return {
     categorySlug:
-      path.find((item) => item.level === 'category')?.slug ??
-      (post.board.level === 'category' ? post.board.slug : ''),
+    path.find((item) => item.level === 'category')?.slug ?? (
+    post.board.level === 'category' ? post.board.slug : ''),
     genusSlug:
-      path.find((item) => item.level === 'genus')?.slug ??
-      (post.board.level === 'genus' ? post.board.slug : ''),
+    path.find((item) => item.level === 'genus')?.slug ?? (
+    post.board.level === 'genus' ? post.board.slug : ''),
     speciesSlug:
-      path.find((item) => item.level === 'species')?.slug ??
-      (post.board.level === 'species' ? post.board.slug : ''),
-    label: formatCurrentBoardLabel(post),
+    path.find((item) => item.level === 'species')?.slug ?? (
+    post.board.level === 'species' ? post.board.slug : ''),
+    label: formatCurrentBoardLabel(post)
   };
 }
 
@@ -553,11 +557,11 @@ function buildPinTargets(post: Post, canGlobalPin: boolean): PinTarget[] {
   const boardScope: PostPinScope = post.board.level === 'category' ? 'board' : post.board.level;
   if (canGlobalPin) {
     targets.push({
-      key: 'global:',
+      key: "global:",
       scope: 'global',
       targetId: '',
       label: '全局置顶',
-      description: '只在首页/全站推荐类列表中优先展示。',
+      description: '只在首页/全站推荐类列表中优先展示。'
     });
   }
 
@@ -566,7 +570,7 @@ function buildPinTargets(post: Post, canGlobalPin: boolean): PinTarget[] {
     scope: boardScope,
     targetId: post.board.id,
     label: `${levelLabel(post.board.level)}置顶`,
-    description: `只在 ${formatCurrentBoardLabel(post)} 范围内置顶。`,
+    description: `只在 ${formatCurrentBoardLabel(post)} 范围内置顶。`
   });
 
   for (const tag of post.tags.slice(0, 10)) {
@@ -575,7 +579,7 @@ function buildPinTargets(post: Post, canGlobalPin: boolean): PinTarget[] {
       scope: 'topic',
       targetId: tag,
       label: `话题置顶：#${tag}`,
-      description: `只在 #${tag} 话题页内置顶。`,
+      description: `只在 #${tag} 话题页内置顶。`
     });
   }
 
@@ -602,12 +606,12 @@ function levelLabel(level: Post['board']['level']): string {
 function MenuItem({
   children,
   danger,
-  onClick,
-}: {
-  children: React.ReactNode;
-  danger?: boolean;
-  onClick: () => void;
-}) {
+  onClick
+
+
+
+
+}: {children: React.ReactNode;danger?: boolean;onClick: () => void;}) {
   return (
     <button
       type='button'
@@ -616,12 +620,12 @@ function MenuItem({
         event.stopPropagation();
         onClick();
       }}
-      className={cn(
-        'block w-full whitespace-nowrap px-3 py-1.5 text-center text-xs hover:bg-leaf-50',
-        danger ? 'text-rose-600 hover:bg-rose-50' : 'text-ink-700',
-      )}
-    >
+      className={cn(cx(styles.r_0214b4b3, styles.r_6da6a3c3, styles.r_e82ae8be, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_ca6bf630, styles.r_359090c2, styles.r_5756b7b4),
+
+      danger ? cx(styles.r_595fceba, styles.r_85cfcc24) : styles.r_eb6abb1f
+      )}>
+
       {children}
-    </button>
-  );
+    </button>);
+
 }

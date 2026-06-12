@@ -4,6 +4,10 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { VipBadge } from './VipBadge';
 import type { User } from '@/lib/types';
+import styles from './UserName.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 /**
  * 显示用户名,自带:
@@ -19,66 +23,66 @@ export function UserName({
   asLink = true,
   size = 'sm',
   className,
-  showVip = true,
-}: {
-  user: Pick<User, 'id' | 'name'> & {
-    vip?: { isVip?: boolean; lifetime?: boolean } | null;
-    equip?: { pendant?: { meta?: Record<string, unknown> | null } | null } | null;
-  };
-  asLink?: boolean;
-  size?: 'xs' | 'sm' | 'md' | 'lg';
-  className?: string;
-  showVip?: boolean;
-}) {
+  showVip = true
+
+
+
+
+
+
+
+
+
+}: {user: Pick<User, 'id' | 'name'> & {vip?: {isVip?: boolean;lifetime?: boolean;} | null;equip?: {pendant?: {meta?: Record<string, unknown> | null;} | null;} | null;};asLink?: boolean;size?: 'xs' | 'sm' | 'md' | 'lg';className?: string;showVip?: boolean;}) {
   const isVip = !!user.vip?.isVip;
   const lifetime = !!user.vip?.lifetime;
 
   const sizeCls = {
-    xs: 'text-xs',
-    sm: 'text-sm',
-    md: 'text-base',
-    lg: 'text-lg',
+    xs: styles.r_359090c2,
+    sm: styles.r_fc7473ca,
+    md: styles.r_4ee73492,
+    lg: styles.r_42536e69
   }[size];
 
   // 名字渐变色:VIP = 金色渐变;否则正常
-  const nameStyle = isVip
-    ? {
-        backgroundImage:
-          'linear-gradient(90deg,#d97706,#f59e0b,#fbbf24,#f59e0b,#d97706)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        backgroundClip: 'text',
-        color: 'transparent',
-      }
-    : undefined;
+  const nameStyle = isVip ?
+  {
+    backgroundImage:
+    "linear-gradient(90deg,#d97706,#f59e0b,#fbbf24,#f59e0b,#d97706)",
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    color: 'transparent'
+  } :
+  undefined;
 
-  const inner = (
-    <>
+  const inner =
+  <>
       <span
-        className={cn('font-medium', !isVip && 'text-ink-800')}
-        style={nameStyle}
-      >
+      className={cn(styles.r_2689f395, !isVip && styles.r_399e11a5)}
+      style={nameStyle}>
+
         {user.name}
       </span>
-      {showVip && isVip && (
-        <VipBadge size={size === 'xs' ? 'xs' : 'sm'} lifetime={lifetime} />
-      )}
-    </>
-  );
+      {showVip && isVip &&
+    <VipBadge size={size === 'xs' ? 'xs' : 'sm'} lifetime={lifetime} />
+    }
+    </>;
+
 
   if (asLink) {
     return (
       <Link
         href={`/user/${user.id}`}
-        className={cn('inline-flex items-center gap-1.5 hover:underline underline-offset-2', sizeCls, className)}
-      >
+        className={cn(cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_58284b4e, styles.r_f673f4a7, styles.r_a28fefe3), sizeCls, className)}>
+
         {inner}
-      </Link>
-    );
+      </Link>);
+
   }
   return (
-    <span className={cn('inline-flex items-center gap-1.5', sizeCls, className)}>
+    <span className={cn(cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_58284b4e), sizeCls, className)}>
       {inner}
-    </span>
-  );
+    </span>);
+
 }

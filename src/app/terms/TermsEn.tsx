@@ -1,8 +1,11 @@
+import styles from './TermsEn.module.scss';
+import { cx } from '@/lib/style-utils';
+
 export function TermsEn() {
   return (
     <>
       <h1>RouYou Terms of Service</h1>
-      <p className="text-leaf-500">
+      <p className={styles.r_eb16169c}>
         Last updated: 7 May 2026 · Effective on the date of publication
       </p>
 
@@ -129,10 +132,10 @@ export function TermsEn() {
       </p>
 
       <hr />
-      <p className="text-xs text-leaf-500">
+      <p className={cx(styles.r_359090c2, styles.r_eb16169c)}>
         This is a demo-quality draft and does not constitute legal advice.
         Please have a qualified legal adviser review before production use.
       </p>
-    </>
-  );
+    </>);
+
 }

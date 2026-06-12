@@ -1,8 +1,11 @@
+import styles from './TermsZh.module.scss';
+import { cx } from '@/lib/style-utils';
+
 export function TermsZh() {
   return (
     <>
       <h1>肉友社 用户协议</h1>
-      <p className="text-leaf-500">
+      <p className={styles.r_eb16169c}>
         最近更新日期:2026 年 05 月 07 日 · 生效日期:协议发布之日
       </p>
 
@@ -95,9 +98,9 @@ export function TermsZh() {
       </p>
 
       <hr />
-      <p className="text-xs text-leaf-500">
+      <p className={cx(styles.r_359090c2, styles.r_eb16169c)}>
         本协议为 Demo 版本,不构成法律意见。正式上线前请由专业法律顾问审阅修订。
       </p>
-    </>
-  );
+    </>);
+
 }

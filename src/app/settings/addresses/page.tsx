@@ -5,12 +5,16 @@ import { Empty } from '@/components/ui/Empty';
 import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import { cn } from '@/lib/utils';
 import { AddressForm, type AddressFormValue } from '@/components/address/AddressForm';
 import { toast } from '@/components/ui/Toast';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import type { Address } from '@/lib/types';
+import styles from './page.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 export default function AddressSettingsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -27,17 +31,17 @@ export default function AddressSettingsPage() {
       const r = await api.get<Address[]>('/api/addresses');
       setList(r);
     } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (user) load();
-    else setLoading(false);
-  }, [user, authLoading]);
+
+
+
+
+
+
+
+
+      // ignore
+    } finally {setLoading(false);}};useEffect(() => {if (authLoading) return;if (user) load();else setLoading(false);}, [user, authLoading]);
 
   const onCreate = async (v: AddressFormValue) => {
     setSubmitting(true);
@@ -98,19 +102,19 @@ export default function AddressSettingsPage() {
 
   if (!user) {
     return (
-      <div className="card p-10 text-center">
-        <div className="text-4xl mb-3">📦</div>
-        <div className="text-lg font-semibold">{t('addresses.loginRequired')}</div>
-      </div>
-    );
+      <div className={cx(styles.r_a4d0f420, styles.r_ca6bf630)}>
+        <div className={cx(styles.r_a95699d9, styles.r_1bb88326)}>📦</div>
+        <div className={cx(styles.r_42536e69, styles.r_e83a7042)}>{t('addresses.loginRequired')}</div>
+      </div>);
+
   }
 
   return (
-    <div className="card p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
+    <div className={styles.r_0478c89a}>
+      <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_b6777c6d)}>
+        <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
           <Icon name="mail" size={20} />
-          <h1 className="text-xl font-semibold">{t('addresses.title')}</h1>
+          <h1 className={cx(styles.r_d5c9b000, styles.r_e83a7042)}>{t('addresses.title')}</h1>
         </div>
         <button
           type="button"
@@ -118,111 +122,111 @@ export default function AddressSettingsPage() {
             setCreating(true);
             setEditing(null);
           }}
-          className="btn-primary !text-sm"
-        >
+          className={styles.r_4f43b5cb}>
+
           <Icon name="plus" size={14} />
           {t('addresses.addNew')}
         </button>
       </div>
 
-      <p className="text-sm text-leaf-600 mb-4">{t('addresses.subtitle')}</p>
+      <p className={cx(styles.r_fc7473ca, styles.r_b17d6a13, styles.r_da019856)}>{t('addresses.subtitle')}</p>
 
-      {loading ? (
-        <div className="py-10 text-center text-sm text-leaf-700/60">{t('common.loading')}</div>
-      ) : list.length === 0 && !creating && !editing ? (
-        <Empty icon="📭" title={t('addresses.empty')} desc={t('addresses.emptyDesc')} />
-      ) : (
-        <div className="space-y-4">
+      {loading ?
+      <div className={cx(styles.r_1100bef6, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>{t('common.loading')}</div> :
+      list.length === 0 && !creating && !editing ?
+      <Empty icon="📭" title={t('addresses.empty')} desc={t('addresses.emptyDesc')} /> :
+
+      <div className={styles.r_3e7ce58d}>
           {/* 地址列表 */}
-          {list.length > 0 && (
-            <ul className="space-y-3">
-              {list.map((a) => (
-                <li
-                  key={a.id}
-                  className={cn(
-                    'flex items-center justify-between rounded-lg border p-4',
-                    a.isDefault ? 'border-leaf-300 bg-leaf-50/50' : 'border-leaf-100'
-                  )}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-xl">{tagIcon(a.tag)}</span>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-ink-800">{a.name}</span>
-                        <span className="text-xs text-ink-500">{a.phone}</span>
-                        {a.tag && (
-                          <span className="rounded-full bg-leaf-50 px-2 py-0.5 text-[10px] text-leaf-700">
+          {list.length > 0 &&
+        <ul className={styles.r_6ed543e2}>
+              {list.map((a) =>
+          <li
+            key={a.id}
+            className={cn(cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_8e63407b),
+
+            a.isDefault ? cx(styles.r_e0e39c88, styles.r_9ac94195) : styles.r_88b684d2
+            )}>
+
+                  <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_7e0b7cdf)}>
+                    <span className={styles.r_d5c9b000}>{tagIcon(a.tag)}</span>
+                    <div className={styles.r_7e0b7cdf}>
+                      <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
+                        <span className={cx(styles.r_2689f395, styles.r_399e11a5)}>{a.name}</span>
+                        <span className={cx(styles.r_359090c2, styles.r_7b89cd85)}>{a.phone}</span>
+                        {a.tag &&
+                  <span className={cx(styles.r_ac204c10, styles.r_7ebecbb6, styles.r_d5eab218, styles.r_465609a2, styles.r_1dc571a3, styles.r_5f6a59f1)}>
                             {a.tag}
                           </span>
-                        )}
-                        {a.isDefault && (
-                          <span className="rounded-full bg-leaf-500 px-2 py-0.5 text-[10px] font-medium text-white">
+                  }
+                        {a.isDefault &&
+                  <span className={cx(styles.r_ac204c10, styles.r_45499621, styles.r_d5eab218, styles.r_465609a2, styles.r_1dc571a3, styles.r_2689f395, styles.r_72a4c7cd)}>
                             {t('addresses.default')}
                           </span>
-                        )}
+                  }
                       </div>
-                      <div className="text-xs text-ink-500 truncate">
+                      <div className={cx(styles.r_359090c2, styles.r_7b89cd85, styles.r_f283ea9b)}>
                         {[a.province, a.city, a.district, a.detail].filter(Boolean).join(' ')}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-4">
-                    {!a.isDefault && (
-                      <button
-                        type="button"
-                        onClick={() => onSetDefault(a.id)}
-                        className="text-xs text-leaf-600 hover:text-leaf-700"
-                      >
+                  <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_012fbd12, styles.r_f242aff2)}>
+                    {!a.isDefault &&
+              <button
+                type="button"
+                onClick={() => onSetDefault(a.id)}
+                className={cx(styles.r_359090c2, styles.r_b17d6a13, styles.r_9825203a)}>
+
                         {t('addresses.setDefault')}
                       </button>
-                    )}
+              }
                     <button
-                      type="button"
-                      onClick={() => { setEditing(a); setCreating(false); }}
-                      className="text-xs text-ink-500 hover:text-ink-700"
-                    >
+                type="button"
+                onClick={() => {setEditing(a);setCreating(false);}}
+                className={cx(styles.r_359090c2, styles.r_7b89cd85, styles.r_3364420b)}>
+
                       <Icon name="edit" size={14} />
                     </button>
                     <ConfirmPopover
-                      title={t('addresses.deleteConfirm')}
-                      message={t('addresses.tips.deleteWarning')}
-                      confirmText={t('addresses.delete')}
-                      danger
-                      onConfirm={() => onDelete(a.id)}
-                    >
+                title={t('addresses.deleteConfirm')}
+                message={t('addresses.tips.deleteWarning')}
+                confirmText={t('addresses.delete')}
+                danger
+                onConfirm={() => onDelete(a.id)}>
+
                       <button
-                        type="button"
-                        className="text-xs text-rose-500 hover:text-rose-600"
-                      >
+                  type="button"
+                  className={cx(styles.r_359090c2, styles.r_fa512798, styles.r_744ff542)}>
+
                         <Icon name="trash" size={14} />
                       </button>
                     </ConfirmPopover>
                   </div>
                 </li>
-              ))}
-            </ul>
           )}
+            </ul>
+        }
 
           {/* 新增/编辑表单 */}
-          {(creating || editing) && (
-            <div className="rounded-lg border border-leaf-100 p-4">
-              <div className="mb-3 text-sm font-semibold">
+          {(creating || editing) &&
+        <div className={cx(styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_8e63407b)}>
+              <div className={cx(styles.r_1bb88326, styles.r_fc7473ca, styles.r_e83a7042)}>
                 {editing ? t('addresses.editTitle') : t('addresses.addNew')}
               </div>
               <AddressForm
-                initial={editing ?? undefined}
-                onSubmit={editing ? onUpdate : onCreate}
-                onCancel={() => { setCreating(false); setEditing(null); }}
-                submitting={submitting}
-                submitText={editing ? t('addresses.saveEdit') : t('addresses.save')}
-              />
+            initial={editing ?? undefined}
+            onSubmit={editing ? onUpdate : onCreate}
+            onCancel={() => {setCreating(false);setEditing(null);}}
+            submitting={submitting}
+            submitText={editing ? t('addresses.saveEdit') : t('addresses.save')} />
+
             </div>
-          )}
+        }
 
           {/* 提示 */}
-          <div className="p-4 text-[11px] text-leaf-700/70 bg-leaf-50 rounded-lg">
-            <div className="mb-1 font-medium text-leaf-700">{t('addresses.tips.title')}</div>
-            <ul className="ml-4 list-disc space-y-0.5">
+          <div className={cx(styles.r_8e63407b, styles.r_d058ca6d, styles.r_69335b95, styles.r_7ebecbb6, styles.r_5f22e64f)}>
+            <div className={cx(styles.r_65281709, styles.r_2689f395, styles.r_5f6a59f1)}>{t('addresses.tips.title')}</div>
+            <ul className={cx(styles.r_f242aff2, styles.r_1f33b438, styles.r_e2eedc57)}>
               <li>{t('addresses.tips.item1')}</li>
               <li>{t('addresses.tips.item2')}</li>
               <li>{t('addresses.tips.item3')}</li>
@@ -230,7 +234,7 @@ export default function AddressSettingsPage() {
             </ul>
           </div>
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }

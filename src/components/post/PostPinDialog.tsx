@@ -3,6 +3,10 @@
 import { Dialog } from '@/components/ui/Dialog';
 import type { PostPinScope } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import styles from './PostPinDialog.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 export type PostPinTarget = {
   key: string;
@@ -28,95 +32,95 @@ export function PostPinDialog({
   pins,
   targets,
   busyKey,
-  onToggle,
-}: {
-  open: boolean;
-  onClose: () => void;
-  postId: string;
-  postTitle: string;
-  authorName?: string;
-  authorHref?: string;
-  pins: PostPinLike[];
-  targets: PostPinTarget[];
-  busyKey: string | null;
-  onToggle: (target: PostPinTarget) => void;
-}) {
+  onToggle
+
+
+
+
+
+
+
+
+
+
+
+}: {open: boolean;onClose: () => void;postId: string;postTitle: string;authorName?: string;authorHref?: string;pins: PostPinLike[];targets: PostPinTarget[];busyKey: string | null;onToggle: (target: PostPinTarget) => void;}) {
   return (
     <Dialog
       open={open}
       onClose={onClose}
       title="置顶管理"
-      maxWidth="lg"
-    >
-      <div className="space-y-4">
-        <div className="space-y-2 rounded-md bg-leaf-50/60 p-3 text-sm">
-          {authorName && (
-            <div className="flex gap-2">
-              <span className="shrink-0 text-ink-500">发帖人：</span>
-              {authorHref ? (
-                <a
-                  href={authorHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="min-w-0 font-medium text-leaf-700 hover:text-leaf-800 hover:underline"
-                >
+      maxWidth="lg">
+
+      <div className={styles.r_3e7ce58d}>
+        <div className={cx(styles.r_6f7e013d, styles.r_421ac2be, styles.r_a8a62ca4, styles.r_eb6e8b88, styles.r_fc7473ca)}>
+          {authorName &&
+          <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
+              <span className={cx(styles.r_012fbd12, styles.r_7b89cd85)}>发帖人：</span>
+              {authorHref ?
+            <a
+              href={authorHref}
+              target="_blank"
+              rel="noreferrer"
+              className={cx(styles.r_7e0b7cdf, styles.r_2689f395, styles.r_5f6a59f1, styles.r_81be6435, styles.r_f673f4a7)}>
+
                   {authorName}
-                </a>
-              ) : (
-                <span className="min-w-0 font-medium text-ink-800">{authorName}</span>
-              )}
+                </a> :
+
+            <span className={cx(styles.r_7e0b7cdf, styles.r_2689f395, styles.r_399e11a5)}>{authorName}</span>
+            }
             </div>
-          )}
-          <div className="flex gap-2">
-            <span className="shrink-0 text-ink-500">帖子标题：</span>
-            <span className="min-w-0 break-words font-medium text-ink-800">{postTitle}</span>
+          }
+          <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
+            <span className={cx(styles.r_012fbd12, styles.r_7b89cd85)}>帖子标题：</span>
+            <span className={cx(styles.r_7e0b7cdf, styles.r_170cee3f, styles.r_2689f395, styles.r_399e11a5)}>{postTitle}</span>
           </div>
-          <div className="flex gap-2">
-            <span className="shrink-0 text-ink-500">帖子 ID：</span>
+          <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
+            <span className={cx(styles.r_012fbd12, styles.r_7b89cd85)}>帖子 ID：</span>
             <a
               href={`/post/${postId}`}
               target="_blank"
               rel="noreferrer"
-              className="min-w-0 break-all font-mono text-xs text-leaf-700 hover:text-leaf-800 hover:underline"
-            >
+              className={cx(styles.r_7e0b7cdf, styles.r_451f34ab, styles.r_0e65706b, styles.r_359090c2, styles.r_5f6a59f1, styles.r_81be6435, styles.r_f673f4a7)}>
+
               {postId}
             </a>
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className={styles.r_6f7e013d}>
           {targets.map((target) => {
             const pinned = isPostPinned(pins, target);
             const loading = busyKey === target.key;
             return (
               <div
                 key={target.key}
-                className="flex items-center justify-between gap-3 rounded-md border border-leaf-100 px-3 py-2"
-              >
-                <div className="min-w-0">
-                  <div className="text-sm font-medium text-ink-800">{target.label}</div>
-                  <div className="mt-0.5 text-xs text-ink-500">{target.description}</div>
+                className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_1004c0c3, styles.r_421ac2be, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_0e17f2bd, styles.r_03b4dd7f)}>
+
+                <div className={styles.r_7e0b7cdf}>
+                  <div className={cx(styles.r_fc7473ca, styles.r_2689f395, styles.r_399e11a5)}>{target.label}</div>
+                  <div className={cx(styles.r_15e1b1f4, styles.r_359090c2, styles.r_7b89cd85)}>{target.description}</div>
                 </div>
                 <button
                   type="button"
                   onClick={() => onToggle(target)}
                   disabled={Boolean(busyKey)}
-                  className={cn(
-                    'shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
-                    pinned
-                      ? 'border border-ink-200 bg-white text-ink-700 hover:bg-ink-50'
-                      : 'bg-leaf-600 text-white hover:bg-leaf-700',
-                  )}
-                >
+                  className={cn(cx(styles.r_012fbd12, styles.r_421ac2be, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_fc7473ca, styles.r_2689f395, styles.r_ceb69a6b, styles.r_5f533b3a, styles.r_d463b664),
+
+                  pinned ? cx(styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_5e10cdb8, styles.r_eb6abb1f, styles.r_5399e21f) : cx(styles.r_6bceb016, styles.r_72a4c7cd, styles.r_e269e58c)
+
+
+                  )}>
+
                   {loading ? '处理中...' : pinned ? '取消置顶' : '置顶'}
                 </button>
-              </div>
-            );
+              </div>);
+
           })}
         </div>
       </div>
-    </Dialog>
-  );
+    </Dialog>);
+
 }
 
 export function isPostPinned(pins: PostPinLike[], target: PostPinTarget): boolean {

@@ -13,13 +13,18 @@ import { RichTextView } from '@/components/richtext/RichTextView';
 import { Countdown } from '@/components/auction/AuctionCard';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import { cn, formatDateTime, formatPrice, timeAgo } from '@/lib/utils';
 import { toast } from '@/components/ui/Toast';
+import { useBodyScrollLock } from '@/lib/hooks/useBodyScrollLock';
 import type { AuctionDetail, Payment } from '@/lib/types';
+import styles from './page.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 export default function AuctionDetailPage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{id: string;}>();
   const router = useRouter();
   const { user, refresh } = useAuth();
   const { t } = useI18n();
@@ -47,13 +52,13 @@ export default function AuctionDetailPage() {
     reload().finally(() => setLoading(false));
     // 实时刷新:每 5s 拉一次,但仅在页面可见时(节省 DB 查询)
     const t = setInterval(() => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      if (typeof document !== 'undefined' && document.visibilityState === "visible") {
         reload();
       }
     }, 5000);
     // 切回前台时立即刷新一次
     const onVisible = () => {
-      if (document.visibilityState === 'visible') reload();
+      if (document.visibilityState === "visible") reload();
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => {
@@ -66,23 +71,23 @@ export default function AuctionDetailPage() {
   if (loading) {
     return (
       <Shell>
-        <div className="py-10 text-center text-sm text-leaf-700/60">{t('common.loading')}</div>
-      </Shell>
-    );
+        <div className={cx(styles.r_1100bef6, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>{t('common.loading')}</div>
+      </Shell>);
+
   }
 
   if (!data) {
     return (
       <Shell>
-        <div className="card mx-auto max-w-md p-10 text-center">
-          <div className="text-4xl">🔨</div>
-          <div className="mt-3 text-base font-semibold">{err ?? t('auction.notFound')}</div>
-          <Link href="/auction" className="btn-primary mt-4 inline-flex">
+        <div className={cx(styles.r_0e12dc7d, styles.r_9794ab45, styles.r_a4d0f420, styles.r_ca6bf630)}>
+          <div className={styles.r_a95699d9}>🔨</div>
+          <div className={cx(styles.r_eccd13ef, styles.r_4ee73492, styles.r_e83a7042)}>{err ?? t('auction.notFound')}</div>
+          <Link href="/auction" className={cx(styles.r_0ab86672, styles.r_52083e7d)}>
             {t('auction.backToList')}
           </Link>
         </div>
-      </Shell>
-    );
+      </Shell>);
+
   }
 
   const isMine = user?.id === data.seller.id;
@@ -90,7 +95,7 @@ export default function AuctionDetailPage() {
   const myPart = data.myParticipant;
   const isLive = data.status === 'live';
   const minNext =
-    data.bidCount === 0 ? data.startPrice : data.currentPrice + data.minIncrement;
+  data.bidCount === 0 ? data.startPrice : data.currentPrice + data.minIncrement;
   // 我是否目前领先(最高出价是我)
   const isLeading = isLive && user && data.bids[0]?.bidder.id === user.id;
   const myLastBid = user ? data.bids.find((b) => b.bidder.id === user.id) : null;
@@ -114,7 +119,7 @@ export default function AuctionDetailPage() {
     }
     setSubmitting(true);
     try {
-      const r = await api.post<{ extended: boolean }>(
+      const r = await api.post<{extended: boolean;}>(
         `/api/auctions/${data.id}/bid`,
         { amount, buyNow }
       );
@@ -143,281 +148,281 @@ export default function AuctionDetailPage() {
   return (
     <Shell>
       {/* 面包屑 */}
-      <div className="mb-4 flex items-center gap-1.5 text-xs text-leaf-700/70">
-        <Link href="/" className="hover:text-leaf-700">{t('nav.home')}</Link>
+      <div className={cx(styles.r_da019856, styles.r_60fbb771, styles.r_3960ffc2, styles.r_58284b4e, styles.r_359090c2, styles.r_69335b95)}>
+        <Link href="/" className={styles.r_9825203a}>{t('nav.home')}</Link>
         <Icon name="arrow-right" size={12} />
-        <Link href="/auction" className="hover:text-leaf-700">{t('auction.backToList')}</Link>
+        <Link href="/auction" className={styles.r_9825203a}>{t('auction.backToList')}</Link>
         <Icon name="arrow-right" size={12} />
-        <span className="truncate text-ink-700">{data.title}</span>
+        <span className={cx(styles.r_f283ea9b, styles.r_eb6abb1f)}>{data.title}</span>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
+      <div className={cx(styles.r_f3c543ad, styles.r_d7c83398, styles.r_0d304f90, styles.r_e7849c79)}>
         {/* 左:商品 + 描述 + 出价记录 */}
-        <div className="space-y-4">
-          <div className="card overflow-hidden">
-            <div className="relative aspect-[16/10] bg-leaf-50">
+        <div className={styles.r_3e7ce58d}>
+          <div className={styles.r_2cd02d11}>
+            <div className={cx(styles.r_d89972fe, styles.r_e5d2d82a, styles.r_7ebecbb6)}>
               <Image
                 src={data.cover}
                 alt={data.title}
                 fill
-                className="object-cover"
-                unoptimized
-              />
-              <div className="absolute left-3 top-3">
+                className={styles.r_7d85d0c2}
+                unoptimized />
+
+              <div className={cx(styles.r_da4dbfbc, styles.r_22e59b72, styles.r_8782d84c)}>
                 <StatusPill data={data} />
               </div>
             </div>
-            <div className="p-5">
-              <h1 className="text-xl font-bold md:text-2xl">{data.title}</h1>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+            <div className={styles.r_c07e54fd}>
+              <h1 className={cx(styles.r_d5c9b000, styles.r_69450ef1, styles.r_115ab7fe)}>{data.title}</h1>
+              <div className={cx(styles.r_50d0d216, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_359090c2)}>
                 <span className="chip">{data.category}</span>
-                {data.tags.map((tag) => (
-                  <span key={tag} className="chip">#{tag}</span>
-                ))}
+                {data.tags.map((tag) =>
+                <span key={tag} className="chip">#{tag}</span>
+                )}
               </div>
 
-              <div className="mt-4 grid grid-cols-3 gap-3 rounded-xl bg-leaf-50/60 p-3 text-xs">
+              <div className={cx(styles.r_0ab86672, styles.r_f3c543ad, styles.r_be2e831b, styles.r_1004c0c3, styles.r_a217b4ea, styles.r_a8a62ca4, styles.r_eb6e8b88, styles.r_359090c2)}>
                 <Stat label={t('auction.startPrice')} value={formatPrice(data.startPrice)} />
                 <Stat label={t('auction.priceIncrement')} value={formatPrice(data.minIncrement)} />
                 <Stat
                   label={t('auction.buyNow')}
-                  value={data.buyNowPrice ? formatPrice(data.buyNowPrice) : '—'}
-                />
+                  value={data.buyNowPrice ? formatPrice(data.buyNowPrice) : '—'} />
+
                 <Stat label={t('auction.deposit')} value={formatPrice(data.depositAmount)} />
                 <Stat
                   label={t('auction.bidders')}
-                  value={t('auction.participantCount', { n: data.participantsCount })}
-                />
+                  value={t('auction.participantCount', { n: data.participantsCount })} />
+
                 <Stat
                   label={t('auction.bidCount', { n: data.bidCount })}
-                  value={t('auction.bidTimes', { n: data.bidCount })}
-                />
+                  value={t('auction.bidTimes', { n: data.bidCount })} />
+
               </div>
 
-              <div className="mt-3 grid grid-cols-2 gap-3 rounded-xl border border-leaf-100 p-3 text-xs">
+              <div className={cx(styles.r_eccd13ef, styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_eb6e8b88, styles.r_359090c2)}>
                 <div>
-                  <div className="text-leaf-700/70">{t('auction.startAt')}</div>
-                  <div className="mt-0.5 font-medium">{formatDateTime(data.startAt)}</div>
+                  <div className={styles.r_69335b95}>{t('auction.startAt')}</div>
+                  <div className={cx(styles.r_15e1b1f4, styles.r_2689f395)}>{formatDateTime(data.startAt)}</div>
                 </div>
                 <div>
-                  <div className="text-leaf-700/70">{t('auction.endAt')}</div>
-                  <div className="mt-0.5 font-medium">{formatDateTime(data.endAt)}</div>
+                  <div className={styles.r_69335b95}>{t('auction.endAt')}</div>
+                  <div className={cx(styles.r_15e1b1f4, styles.r_2689f395)}>{formatDateTime(data.endAt)}</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="card p-5">
-            <h2 className="mb-3 text-lg font-semibold">{t('auction.detail.intro')}</h2>
+          <div className={styles.r_c07e54fd}>
+            <h2 className={cx(styles.r_1bb88326, styles.r_42536e69, styles.r_e83a7042)}>{t('auction.detail.intro')}</h2>
             <RichTextView json={data.descriptionJson} html={data.description} />
           </div>
 
-          <div className="card p-5">
-            <h2 className="mb-3 text-lg font-semibold">
-              {t('auction.detail.bidLog')} <span className="text-xs font-normal text-leaf-700/60">({data.bidCount})</span>
+          <div className={styles.r_c07e54fd}>
+            <h2 className={cx(styles.r_1bb88326, styles.r_42536e69, styles.r_e83a7042)}>
+              {t('auction.detail.bidLog')} <span className={cx(styles.r_359090c2, styles.r_8ecebc9f, styles.r_6c4cc49e)}>({data.bidCount})</span>
             </h2>
-            {data.bids.length === 0 ? (
-              <Empty icon="🤐" title={t('auction.detail.bidLogEmpty')} />
-            ) : (
-              <ul className="divide-y divide-leaf-50">
-                {data.bids.slice(0, 30).map((b, i) => (
-                  <li key={b.id} className="flex items-center gap-3 py-3">
+            {data.bids.length === 0 ?
+            <Empty icon="🤐" title={t('auction.detail.bidLogEmpty')} /> :
+
+            <ul className={cx(styles.r_fa6acbf8, styles.r_6f8e581a)}>
+                {data.bids.slice(0, 30).map((b, i) =>
+              <li key={b.id} className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_1b2d54a3)}>
                     <span
-                      className={cn(
-                        'grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-bold',
-                        i === 0 ? 'bg-amber-100 text-amber-800' : 'bg-leaf-50 text-leaf-700'
-                      )}
-                    >
+                  className={cn(cx(styles.r_f3c543ad, styles.r_d0a52b31, styles.r_cbbf90f9, styles.r_012fbd12, styles.r_67d66567, styles.r_ac204c10, styles.r_d058ca6d, styles.r_69450ef1),
+
+                  i === 0 ? cx(styles.r_735dd972, styles.r_5c6230d2) : cx(styles.r_7ebecbb6, styles.r_5f6a59f1)
+                  )}>
+
                       {i === 0 ? '👑' : i + 1}
                     </span>
                     <Avatar src={b.bidder.avatar} alt={b.bidder.name} size={28} />
                     <UserName user={b.bidder} size="sm" />
-                    <span className="ml-auto text-sm font-semibold text-rose-600">
+                    <span className={cx(styles.r_fb56d9cf, styles.r_fc7473ca, styles.r_e83a7042, styles.r_595fceba)}>
                       {formatPrice(b.amount)}
                     </span>
-                    <span className="text-[11px] text-leaf-700/60">{timeAgo(b.createdAt)}</span>
+                    <span className={cx(styles.r_d058ca6d, styles.r_6c4cc49e)}>{timeAgo(b.createdAt)}</span>
                   </li>
-                ))}
+              )}
               </ul>
-            )}
+            }
           </div>
         </div>
 
         {/* 右:出价面板 + 卖家 */}
-        <div className="space-y-4">
-          <div className="card p-5">
+        <div className={styles.r_3e7ce58d}>
+          <div className={styles.r_c07e54fd}>
             {/* 我的状态条 */}
-            {isLive && isLeading && (
-              <div className="mb-3 rounded-lg bg-leaf-100 px-3 py-1.5 text-xs text-leaf-800">
+            {isLive && isLeading &&
+            <div className={cx(styles.r_1bb88326, styles.r_5f22e64f, styles.r_f2b23104, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_359090c2, styles.r_e7eab4cb)}>
                 {t('auction.detail.leadingYou')}
               </div>
-            )}
-            {isLive && beingOutbid && (
-              <div className="mb-3 rounded-lg bg-rose-50 px-3 py-1.5 text-xs text-rose-700">
+            }
+            {isLive && beingOutbid &&
+            <div className={cx(styles.r_1bb88326, styles.r_5f22e64f, styles.r_0759a0f1, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_359090c2, styles.r_b54428d1)}>
                 {t('auction.detail.outbidYou', { amount: formatPrice(myLastBid!.amount) })}
               </div>
-            )}
-            {isLive && isMine && (
-              <div className="mb-3 rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-800">
+            }
+            {isLive && isMine &&
+            <div className={cx(styles.r_1bb88326, styles.r_5f22e64f, styles.r_67d2289d, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_359090c2, styles.r_5c6230d2)}>
                 {t('auction.detail.yourAuction')}
               </div>
-            )}
+            }
 
-            <div className="text-xs text-leaf-700/70">
+            <div className={cx(styles.r_359090c2, styles.r_69335b95)}>
               {data.bidCount > 0 ? t('auction.currentPrice') : t('auction.startPrice')}
             </div>
-            <div className="text-3xl font-bold text-rose-600">
+            <div className={cx(styles.r_751fb0d1, styles.r_69450ef1, styles.r_595fceba)}>
               {formatPrice(data.currentPrice)}
             </div>
 
-            {isLive && (
-              <div className="mt-3 rounded-lg bg-leaf-50 p-3 text-center">
-                <div className="text-[11px] text-leaf-700/70">{t('auction.detail.distanceToEnd')}</div>
-                <Countdown to={data.endAt} className="text-base font-bold" />
-                <div className="mt-1 text-[10px] text-leaf-700/60">
+            {isLive &&
+            <div className={cx(styles.r_eccd13ef, styles.r_5f22e64f, styles.r_7ebecbb6, styles.r_eb6e8b88, styles.r_ca6bf630)}>
+                <div className={cx(styles.r_d058ca6d, styles.r_69335b95)}>{t('auction.detail.distanceToEnd')}</div>
+                <Countdown to={data.endAt} className={cx(styles.r_4ee73492, styles.r_69450ef1)} />
+                <div className={cx(styles.r_b6b02c0e, styles.r_1dc571a3, styles.r_6c4cc49e)}>
                   {t('auction.antiSnipeHint', { n: data.antiSnipeMinutes })}
                 </div>
               </div>
-            )}
+            }
 
-            {data.status === 'scheduled' && (
-              <div className="mt-3 rounded-lg bg-amber-50 p-3 text-center">
-                <div className="text-[11px] text-amber-700/70">{t('auction.detail.distanceToStart')}</div>
-                <Countdown to={data.startAt} className="text-base font-bold text-amber-700" />
+            {data.status === 'scheduled' &&
+            <div className={cx(styles.r_eccd13ef, styles.r_5f22e64f, styles.r_67d2289d, styles.r_eb6e8b88, styles.r_ca6bf630)}>
+                <div className={cx(styles.r_d058ca6d, styles.r_08acc661)}>{t('auction.detail.distanceToStart')}</div>
+                <Countdown to={data.startAt} className={cx(styles.r_4ee73492, styles.r_69450ef1, styles.r_85d79ebf)} />
               </div>
-            )}
+            }
 
-            {data.status === 'finished' && (
-              <div className="mt-3 rounded-lg bg-leaf-50 p-3 text-center">
-                {data.result === 'no_bidder' ? (
-                  <div className="text-leaf-700/70">{t('auction.detail.noBidderResult')}</div>
-                ) : data.winner ? (
-                  <>
-                    <div className="text-xs text-leaf-700/70">{t('auction.detail.finalDeal')}</div>
-                    <div className="mt-1 font-medium text-leaf-700">
+            {data.status === 'finished' &&
+            <div className={cx(styles.r_eccd13ef, styles.r_5f22e64f, styles.r_7ebecbb6, styles.r_eb6e8b88, styles.r_ca6bf630)}>
+                {data.result === 'no_bidder' ?
+              <div className={styles.r_69335b95}>{t('auction.detail.noBidderResult')}</div> :
+              data.winner ?
+              <>
+                    <div className={cx(styles.r_359090c2, styles.r_69335b95)}>{t('auction.detail.finalDeal')}</div>
+                    <div className={cx(styles.r_b6b02c0e, styles.r_2689f395, styles.r_5f6a59f1)}>
                       🏆 {data.winner.name}
                     </div>
-                    <div className="text-xs text-leaf-700/60">
+                    <div className={cx(styles.r_359090c2, styles.r_6c4cc49e)}>
                       {data.result === 'paid' ? t('auction.detail.paidDone') : t('auction.detail.waitPay')}
                     </div>
-                    {isWinner && data.winningOrderId && data.result !== 'paid' && (
-                      <Link
-                        href={`/checkout/auction/${data.winningOrderId}`}
-                        className="btn-primary mt-3 w-full justify-center !text-sm"
-                      >
+                    {isWinner && data.winningOrderId && data.result !== 'paid' &&
+                <Link
+                  href={`/checkout/auction/${data.winningOrderId}`}
+                  className={cx(styles.r_eccd13ef, styles.r_6da6a3c3, styles.r_86843cf1, styles.r_4f43b5cb)}>
+
                         {t('auction.detail.payFinalNow')}
                       </Link>
-                    )}
-                  </>
-                ) : null}
+                }
+                  </> :
+              null}
               </div>
-            )}
+            }
 
             {/* 出价区域 */}
-            {isLive && !isMine && (
-              <div className="mt-4 space-y-2">
-                <div className="text-[11px] text-leaf-700/70">
+            {isLive && !isMine &&
+            <div className={cx(styles.r_0ab86672, styles.r_6f7e013d)}>
+                <div className={cx(styles.r_d058ca6d, styles.r_69335b95)}>
                   {t('auction.bidAtLeastShort', { yuan: (minNext / 100).toFixed(2) })}
                 </div>
-                <div className="flex gap-2">
+                <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
                   <input
-                    inputMode="decimal"
-                    value={bidAmount}
-                    onChange={(e) => setBidAmount(e.target.value)}
-                    placeholder={(minNext / 100).toFixed(2)}
-                    className="input"
-                  />
+                  inputMode="decimal"
+                  value={bidAmount}
+                  onChange={(e) => setBidAmount(e.target.value)}
+                  placeholder={(minNext / 100).toFixed(2)}
+                  className="input" />
+
                   <button
-                    type="button"
-                    disabled={submitting}
-                    onClick={() => submitBid(false)}
-                    className="btn-primary !px-4"
-                  >
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => submitBid(false)}
+                  className={styles.r_af7490b1}>
+
                     {submitting ? t('auction.detail.submitting') : t('auction.placeBid')}
                   </button>
                 </div>
-                {data.buyNowPrice && (
-                  <button
-                    type="button"
-                    disabled={submitting}
-                    onClick={() => submitBid(true)}
-                    className="btn-outline w-full justify-center !text-xs"
-                  >
-                    {t('auction.buyNowFull', { price: formatPrice(data.buyNowPrice) })}
-                  </button>
-                )}
-                {(!user || !myPart || myPart.depositStatus !== 'held') && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!user) router.push(`/login?redirect=/auction/${data.id}`);
-                      else setShowJoin(true);
-                    }}
-                    className="btn-ghost w-full justify-center !text-xs"
-                  >
-                    {t('auction.depositRequiredHint', { price: formatPrice(data.depositAmount) })}
-                  </button>
-                )}
-                {myPart?.depositStatus === 'held' && (
-                  <div className="rounded-lg bg-leaf-50 px-3 py-2 text-[11px] text-leaf-700">
-                    {t('auction.depositEscrowed')}
-                  </div>
-                )}
-                {myPart?.depositStatus === 'pending' && (
-                  <div className="rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
-                    {t('auction.depositPending')}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* 发起者操作 */}
-            {isMine && data.bidCount === 0 && (data.status === 'live' || data.status === 'scheduled') && (
+                {data.buyNowPrice &&
               <button
                 type="button"
-                onClick={cancel}
-                className="btn-outline mt-4 w-full justify-center !text-xs hover:bg-rose-50 hover:text-rose-600"
-              >
+                disabled={submitting}
+                onClick={() => submitBid(true)}
+                className={cx(styles.r_6da6a3c3, styles.r_86843cf1, styles.r_dd702538)}>
+
+                    {t('auction.buyNowFull', { price: formatPrice(data.buyNowPrice) })}
+                  </button>
+              }
+                {(!user || !myPart || myPart.depositStatus !== 'held') &&
+              <button
+                type="button"
+                onClick={() => {
+                  if (!user) router.push(`/login?redirect=/auction/${data.id}`);else
+                  setShowJoin(true);
+                }}
+                className={cx(styles.r_6da6a3c3, styles.r_86843cf1, styles.r_dd702538)}>
+
+                    {t('auction.depositRequiredHint', { price: formatPrice(data.depositAmount) })}
+                  </button>
+              }
+                {myPart?.depositStatus === 'held' &&
+              <div className={cx(styles.r_5f22e64f, styles.r_7ebecbb6, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_d058ca6d, styles.r_5f6a59f1)}>
+                    {t('auction.depositEscrowed')}
+                  </div>
+              }
+                {myPart?.depositStatus === 'pending' &&
+              <div className={cx(styles.r_5f22e64f, styles.r_67d2289d, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_d058ca6d, styles.r_5c6230d2)}>
+                    {t('auction.depositPending')}
+                  </div>
+              }
+              </div>
+            }
+
+            {/* 发起者操作 */}
+            {isMine && data.bidCount === 0 && (data.status === 'live' || data.status === 'scheduled') &&
+            <button
+              type="button"
+              onClick={cancel}
+              className={cx(styles.r_0ab86672, styles.r_6da6a3c3, styles.r_86843cf1, styles.r_dd702538, styles.r_85cfcc24, styles.r_744ff542)}>
+
                 {t('auction.detail.cancelAuction')}
               </button>
-            )}
-            {isMine && data.bidCount > 0 && data.status === 'live' && (
-              <div className="mt-4 rounded-lg bg-amber-50 p-3 text-[11px] text-amber-800">
+            }
+            {isMine && data.bidCount > 0 && data.status === 'live' &&
+            <div className={cx(styles.r_0ab86672, styles.r_5f22e64f, styles.r_67d2289d, styles.r_eb6e8b88, styles.r_d058ca6d, styles.r_5c6230d2)}>
                 {t('auction.detail.cannotCancelAfterBid')}
               </div>
-            )}
+            }
           </div>
 
-          <div className="card p-4">
-            <div className="mb-3 text-sm font-semibold">{t('auction.detail.sellerTitle')}</div>
-            <div className="flex items-center gap-3">
+          <div className={styles.r_8e63407b}>
+            <div className={cx(styles.r_1bb88326, styles.r_fc7473ca, styles.r_e83a7042)}>{t('auction.detail.sellerTitle')}</div>
+            <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3)}>
               <Avatar src={data.seller.avatar} alt={data.seller.name} size={40} />
-              <div className="min-w-0 flex-1">
+              <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
                 <UserName user={data.seller} size="sm" />
-                <div className="mt-0.5 line-clamp-1 text-[11px] text-leaf-700/70">
+                <div className={cx(styles.r_15e1b1f4, styles.r_f50e2015, styles.r_d058ca6d, styles.r_69335b95)}>
                   {data.seller.bio}
                 </div>
               </div>
             </div>
-            <div className="mt-3 flex gap-2">
+            <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_77a2a20e)}>
               <Link
                 href={`/user/${data.seller.id}`}
-                className="btn-outline flex-1 justify-center !text-xs"
-              >
+                className={cx(styles.r_36e579c0, styles.r_86843cf1, styles.r_dd702538)}>
+
                 {t('nav.myProfile')}
               </Link>
               <Link
                 href={`/messages?to=${data.seller.id}`}
-                className="btn-primary flex-1 justify-center !text-xs"
-              >
+                className={cx(styles.r_36e579c0, styles.r_86843cf1, styles.r_dd702538)}>
+
                 {t('nav.messages')}
               </Link>
             </div>
           </div>
 
-          <div className="card p-4 text-[11px] text-leaf-700/70">
-            <div className="mb-1 font-medium text-leaf-700">{t('auction.detail.rulesTitle')}</div>
-            <ul className="ml-4 list-disc space-y-0.5">
+          <div className={cx(styles.r_8e63407b, styles.r_d058ca6d, styles.r_69335b95)}>
+            <div className={cx(styles.r_65281709, styles.r_2689f395, styles.r_5f6a59f1)}>{t('auction.detail.rulesTitle')}</div>
+            <ul className={cx(styles.r_f242aff2, styles.r_1f33b438, styles.r_e2eedc57)}>
               <li>{t('auction.detail.ruleDeposit', { amount: formatPrice(data.depositAmount) })}</li>
               <li>{t('auction.detail.ruleWinner')}</li>
               <li>{t('auction.detail.ruleRefund', { points: Math.ceil(data.depositAmount / 100) * 100 })}</li>
@@ -428,57 +433,57 @@ export default function AuctionDetailPage() {
         </div>
       </div>
 
-      {showJoin && (
-        <JoinDialog
-          auctionId={data.id}
-          depositAmount={data.depositAmount}
-          onClose={() => setShowJoin(false)}
-          onPaid={async () => {
-            setShowJoin(false);
-            await reload();
-            await refresh();
-            toast.success(t('auction.depositModal.toastEscrowed'));
-          }}
-        />
-      )}
-    </Shell>
-  );
+      {showJoin &&
+      <JoinDialog
+        auctionId={data.id}
+        depositAmount={data.depositAmount}
+        onClose={() => setShowJoin(false)}
+        onPaid={async () => {
+          setShowJoin(false);
+          await reload();
+          await refresh();
+          toast.success(t('auction.depositModal.toastEscrowed'));
+        }} />
+
+      }
+    </Shell>);
+
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value }: {label: string;value: string;}) {
   return (
     <div>
-      <div className="text-[10px] text-leaf-700/70">{label}</div>
-      <div className="mt-0.5 text-sm font-medium text-ink-800">{value}</div>
-    </div>
-  );
+      <div className={cx(styles.r_1dc571a3, styles.r_69335b95)}>{label}</div>
+      <div className={cx(styles.r_15e1b1f4, styles.r_fc7473ca, styles.r_2689f395, styles.r_399e11a5)}>{value}</div>
+    </div>);
+
 }
 
-function StatusPill({ data }: { data: AuctionDetail }) {
+function StatusPill({ data }: {data: AuctionDetail;}) {
   const { t } = useI18n();
   if (data.status === 'live')
-    return (
-      <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-bold text-white">
-        {t('auction.statusLabel.live')}
-      </span>
-    );
-  if (data.status === 'scheduled')
-    return (
-      <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-white">
-        {t('auction.statusLabel.scheduled')}
-      </span>
-    );
-  if (data.status === 'finished')
-    return (
-      <span className="rounded-full bg-leaf-700 px-2 py-0.5 text-xs text-white">
-        {data.result === 'no_bidder' ? t('auction.statusLabel.finishedNoBidder') : t('auction.statusLabel.finished')}
-      </span>
-    );
   return (
-    <span className="rounded-full bg-leaf-300 px-2 py-0.5 text-xs text-leaf-800">
+    <span className={cx(styles.r_ac204c10, styles.r_45a732a4, styles.r_d5eab218, styles.r_465609a2, styles.r_359090c2, styles.r_69450ef1, styles.r_72a4c7cd)}>
+        {t('auction.statusLabel.live')}
+      </span>);
+
+  if (data.status === 'scheduled')
+  return (
+    <span className={cx(styles.r_ac204c10, styles.r_931bc423, styles.r_d5eab218, styles.r_465609a2, styles.r_359090c2, styles.r_69450ef1, styles.r_72a4c7cd)}>
+        {t('auction.statusLabel.scheduled')}
+      </span>);
+
+  if (data.status === 'finished')
+  return (
+    <span className={cx(styles.r_ac204c10, styles.r_b81efa1b, styles.r_d5eab218, styles.r_465609a2, styles.r_359090c2, styles.r_72a4c7cd)}>
+        {data.result === 'no_bidder' ? t('auction.statusLabel.finishedNoBidder') : t('auction.statusLabel.finished')}
+      </span>);
+
+  return (
+    <span className={cx(styles.r_ac204c10, styles.r_8b65c498, styles.r_d5eab218, styles.r_465609a2, styles.r_359090c2, styles.r_e7eab4cb)}>
       {t('auction.statusLabel.cancelled')}
-    </span>
-  );
+    </span>);
+
 }
 
 /* -------------- 加入拍卖(支付保证金)对话框 -------------- */
@@ -487,13 +492,15 @@ function JoinDialog({
   auctionId,
   depositAmount,
   onClose,
-  onPaid,
-}: {
-  auctionId: string;
-  depositAmount: number;
-  onClose: () => void;
-  onPaid: () => void;
-}) {
+  onPaid
+
+
+
+
+
+}: {auctionId: string;depositAmount: number;onClose: () => void;onPaid: () => void;}) {
+  useBodyScrollLock(true);
+
   const { pointsBalance } = useAuth();
   const { t } = useI18n();
   const [channel, setChannel] = useState<'wechat' | 'alipay' | 'points'>('wechat');
@@ -542,8 +549,8 @@ function JoinDialog({
           setPayment(p);
         }
       } catch {
-        /* ignore */
-      }
+
+        /* ignore */}
     }, 2000);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
@@ -563,97 +570,97 @@ function JoinDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-ink-900/40 p-4"
-      onClick={onClose}
-    >
-      <div className="card w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-2 text-base font-semibold">{t('auction.depositModal.title')}</div>
-        <p className="mb-4 text-xs text-leaf-700/70">
+      className={cx(styles.r_7bc55599, styles.r_7b7df044, styles.r_181b2866, styles.r_f3c543ad, styles.r_67d66567, styles.r_094a9df0, styles.r_8e63407b)}
+      onClick={onClose}>
+
+      <div className={cx(styles.r_6da6a3c3, styles.r_9794ab45, styles.r_0478c89a)} onClick={(e) => e.stopPropagation()}>
+        <div className={cx(styles.r_a77ed4d9, styles.r_4ee73492, styles.r_e83a7042)}>{t('auction.depositModal.title')}</div>
+        <p className={cx(styles.r_da019856, styles.r_359090c2, styles.r_69335b95)}>
           {t('auction.depositModal.desc')}
         </p>
 
-        {!payment ? (
-          <>
-            <div className="mb-3 rounded-xl bg-leaf-50/60 p-3">
-              <div className="text-xs text-leaf-700/70">{t('auction.depositModal.needPay')}</div>
-              <div className="text-2xl font-bold text-rose-600">
+        {!payment ?
+        <>
+            <div className={cx(styles.r_1bb88326, styles.r_a217b4ea, styles.r_a8a62ca4, styles.r_eb6e8b88)}>
+              <div className={cx(styles.r_359090c2, styles.r_69335b95)}>{t('auction.depositModal.needPay')}</div>
+              <div className={cx(styles.r_3febee09, styles.r_69450ef1, styles.r_595fceba)}>
                 {formatPrice(depositAmount)}
               </div>
             </div>
 
-            <div className="mb-3 grid grid-cols-3 gap-2">
+            <div className={cx(styles.r_1bb88326, styles.r_f3c543ad, styles.r_be2e831b, styles.r_77a2a20e)}>
               <ChannelOption
-                active={channel === 'wechat'}
-                onClick={() => setChannel('wechat')}
-                icon="💚"
-                label={t('auction.depositModal.channelWechat')}
-              />
+              active={channel === 'wechat'}
+              onClick={() => setChannel('wechat')}
+              icon="💚"
+              label={t('auction.depositModal.channelWechat')} />
+
               <ChannelOption
-                active={channel === 'alipay'}
-                onClick={() => setChannel('alipay')}
-                icon="💙"
-                label={t('auction.depositModal.channelAlipay')}
-              />
+              active={channel === 'alipay'}
+              onClick={() => setChannel('alipay')}
+              icon="💙"
+              label={t('auction.depositModal.channelAlipay')} />
+
               <ChannelOption
-                active={channel === 'points'}
-                onClick={() => setChannel('points')}
-                icon="💎"
-                label={t('auction.depositModal.channelPoints', { n: pointsCost })}
-                disabled={pointsBalance < pointsCost}
-              />
+              active={channel === 'points'}
+              onClick={() => setChannel('points')}
+              icon="💎"
+              label={t('auction.depositModal.channelPoints', { n: pointsCost })}
+              disabled={pointsBalance < pointsCost} />
+
             </div>
 
-            {err && (
-              <div className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">
+            {err &&
+          <div className={cx(styles.r_1bb88326, styles.r_5f22e64f, styles.r_0759a0f1, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_b54428d1)}>
                 {err}
               </div>
-            )}
+          }
 
-            <div className="flex justify-end gap-2">
-              <button onClick={onClose} className="btn-outline !text-xs">{t('auction.depositModal.cancel')}</button>
+            <div className={cx(styles.r_60fbb771, styles.r_77c08e01, styles.r_77a2a20e)}>
+              <button onClick={onClose} className={styles.r_dd702538}>{t('auction.depositModal.cancel')}</button>
               <button
-                disabled={submitting}
-                onClick={join}
-                className="btn-primary !text-xs"
-              >
+              disabled={submitting}
+              onClick={join}
+              className={styles.r_dd702538}>
+
                 {submitting ? t('auction.detail.submitting') : t('auction.depositModal.confirmPay')}
               </button>
             </div>
-          </>
-        ) : (
-          <div className="text-center">
-            <div className="text-xs text-leaf-700/70">
+          </> :
+
+        <div className={styles.r_ca6bf630}>
+            <div className={cx(styles.r_359090c2, styles.r_69335b95)}>
               {t('auction.depositModal.scanQr', {
-                channel: channel === 'wechat' ? t('auction.depositModal.channelWechat') : t('auction.depositModal.channelAlipay'),
-              })}
+              channel: channel === 'wechat' ? t('auction.depositModal.channelWechat') : t('auction.depositModal.channelAlipay')
+            })}
             </div>
-            <div className="my-3 grid h-40 w-40 place-self-center place-items-center rounded-xl border border-dashed border-leaf-200 bg-white text-xs text-leaf-700/60">
+            <div className={cx(styles.r_f9ff4486, styles.r_f3c543ad, styles.r_aadad687, styles.r_84789e8a, styles.r_367d252e, styles.r_67d66567, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_5e10cdb8, styles.r_359090c2, styles.r_6c4cc49e)}>
               {payment.qrcode?.slice(0, 24)}...
             </div>
-            <div className="text-[11px] text-amber-700">
+            <div className={cx(styles.r_d058ca6d, styles.r_85d79ebf)}>
               {t('auction.depositModal.mockHint')}
             </div>
             <button
-              onClick={mockConfirm}
-              className="btn mt-2 bg-amber-500 text-white hover:bg-amber-600 !text-xs"
-            >
+            onClick={mockConfirm}
+            className={cx(styles.r_50d0d216, styles.r_931bc423, styles.r_72a4c7cd, styles.r_7ee371ab, styles.r_dd702538)}>
+
               {t('auction.depositModal.mockPay')}
             </button>
-            {err && (
-              <div className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">
+            {err &&
+          <div className={cx(styles.r_eccd13ef, styles.r_5f22e64f, styles.r_0759a0f1, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_b54428d1)}>
                 {err}
               </div>
-            )}
-            <div className="mt-3">
-              <button onClick={onClose} className="btn-outline !text-xs">
+          }
+            <div className={styles.r_eccd13ef}>
+              <button onClick={onClose} className={styles.r_dd702538}>
                 {t('auction.depositModal.payLater')}
               </button>
             </div>
           </div>
-        )}
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 function ChannelOption({
@@ -661,29 +668,29 @@ function ChannelOption({
   disabled,
   onClick,
   icon,
-  label,
-}: {
-  active: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-  icon: string;
-  label: string;
-}) {
+  label
+
+
+
+
+
+
+}: {active: boolean;disabled?: boolean;onClick: () => void;icon: string;label: string;}) {
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={cn(
-        'flex flex-col items-center gap-1 rounded-xl border-2 p-3 text-xs transition-all',
-        active && !disabled
-          ? 'border-leaf-500 bg-leaf-50/60'
-          : 'border-leaf-100 hover:border-leaf-300',
-        disabled && 'opacity-40 cursor-not-allowed'
-      )}
-    >
-      <span className="text-xl">{icon}</span>
+      className={cn(cx(styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_a217b4ea, styles.r_65935df5, styles.r_eb6e8b88, styles.r_359090c2, styles.r_0fe7d7d8),
+
+      active && !disabled ? cx(styles.r_d3b27cd9, styles.r_a8a62ca4) : cx(styles.r_88b684d2, styles.r_a5c39c39),
+
+
+      disabled && cx(styles.r_2a2db466, styles.r_29b733e4)
+      )}>
+
+      <span className={styles.r_d5c9b000}>{icon}</span>
       <span>{label}</span>
-    </button>
-  );
+    </button>);
+
 }

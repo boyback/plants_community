@@ -1,8 +1,11 @@
+import styles from './CookiesEn.module.scss';
+import { cx } from '@/lib/style-utils';
+
 export function CookiesEn() {
   return (
     <>
       <h1>RouYou Cookie Policy</h1>
-      <p className="text-leaf-500">Last updated: 7 May 2026 · Effective on the date of publication</p>
+      <p className={styles.r_eb16169c}>Last updated: 7 May 2026 · Effective on the date of publication</p>
 
       <p>
         This policy explains how RouYou (the &quot;Service&quot;) uses cookies and
@@ -87,7 +90,7 @@ export function CookiesEn() {
       </p>
 
       <hr />
-      <p className="text-xs text-leaf-500">Demo draft; not legal advice.</p>
-    </>
-  );
+      <p className={cx(styles.r_359090c2, styles.r_eb16169c)}>Demo draft; not legal advice.</p>
+    </>);
+
 }

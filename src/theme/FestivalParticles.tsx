@@ -9,6 +9,10 @@
  */
 import { useEffect, useState } from 'react';
 import { useTheme } from './ThemeContext';
+import styles from './FestivalParticles.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 export function FestivalParticles() {
   const { primary } = useTheme();
@@ -34,40 +38,40 @@ export function FestivalParticles() {
     const r = pseudoRandom(seed + i);
     return {
       left: (r * 100).toFixed(2) + '%',
-      delay: ((r * 6) % 6).toFixed(2) + 's',
-      duration: (6 + (r * 6) % 4).toFixed(2) + 's',
-      size: (18 + (r * 10) % 12).toFixed(0) + 'px',
-      opacity: (0.5 + (r * 0.5) % 0.5).toFixed(2),
+      delay: (r * 6 % 6).toFixed(2) + 's',
+      duration: (6 + r * 6 % 4).toFixed(2) + 's',
+      size: (18 + r * 10 % 12).toFixed(0) + 'px',
+      opacity: (0.5 + r * 0.5 % 0.5).toFixed(2)
     };
   });
 
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 overflow-hidden z-[5]"
-    >
-      {particles.map((p, i) => (
-        <span
-          key={i}
-          className="absolute -top-12 animate-rouyou-fall"
-          style={{
-            left: p.left,
-            animationDelay: p.delay,
-            animationDuration: p.duration,
-            fontSize: p.size,
-            opacity: p.opacity,
-          }}
-        >
+      className={cx(styles.r_a4326536, styles.r_7bc55599, styles.r_7b7df044, styles.r_2cd02d11, styles.r_af9d12c8)}>
+
+      {particles.map((p, i) =>
+      <span
+        key={i}
+        className={cx(styles.r_da4dbfbc, styles.r_64a6d4e0, styles.r_e19cf380)}
+        style={{
+          left: p.left,
+          animationDelay: p.delay,
+          animationDuration: p.duration,
+          fontSize: p.size,
+          opacity: p.opacity
+        }}>
+
           {primary.decoration.particleEmoji}
         </span>
-      ))}
-    </div>
-  );
+      )}
+    </div>);
+
 }
 
 function hashCode(s: string): number {
   let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  for (let i = 0; i < s.length; i++) h = h * 31 + s.charCodeAt(i) | 0;
   return Math.abs(h);
 }
 function pseudoRandom(seed: number): number {

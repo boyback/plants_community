@@ -1,8 +1,11 @@
+import styles from './TermsKo.module.scss';
+import { cx } from '@/lib/style-utils';
+
 export function TermsKo() {
   return (
     <>
       <h1>RouYou 이용약관</h1>
-      <p className="text-leaf-500">
+      <p className={styles.r_eb16169c}>
         최근 개정일: 2026 년 5 월 7 일 · 시행일: 약관 공지일
       </p>
 
@@ -91,9 +94,9 @@ export function TermsKo() {
       </p>
 
       <hr />
-      <p className="text-xs text-leaf-500">
+      <p className={cx(styles.r_359090c2, styles.r_eb16169c)}>
         본 약관은 Demo 버전이며, 법률 자문을 구성하지 않습니다. 실제 서비스 개시 전 반드시 전문가 검토를 받으십시오.
       </p>
-    </>
-  );
+    </>);
+
 }

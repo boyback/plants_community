@@ -2,8 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import styles from './StickyBoardFilter.module.scss';
+import { cx } from '@/lib/style-utils';
 
-export function StickyBoardFilter({ children }: { children: React.ReactNode }) {
+
+
+export function StickyBoardFilter({ children }: {children: React.ReactNode;}) {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
@@ -36,12 +40,12 @@ export function StickyBoardFilter({ children }: { children: React.ReactNode }) {
 
   return (
     <section
-      className={cn(
-        'sticky top-16 z-20 rounded-[6px] border border-leaf-100 bg-white p-4 shadow-sm transition-[transform,opacity] duration-200 lg:top-[112px]',
-        hidden && 'pointer-events-none -translate-y-full opacity-0',
-      )}
-    >
+      className={cn(cx(styles.r_3e0fd166, styles.r_493cfb05, styles.r_145745bf, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_8e63407b, styles.r_438b2237, styles.r_80d1eef6, styles.r_625a4c3f, styles.r_6281de3e),
+
+      hidden && cx(styles.r_a4326536, styles.r_9978b778, styles.r_7065497e)
+      )}>
+
       {children}
-    </section>
-  );
+    </section>);
+
 }

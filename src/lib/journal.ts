@@ -5,18 +5,18 @@ export const STAGE_META: Record<
   JournalStage,
   { emoji: string; zh: string; color: string }
 > = {
-  germinate: { emoji: '🌱', zh: '发芽', color: 'bg-leaf-50 text-leaf-700 border-leaf-200' },
-  growing: { emoji: '🌿', zh: '成长', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  flowering: { emoji: '🌸', zh: '开花', color: 'bg-pink-50 text-pink-700 border-pink-200' },
-  fruiting: { emoji: '🍒', zh: '结果', color: 'bg-rose-50 text-rose-700 border-rose-200' },
-  withering: { emoji: '🥀', zh: '枯萎', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-  repot: { emoji: '🪴', zh: '换盆', color: 'bg-orange-50 text-orange-700 border-orange-200' },
-  cutting: { emoji: '✂️', zh: '扦插', color: 'bg-teal-50 text-teal-700 border-teal-200' },
-  summer: { emoji: '☀️', zh: '度夏', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-  winter: { emoji: '❄️', zh: '越冬', color: 'bg-sky-50 text-sky-700 border-sky-200' },
-  pest: { emoji: '🐛', zh: '虫害', color: 'bg-red-50 text-red-700 border-red-200' },
-  watering: { emoji: '💧', zh: '浇水', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-  other: { emoji: '📌', zh: '其他', color: 'bg-leaf-50 text-leaf-700 border-leaf-200' },
+  germinate: { emoji: '🌱', zh: '发芽', color: 'journal-stage journal-stage--germinate' },
+  growing: { emoji: '🌿', zh: '成长', color: 'journal-stage journal-stage--growing' },
+  flowering: { emoji: '🌸', zh: '开花', color: 'journal-stage journal-stage--flowering' },
+  fruiting: { emoji: '🍒', zh: '结果', color: 'journal-stage journal-stage--fruiting' },
+  withering: { emoji: '🥀', zh: '枯萎', color: 'journal-stage journal-stage--withering' },
+  repot: { emoji: '🪴', zh: '换盆', color: 'journal-stage journal-stage--repot' },
+  cutting: { emoji: '✂️', zh: '扦插', color: 'journal-stage journal-stage--cutting' },
+  summer: { emoji: '☀️', zh: '度夏', color: 'journal-stage journal-stage--summer' },
+  winter: { emoji: '❄️', zh: '越冬', color: 'journal-stage journal-stage--winter' },
+  pest: { emoji: '🐛', zh: '虫害', color: 'journal-stage journal-stage--pest' },
+  watering: { emoji: '💧', zh: '浇水', color: 'journal-stage journal-stage--watering' },
+  other: { emoji: '📌', zh: '其他', color: 'journal-stage journal-stage--other' },
 };
 
 export const ALL_STAGES: JournalStage[] = [

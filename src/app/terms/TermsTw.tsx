@@ -1,8 +1,11 @@
+import styles from './TermsTw.module.scss';
+import { cx } from '@/lib/style-utils';
+
 export function TermsTw() {
   return (
     <>
       <h1>肉友社 用戶協議</h1>
-      <p className="text-leaf-500">
+      <p className={styles.r_eb16169c}>
         最近更新日期:2026 年 05 月 07 日 · 生效日期:協議發佈之日
       </p>
 
@@ -92,9 +95,9 @@ export function TermsTw() {
       </p>
 
       <hr />
-      <p className="text-xs text-leaf-500">
+      <p className={cx(styles.r_359090c2, styles.r_eb16169c)}>
         本協議為 Demo 版本,不構成法律意見。正式上線前請由專業法律顧問審閱修訂。
       </p>
-    </>
-  );
+    </>);
+
 }

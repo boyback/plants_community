@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import { toast } from '@/components/ui/Toast';
 import type { Post } from '@/lib/types';
 import type { BoardSelection } from '@/components/editor/BoardSelect';
@@ -13,8 +13,12 @@ import {
   pinScopeLabel,
   PostPinDialog,
   type PostPinLike,
-  type PostPinTarget,
-} from '@/components/post/PostPinDialog';
+  type PostPinTarget } from
+'@/components/post/PostPinDialog';
+import styles from './AdminPostPinActions.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 export function AdminPostPinActions({
   postId,
@@ -27,20 +31,20 @@ export function AdminPostPinActions({
   deleted,
   reviewStatus,
   initialPins,
-  targets,
-}: {
-  postId: string;
-  postTitle: string;
-  authorName?: string;
-  authorHref?: string;
-  initialBoardSelection: BoardSelection;
-  initialBoardLabel: string;
-  initialLocked: boolean;
-  deleted: boolean;
-  reviewStatus?: string;
-  initialPins: PostPinLike[];
-  targets: PostPinTarget[];
-}) {
+  targets
+
+
+
+
+
+
+
+
+
+
+
+
+}: {postId: string;postTitle: string;authorName?: string;authorHref?: string;initialBoardSelection: BoardSelection;initialBoardLabel: string;initialLocked: boolean;deleted: boolean;reviewStatus?: string;initialPins: PostPinLike[];targets: PostPinTarget[];}) {
   const [pins, setPins] = useState<PostPinLike[]>(initialPins);
   const [open, setOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
@@ -59,7 +63,7 @@ export function AdminPostPinActions({
       const updated = await api.post<Post>(`/api/posts/${postId}/admin`, {
         action: pinned ? 'unpin' : 'pin',
         scope: target.scope,
-        targetId: target.targetId,
+        targetId: target.targetId
       });
       setPins(updated.pins ?? []);
       toast.success(pinned ? '取消置顶成功' : '置顶成功');
@@ -81,7 +85,7 @@ export function AdminPostPinActions({
         action: 'move',
         categorySlug: moveSelection.categorySlug || undefined,
         genusSlug: moveSelection.genusSlug || undefined,
-        speciesSlug: moveSelection.speciesSlug || undefined,
+        speciesSlug: moveSelection.speciesSlug || undefined
       });
       toast.success('移帖成功');
       setCurrentBoardLabel(moveSelection.label || currentBoardLabel);
@@ -97,7 +101,7 @@ export function AdminPostPinActions({
     setLockSubmitting(true);
     try {
       const updated = await api.post<Post>(`/api/posts/${postId}/admin`, {
-        action: locked ? 'unlock' : 'lock',
+        action: locked ? 'unlock' : 'lock'
       });
       setLocked(updated.locked === true);
       toast.success(locked ? '解锁成功' : '锁定成功');
@@ -111,54 +115,54 @@ export function AdminPostPinActions({
 
   return (
     <>
-      <td className="px-3 py-2">
-        <div className="flex flex-wrap gap-1">
-          {pins.length > 0 ? (
-            pins.map((pin) => (
-              <span
-                key={pin.id}
-                className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-700"
-              >
+      <td className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f)}>
+        <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_44ee8ba0)}>
+          {pins.length > 0 ?
+          pins.map((pin) =>
+          <span
+            key={pin.id}
+            className={cx(styles.r_ac204c10, styles.r_735dd972, styles.r_d5eab218, styles.r_465609a2, styles.r_1dc571a3, styles.r_85d79ebf)}>
+
                 {pinScopeLabel(pin.scope)}
               </span>
-            ))
-          ) : (
-            <span className="text-[10px] text-ink-400">-</span>
-          )}
+          ) :
+
+          <span className={cx(styles.r_1dc571a3, styles.r_66a36c90)}>-</span>
+          }
         </div>
       </td>
-      <td className="px-3 py-2 text-right">
-        <div className="flex flex-wrap justify-end gap-1">
-          {!deleted && (
-            <button
-              type="button"
-              onClick={() => setMoveOpen(true)}
-              disabled={moveSubmitting}
-              className="rounded bg-ink-100 px-2 py-1 text-[10px] text-ink-700 hover:bg-ink-200 disabled:cursor-not-allowed disabled:opacity-60"
-            >
+      <td className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_308fc069)}>
+        <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_77c08e01, styles.r_44ee8ba0)}>
+          {!deleted &&
+          <button
+            type="button"
+            onClick={() => setMoveOpen(true)}
+            disabled={moveSubmitting}
+            className={cx(styles.r_07389a77, styles.r_febec8f2, styles.r_d5eab218, styles.r_660d2eff, styles.r_1dc571a3, styles.r_eb6abb1f, styles.r_1e172434, styles.r_5f533b3a, styles.r_d463b664)}>
+
               移帖
             </button>
-          )}
-          {!deleted && (
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              disabled={Boolean(busyKey)}
-              className="rounded bg-leaf-100 px-2 py-1 text-[10px] text-leaf-700 hover:bg-leaf-200 disabled:cursor-not-allowed disabled:opacity-60"
-            >
+          }
+          {!deleted &&
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            disabled={Boolean(busyKey)}
+            className={cx(styles.r_07389a77, styles.r_f2b23104, styles.r_d5eab218, styles.r_660d2eff, styles.r_1dc571a3, styles.r_5f6a59f1, styles.r_d8a68f7c, styles.r_5f533b3a, styles.r_d463b664)}>
+
               置顶管理
             </button>
-          )}
-          {!deleted && (
-            <button
-              type="button"
-              onClick={() => setLockOpen(true)}
-              disabled={lockSubmitting}
-              className="rounded bg-amber-100 px-2 py-1 text-[10px] text-amber-700 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
-            >
+          }
+          {!deleted &&
+          <button
+            type="button"
+            onClick={() => setLockOpen(true)}
+            disabled={lockSubmitting}
+            className={cx(styles.r_07389a77, styles.r_735dd972, styles.r_d5eab218, styles.r_660d2eff, styles.r_1dc571a3, styles.r_85d79ebf, styles.r_bfa526ce, styles.r_5f533b3a, styles.r_d463b664)}>
+
               {locked ? '解锁' : '锁定'}
             </button>
-          )}
+          }
           <PostAdminActions postId={postId} deleted={deleted} reviewStatus={reviewStatus} />
         </div>
       </td>
@@ -175,8 +179,8 @@ export function AdminPostPinActions({
         pins={pins}
         targets={targets}
         busyKey={busyKey}
-        onToggle={togglePin}
-      />
+        onToggle={togglePin} />
+
 
       <PostMoveDialog
         open={moveOpen}
@@ -185,14 +189,14 @@ export function AdminPostPinActions({
         }}
         postId={postId}
         postTitle={postTitle}
-        authorName={authorName ?? '-'}
+        authorName={authorName ?? "-"}
         authorHref={authorHref ?? `/post/${postId}`}
         currentBoardLabel={currentBoardLabel}
         selection={moveSelection}
         submitting={moveSubmitting}
         onSelectionChange={setMoveSelection}
-        onConfirm={confirmMove}
-      />
+        onConfirm={confirmMove} />
+
 
       <PostLockDialog
         open={lockOpen}
@@ -205,8 +209,8 @@ export function AdminPostPinActions({
         authorHref={authorHref}
         locked={locked}
         submitting={lockSubmitting}
-        onConfirm={confirmLock}
-      />
-    </>
-  );
+        onConfirm={confirmLock} />
+
+    </>);
+
 }

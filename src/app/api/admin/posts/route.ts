@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
 
 const Query = z.object({
   q: z.string().optional(),
-  type: z.enum(['rich', 'short', 'vote', 'video', 'event', 'help', 'journal']).optional(),
+  type: z.enum(['rich', 'image', 'short', 'vote', 'video', 'event', 'help', 'journal']).optional(),
   status: z.enum(['all', 'deleted', 'active']).default('active'),
   /** 审核状态过滤:pending=待审 / rejected=已驳 / published=已发 / all_review=全部 */
   review: z

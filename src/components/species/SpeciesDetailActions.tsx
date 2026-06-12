@@ -4,7 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FloatingActionRail } from '@/components/ui/FloatingActionRail';
 import { toast } from '@/components/ui/Toast';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
+import styles from './SpeciesDetailActions.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 type SpeciesActionItem = {
   id: string;
@@ -16,7 +20,7 @@ type SpeciesActionItem = {
   compared: boolean;
 };
 
-export function SpeciesDetailActions({ species }: { species: SpeciesActionItem }) {
+export function SpeciesDetailActions({ species }: {species: SpeciesActionItem;}) {
   const router = useRouter();
   const [collected, setCollected] = useState(species.collected);
   const [collectTotal, setCollectTotal] = useState(species.collectTotal);
@@ -28,7 +32,7 @@ export function SpeciesDetailActions({ species }: { species: SpeciesActionItem }
     if (collectBusy) return;
     setCollectBusy(true);
     try {
-      const res = await api.post<{ collected: boolean; total: number }>(`/api/species/${species.speciesId}/collect`);
+      const res = await api.post<{collected: boolean;total: number;}>(`/api/species/${species.speciesId}/collect`);
       setCollected(res.collected);
       setCollectTotal(res.total);
       toast.success(res.collected ? '已收藏到我的图鉴，可到 /plants/favorites 查看' : '已取消收藏');
@@ -47,7 +51,7 @@ export function SpeciesDetailActions({ species }: { species: SpeciesActionItem }
     if (compareBusy) return;
     setCompareBusy(true);
     try {
-      const res = await api.post<{ compared: boolean; total: number }>(`/api/species/${species.speciesId}/compare`);
+      const res = await api.post<{compared: boolean;total: number;}>(`/api/species/${species.speciesId}/compare`);
       setCompared(res.compared);
       toast.success(res.compared ? `已加入对比列表(${res.total}/4)，可到 /plants/compare 查看` : `已移出对比列表(${res.total}/4)`);
     } catch (e) {
@@ -78,25 +82,25 @@ export function SpeciesDetailActions({ species }: { species: SpeciesActionItem }
   return (
     <FloatingActionRail
       items={[
-        { icon: 'share', label: '分享', onClick: share },
-        {
-          icon: 'bookmark',
-          label: collected ? '已收藏' : '收藏',
-          count: collectTotal,
-          active: collected,
-          activeCls: 'bg-amber-50 text-amber-600',
-          onClick: toggleFavorite,
-          disabled: collectBusy,
-        },
-        {
-          icon: 'link',
-          label: compared ? '已对比' : '对比',
-          active: compared,
-          activeCls: 'bg-leaf-50 text-leaf-800',
-          onClick: toggleCompare,
-          disabled: compareBusy,
-        },
-      ]}
-    />
-  );
+      { icon: 'share', label: '分享', onClick: share },
+      {
+        icon: 'bookmark',
+        label: collected ? '已收藏' : '收藏',
+        count: collectTotal,
+        active: collected,
+        activeCls: cx(styles.r_67d2289d, styles.r_47d65ecb),
+        onClick: toggleFavorite,
+        disabled: collectBusy
+      },
+      {
+        icon: 'link',
+        label: compared ? '已对比' : '对比',
+        active: compared,
+        activeCls: cx(styles.r_7ebecbb6, styles.r_e7eab4cb),
+        onClick: toggleCompare,
+        disabled: compareBusy
+      }]
+      } />);
+
+
 }

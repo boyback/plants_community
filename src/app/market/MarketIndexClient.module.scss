@@ -1,0 +1,108 @@
+/* Generated from src/app/market/MarketIndexClient.tsx. Keep component-local styles here. */.r_ac204c10{border-radius:9999px}.r_d5eab218{padding-left:8px;padding-right:8px}.r_465609a2{padding-top:2px;padding-bottom:2px}.r_d058ca6d{font-size:11px}.r_2689f395{font-weight:500}.r_ceb69a6b{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.r_f2868c22{opacity:.6}.r_da4dbfbc{position:absolute}.r_7b2d6393{right:8px}.r_9a2db8f9{top:8px}.r_236812d6{z-index:10}.r_f3c543ad{display:grid}.r_d0a52b31{height:28px}.r_cbbf90f9{width:28px}.r_67d66567{place-items:center}.r_6c21de57{background-color:#ffffffe6}.r_438b2237{--tw-shadow:0 1px 2px 0 #0000000d;--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color)}.r_438b2237{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.r_29687528:hover{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity))}.r_52083e7d{display:inline-flex}.r_3960ffc2{align-items:center}.r_421ac2be{border-radius:6px}.r_0b91436d{padding-left:10px;padding-right:10px}.r_359090c2{font-size:12px;line-height:16px}
+
+
+/* Recovered utility rules referenced by this CSS module. */
+.r_fb88ccaa{margin-bottom:20px}
+.r_6ed543e2>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(12px*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(12px*var(--tw-space-y-reverse))}
+.r_60fbb771{display:flex}
+.r_1eb5c6df{flex-wrap:wrap}
+.r_77a2a20e{gap:8px}
+.r_e7e37107{width:48px}
+.r_012fbd12{flex-shrink:0}
+.r_6c4cc49e{color:rgb(var(--leaf-700)/.6)}
+.r_ed8a5df7{height:32px}
+.r_ed831a4d{width:80px}
+.r_ca6bcd4b{border-width:1px}
+.r_691861bc{--tw-border-opacity:1;border-color:rgb(var(--leaf-200)/var(--tw-border-opacity))}
+.r_5e10cdb8{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity))}
+.r_df37b1fd{outline:2px solid #0000;outline-offset:2px}
+.r_74046e83:focus{--tw-border-opacity:1;border-color:rgb(var(--leaf-400)/var(--tw-border-opacity))}
+.r_4d094717{color:rgb(var(--leaf-700)/.4)}
+.r_fd9bb0dd{margin-left:12px}
+.r_660d2eff{padding-top:4px;padding-bottom:4px}
+.r_69335b95{color:rgb(var(--leaf-700)/.7)}
+.r_e7235083:hover{--tw-border-opacity:1;border-color:rgb(253 164 175/var(--tw-border-opacity))}
+.r_744ff542:hover{--tw-text-opacity:1;color:rgb(225 29 72/var(--tw-text-opacity))}
+.r_d89972fe{position:relative}
+.r_fb56d9cf{margin-left:auto}
+.r_a4326536{pointer-events:none}
+.r_ecfeb742{left:10px}
+.r_d694ba66{top:50%}
+.r_36b381be{--tw-translate-y:-50%;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));}
+.r_eb16169c{--tw-text-opacity:1;color:rgb(var(--leaf-500)/var(--tw-text-opacity))}
+.r_74b2435a{width:192px}
+.r_20ebde75{padding-left:28px}
+.r_aa2c13a5{padding-right:8px}
+.r_66f2147e{width:256px}
+.r_1100bef6{padding-top:40px;padding-bottom:40px}
+.r_ca6bf630{text-align:center}
+.r_fc7473ca{font-size:14px;line-height:20px}
+.r_a77ed4d9{margin-bottom:8px}
+.r_8ef2268e{justify-content:space-between}
+.r_3353f144{color:rgb(var(--leaf-700)/.5)}
+.r_d7c83398{grid-template-columns:repeat(1,minmax(0,1fr))}
+.r_1004c0c3{gap:12px}
+@media (min-width:640px){.r_e00ad816{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1024px){.r_19d9b25e{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:1280px){.r_a1de1eab{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.r_e3a0584f{height:360px}
+.r_7e0b7cdf{min-width:0}
+.r_8dddea07{flex-direction:column}
+.r_2cd02d11{overflow:hidden}
+.r_a217b4ea{border-radius:12px}
+.r_88b684d2{--tw-border-opacity:1;border-color:rgb(var(--leaf-100)/var(--tw-border-opacity))}
+.r_a5c39c39:hover{--tw-border-opacity:1;border-color:rgb(var(--leaf-300)/var(--tw-border-opacity))}
+.r_ab1dd417:hover{--tw-shadow:0 1px 2px 0 #0000000d;--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color)}
+.r_0214b4b3{display:block}
+.r_726bdf47{height:180px}
+.r_7ebecbb6{--tw-bg-opacity:1;background-color:rgb(var(--leaf-50)/var(--tw-bg-opacity))}
+.r_7d85d0c2{-o-object-fit:cover;object-fit:cover}
+.r_f6babb33{bottom:8px}
+.r_95a04d1b{background-color:rgb(var(--ink-900)/.7)}
+.r_72a4c7cd{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity))}
+.r_fb7302e5{min-height:0}
+.r_36e579c0{flex:1 1 0%}
+.r_eb6e8b88{padding:12px}
+.r_054cb4e3{-webkit-line-clamp:2}
+.r_bb37cef0{min-height:40px}
+.r_cff55289{font-size:15px}
+.r_e83a7042{font-weight:600}
+.r_7054e276{line-height:20px}
+.r_399e11a5{--tw-text-opacity:1;color:rgb(var(--ink-800)/var(--tw-text-opacity))}
+.r_9825203a:hover{--tw-text-opacity:1;color:rgb(var(--leaf-700)/var(--tw-text-opacity))}
+.r_7b89cd85{--tw-text-opacity:1;color:rgb(107 114 128/var(--tw-text-opacity))}
+.r_86843cf1{justify-content:center}
+.r_f2b23104{--tw-bg-opacity:1;background-color:rgb(var(--leaf-100)/var(--tw-bg-opacity))}
+.r_b17d6a13{--tw-text-opacity:1;color:rgb(var(--leaf-600)/var(--tw-text-opacity))}
+.r_f283ea9b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r_5f6a59f1{--tw-text-opacity:1;color:rgb(var(--leaf-700)/var(--tw-text-opacity))}
+.r_5756b7b4:hover{--tw-bg-opacity:1;background-color:rgb(var(--leaf-50)/var(--tw-bg-opacity))}
+.r_2eba0d65{text-align:left}
+.r_02eb621e{--tw-text-opacity:1;color:rgb(75 85 99/var(--tw-text-opacity))}
+.r_6f27f4f7{align-items:flex-end}
+.r_42536e69{font-size:18px;line-height:28px}
+.r_69450ef1{font-weight:700}
+.r_595fceba{--tw-text-opacity:1;color:rgb(225 29 72/var(--tw-text-opacity))}
+.r_44ee8ba0{gap:4px}
+.r_07389a77{border-radius:4px}
+.r_67d2289d{--tw-bg-opacity:1;background-color:rgb(255 251 235/var(--tw-bg-opacity))}
+.r_45d82811{padding-left:6px;padding-right:6px}
+.r_1dc571a3{font-size:10px}
+.r_85d79ebf{--tw-text-opacity:1;color:rgb(180 83 9/var(--tw-text-opacity))}
+.r_662364b2{max-height:46px}
+.r_9953408a{margin-top:auto}
+.r_b950dda2{border-top-width:1px}
+.r_f46b61a9{padding-top:8px}
+.r_d83be576{left:8px}
+.r_5d253a80{background-color:#f43f5ef2}
+.r_d8a68f7c:hover{--tw-bg-opacity:1;background-color:rgb(var(--leaf-200)/var(--tw-bg-opacity))}
+.r_6bceb016{--tw-bg-opacity:1;background-color:rgb(var(--leaf-600)/var(--tw-bg-opacity))}
+.r_e269e58c:hover{--tw-bg-opacity:1;background-color:rgb(var(--leaf-700)/var(--tw-bg-opacity))}
+.r_60541e1e{align-items:flex-start}
+.r_b6b02c0e{margin-top:4px}
+.r_58284b4e{gap:6px}
+.r_b85c981b{color:rgb(var(--ink-700)/.8)}
+
+
+/* Recovered utility rules referenced by this CSS module. */
+.r_ce27a834{--tw-bg-opacity:1;background-color:rgb(249 250 251/var(--tw-bg-opacity))}

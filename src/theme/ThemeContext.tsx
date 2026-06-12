@@ -14,8 +14,8 @@ import {
   useEffect,
   useMemo,
   useState,
-  type ReactNode,
-} from 'react';
+  type ReactNode } from
+'react';
 import type { Theme } from '@/lib/themes';
 
 interface Preferences {
@@ -40,7 +40,7 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-async function fetchActive(at?: Date | null): Promise<{ themes: Theme[]; globalDisabled: boolean }> {
+async function fetchActive(at?: Date | null): Promise<{themes: Theme[];globalDisabled: boolean;}> {
   const qs = at ? `?at=${encodeURIComponent(at.toISOString())}` : '';
   const res = await fetch(`/api/themes/active${qs}`);
   if (!res.ok) return { themes: [], globalDisabled: false };
@@ -61,7 +61,7 @@ async function fetchPrefs(): Promise<Preferences> {
   }
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export function ThemeProvider({ children }: {children: ReactNode;}) {
   const [activeThemes, setActive] = useState<Theme[]>([]);
   const [ready, setReady] = useState(false);
   const [previewDate, setPreviewDate] = useState<Date | null>(null);
@@ -88,8 +88,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const updatePrefs = useCallback(async (patch: Partial<Preferences>) => {
     const res = await fetch('/api/themes/preferences', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(patch),
+      headers: { "Content-Type": 'application/json' },
+      body: JSON.stringify(patch)
     });
     if (!res.ok) return;
     const body = await res.json();
@@ -109,9 +109,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       previewAt,
       previewDate,
       prefs,
-      updatePrefs,
+      updatePrefs
     }),
-    [activeThemes, ready, previewAt, previewDate, prefs, updatePrefs],
+    [activeThemes, ready, previewAt, previewDate, prefs, updatePrefs]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
@@ -127,7 +127,7 @@ export function useTheme(): ThemeContextValue {
       previewAt: async () => {},
       previewDate: null,
       prefs: { globalDisabled: false, disabledSlugs: [] },
-      updatePrefs: async () => {},
+      updatePrefs: async () => {}
     };
   }
   return ctx;

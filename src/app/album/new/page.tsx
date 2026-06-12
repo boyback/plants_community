@@ -7,7 +7,11 @@ import { Shell } from '@/components/layout/Shell';
 import { UploadField } from '@/components/upload/UploadField';
 import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/context/AuthContext';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
+import styles from './page.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 export default function NewAlbumPage() {
   const router = useRouter();
@@ -23,23 +27,23 @@ export default function NewAlbumPage() {
   if (authLoading) {
     return (
       <Shell>
-        <div className="py-10 text-center text-sm text-leaf-700/60">加载中...</div>
-      </Shell>
-    );
+        <div className={cx(styles.r_1100bef6, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>加载中...</div>
+      </Shell>);
+
   }
 
   if (!user) {
     return (
       <Shell>
-        <div className="card mx-auto max-w-md p-10 text-center">
-          <div className="text-4xl">📷</div>
-          <div className="mt-3 text-lg font-semibold">请先登录</div>
-          <Link href="/login?redirect=/album/new" className="btn-primary mt-4 inline-block">
+        <div className={cx(styles.r_0e12dc7d, styles.r_9794ab45, styles.r_a4d0f420, styles.r_ca6bf630)}>
+          <div className={styles.r_a95699d9}>📷</div>
+          <div className={cx(styles.r_eccd13ef, styles.r_42536e69, styles.r_e83a7042)}>请先登录</div>
+          <Link href="/login?redirect=/album/new" className={cx(styles.r_0ab86672, styles.r_bb0c4bfc)}>
             登录
           </Link>
         </div>
-      </Shell>
-    );
+      </Shell>);
+
   }
 
   const handleSubmit = async () => {
@@ -56,11 +60,11 @@ export default function NewAlbumPage() {
     setErr(null);
 
     try {
-      const album = await api.post<{ id: string }>('/api/albums', {
+      const album = await api.post<{id: string;}>('/api/albums', {
         title: title.trim(),
         description: description.trim() || undefined,
         isPublic,
-        images,
+        images
       });
 
       router.push(`/album/${album.id}`);
@@ -73,21 +77,21 @@ export default function NewAlbumPage() {
 
   return (
     <Shell>
-      <div className="max-w-2xl mx-auto">
+      <div className={cx(styles.r_2cc8041e, styles.r_0e12dc7d)}>
         <Link
           href="/shaitu"
-          className="inline-flex items-center gap-1 text-sm text-leaf-600 hover:text-leaf-700 mb-4"
-        >
+          className={cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_fc7473ca, styles.r_b17d6a13, styles.r_9825203a, styles.r_da019856)}>
+
           ← 返回晒图广场
         </Link>
 
-        <div className="card p-6">
-          <h1 className="text-xl font-bold text-ink-800 mb-6">📷 创建相册</h1>
+        <div className={styles.r_0478c89a}>
+          <h1 className={cx(styles.r_d5c9b000, styles.r_69450ef1, styles.r_399e11a5, styles.r_b6777c6d)}>📷 创建相册</h1>
 
-          <div className="space-y-4">
+          <div className={styles.r_3e7ce58d}>
             {/* 标题 */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink-700">
+              <label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_fc7473ca, styles.r_2689f395, styles.r_eb6abb1f)}>
                 相册标题 *
               </label>
               <input
@@ -95,68 +99,68 @@ export default function NewAlbumPage() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="给相册起个名字"
-                maxLength={50}
-              />
-              <div className="mt-1 text-right text-[11px] text-ink-400">
+                maxLength={50} />
+
+              <div className={cx(styles.r_b6b02c0e, styles.r_308fc069, styles.r_d058ca6d, styles.r_66a36c90)}>
                 {title.length}/50
               </div>
             </div>
 
             {/* 描述 */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink-700">
+              <label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_fc7473ca, styles.r_2689f395, styles.r_eb6abb1f)}>
                 相册描述
               </label>
               <textarea
-                className="input min-h-[80px]"
+                className={styles.r_dd9ce2a7}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="简单描述一下这个相册（可选）"
-                maxLength={500}
-              />
-              <div className="mt-1 text-right text-[11px] text-ink-400">
+                maxLength={500} />
+
+              <div className={cx(styles.r_b6b02c0e, styles.r_308fc069, styles.r_d058ca6d, styles.r_66a36c90)}>
                 {description.length}/500
               </div>
             </div>
 
             {/* 公开设置 */}
             <div>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_34516836)}>
                 <input
                   type="checkbox"
                   checked={isPublic}
                   onChange={(e) => setIsPublic(e.target.checked)}
-                  className="h-4 w-4 accent-leaf-500"
-                />
-                <span className="text-sm text-ink-700">公开相册</span>
+                  className={cx(styles.r_11e59c6d, styles.r_dc7972eb, styles.r_5f66c7c0)} />
+
+                <span className={cx(styles.r_fc7473ca, styles.r_eb6abb1f)}>公开相册</span>
               </label>
-              <p className="mt-1 text-xs text-ink-500">
+              <p className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_7b89cd85)}>
                 公开相册会显示在晒图广场，其他人可以浏览和点赞
               </p>
             </div>
 
             {/* 图片上传 */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-ink-700">
+              <label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_fc7473ca, styles.r_2689f395, styles.r_eb6abb1f)}>
                 上传图片 *（最多100张）
               </label>
               <UploadField
                 kind="image"
                 value={images}
                 onChange={setImages}
-                max={100}
-              />
+                max={100} />
+
             </div>
 
             {/* 错误提示 */}
-            {err && (
-              <div className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {err &&
+            <div className={cx(styles.r_5f22e64f, styles.r_0759a0f1, styles.r_f0faeb26, styles.r_1b2d54a3, styles.r_fc7473ca, styles.r_b54428d1)}>
                 {err}
               </div>
-            )}
+            }
 
             {/* 提交按钮 */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-leaf-100">
+            <div className={cx(styles.r_60fbb771, styles.r_77c08e01, styles.r_1004c0c3, styles.r_173fa8f0, styles.r_b950dda2, styles.r_88b684d2)}>
               <Link href="/shaitu" className="btn-outline">
                 取消
               </Link>
@@ -164,14 +168,14 @@ export default function NewAlbumPage() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="btn-primary"
-              >
+                className="btn-primary">
+
                 {submitting ? '创建中...' : '创建相册'}
               </button>
             </div>
           </div>
         </div>
       </div>
-    </Shell>
-  );
+    </Shell>);
+
 }

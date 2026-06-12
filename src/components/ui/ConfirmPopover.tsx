@@ -1,8 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Popover as RadixPopover } from 'radix-ui';
+import { Popover as RadixPopover } from "radix-ui";
 import { cn } from '@/lib/utils';
+import styles from './ConfirmPopover.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface ConfirmPopoverProps {
   children: React.ReactNode;
@@ -26,7 +30,7 @@ export function ConfirmPopover({
   cancelText = '取消',
   danger = false,
   onConfirm,
-  className,
+  className
 }: ConfirmPopoverProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -45,7 +49,7 @@ export function ConfirmPopover({
   return (
     <RadixPopover.Root open={open} onOpenChange={setOpen}>
       <RadixPopover.Trigger asChild>
-        <span className={cn('inline-block', className)}>{children}</span>
+        <span className={cn(styles.r_bb0c4bfc, className)}>{children}</span>
       </RadixPopover.Trigger>
 
       <RadixPopover.Portal>
@@ -53,14 +57,14 @@ export function ConfirmPopover({
           align="start"
           sideOffset={8}
           collisionPadding={8}
-          className="z-50 w-64 rounded-lg border border-leaf-200 bg-white p-4 shadow-lg outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
-          style={{ minWidth: '200px' }}
-        >
-          <div className="mb-1 text-sm font-medium text-ink-800">{title}</div>
-          {message && (
-            <div className="mb-3 text-xs text-leaf-700 whitespace-pre-line">{message}</div>
-          )}
-          <div className="flex gap-2">
+          className={cx(styles.r_181b2866, styles.r_6ca62528, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_691861bc, styles.r_5e10cdb8, styles.r_8e63407b, styles.r_06bbb431, styles.r_df37b1fd, styles.r_2089b774, styles.r_a9faa555, styles.r_0bc7c6cf, styles.r_33b203f5, styles.r_26698b65, styles.r_3424811d)}
+          style={{ minWidth: '200px' }}>
+
+          <div className={cx(styles.r_65281709, styles.r_fc7473ca, styles.r_2689f395, styles.r_399e11a5)}>{title}</div>
+          {message &&
+          <div className={cx(styles.r_1bb88326, styles.r_359090c2, styles.r_5f6a59f1, styles.r_3404bdae)}>{message}</div>
+          }
+          <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
             <button
               type="button"
               onClick={(e) => {
@@ -68,8 +72,8 @@ export function ConfirmPopover({
                 setOpen(false);
               }}
               disabled={loading}
-              className="flex-1 rounded-md border border-leaf-200 bg-white px-3 py-1.5 text-xs font-medium text-leaf-700 hover:bg-leaf-50 transition-colors"
-            >
+              className={cx(styles.r_36e579c0, styles.r_421ac2be, styles.r_ca6bcd4b, styles.r_691861bc, styles.r_5e10cdb8, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_359090c2, styles.r_2689f395, styles.r_5f6a59f1, styles.r_5756b7b4, styles.r_ceb69a6b)}>
+
               {cancelText}
             </button>
             <button
@@ -80,20 +84,20 @@ export function ConfirmPopover({
               }}
               disabled={loading}
               className={
-                danger
-                  ? 'flex-1 rounded-md bg-rose-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-600 transition-colors disabled:opacity-50'
-                  : 'flex-1 rounded-md bg-leaf-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-leaf-700 transition-colors disabled:opacity-50'
-              }
-            >
+              danger ? cx(styles.r_36e579c0, styles.r_421ac2be, styles.r_45a732a4, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_359090c2, styles.r_2689f395, styles.r_72a4c7cd, styles.r_62129538, styles.r_ceb69a6b, styles.r_b29d8adb) : cx(styles.r_36e579c0, styles.r_421ac2be, styles.r_6bceb016, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_359090c2, styles.r_2689f395, styles.r_72a4c7cd, styles.r_e269e58c, styles.r_ceb69a6b, styles.r_b29d8adb)
+
+
+              }>
+
               {loading ? '处理中...' : confirmText}
             </button>
           </div>
 
-          <RadixPopover.Arrow className="fill-white stroke-leaf-200" width={16} height={8} />
+          <RadixPopover.Arrow className={cx(styles.r_34208978, styles.r_a876a480)} width={16} height={8} />
         </RadixPopover.Content>
       </RadixPopover.Portal>
-    </RadixPopover.Root>
-  );
+    </RadixPopover.Root>);
+
 }
 
 /**
@@ -105,7 +109,7 @@ export function DangerConfirmPopover({
   message,
   confirmText = '确定',
   onConfirm,
-  className,
+  className
 }: Omit<ConfirmPopoverProps, 'danger'>) {
   return (
     <ConfirmPopover
@@ -114,9 +118,9 @@ export function DangerConfirmPopover({
       confirmText={confirmText}
       danger
       onConfirm={onConfirm}
-      className={className}
-    >
+      className={className}>
+
       {children}
-    </ConfirmPopover>
-  );
+    </ConfirmPopover>);
+
 }

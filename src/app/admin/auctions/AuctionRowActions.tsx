@@ -2,10 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import { toast } from '@/components/ui/Toast';
+import styles from './AuctionRowActions.module.scss';
+import { cx } from '@/lib/style-utils';
 
-export function AuctionRowActions({ id, status }: { id: string; status: string }) {
+
+
+export function AuctionRowActions({ id, status }: {id: string;status: string;}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const canCancel = status === 'scheduled' || status === 'live' || status === 'draft';
@@ -24,7 +28,7 @@ export function AuctionRowActions({ id, status }: { id: string; status: string }
   };
 
   const cancel = () => {
-    const reason = window.prompt('取消原因:', '');
+    const reason = window.prompt("取消原因:", '');
     if (reason === null) return;
     if (!confirm('确认取消本场拍卖?')) return;
     void doPatch({ action: 'cancel', reason });
@@ -36,31 +40,31 @@ export function AuctionRowActions({ id, status }: { id: string; status: string }
   };
 
   if (!canCancel && !canFinish) {
-    return <span className="text-[10px] text-ink-400">—</span>;
+    return <span className={cx(styles.r_1dc571a3, styles.r_66a36c90)}>—</span>;
   }
 
   return (
-    <div className="inline-flex gap-1">
-      {canFinish && (
-        <button
-          type="button"
-          disabled={busy}
-          onClick={finish}
-          className="rounded bg-amber-100 px-2 py-1 text-[10px] text-amber-700 hover:bg-amber-200"
-        >
+    <div className={cx(styles.r_52083e7d, styles.r_44ee8ba0)}>
+      {canFinish &&
+      <button
+        type="button"
+        disabled={busy}
+        onClick={finish}
+        className={cx(styles.r_07389a77, styles.r_735dd972, styles.r_d5eab218, styles.r_660d2eff, styles.r_1dc571a3, styles.r_85d79ebf, styles.r_bfa526ce)}>
+
           强结
         </button>
-      )}
-      {canCancel && (
-        <button
-          type="button"
-          disabled={busy}
-          onClick={cancel}
-          className="rounded bg-rose-100 px-2 py-1 text-[10px] text-rose-700 hover:bg-rose-200"
-        >
+      }
+      {canCancel &&
+      <button
+        type="button"
+        disabled={busy}
+        onClick={cancel}
+        className={cx(styles.r_07389a77, styles.r_e0467cf5, styles.r_d5eab218, styles.r_660d2eff, styles.r_1dc571a3, styles.r_b54428d1, styles.r_fd25c495)}>
+
           取消
         </button>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }

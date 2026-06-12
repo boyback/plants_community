@@ -5,14 +5,18 @@ import { usePathname } from 'next/navigation';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/i18n/I18nContext';
+import styles from './MobileTabBar.module.scss';
+import { cx } from '@/lib/style-utils';
 
-const items: { href: string; labelKey: string; icon: IconName; center?: boolean; match?: (p: string) => boolean }[] = [
-  { href: '/', labelKey: 'nav.home', icon: 'home', match: (p) => p === '/' },
-  { href: '/board', labelKey: 'nav.board', icon: 'board', match: (p) => p.startsWith('/board') },
-  { href: '/editor', labelKey: 'nav.mobileTabEditor', icon: 'plus', center: true },
-  { href: '/plants', labelKey: 'nav.plants', icon: 'plants', match: (p) => p.startsWith('/plants') },
-  { href: '/tasks', labelKey: 'nav.tasks', icon: 'check', match: (p) => p.startsWith('/tasks') },
-];
+
+
+const items: {href: string;labelKey: string;icon: IconName;center?: boolean;match?: (p: string) => boolean;}[] = [
+{ href: '/', labelKey: 'nav.home', icon: 'home', match: (p) => p === '/' },
+{ href: '/board', labelKey: 'nav.board', icon: 'board', match: (p) => p.startsWith('/board') },
+{ href: '/editor', labelKey: 'nav.mobileTabEditor', icon: 'plus', center: true },
+{ href: '/plants', labelKey: 'nav.plants', icon: 'plants', match: (p) => p.startsWith('/plants') },
+{ href: '/tasks', labelKey: 'nav.tasks', icon: 'check', match: (p) => p.startsWith('/tasks') }];
+
 
 /** 仅在 lg 以下显示的底部 Tabbar */
 export function MobileTabBar() {
@@ -24,12 +28,12 @@ export function MobileTabBar() {
 
   return (
     <>
-      <div className="h-16 lg:hidden" aria-hidden />
+      <div className={cx(styles.r_acaee621, styles.r_a327049c)} aria-hidden />
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-leaf-100 bg-white/95 backdrop-blur lg:hidden"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        <div className="mx-auto flex max-w-2xl items-stretch">
+        className={cx(styles.r_7bc55599, styles.r_3f6397bf, styles.r_189f036c, styles.r_0f2fff0a, styles.r_b950dda2, styles.r_88b684d2, styles.r_f5ebd4d0, styles.r_0b2e8c28, styles.r_a327049c)}
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+
+        <div className={cx(styles.r_0e12dc7d, styles.r_60fbb771, styles.r_2cc8041e, styles.r_a13d486c)}>
           {items.map((it) => {
             const active = it.match ? it.match(pathname) : pathname === it.href;
             const label = t(it.labelKey);
@@ -38,41 +42,41 @@ export function MobileTabBar() {
                 <Link
                   key={it.href}
                   href={it.href}
-                  className="relative flex w-16 shrink-0 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px]"
-                >
-                  <span className="grid h-12 w-12 -translate-y-3.5 place-items-center rounded-none bg-gradient-to-br from-leaf-400 to-leaf-600 text-white shadow-lg shadow-leaf-500/30 transition-transform duration-200 active:scale-90">
+                  className={cx(styles.r_d89972fe, styles.r_60fbb771, styles.r_baceed34, styles.r_012fbd12, styles.r_8dddea07, styles.r_3960ffc2, styles.r_86843cf1, styles.r_a3899220, styles.r_ec0091ee, styles.r_1dc571a3)}>
+
+                  <span className={cx(styles.r_f3c543ad, styles.r_508ebf85, styles.r_e7e37107, styles.r_0ad21a23, styles.r_67d66567, styles.r_0c5e9137, styles.r_39b2e003, styles.r_78ce000e, styles.r_0a6f1c29, styles.r_72a4c7cd, styles.r_06bbb431, styles.r_a84b3b45, styles.r_eadef238, styles.r_625a4c3f, styles.r_abcc287e)}>
                     <Icon name="plus" size={22} />
                   </span>
-                  <span className="-mt-2.5 text-leaf-700">{label}</span>
-                </Link>
-              );
+                  <span className={cx(styles.r_8ac08c89, styles.r_5f6a59f1)}>{label}</span>
+                </Link>);
+
             }
             return (
               <Link
                 key={it.href}
                 href={it.href}
-                className={cn(
-                  'relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] transition-colors',
-                  active ? 'text-leaf-700 font-medium' : 'text-ink-700/60'
-                )}
-              >
+                className={cn(cx(styles.r_d89972fe, styles.r_60fbb771, styles.r_36e579c0, styles.r_8dddea07, styles.r_3960ffc2, styles.r_86843cf1, styles.r_a3899220, styles.r_03b4dd7f, styles.r_1dc571a3, styles.r_ceb69a6b),
+
+                active ? cx(styles.r_5f6a59f1, styles.r_2689f395) : styles.r_5fa66415
+                )}>
+
                 <Icon
                   name={it.icon}
                   size={20}
-                  className={cn(
-                    'transition-transform duration-200',
-                    active && 'scale-110'
-                  )}
-                />
+                  className={cn(cx(styles.r_eadef238, styles.r_625a4c3f),
+
+                  active && styles.r_fecb6ec6
+                  )} />
+
                 {label}
-                {active && (
-                  <span className="absolute bottom-1 h-1 w-1 rounded-full bg-leaf-500" />
-                )}
-              </Link>
-            );
+                {active &&
+                <span className={cx(styles.r_da4dbfbc, styles.r_57045bd8, styles.r_3a1268a4, styles.r_0b00578a, styles.r_ac204c10, styles.r_45499621)} />
+                }
+              </Link>);
+
           })}
         </div>
       </nav>
-    </>
-  );
+    </>);
+
 }

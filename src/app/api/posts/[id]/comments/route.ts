@@ -50,12 +50,12 @@ export const POST = handler(async (req) => {
   if (!post) return fail(404, '帖子不存在');
 
   if (body.journalEntryId) {
-    if (!post.journal) return fail(400, '该帖子不是成长记录帖');
+    if (!post.journal) return fail(400, '该帖子不是记录贴');
     const entry = await prisma.journalEntry.findUnique({
       where: { id: body.journalEntryId },
       select: { journalId: true },
     });
-    if (!entry || entry.journalId !== post.journal.id) return fail(400, '成长记录无效');
+    if (!entry || entry.journalId !== post.journal.id) return fail(400, '记录无效');
   }
 
   if (body.parentId) {

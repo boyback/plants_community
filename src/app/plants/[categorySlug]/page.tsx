@@ -1,29 +1,29 @@
 import { redirect, notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function PlantCategoryEntry({
-  params,
-}: {
-  params: { categorySlug: string };
-}) {
+  params
+
+
+}: {params: {categorySlug: string;};}) {
   const firstInCategory = await prisma.species.findFirst({
     where: {
       genus: {
         board: {
           slug: params.categorySlug,
           kind: 'family',
-          enabled: true,
-        },
-      },
+          enabled: true
+        }
+      }
     },
     orderBy: [
-      { genus: { orderIdx: 'asc' } },
-      { orderIdx: 'asc' },
-      { name: 'asc' },
-    ],
-    include: { genus: { include: { board: true } } },
+    { genus: { orderIdx: 'asc' } },
+    { orderIdx: 'asc' },
+    { name: 'asc' }],
+
+    include: { genus: { include: { board: true } } }
   });
 
   if (firstInCategory?.genus?.board) {
@@ -34,7 +34,7 @@ export default async function PlantCategoryEntry({
 
   const legacySpecies = await prisma.species.findFirst({
     where: { slug: params.categorySlug },
-    include: { genus: { include: { board: true } } },
+    include: { genus: { include: { board: true } } }
   });
 
   if (!legacySpecies?.genus?.board) notFound();

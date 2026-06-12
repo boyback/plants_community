@@ -4,8 +4,12 @@ import { parseJsonArray } from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { PlantArchiveClient, type PlantArchiveItem, type PlantArchiveStats, type PlantArchiveStatus } from './PlantArchiveClient';
+import styles from './page.module.scss';
+import { cx } from '@/lib/style-utils';
 
-export const dynamic = 'force-dynamic';
+
+
+export const dynamic = "force-dynamic";
 
 const STAGE_LABELS: Record<string, string> = {
   germinate: '发芽',
@@ -19,12 +23,12 @@ const STAGE_LABELS: Record<string, string> = {
   winter: '越冬',
   pest: '病虫害',
   watering: '浇水',
-  other: '其他',
+  other: '其他'
 };
 
 export default async function PlantArchivesPage() {
   const me = await getCurrentUser();
-  if (!me) redirect('/login?redirect=/plant-archives');
+  if (!me) redirect("/login?redirect=/plant-archives");
 
   const plants = await prisma.userPlant.findMany({
     where: { ownerId: me.id },
@@ -33,10 +37,10 @@ export default async function PlantArchivesPage() {
         include: {
           genus: {
             include: {
-              board: true,
-            },
-          },
-        },
+              board: true
+            }
+          }
+        }
       },
       journal: {
         include: {
@@ -47,25 +51,25 @@ export default async function PlantArchivesPage() {
               cover: true,
               images: true,
               updatedAt: true,
-              deleted: true,
-            },
+              deleted: true
+            }
           },
           entries: {
             orderBy: [
-              { entryDate: 'desc' },
-              { orderIdx: 'desc' },
-            ],
-          },
-        },
-      },
+            { entryDate: 'desc' },
+            { orderIdx: 'desc' }]
+
+          }
+        }
+      }
     },
-    orderBy: [{ updatedAt: 'desc' }],
+    orderBy: [{ updatedAt: 'desc' }]
   });
 
   const items: PlantArchiveItem[] = plants.map((plant) => {
     const journals = plant.journal && !plant.journal.post.deleted ? [plant.journal] : [];
     const entries = journals.flatMap((journal) =>
-      journal.entries.map((entry) => ({ entry, journal })),
+    journal.entries.map((entry) => ({ entry, journal }))
     );
     const latest = entries.sort((a, b) => {
       const byDate = b.entry.entryDate.getTime() - a.entry.entryDate.getTime();
@@ -75,11 +79,11 @@ export default async function PlantArchivesPage() {
     const postImages = journals.flatMap((journal) => parseJsonArray(journal.post.images));
     const latestImages = latest ? parseJsonArray(latest.entry.images) : [];
     const cover = latestImages[0] ?? plant.cover ?? postImages[0] ?? plant.species.cover ?? null;
-    const stageLabel = latest
-      ? latest.entry.stage === 'other'
-        ? latest.entry.stageLabel || STAGE_LABELS.other
-        : STAGE_LABELS[latest.entry.stage] ?? STAGE_LABELS.other
-      : '暂无记录';
+    const stageLabel = latest ?
+    latest.entry.stage === 'other' ?
+    latest.entry.stageLabel || STAGE_LABELS.other :
+    STAGE_LABELS[latest.entry.stage] ?? STAGE_LABELS.other :
+    '暂无记录';
     const lastUpdatedAt = latest?.entry.entryDate ?? plant.updatedAt;
 
     return {
@@ -93,9 +97,9 @@ export default async function PlantArchivesPage() {
       genusName: plant.species.genus.name,
       cover,
       status: plant.status as PlantArchiveStatus,
-      statusLabel: plant.currentStage === 'other'
-        ? plant.currentStageLabel || STAGE_LABELS.other
-        : STAGE_LABELS[plant.currentStage] ?? STAGE_LABELS.other,
+      statusLabel: plant.currentStage === 'other' ?
+      plant.currentStageLabel || STAGE_LABELS.other :
+      STAGE_LABELS[plant.currentStage] ?? STAGE_LABELS.other,
       currentStage: plant.currentStage,
       currentStageLabel: plant.currentStageLabel ?? '',
       durationLabel: formatDuration(plant.acquiredAt, new Date()),
@@ -108,7 +112,7 @@ export default async function PlantArchivesPage() {
       imageCount: allImages.length,
       updatedAt: lastUpdatedAt.toISOString(),
       acquiredAt: plant.acquiredAt.toISOString(),
-      note: plant.note ?? '',
+      note: plant.note ?? ''
     };
   });
 
@@ -117,14 +121,14 @@ export default async function PlantArchivesPage() {
     healthy: items.filter((item) => item.status === 'healthy').length,
     watching: items.filter((item) => item.status === 'watching').length,
     needs: items.filter((item) => item.status === 'needs_attention').length,
-    dormant: items.filter((item) => item.status === 'dormant').length,
+    dormant: items.filter((item) => item.status === 'dormant').length
   };
 
   return (
-    <AppShell showFloatingAi={false} className="!max-w-[1280px] pt-4">
+    <AppShell showFloatingAi={false} className={cx(styles.r_d14dc4ed, styles.r_173fa8f0)}>
       <PlantArchiveClient items={items} stats={stats} />
-    </AppShell>
-  );
+    </AppShell>);
+
 }
 
 function statusLabel(status: PlantArchiveStatus) {
@@ -147,7 +151,7 @@ function formatDuration(start: Date, end: Date) {
   if (days < 31) return `${Math.max(days, 1)}天`;
   if (days < 365) return `${Math.max(1, Math.round(days / 30))}个月`;
   const years = Math.floor(days / 365);
-  const months = Math.round((days % 365) / 30);
+  const months = Math.round(days % 365 / 30);
   return months > 0 ? `${years}年${months}个月` : `${years}年`;
 }
 

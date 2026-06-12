@@ -5,7 +5,7 @@
  *
  * 用法:
  *   <BottomSheet open={open} onClose={() => setOpen(false)} title="选项">
- *     <div className="p-4">...</div>
+ *     <div>...</div>
  *   </BottomSheet>
  *
  * 特性:
@@ -20,6 +20,11 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
+import { useBodyScrollLock } from '@/lib/hooks/useBodyScrollLock';
+import styles from './BottomSheet.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface Props {
   open: boolean;
@@ -37,13 +42,14 @@ export function BottomSheet({
   title,
   children,
   maxHeight = '86vh',
-  className,
+  className
 }: Props) {
   const [mounted, setMounted] = useState(false);
   const [animOpen, setAnimOpen] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragYRef = useRef(0);
   const dragStartRef = useRef<number | null>(null);
+  useBodyScrollLock(mounted);
 
   // mount/unmount 控制(支持离开动画)
   useEffect(() => {
@@ -58,16 +64,6 @@ export function BottomSheet({
       return () => clearTimeout(t);
     }
   }, [open]);
-
-  // body scroll lock
-  useEffect(() => {
-    if (!mounted) return;
-    const original = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = original;
-    };
-  }, [mounted]);
 
   // ESC 关闭
   useEffect(() => {
@@ -113,44 +109,44 @@ export function BottomSheet({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex flex-col justify-end touch-manipulation"
-    >
+      className={cx(styles.r_7bc55599, styles.r_7b7df044, styles.r_181b2866, styles.r_60fbb771, styles.r_8dddea07, styles.r_77c08e01, styles.r_cd1b8986)}>
+
       {/* backdrop */}
       <div
         onClick={onClose}
-        className={cn(
-          'absolute inset-0 bg-ink-900/40 transition-opacity duration-200',
-          animOpen ? 'opacity-100' : 'opacity-0'
-        )}
-      />
+        className={cn(cx(styles.r_da4dbfbc, styles.r_7b7df044, styles.r_094a9df0, styles.r_67d6184a, styles.r_625a4c3f),
+
+        animOpen ? styles.r_3972e98d : styles.r_7065497e
+        )} />
+
       {/* sheet */}
       <div
         ref={sheetRef}
-        className={cn(
-          'relative z-10 mx-auto w-full max-w-[640px] overflow-hidden rounded-t-2xl bg-white shadow-2xl transition-transform duration-200',
-          animOpen ? 'translate-y-0' : 'translate-y-full',
-          className
+        className={cn(cx(styles.r_d89972fe, styles.r_236812d6, styles.r_0e12dc7d, styles.r_6da6a3c3, styles.r_cb7721dc, styles.r_2cd02d11, styles.r_1e3a8aa7, styles.r_5e10cdb8, styles.r_14e46609, styles.r_eadef238, styles.r_625a4c3f),
+
+        animOpen ? styles.r_fbccda82 : styles.r_8a624dc5,
+        className
         )}
-        style={{ maxHeight }}
-      >
+        style={{ maxHeight }}>
+
         {/* drag handle */}
         <div
-          className="grid place-items-center py-2.5 cursor-grab active:cursor-grabbing"
+          className={cx(styles.r_f3c543ad, styles.r_67d66567, styles.r_e7ee55ac, styles.r_8d083852, styles.r_d9bff91e)}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-        >
-          <div className="h-1 w-10 rounded-full bg-ink-200" />
+          onTouchEnd={onTouchEnd}>
+
+          <div className={cx(styles.r_3a1268a4, styles.r_d854e569, styles.r_ac204c10, styles.r_ee1b532e)} />
         </div>
-        {title && (
-          <header className="px-5 pb-2 pt-1 text-base font-semibold text-ink-800">
+        {title &&
+        <header className={cx(styles.r_d139dd09, styles.r_f4cc511f, styles.r_6b7d6e21, styles.r_4ee73492, styles.r_e83a7042, styles.r_399e11a5)}>
             {title}
           </header>
-        )}
-        <div className="overflow-y-auto" style={{ maxHeight: `calc(${maxHeight} - 60px)` }}>
+        }
+        <div className={styles.r_92bf82f4} style={{ maxHeight: `calc(${maxHeight} - 60px)` }}>
           {children}
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }

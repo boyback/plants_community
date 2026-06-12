@@ -12,6 +12,10 @@
  */
 import Link from 'next/link';
 import Image from 'next/image';
+import styles from './MarketShowcase.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface ProductCard {
   id: string;
@@ -31,81 +35,81 @@ interface AuctionCard {
 
 export function MarketShowcase({
   products,
-  auctions,
-}: {
-  products: ProductCard[];
-  auctions: AuctionCard[];
-}) {
+  auctions
+
+
+
+}: {products: ProductCard[];auctions: AuctionCard[];}) {
   if (products.length === 0 && auctions.length === 0) return null;
 
   return (
-    <div className="card overflow-hidden">
-      <div className="flex items-center justify-between border-b border-leaf-100/60 px-4 py-2.5">
-        <div className="text-sm font-semibold text-ink-800">🛒 市场橱窗</div>
-        <div className="flex items-center gap-3 text-[11px]">
-          <Link href="/market" className="text-leaf-700 hover:underline">
+    <div className={styles.r_2cd02d11}>
+      <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_65fdbade, styles.r_38748e06, styles.r_f0faeb26, styles.r_e7ee55ac)}>
+        <div className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>🛒 市场橱窗</div>
+        <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_d058ca6d)}>
+          <Link href="/market" className={cx(styles.r_5f6a59f1, styles.r_f673f4a7)}>
             全部商品 →
           </Link>
-          <Link href="/auction" className="text-rose-700 hover:underline">
+          <Link href="/auction" className={cx(styles.r_b54428d1, styles.r_f673f4a7)}>
             拍卖会 →
           </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 p-3 md:grid-cols-3 lg:grid-cols-4">
-        {auctions.map((a) => (
-          <AuctionItem key={a.id} a={a} />
-        ))}
-        {products.map((p) => (
-          <ProductItem key={p.id} p={p} />
-        ))}
+      <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3, styles.r_eb6e8b88, styles.r_9a638cfe, styles.r_4558bce6)}>
+        {auctions.map((a) =>
+        <AuctionItem key={a.id} a={a} />
+        )}
+        {products.map((p) =>
+        <ProductItem key={p.id} p={p} />
+        )}
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
-function ProductItem({ p }: { p: ProductCard }) {
+function ProductItem({ p }: {p: ProductCard;}) {
   const yuan = (p.price / 100).toFixed(p.price % 100 === 0 ? 0 : 2);
   const orig = p.originalPrice ? (p.originalPrice / 100).toFixed(p.originalPrice % 100 === 0 ? 0 : 2) : null;
   return (
-    <Link href={`/market/${p.id}`} className="group overflow-hidden rounded-none border border-leaf-100 transition-all hover:border-leaf-300 hover:shadow-card">
-      <div className="relative aspect-square bg-leaf-50">
-        <Image src={p.cover} alt={p.title} fill className="object-cover" unoptimized />
+    <Link href={`/market/${p.id}`} className={cx(styles.r_64292b1c, styles.r_2cd02d11, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_0fe7d7d8, styles.r_a5c39c39, styles.r_6705344e)}>
+      <div className={cx(styles.r_d89972fe, styles.r_b59cd297, styles.r_7ebecbb6)}>
+        <Image src={p.cover} alt={p.title} fill className={styles.r_7d85d0c2} unoptimized />
       </div>
-      <div className="p-2">
-        <div className="line-clamp-1 text-xs text-ink-800 group-hover:text-leaf-700">
+      <div className={styles.r_7660b450}>
+        <div className={cx(styles.r_f50e2015, styles.r_359090c2, styles.r_399e11a5, styles.r_0eb80431)}>
           {p.title}
         </div>
-        <div className="mt-1 flex items-baseline gap-1">
-          <span className="text-sm font-semibold text-rose-600">¥{yuan}</span>
-          {orig && (
-            <span className="text-[10px] text-leaf-700/40 line-through">¥{orig}</span>
-          )}
+        <div className={cx(styles.r_b6b02c0e, styles.r_60fbb771, styles.r_b7012bb2, styles.r_44ee8ba0)}>
+          <span className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_595fceba)}>¥{yuan}</span>
+          {orig &&
+          <span className={cx(styles.r_1dc571a3, styles.r_4d094717, styles.r_093ca562)}>¥{orig}</span>
+          }
         </div>
       </div>
-    </Link>
-  );
+    </Link>);
+
 }
 
-function AuctionItem({ a }: { a: AuctionCard }) {
+function AuctionItem({ a }: {a: AuctionCard;}) {
   const yuan = (a.startPrice / 100).toFixed(a.startPrice % 100 === 0 ? 0 : 2);
   return (
-    <Link href={`/auction/${a.id}`} className="group relative overflow-hidden rounded-none border-2 border-rose-300 bg-rose-50/40 transition-all hover:border-rose-400 hover:shadow-card">
-      <span className="absolute left-1.5 top-1.5 z-10 rounded bg-rose-500 px-1.5 py-0.5 text-[10px] font-medium text-white shadow">
+    <Link href={`/auction/${a.id}`} className={cx(styles.r_64292b1c, styles.r_d89972fe, styles.r_2cd02d11, styles.r_0c5e9137, styles.r_65935df5, styles.r_3b7f9781, styles.r_e0957073, styles.r_0fe7d7d8, styles.r_79fb1b08, styles.r_6705344e)}>
+      <span className={cx(styles.r_da4dbfbc, styles.r_5dee17e1, styles.r_b1044d86, styles.r_236812d6, styles.r_07389a77, styles.r_45a732a4, styles.r_45d82811, styles.r_465609a2, styles.r_1dc571a3, styles.r_2689f395, styles.r_72a4c7cd, styles.r_ed9d3d83)}>
         🔨 拍卖中
       </span>
-      <div className="relative aspect-square bg-leaf-50">
-        <Image src={a.cover} alt={a.title} fill className="object-cover" unoptimized />
+      <div className={cx(styles.r_d89972fe, styles.r_b59cd297, styles.r_7ebecbb6)}>
+        <Image src={a.cover} alt={a.title} fill className={styles.r_7d85d0c2} unoptimized />
       </div>
-      <div className="p-2">
-        <div className="line-clamp-1 text-xs text-ink-800 group-hover:text-rose-700">
+      <div className={styles.r_7660b450}>
+        <div className={cx(styles.r_f50e2015, styles.r_359090c2, styles.r_399e11a5, styles.r_412183fb)}>
           {a.title}
         </div>
-        <div className="mt-1 flex items-baseline gap-1">
-          <span className="text-[10px] text-leaf-700/60">起拍</span>
-          <span className="text-sm font-semibold text-rose-600">¥{yuan}</span>
+        <div className={cx(styles.r_b6b02c0e, styles.r_60fbb771, styles.r_b7012bb2, styles.r_44ee8ba0)}>
+          <span className={cx(styles.r_1dc571a3, styles.r_6c4cc49e)}>起拍</span>
+          <span className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_595fceba)}>¥{yuan}</span>
         </div>
       </div>
-    </Link>
-  );
+    </Link>);
+
 }

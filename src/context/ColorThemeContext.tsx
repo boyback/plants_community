@@ -5,8 +5,8 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useState,
-} from 'react';
+  useState } from
+'react';
 import {
   COLOR_THEMES,
   COLOR_THEME_STORAGE_KEY,
@@ -18,8 +18,8 @@ import {
   isValidMode,
   type ColorThemeKey,
   type ColorThemeMeta,
-  type ColorThemeMode,
-} from '@/lib/color-theme';
+  type ColorThemeMode } from
+"@/lib/color-theme";
 
 interface Ctx {
   theme: ColorThemeKey;
@@ -38,11 +38,11 @@ function applyToDOM(theme: ColorThemeKey, mode: ColorThemeMode) {
   const html = document.documentElement;
   html.setAttribute('data-theme', theme);
   html.setAttribute('data-mode', mode);
-  if (mode === 'dark') html.classList.add('dark');
-  else html.classList.remove('dark');
+  if (mode === 'dark') html.classList.add('dark');else
+  html.classList.remove('dark');
 }
 
-export function ColorThemeProvider({ children }: { children: React.ReactNode }) {
+export function ColorThemeProvider({ children }: {children: React.ReactNode;}) {
   const [theme, setThemeState] = useState<ColorThemeKey>(DEFAULT_COLOR_THEME);
   const [mode, setModeState] = useState<ColorThemeMode>(DEFAULT_COLOR_MODE);
 
@@ -58,10 +58,10 @@ export function ColorThemeProvider({ children }: { children: React.ReactNode }) 
       setModeState(m);
       applyToDOM(t, m);
     } catch {
-      // ignore
-    }
-  }, []);
 
+
+      // ignore
+    }}, []);
   const setTheme = useCallback(
     (k: ColorThemeKey) => {
       if (!isValidColorTheme(k)) return;
@@ -69,10 +69,10 @@ export function ColorThemeProvider({ children }: { children: React.ReactNode }) 
       try {
         localStorage.setItem(COLOR_THEME_STORAGE_KEY, k);
       } catch {
+
+
         // ignore
-      }
-      applyToDOM(k, mode);
-    },
+      }applyToDOM(k, mode);},
     [mode]
   );
 
@@ -83,10 +83,10 @@ export function ColorThemeProvider({ children }: { children: React.ReactNode }) 
       try {
         localStorage.setItem(COLOR_THEME_MODE_STORAGE_KEY, m);
       } catch {
+
+
         // ignore
-      }
-      applyToDOM(theme, m);
-    },
+      }applyToDOM(theme, m);},
     [theme]
   );
 
@@ -103,12 +103,12 @@ export function ColorThemeProvider({ children }: { children: React.ReactNode }) 
         setTheme,
         setMode,
         toggleMode,
-        themes: COLOR_THEMES,
-      }}
-    >
+        themes: COLOR_THEMES
+      }}>
+
       {children}
-    </ColorThemeContext.Provider>
-  );
+    </ColorThemeContext.Provider>);
+
 }
 
 export function useColorTheme(): Ctx {

@@ -11,6 +11,10 @@
 import { useEffect, useState } from 'react';
 import { useTheme } from './ThemeContext';
 import { useI18n } from '@/i18n/I18nContext';
+import styles from './FestivalBanner.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 const SESSION_KEY_PREFIX = 'rouyou.festivalDismissed.';
 
@@ -34,14 +38,14 @@ export function FestivalBanner() {
 
   return (
     <div
-      className="relative h-7 overflow-hidden text-white text-xs flex items-center justify-center select-none"
+      className={cx(styles.r_d89972fe, styles.r_d0a52b31, styles.r_2cd02d11, styles.r_72a4c7cd, styles.r_359090c2, styles.r_60fbb771, styles.r_3960ffc2, styles.r_86843cf1, styles.r_7f691228)}
       style={{
-        background: `linear-gradient(90deg, ${primary.decoration.accentFrom}, ${primary.decoration.accentTo})`,
+        background: `linear-gradient(90deg, ${primary.decoration.accentFrom}, ${primary.decoration.accentTo})`
       }}
-      role="status"
-    >
-      <span className="px-3 truncate" title={bannerText}>
-        <span className="mr-1" aria-hidden>{primary.decoration.logoBadge}</span>
+      role="status">
+
+      <span className={cx(styles.r_0e17f2bd, styles.r_f283ea9b)} title={bannerText}>
+        <span className={styles.r_61816240} aria-hidden>{primary.decoration.logoBadge}</span>
         {bannerText}
       </span>
       <button
@@ -51,10 +55,10 @@ export function FestivalBanner() {
           setDismissed(true);
         }}
         aria-label="关闭节日横幅"
-        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-80 hover:opacity-100 text-[11px]"
-      >
+        className={cx(styles.r_da4dbfbc, styles.r_7b2d6393, styles.r_d694ba66, styles.r_36b381be, styles.r_714816ef, styles.r_5da1d525, styles.r_d058ca6d)}>
+
         ✕
       </button>
-    </div>
-  );
+    </div>);
+
 }

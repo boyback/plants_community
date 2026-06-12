@@ -12,9 +12,13 @@ import type { PostVoteUpdateHandler } from '@/components/post/PostVotePreview';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { useAuth } from '@/context/AuthContext';
-import { api } from '@/lib/client-api';
+import { api } from "@/lib/client-api";
 import type { BannerItem, Post } from '@/lib/types';
 import { cn, formatDateTime, formatFollowers, formatNumber } from '@/lib/utils';
+import styles from './HomeDashboard.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 type TopicItem = {
   tag: string;
@@ -76,16 +80,16 @@ export function HomeDashboard({
   banners,
   topics,
   events,
-  stats,
-}: {
-  posts: Post[];
-  banners: BannerItem[];
-  topics: TopicItem[];
-  events: EventItem[];
-  reminders: ReminderItem[];
-  stats: HomeStats;
-  selections: SelectionItem[];
-}) {
+  stats
+
+
+
+
+
+
+
+
+}: {posts: Post[];banners: BannerItem[];topics: TopicItem[];events: EventItem[];reminders: ReminderItem[];stats: HomeStats;selections: SelectionItem[];}) {
   return (
     <AppShell>
       <div>
@@ -95,28 +99,28 @@ export function HomeDashboard({
         <EventsStrip events={events} />
         <HotTopics topics={topics} />
       </div>
-    </AppShell>
-  );
+    </AppShell>);
+
 }
 
-function HomeHero({ banners }: { banners: BannerItem[] }) {
+function HomeHero({ banners }: {banners: BannerItem[];}) {
   const swiperRef = useRef<SwiperInstance | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const slides = banners.length
-    ? banners
-    : [
-        {
-          id: 'fallback',
-          title: '探索多肉的美好世界',
-          image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=1600',
-          link: '/board',
-          tint: '',
-        },
-      ];
+  const slides = banners.length ?
+  banners :
+  [
+  {
+    id: 'fallback',
+    title: '探索多肉的美好世界',
+    image: "https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=1600",
+    link: '/board',
+    tint: ''
+  }];
+
   const canLoop = slides.length > 1;
 
   return (
-    <section className="relative mx-auto my-12 w-full max-w-[1280px] overflow-hidden rounded-[6px] bg-white shadow-sm">
+    <section className={cx(styles.r_d89972fe, styles.r_0e12dc7d, styles.r_710be1ec, styles.r_6da6a3c3, styles.r_da310242, styles.r_2cd02d11, styles.r_c10ff8c0, styles.r_5e10cdb8, styles.r_438b2237)}>
       <Swiper
         modules={[Autoplay, Navigation, A11y]}
         slidesPerView={1}
@@ -125,56 +129,56 @@ function HomeHero({ banners }: { banners: BannerItem[] }) {
         navigation={canLoop}
         autoplay={canLoop ? { delay: 3000, disableOnInteraction: false, pauseOnMouseEnter: true } : false}
         a11y={{ enabled: true, prevSlideMessage: '上一张 Banner', nextSlideMessage: '下一张 Banner' }}
-        className="home-hero-swiper h-[454px] md:h-[594px]"
+        className={cx("home-hero-swiper", styles.r_29acde56, styles.r_83b44422)}
         onSwiper={(swiper) => {
           swiperRef.current = swiper;
         }}
-        onRealIndexChange={(swiper) => setActiveIndex(swiper.realIndex)}
-      >
-        {slides.map((banner, index) => (
-          <SwiperSlide
-            key={banner.id}
-            data-swiper-autoplay={banner.durationMs && banner.durationMs > 0 ? banner.durationMs : undefined}
-          >
-            <Link href={banner.link || '/board'} className="flex h-full flex-col" aria-label={banner.title}>
-              <span className="relative block h-[320px] overflow-hidden bg-leaf-100 md:h-[460px]">
+        onRealIndexChange={(swiper) => setActiveIndex(swiper.realIndex)}>
+
+        {slides.map((banner, index) =>
+        <SwiperSlide
+          key={banner.id}
+          data-swiper-autoplay={banner.durationMs && banner.durationMs > 0 ? banner.durationMs : undefined}>
+
+            <Link href={banner.link || '/board'} className={cx(styles.r_60fbb771, styles.r_668b21aa, styles.r_8dddea07)} aria-label={banner.title}>
+              <span className={cx(styles.r_d89972fe, styles.r_0214b4b3, styles.r_149b4462, styles.r_2cd02d11, styles.r_f2b23104, styles.r_4dd22916)}>
                 <Image
-                  src={banner.image}
-                  alt={banner.title || '多肉植物'}
-                  fill
-                  priority={index === 0}
-                  unoptimized
-                  className="object-cover"
-                />
+                src={banner.image}
+                alt={banner.title || '多肉植物'}
+                fill
+                priority={index === 0}
+                unoptimized
+                className={styles.r_7d85d0c2} />
+
               </span>
-              <span className="box-border flex h-[134px] items-center rounded-b-[6px] bg-white px-10 py-[37px]">
-                <span className="line-clamp-2 whitespace-normal text-[26px] font-bold leading-tight text-black">
+              <span className={cx(styles.r_7906320e, styles.r_60fbb771, styles.r_ef15d3cc, styles.r_3960ffc2, styles.r_48fd24ce, styles.r_5e10cdb8, styles.r_61203b55, styles.r_e0578dd7)}>
+                <span className={cx(styles.r_054cb4e3, styles.r_e5660dac, styles.r_ca5169a2, styles.r_69450ef1, styles.r_e9fadafb, styles.r_d2a412c3)}>
                   {banner.title || '探索多肉的美好世界'}
                 </span>
               </span>
             </Link>
           </SwiperSlide>
-        ))}
+        )}
       </Swiper>
-      {canLoop && (
-        <div className="home-hero-pagination" aria-label="轮播图分页">
-          {slides.map((banner, index) => (
-            <button
-              key={banner.id}
-              type="button"
-              className={cn('home-hero-pagination-bullet', index === activeIndex && 'is-active')}
-              aria-label={`切换到第 ${index + 1} 张轮播图`}
-              aria-current={index === activeIndex ? 'true' : undefined}
-              onClick={() => swiperRef.current?.slideToLoop(index)}
-            />
-          ))}
+      {canLoop &&
+      <div className={"home-hero-pagination"} aria-label="轮播图分页">
+          {slides.map((banner, index) =>
+        <button
+          key={banner.id}
+          type="button"
+          className={cn("home-hero-pagination-bullet", index === activeIndex && "is-active")}
+          aria-label={`切换到第 ${index + 1} 张轮播图`}
+          aria-current={index === activeIndex ? 'true' : undefined}
+          onClick={() => swiperRef.current?.slideToLoop(index)} />
+
+        )}
         </div>
-      )}
-    </section>
-  );
+      }
+    </section>);
+
 }
 
-function Recommended({ posts }: { posts: Post[] }) {
+function Recommended({ posts }: {posts: Post[];}) {
   const [items, setItems] = useState(posts);
   const [cursor, setCursor] = useState<string | null>(
     posts.length >= RECOMMENDED_FEED_PAGE_SIZE ? '1' : posts.length === 0 ? '0' : null
@@ -237,11 +241,11 @@ function Recommended({ posts }: { posts: Post[] }) {
 
   const onVoteUpdate = useCallback<PostVoteUpdateHandler>((postId, options, total, voted, votedOptionIds) => {
     setItems((prev) =>
-      prev.map((post) =>
-        post.id === postId && post.vote
-          ? { ...post, vote: { ...post.vote, options, total, voted, votedOptionIds } }
-          : post
-      )
+    prev.map((post) =>
+    post.id === postId && post.vote ?
+    { ...post, vote: { ...post.vote, options, total, voted, votedOptionIds } } :
+    post
+    )
     );
   }, []);
 
@@ -258,216 +262,216 @@ function Recommended({ posts }: { posts: Post[] }) {
   const activeUsers = getActiveUsers(items);
 
   return (
-    <section className="mb-[18px]">
-      <div className="grid gap-5 md:grid-cols-3">
-        {featuredPosts.map((post) => (
-          <RecommendedCard key={post.id} post={post} />
-        ))}
+    <section className={styles.r_348b2c1e}>
+      <div className={cx(styles.r_f3c543ad, styles.r_b39e60c3, styles.r_9a638cfe)}>
+        {featuredPosts.map((post) =>
+        <RecommendedCard key={post.id} post={post} />
+        )}
       </div>
 
-      {feedPosts.length > 0 && (
-        <div className="mt-12 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-sm">
-            {feedPosts.map((post, index) => (
-              <PostListItem
-                key={post.id}
-                post={post}
-                showDivider={index < feedPosts.length - 1 || loadingMore || Boolean(cursor)}
-                onVoteUpdate={onVoteUpdate}
-              />
-            ))}
+      {feedPosts.length > 0 &&
+      <div className={cx(styles.r_65cf08ba, styles.r_f3c543ad, styles.r_0d304f90, styles.r_c0e5f9b0)}>
+          <div className={cx(styles.r_2cd02d11, styles.r_68f2db62, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_438b2237)}>
+            {feedPosts.map((post, index) =>
+          <PostListItem
+            key={post.id}
+            post={post}
+            showDivider={index < feedPosts.length - 1 || loadingMore || Boolean(cursor)}
+            onVoteUpdate={onVoteUpdate} />
+
+          )}
             {loadingMore && <RecommendedFeedLoading />}
             {error && <RecommendedFeedError message={error} onRetry={() => void loadMore()} />}
             {!cursor && !loadingMore && !error && <RecommendedFeedEnd />}
-            {cursor && <div ref={sentinelRef} className="h-1 w-full" aria-hidden />}
+            {cursor && <div ref={sentinelRef} className={cx(styles.r_3a1268a4, styles.r_6da6a3c3)} aria-hidden />}
           </div>
 
-          <aside className="space-y-5 lg:sticky lg:top-[136px] lg:self-start">
+          <aside className={cx(styles.r_b43b4c08, styles.r_88bc1fd8, styles.r_7df46613, styles.r_8b877f1c)}>
             <CheckInCard />
             <ActiveUsersCard users={activeUsers} />
           </aside>
         </div>
-      )}
-    </section>
-  );
+      }
+    </section>);
+
 }
 
 function RecommendedFeedSkeleton() {
   return (
-    <section className="mb-[18px] animate-pulse">
-      <div className="grid gap-5 md:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div key={index} className="overflow-hidden rounded-lg border border-leaf-100 bg-white shadow-sm">
-            <div className="aspect-[16/9] bg-leaf-100/80" />
-            <div className="space-y-2.5 p-4">
-              <div className="h-5 w-5/6 rounded bg-leaf-100" />
-              <div className="h-5 w-2/3 rounded bg-leaf-100/80" />
-              <div className="flex items-center justify-between pt-1.5">
-                <div className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-leaf-100" />
-                  <div className="h-3 w-20 rounded bg-leaf-100" />
+    <section className={cx(styles.r_348b2c1e, styles.r_d59b9794)}>
+      <div className={cx(styles.r_f3c543ad, styles.r_b39e60c3, styles.r_9a638cfe)}>
+        {Array.from({ length: 3 }).map((_, index) =>
+        <div key={index} className={cx(styles.r_2cd02d11, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_438b2237)}>
+            <div className={cx(styles.r_c248b33a, styles.r_b4a3573a)} />
+            <div className={cx(styles.r_14dd497e, styles.r_8e63407b)}>
+              <div className={cx(styles.r_cd0d9c51, styles.r_b9c9ec11, styles.r_07389a77, styles.r_f2b23104)} />
+              <div className={cx(styles.r_cd0d9c51, styles.r_f09b0bba, styles.r_07389a77, styles.r_b4a3573a)} />
+              <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_6874bf95)}>
+                <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
+                  <div className={cx(styles.r_f6fe9024, styles.r_7ec10f86, styles.r_ac204c10, styles.r_f2b23104)} />
+                  <div className={cx(styles.r_6a60c09e, styles.r_ed831a4d, styles.r_07389a77, styles.r_f2b23104)} />
                 </div>
-                <div className="h-3 w-24 rounded bg-leaf-100" />
+                <div className={cx(styles.r_6a60c09e, styles.r_69da7e4f, styles.r_07389a77, styles.r_f2b23104)} />
               </div>
             </div>
           </div>
-        ))}
+        )}
       </div>
 
-      <div className="mt-12 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="overflow-hidden rounded-2xl border border-leaf-100 bg-white shadow-sm">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index}>
-              <div className="px-5 py-5 md:px-6">
-                <div className="mb-3.5 flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-leaf-100" />
-                  <div className="h-4 w-24 rounded bg-leaf-100" />
-                  <div className="ml-auto h-8 w-8 rounded-lg bg-leaf-100/70" />
+      <div className={cx(styles.r_65cf08ba, styles.r_f3c543ad, styles.r_0d304f90, styles.r_c0e5f9b0)}>
+        <div className={cx(styles.r_2cd02d11, styles.r_68f2db62, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_438b2237)}>
+          {Array.from({ length: 4 }).map((_, index) =>
+          <div key={index}>
+              <div className={cx(styles.r_d139dd09, styles.r_c9b99cd9, styles.r_8a383123)}>
+                <div className={cx(styles.r_72418557, styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
+                  <div className={cx(styles.r_ed8a5df7, styles.r_2bbcfc3b, styles.r_ac204c10, styles.r_f2b23104)} />
+                  <div className={cx(styles.r_11e59c6d, styles.r_69da7e4f, styles.r_07389a77, styles.r_f2b23104)} />
+                  <div className={cx(styles.r_fb56d9cf, styles.r_ed8a5df7, styles.r_2bbcfc3b, styles.r_5f22e64f, styles.r_794f0116)} />
                 </div>
-                <div className="mb-2.5 h-5 w-3/4 rounded bg-leaf-100" />
-                <div className="mb-2 h-3.5 w-full rounded bg-leaf-100/80" />
-                <div className="mb-3 h-3.5 w-2/3 rounded bg-leaf-100/70" />
-                <div className="mb-3 flex gap-1.5">
-                  <div className="h-5 w-14 rounded-full bg-leaf-100/80" />
-                  <div className="h-5 w-16 rounded-full bg-leaf-100/80" />
-                  <div className="h-5 w-12 rounded-full bg-leaf-100/80" />
+                <div className={cx(styles.r_fbe25fd3, styles.r_cd0d9c51, styles.r_1d9f2d98, styles.r_07389a77, styles.r_f2b23104)} />
+                <div className={cx(styles.r_a77ed4d9, styles.r_7fc7f732, styles.r_6da6a3c3, styles.r_07389a77, styles.r_b4a3573a)} />
+                <div className={cx(styles.r_1bb88326, styles.r_7fc7f732, styles.r_f09b0bba, styles.r_07389a77, styles.r_794f0116)} />
+                <div className={cx(styles.r_1bb88326, styles.r_60fbb771, styles.r_58284b4e)}>
+                  <div className={cx(styles.r_cd0d9c51, styles.r_7e74e5fe, styles.r_ac204c10, styles.r_b4a3573a)} />
+                  <div className={cx(styles.r_cd0d9c51, styles.r_baceed34, styles.r_ac204c10, styles.r_b4a3573a)} />
+                  <div className={cx(styles.r_cd0d9c51, styles.r_e7e37107, styles.r_ac204c10, styles.r_b4a3573a)} />
                 </div>
-                <div className="mb-3 grid grid-cols-5 gap-1.5">
-                  {Array.from({ length: 5 }).map((_, itemIndex) => (
-                    <div key={itemIndex} className="aspect-square bg-leaf-100" />
-                  ))}
+                <div className={cx(styles.r_1bb88326, styles.r_f3c543ad, styles.r_931228bb, styles.r_58284b4e)}>
+                  {Array.from({ length: 5 }).map((_, itemIndex) =>
+                <div key={itemIndex} className={cx(styles.r_b59cd297, styles.r_f2b23104)} />
+                )}
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="h-6 w-20 rounded-full bg-leaf-100" />
-                  <div className="flex gap-3">
-                    <div className="h-4 w-24 rounded bg-leaf-100" />
-                    <div className="h-4 w-10 rounded bg-leaf-100" />
-                    <div className="h-4 w-10 rounded bg-leaf-100" />
+                <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e)}>
+                  <div className={cx(styles.r_f6fe9024, styles.r_ed831a4d, styles.r_ac204c10, styles.r_f2b23104)} />
+                  <div className={cx(styles.r_60fbb771, styles.r_1004c0c3)}>
+                    <div className={cx(styles.r_11e59c6d, styles.r_69da7e4f, styles.r_07389a77, styles.r_f2b23104)} />
+                    <div className={cx(styles.r_11e59c6d, styles.r_d854e569, styles.r_07389a77, styles.r_f2b23104)} />
+                    <div className={cx(styles.r_11e59c6d, styles.r_d854e569, styles.r_07389a77, styles.r_f2b23104)} />
                   </div>
                 </div>
               </div>
-              {index < 3 && <div className="mx-5 border-t border-leaf-100 md:mx-6" />}
+              {index < 3 && <div className={cx(styles.r_abfeed1c, styles.r_b950dda2, styles.r_88b684d2, styles.r_c73e05ca)} />}
             </div>
-          ))}
+          )}
         </div>
 
-        <aside className="space-y-5">
-          <div className="h-[108px] rounded-[6px] border border-leaf-100 bg-white shadow-sm">
-            <div className="h-14 bg-leaf-100" />
-            <div className="mx-auto mt-4 h-4 w-40 rounded bg-leaf-100" />
+        <aside className={styles.r_b43b4c08}>
+          <div className={cx(styles.r_c16c158f, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_438b2237)}>
+            <div className={cx(styles.r_73a13409, styles.r_f2b23104)} />
+            <div className={cx(styles.r_0e12dc7d, styles.r_0ab86672, styles.r_11e59c6d, styles.r_84789e8a, styles.r_07389a77, styles.r_f2b23104)} />
           </div>
-          <div className="rounded-2xl border border-leaf-100 bg-white p-6 shadow-sm">
-            <div className="mb-5 h-6 w-32 rounded bg-leaf-100" />
-            <div className="space-y-4">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <div className="h-5 w-5 rounded bg-leaf-100" />
-                  <div className="h-9 w-9 rounded-full bg-leaf-100" />
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <div className="h-3 w-24 rounded bg-leaf-100" />
-                    <div className="h-3 w-16 rounded bg-leaf-100/80" />
+          <div className={cx(styles.r_68f2db62, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_0478c89a, styles.r_438b2237)}>
+            <div className={cx(styles.r_fb88ccaa, styles.r_f6fe9024, styles.r_516b03df, styles.r_07389a77, styles.r_f2b23104)} />
+            <div className={styles.r_3e7ce58d}>
+              {Array.from({ length: 5 }).map((_, index) =>
+              <div key={index} className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3)}>
+                  <div className={cx(styles.r_cd0d9c51, styles.r_72470489, styles.r_07389a77, styles.r_f2b23104)} />
+                  <div className={cx(styles.r_e7a768f9, styles.r_ae2181c7, styles.r_ac204c10, styles.r_f2b23104)} />
+                  <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0, styles.r_6f7e013d)}>
+                    <div className={cx(styles.r_6a60c09e, styles.r_69da7e4f, styles.r_07389a77, styles.r_f2b23104)} />
+                    <div className={cx(styles.r_6a60c09e, styles.r_baceed34, styles.r_07389a77, styles.r_b4a3573a)} />
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </aside>
       </div>
-    </section>
-  );
+    </section>);
+
 }
 
 function RecommendedFeedLoading() {
   return (
-    <div className="flex items-center justify-center gap-3 border-t border-leaf-100 py-10 text-sm font-medium text-ink-600">
-      <span className="h-5 w-5 animate-spin rounded-full border-2 border-leaf-200 border-t-leaf-600" />
+    <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_86843cf1, styles.r_1004c0c3, styles.r_b950dda2, styles.r_88b684d2, styles.r_1100bef6, styles.r_fc7473ca, styles.r_2689f395, styles.r_02eb621e)}>
+      <span className={cx(styles.r_cd0d9c51, styles.r_72470489, styles.r_afbdd13a, styles.r_ac204c10, styles.r_65935df5, styles.r_691861bc, styles.r_6121dab0)} />
       <span>加载中</span>
-    </div>
-  );
+    </div>);
+
 }
 
 function RecommendedFeedEnd() {
   return (
-    <div className="border-t border-leaf-100 py-8 text-center text-sm text-leaf-700/60">
+    <div className={cx(styles.r_b950dda2, styles.r_88b684d2, styles.r_a1f611f0, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>
       已经到底了，没有更多内容了
-    </div>
-  );
+    </div>);
+
 }
 
 function RecommendedFeedEmpty() {
   return (
-    <section className="mb-[18px] rounded-2xl border border-dashed border-leaf-200 bg-white/70 py-16 text-center">
-      <div className="text-base font-semibold text-ink-900">暂无推荐内容</div>
-      <div className="mt-2 text-sm text-leaf-700/60">稍后再来看看新的帖子</div>
-    </section>
-  );
+    <section className={cx(styles.r_348b2c1e, styles.r_68f2db62, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_b0b66d88, styles.r_02cafd38, styles.r_ca6bf630)}>
+      <div className={cx(styles.r_4ee73492, styles.r_e83a7042, styles.r_4ddaa618)}>暂无推荐内容</div>
+      <div className={cx(styles.r_50d0d216, styles.r_fc7473ca, styles.r_6c4cc49e)}>稍后再来看看新的帖子</div>
+    </section>);
+
 }
 
-function RecommendedFeedError({ message, onRetry }: { message: string; onRetry: () => void }) {
+function RecommendedFeedError({ message, onRetry }: {message: string;onRetry: () => void;}) {
   return (
-    <div className="flex items-center justify-center gap-3 border-t border-leaf-100 py-8 text-sm text-rose-600">
+    <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_86843cf1, styles.r_1004c0c3, styles.r_b950dda2, styles.r_88b684d2, styles.r_a1f611f0, styles.r_fc7473ca, styles.r_595fceba)}>
       <span>{message}</span>
       <button
         type="button"
         onClick={onRetry}
-        className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold hover:bg-rose-50"
-      >
+        className={cx(styles.r_ac204c10, styles.r_ca6bcd4b, styles.r_959f4a9f, styles.r_0e17f2bd, styles.r_660d2eff, styles.r_359090c2, styles.r_e83a7042, styles.r_85cfcc24)}>
+
         重试
       </button>
-    </div>
-  );
+    </div>);
+
 }
 
-function RecommendedCard({ post }: { post: Post }) {
+function RecommendedCard({ post }: {post: Post;}) {
   const cover = getPostCover(post);
 
   return (
     <Link
       href={`/post/${post.id}`}
-      className="group overflow-hidden rounded-lg border border-leaf-100 bg-white shadow-sm"
-    >
-      <div className="relative aspect-[16/9] overflow-hidden bg-leaf-50">
-        {cover ? (
-          <Image
-            src={cover}
-            alt={post.title}
-            fill
-            sizes="(max-width: 768px) 100vw, 390px"
-            unoptimized
-            className="object-cover"
-          />
-        ) : (
-          <div className="grid h-full place-items-center text-leaf-300">
+      className={cx(styles.r_64292b1c, styles.r_2cd02d11, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_438b2237)}>
+
+      <div className={cx(styles.r_d89972fe, styles.r_c248b33a, styles.r_2cd02d11, styles.r_7ebecbb6)}>
+        {cover ?
+        <Image
+          src={cover}
+          alt={post.title}
+          fill
+          sizes="(max-width: 768px) 100vw, 390px"
+          unoptimized
+          className={styles.r_7d85d0c2} /> :
+
+
+        <div className={cx(styles.r_f3c543ad, styles.r_668b21aa, styles.r_67d66567, styles.r_e55bc853)}>
             <Icon name="plants" size={44} />
           </div>
-        )}
+        }
       </div>
-      <div className="p-4">
-        <h3 className="line-clamp-2 min-h-[2.75rem] text-lg font-bold leading-[1.22] text-ink-950 group-hover:text-leaf-800">
+      <div className={styles.r_8e63407b}>
+        <h3 className={cx(styles.r_054cb4e3, styles.r_978a8dca, styles.r_42536e69, styles.r_69450ef1, styles.r_1126dbdb, styles.r_6d623258, styles.r_d94501d2)}>
           {post.title}
         </h3>
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <span className="flex min-w-0 items-center gap-2.5">
+        <div className={cx(styles.r_0ab86672, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_1004c0c3)}>
+          <span className={cx(styles.r_60fbb771, styles.r_7e0b7cdf, styles.r_3960ffc2, styles.r_7e9a2a25)}>
             <UserAvatar
               src={post.author.avatar}
               alt={post.author.name}
               size={36}
               pendant={post.author.equip?.pendant ?? null}
               ring={false}
-              showFestival={false}
-            />
-            <span className="min-w-0 leading-tight">
-              <span className="block truncate text-[13px] font-semibold text-ink-800">{post.author.name}</span>
-              <span className="block text-[10px] font-normal text-leaf-700/60">
+              showFestival={false} />
+
+            <span className={cx(styles.r_7e0b7cdf, styles.r_e9fadafb)}>
+              <span className={cx(styles.r_0214b4b3, styles.r_f283ea9b, styles.r_a14daebf, styles.r_e83a7042, styles.r_399e11a5)}>{post.author.name}</span>
+              <span className={cx(styles.r_0214b4b3, styles.r_1dc571a3, styles.r_8ecebc9f, styles.r_6c4cc49e)}>
                 {formatFollowers(post.author.followers)} 粉丝
               </span>
             </span>
           </span>
-          <span className="shrink-0 text-xs text-ink-400">{formatDateTime(post.createdAt)}</span>
+          <span className={cx(styles.r_012fbd12, styles.r_359090c2, styles.r_66a36c90)}>{formatDateTime(post.createdAt)}</span>
         </div>
       </div>
-    </Link>
-  );
+    </Link>);
+
 }
 
 function CheckInCard() {
@@ -478,9 +482,9 @@ function CheckInCard() {
     () => buildSignInCells(signInStreak, signedInToday),
     [signInStreak, signedInToday]
   );
-  const monthLabel = new Date().toLocaleDateString('zh-CN', {
+  const monthLabel = new Date().toLocaleDateString("zh-CN", {
     year: 'numeric',
-    month: 'long',
+    month: 'long'
   });
 
   const handleSignIn = async () => {
@@ -495,193 +499,193 @@ function CheckInCard() {
   };
 
   return (
-    <section className="overflow-hidden rounded-[6px] border border-leaf-100 bg-white shadow-sm">
-      {user ? (
-        <button
-          type="button"
-          onClick={handleSignIn}
-          disabled={signedInToday || submitting}
-          className={cn(
-            'flex h-14 w-full items-center justify-center gap-2 bg-leaf-600 text-base font-bold text-white transition',
-            signedInToday || submitting ? 'cursor-default opacity-90' : 'hover:bg-leaf-700'
-          )}
-        >
+    <section className={cx(styles.r_2cd02d11, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_438b2237)}>
+      {user ?
+      <button
+        type="button"
+        onClick={handleSignIn}
+        disabled={signedInToday || submitting}
+        className={cn(cx(styles.r_60fbb771, styles.r_73a13409, styles.r_6da6a3c3, styles.r_3960ffc2, styles.r_86843cf1, styles.r_77a2a20e, styles.r_6bceb016, styles.r_4ee73492, styles.r_69450ef1, styles.r_72a4c7cd, styles.r_56bf8ae8),
+
+        signedInToday || submitting ? cx(styles.r_50ca6ba5, styles.r_4f5874c5) : styles.r_e269e58c
+        )}>
+
           <Icon name={signedInToday ? 'check' : 'event'} size={20} />
           {signedInToday ? '今日已签到' : submitting ? '签到中' : '立即签到'}
-        </button>
-      ) : (
-        <Link
-          href="/login?redirect=/"
-          className="flex h-14 items-center justify-center gap-2 bg-leaf-600 text-base font-bold text-white transition hover:bg-leaf-700"
-        >
+        </button> :
+
+      <Link
+        href="/login?redirect=/"
+        className={cx(styles.r_60fbb771, styles.r_73a13409, styles.r_3960ffc2, styles.r_86843cf1, styles.r_77a2a20e, styles.r_6bceb016, styles.r_4ee73492, styles.r_69450ef1, styles.r_72a4c7cd, styles.r_56bf8ae8, styles.r_e269e58c)}>
+
           <Icon name="event" size={20} />
           立即签到
         </Link>
-      )}
+      }
 
-      <div className="flex min-h-[52px] items-center justify-center border-b border-leaf-100 px-4 text-center text-base font-bold text-ink-900">
+      <div className={cx(styles.r_60fbb771, styles.r_b7745220, styles.r_3960ffc2, styles.r_86843cf1, styles.r_65fdbade, styles.r_88b684d2, styles.r_f0faeb26, styles.r_ca6bf630, styles.r_4ee73492, styles.r_69450ef1, styles.r_4ddaa618)}>
         今天已有 {formatNumber(todaySignedCount)} 位肉友签到
       </div>
 
-      {signedInToday && (
-        <div className="p-4">
-          <div className="mb-2.5 flex items-center justify-between text-[11px] text-leaf-700/70">
+      {signedInToday &&
+      <div className={styles.r_8e63407b}>
+          <div className={cx(styles.r_fbe25fd3, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_d058ca6d, styles.r_69335b95)}>
             <span>连续签到 {signInStreak} 天</span>
             <span>{monthLabel}</span>
           </div>
 
-          <div className="mb-1.5 grid grid-cols-7 gap-1 text-center text-[10px] text-leaf-700/60">
-            {['一', '二', '三', '四', '五', '六', '日'].map((day) => (
-              <div key={day}>{day}</div>
-            ))}
+          <div className={cx(styles.r_d7c1392c, styles.r_f3c543ad, styles.r_67d5ae42, styles.r_44ee8ba0, styles.r_ca6bf630, styles.r_1dc571a3, styles.r_6c4cc49e)}>
+            {['一', '二', '三', '四', '五', '六', '日'].map((day) =>
+          <div key={day}>{day}</div>
+          )}
           </div>
 
-          <div className="grid grid-cols-7 gap-1">
+          <div className={cx(styles.r_f3c543ad, styles.r_67d5ae42, styles.r_44ee8ba0)}>
             {cells.map((cell, index) =>
-              cell == null ? (
-                <div key={index} />
-              ) : (
-                <div
-                  key={index}
-                  className={cn(
-                    'grid h-7 place-items-center rounded-md text-[10px] tabular-nums transition-colors',
-                    cell.signed
-                      ? 'bg-leaf-600 text-white shadow-sm'
-                      : cell.today
-                        ? 'border-2 border-dashed border-leaf-400 font-semibold text-leaf-600'
-                        : cell.future
-                          ? 'text-leaf-300'
-                          : 'bg-leaf-50/70 text-leaf-700/70'
-                  )}
-                  title={
-                    cell.signed
-                      ? `${cell.day} 日 已签到`
-                      : cell.today
-                        ? `今天 ${cell.day} 日`
-                        : cell.future
-                          ? `${cell.day} 日 还未到`
-                          : `${cell.day} 日`
-                  }
-                >
+          cell == null ?
+          <div key={index} /> :
+
+          <div
+            key={index}
+            className={cn(cx(styles.r_f3c543ad, styles.r_d0a52b31, styles.r_67d66567, styles.r_421ac2be, styles.r_1dc571a3, styles.r_3032cae0, styles.r_ceb69a6b),
+
+            cell.signed ? cx(styles.r_6bceb016, styles.r_72a4c7cd, styles.r_438b2237) :
+
+            cell.today ? cx(styles.r_65935df5, styles.r_a29b7a64, styles.r_3883b0f9, styles.r_e83a7042, styles.r_b17d6a13) :
+
+            cell.future ? styles.r_e55bc853 : cx(styles.r_52f53b18, styles.r_69335b95)
+
+
+            )}
+            title={
+            cell.signed ?
+            `${cell.day} 日 已签到` :
+            cell.today ?
+            `今天 ${cell.day} 日` :
+            cell.future ?
+            `${cell.day} 日 还未到` :
+            `${cell.day} 日`
+            }>
+
                   {cell.day}
                 </div>
-              )
-            )}
+
+          )}
           </div>
         </div>
-      )}
-    </section>
-  );
+      }
+    </section>);
+
 }
 
-function ActiveUsersCard({ users }: { users: ActiveUser[] }) {
+function ActiveUsersCard({ users }: {users: ActiveUser[];}) {
   if (users.length === 0) return null;
 
   return (
-    <section className="rounded-2xl border border-leaf-100 bg-white p-6 shadow-sm">
-      <div className="mb-5 flex items-start justify-between gap-3">
-        <h3 className="text-xl font-bold leading-7 text-ink-950">本周活跃肉友</h3>
-        <Link href="/ranking" className="shrink-0 text-sm font-semibold text-leaf-700 hover:text-leaf-800">
+    <section className={cx(styles.r_68f2db62, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_0478c89a, styles.r_438b2237)}>
+      <div className={cx(styles.r_fb88ccaa, styles.r_60fbb771, styles.r_60541e1e, styles.r_8ef2268e, styles.r_1004c0c3)}>
+        <h3 className={cx(styles.r_d5c9b000, styles.r_69450ef1, styles.r_7eff2faf, styles.r_6d623258)}>本周活跃肉友</h3>
+        <Link href="/ranking" className={cx(styles.r_012fbd12, styles.r_fc7473ca, styles.r_e83a7042, styles.r_5f6a59f1, styles.r_81be6435)}>
           查看
         </Link>
       </div>
-      <div className="space-y-4">
-        {users.slice(0, 5).map((user, index) => (
-          <div key={user.id} className="flex items-center gap-3">
-            <span className={cn('grid h-5 w-5 shrink-0 place-items-center rounded-md text-xs font-bold text-white', rankTone(index))}>
+      <div className={styles.r_3e7ce58d}>
+        {users.slice(0, 5).map((user, index) =>
+        <div key={user.id} className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3)}>
+            <span className={cn(cx(styles.r_f3c543ad, styles.r_cd0d9c51, styles.r_72470489, styles.r_012fbd12, styles.r_67d66567, styles.r_421ac2be, styles.r_359090c2, styles.r_69450ef1, styles.r_72a4c7cd), rankTone(index))}>
               {index + 1}
             </span>
-            <Link href={`/user/${user.id}`} className="flex min-w-0 flex-1 items-center gap-2">
-              <UserAvatar src={user.avatar || '/default-avatar.svg'} alt={user.name} size={38} showFestival={false} />
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold text-ink-900">{user.name}</span>
-                <span className="block truncate text-xs text-leaf-700">活跃值 {formatNumber(user.score)}</span>
+            <Link href={`/user/${user.id}`} className={cx(styles.r_60fbb771, styles.r_7e0b7cdf, styles.r_36e579c0, styles.r_3960ffc2, styles.r_77a2a20e)}>
+              <UserAvatar src={user.avatar || "/default-avatar.svg"} alt={user.name} size={38} showFestival={false} />
+              <span className={styles.r_7e0b7cdf}>
+                <span className={cx(styles.r_0214b4b3, styles.r_f283ea9b, styles.r_fc7473ca, styles.r_e83a7042, styles.r_4ddaa618)}>{user.name}</span>
+                <span className={cx(styles.r_0214b4b3, styles.r_f283ea9b, styles.r_359090c2, styles.r_5f6a59f1)}>活跃值 {formatNumber(user.score)}</span>
               </span>
             </Link>
             <Link
-              href={`/user/${user.id}`}
-              className="shrink-0 rounded-full bg-leaf-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-leaf-700"
-            >
+            href={`/user/${user.id}`}
+            className={cx(styles.r_012fbd12, styles.r_ac204c10, styles.r_6bceb016, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_359090c2, styles.r_e83a7042, styles.r_72a4c7cd, styles.r_e269e58c)}>
+
               关注
             </Link>
           </div>
-        ))}
+        )}
       </div>
-      <Link href="/ranking" className="mt-5 flex items-center justify-center gap-1 text-sm font-semibold text-leaf-700 hover:text-leaf-800">
+      <Link href="/ranking" className={cx(styles.r_fb77735e, styles.r_60fbb771, styles.r_3960ffc2, styles.r_86843cf1, styles.r_44ee8ba0, styles.r_fc7473ca, styles.r_e83a7042, styles.r_5f6a59f1, styles.r_81be6435)}>
         更多
         <Icon name="arrow-right" size={14} />
       </Link>
-    </section>
-  );
+    </section>);
+
 }
 
-function FeatureGrid({ stats }: { stats: HomeStats }) {
+function FeatureGrid({ stats }: {stats: HomeStats;}) {
   const items = [
-    {
-      title: 'AI 植物医生',
-      desc: '拍照诊断，识别病害',
-      href: '/ai-care',
-      action: '立即诊断',
-      tone: 'from-leaf-50 to-white',
-      icon: 'star' as IconName,
-    },
-    {
-      title: '植物图鉴',
-      desc: `收录 ${formatNumber(stats.speciesCount)}+ 品种`,
-      href: '/plants',
-      action: '探索图鉴',
-      tone: 'from-[#eff8ed] to-white',
-      icon: 'plants' as IconName,
-    },
-    {
-      title: '成长时间轴',
-      desc: `${formatNumber(stats.journalCount)} 份成长记录`,
-      href: '/editor?type=journal',
-      action: '记录成长',
-      tone: 'from-[#f6f8ef] to-white',
-      icon: 'event' as IconName,
-    },
-    {
-      title: '交易市场',
-      desc: `多肉交易 · ${formatNumber(stats.marketCount)} 个在售`,
-      href: '/market',
-      action: '进入市场',
-      tone: 'from-[#fff6f0] to-white',
-      icon: 'shop' as IconName,
-    },
-  ];
+  {
+    title: 'AI 植物医生',
+    desc: '拍照诊断，识别病害',
+    href: "/ai-care",
+    action: '立即诊断',
+    tone: cx(styles.r_49a47a82, styles.r_0d13093a),
+    icon: 'star' as IconName
+  },
+  {
+    title: '植物图鉴',
+    desc: `收录 ${formatNumber(stats.speciesCount)}+ 品种`,
+    href: '/plants',
+    action: '探索图鉴',
+    tone: cx(styles.r_b03b2a33, styles.r_0d13093a),
+    icon: 'plants' as IconName
+  },
+  {
+    title: '成长时间轴',
+    desc: `${formatNumber(stats.journalCount)} 份成长记录`,
+    href: '/editor?type=journal',
+    action: '记录成长',
+    tone: cx(styles.r_da7b02bf, styles.r_0d13093a),
+    icon: 'event' as IconName
+  },
+  {
+    title: '交易市场',
+    desc: `多肉交易 · ${formatNumber(stats.marketCount)} 个在售`,
+    href: '/market',
+    action: '进入市场',
+    tone: cx(styles.r_6abc982d, styles.r_0d13093a),
+    icon: 'shop' as IconName
+  }];
+
 
   return (
-    <section className="mb-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      {items.map((item) => (
-        <Link
-          key={item.title}
-          href={item.href}
-          className={cn(
-            'group min-h-[128px] overflow-hidden rounded-xl border border-leaf-100 bg-gradient-to-br p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md',
-            item.tone
-          )}
-        >
-          <div className="flex items-start justify-between gap-3">
+    <section className={cx(styles.r_2cad2f15, styles.r_f3c543ad, styles.r_0c3bc985, styles.r_e4d6f343, styles.r_a1de1eab)}>
+      {items.map((item) =>
+      <Link
+        key={item.title}
+        href={item.href}
+        className={cn(cx(styles.r_64292b1c, styles.r_37d71821, styles.r_2cd02d11, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_39b2e003, styles.r_c07e54fd, styles.r_438b2237, styles.r_56bf8ae8, styles.r_0ca49668, styles.r_9e85ac05),
+
+        item.tone
+        )}>
+
+          <div className={cx(styles.r_60fbb771, styles.r_60541e1e, styles.r_8ef2268e, styles.r_1004c0c3)}>
             <span>
-              <span className="block text-base font-bold text-ink-900">{item.title}</span>
-              <span className="mt-2 block text-sm text-ink-600">{item.desc}</span>
+              <span className={cx(styles.r_0214b4b3, styles.r_4ee73492, styles.r_69450ef1, styles.r_4ddaa618)}>{item.title}</span>
+              <span className={cx(styles.r_50d0d216, styles.r_0214b4b3, styles.r_fc7473ca, styles.r_02eb621e)}>{item.desc}</span>
             </span>
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/78 text-leaf-700 shadow-sm">
+            <span className={cx(styles.r_f3c543ad, styles.r_508ebf85, styles.r_e7e37107, styles.r_012fbd12, styles.r_67d66567, styles.r_a217b4ea, styles.r_073d1ac4, styles.r_5f6a59f1, styles.r_438b2237)}>
               <Icon name={item.icon} size={22} />
             </span>
           </div>
-          <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-leaf-700">
+          <span className={cx(styles.r_fb77735e, styles.r_52083e7d, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_fc7473ca, styles.r_e83a7042, styles.r_5f6a59f1)}>
             {item.action}
             <Icon name="arrow-right" size={14} />
           </span>
         </Link>
-      ))}
-    </section>
-  );
+      )}
+    </section>);
+
 }
 
-function EventsStrip({ events }: { events: EventItem[] }) {
+function EventsStrip({ events }: {events: EventItem[];}) {
   const items = events.slice(0, 3);
   if (items.length === 0) return null;
 
@@ -690,76 +694,76 @@ function EventsStrip({ events }: { events: EventItem[] }) {
   return (
     <section>
       <SectionHead title="热门活动" href="/contests" />
-      <div className="grid gap-4 md:grid-cols-3">
-        {items.map((event, index) => (
-          <Link
-            key={event.id}
-            href={`/contests/${event.id}`}
-            className="group relative min-h-[136px] overflow-hidden rounded-xl border border-leaf-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            {event.cover && (
-              <Image src={event.cover} alt="" fill unoptimized className="object-cover transition duration-500 group-hover:scale-105" />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-r from-white/92 via-white/64 to-white/12" />
-            <div className="relative z-10">
-              <span className={cn('rounded-md px-2 py-1 text-xs font-semibold text-white', index === 2 ? 'bg-orange-500' : 'bg-leaf-600')}>
+      <div className={cx(styles.r_f3c543ad, styles.r_0c3bc985, styles.r_9a638cfe)}>
+        {items.map((event, index) =>
+        <Link
+          key={event.id}
+          href={`/contests/${event.id}`}
+          className={cx(styles.r_64292b1c, styles.r_d89972fe, styles.r_8e83bd34, styles.r_2cd02d11, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_8e63407b, styles.r_438b2237, styles.r_56bf8ae8, styles.r_0ca49668, styles.r_9e85ac05)}>
+
+            {event.cover &&
+          <Image src={event.cover} alt="" fill unoptimized className={cx(styles.r_7d85d0c2, styles.r_56bf8ae8, styles.r_84432211, styles.r_1a9195e1)} />
+          }
+            <div className={cx(styles.r_da4dbfbc, styles.r_7b7df044, styles.r_6ae7db2c, styles.r_0604a602, styles.r_35fedd90, styles.r_672d0427)} />
+            <div className={cx(styles.r_d89972fe, styles.r_236812d6)}>
+              <span className={cn(cx(styles.r_421ac2be, styles.r_d5eab218, styles.r_660d2eff, styles.r_359090c2, styles.r_e83a7042, styles.r_72a4c7cd), index === 2 ? styles.r_d0adf729 : styles.r_6bceb016)}>
                 {labels[index] ?? event.status}
               </span>
-              <h3 className="mt-4 line-clamp-1 text-base font-bold text-ink-900">{event.title}</h3>
-              <p className="mt-2 text-xs text-ink-600">{formatNumber(event.participantCount)} 人参与</p>
-              <p className="mt-3 text-xs text-ink-500">{formatDateShort(event.startAt)} - {formatDateShort(event.endAt)}</p>
+              <h3 className={cx(styles.r_0ab86672, styles.r_f50e2015, styles.r_4ee73492, styles.r_69450ef1, styles.r_4ddaa618)}>{event.title}</h3>
+              <p className={cx(styles.r_50d0d216, styles.r_359090c2, styles.r_02eb621e)}>{formatNumber(event.participantCount)} 人参与</p>
+              <p className={cx(styles.r_eccd13ef, styles.r_359090c2, styles.r_7b89cd85)}>{formatDateShort(event.startAt)} - {formatDateShort(event.endAt)}</p>
             </div>
           </Link>
-        ))}
+        )}
       </div>
-    </section>
-  );
+    </section>);
+
 }
 
-function HotTopics({ topics }: { topics: TopicItem[] }) {
+function HotTopics({ topics }: {topics: TopicItem[];}) {
   if (topics.length === 0) return null;
 
   return (
     <section>
-      <h2 className="mb-4 text-xl font-bold text-ink-950">热门话题</h2>
-      <div className="grid gap-3 md:grid-cols-3 2xl:grid-cols-6">
-        {topics.slice(0, 6).map((topic) => (
-          <Link
-            key={topic.tag}
-            href={`/topic/${encodeURIComponent(topic.tag)}`}
-            className="relative min-h-[104px] overflow-hidden rounded-xl border border-leaf-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <div className="relative z-10">
-              <div className="text-sm font-bold text-ink-900"># {topic.tag}</div>
-              <div className="mt-2 text-xs text-ink-500">{formatNumber(topic.postCount)} 帖子</div>
+      <h2 className={cx(styles.r_da019856, styles.r_d5c9b000, styles.r_69450ef1, styles.r_6d623258)}>热门话题</h2>
+      <div className={cx(styles.r_f3c543ad, styles.r_1004c0c3, styles.r_9a638cfe, styles.r_5ac2a7ed)}>
+        {topics.slice(0, 6).map((topic) =>
+        <Link
+          key={topic.tag}
+          href={`/topic/${encodeURIComponent(topic.tag)}`}
+          className={cx(styles.r_d89972fe, styles.r_c02a2ceb, styles.r_2cd02d11, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_8e63407b, styles.r_438b2237, styles.r_56bf8ae8, styles.r_0ca49668, styles.r_9e85ac05)}>
+
+            <div className={cx(styles.r_d89972fe, styles.r_236812d6)}>
+              <div className={cx(styles.r_fc7473ca, styles.r_69450ef1, styles.r_4ddaa618)}># {topic.tag}</div>
+              <div className={cx(styles.r_50d0d216, styles.r_359090c2, styles.r_7b89cd85)}>{formatNumber(topic.postCount)} 帖子</div>
             </div>
-            {topic.cover && (
-              <Image
-                src={topic.cover}
-                alt=""
-                width={76}
-                height={76}
-                unoptimized
-                className="absolute -bottom-4 -right-4 h-20 w-20 rounded-xl object-cover opacity-85"
-              />
-            )}
+            {topic.cover &&
+          <Image
+            src={topic.cover}
+            alt=""
+            width={76}
+            height={76}
+            unoptimized
+            className={cx(styles.r_da4dbfbc, styles.r_80d728e6, styles.r_d83cb3d9, styles.r_0a769880, styles.r_ed831a4d, styles.r_a217b4ea, styles.r_7d85d0c2, styles.r_0f5f35d8)} />
+
+          }
           </Link>
-        ))}
+        )}
       </div>
-    </section>
-  );
+    </section>);
+
 }
 
-function SectionHead({ title, href }: { title: string; href: string }) {
+function SectionHead({ title, href }: {title: string;href: string;}) {
   return (
-    <div className="mb-4 flex items-center justify-between gap-3">
-      <h2 className="text-xl font-bold text-ink-950">{title}</h2>
-      <Link href={href} className="inline-flex items-center gap-1 text-sm font-semibold text-ink-500 hover:text-leaf-700">
+    <div className={cx(styles.r_da019856, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_1004c0c3)}>
+      <h2 className={cx(styles.r_d5c9b000, styles.r_69450ef1, styles.r_6d623258)}>{title}</h2>
+      <Link href={href} className={cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_fc7473ca, styles.r_e83a7042, styles.r_7b89cd85, styles.r_9825203a)}>
         查看更多
         <Icon name="arrow-right" size={13} />
       </Link>
-    </div>
-  );
+    </div>);
+
 }
 
 function formatDateShort(iso: string) {
@@ -778,12 +782,12 @@ function useTodaySignedCount() {
 
   useEffect(() => {
     let cancelled = false;
-    api
-      .get<{ count: number }>('/api/stats/signed-today')
-      .then((result) => {
-        if (!cancelled) setCount(result.count);
-      })
-      .catch(() => null);
+    api.
+    get<{count: number;}>("/api/stats/signed-today").
+    then((result) => {
+      if (!cancelled) setCount(result.count);
+    }).
+    catch(() => null);
 
     return () => {
       cancelled = true;
@@ -823,7 +827,7 @@ function buildSignInCells(streak: number, todayDone: boolean): (SignInCell | nul
       day,
       signed: signedDays.has(day),
       today: day === todayDate,
-      future: day > todayDate,
+      future: day > todayDate
     });
   }
   while (cells.length % 7 !== 0) cells.push(null);
@@ -832,10 +836,10 @@ function buildSignInCells(streak: number, todayDone: boolean): (SignInCell | nul
 }
 
 function rankTone(index: number) {
-  if (index === 0) return 'bg-rose-500';
-  if (index === 1) return 'bg-orange-400';
-  if (index === 2) return 'bg-amber-400';
-  return 'bg-ink-100 text-ink-700';
+  if (index === 0) return styles.r_45a732a4;
+  if (index === 1) return styles.r_82730b92;
+  if (index === 2) return styles.r_a5a0d879;
+  return cx(styles.r_febec8f2, styles.r_eb6abb1f);
 }
 
 function getActiveUsers(posts: Post[]): ActiveUser[] {
@@ -847,7 +851,7 @@ function getActiveUsers(posts: Post[]): ActiveUser[] {
       name: post.author.name,
       avatar: post.author.avatar,
       posts: 0,
-      score: 0,
+      score: 0
     };
     current.posts += 1;
     current.score += post.likes * 3 + post.comments * 4 + post.views + 20;

@@ -7,7 +7,7 @@
 
 export type Permission =
   | 'comment'           // 发评论
-  | 'post:rich'         // 发富文本贴
+  | 'post:rich'         // 发长文贴 / 图文贴
   | 'post:short'        // 发短内容贴
   | 'post:image'        // 帖子带图
   | 'post:video'        // 视频贴
@@ -35,7 +35,7 @@ export interface LevelDef {
 export const LEVELS: LevelDef[] = [
   { level: 1,  name: '新苗',       expRequired: 0,     permissions: ['comment', 'post:short'],     perks: ['可发评论', '可发短内容贴'] },
   { level: 2,  name: '小苗',       expRequired: 50,    permissions: ['post:collect'],              perks: ['可收藏帖子'] },
-  { level: 3,  name: '幼株',       expRequired: 150,   permissions: ['post:rich'],                 perks: ['可发富文本贴'] },
+  { level: 3,  name: '幼株',       expRequired: 150,   permissions: ['post:rich'],                 perks: ['可发长文贴 · 图文贴'] },
   { level: 4,  name: '青株',       expRequired: 350,   permissions: ['post:image'],                perks: ['发帖可带图'] },
   { level: 5,  name: '成株',       expRequired: 700,   permissions: ['post:video', 'market:buy'],  perks: ['可发视频贴', '可在交易区购买'] },
   { level: 6,  name: '大株',       expRequired: 1200,  permissions: ['post:vote'],                 perks: ['可发投票贴'] },
@@ -156,7 +156,7 @@ export function expProgressFromDefs(exp: number, levels: Pick<LevelDef, 'level' 
 /** 等级权限给用户看的友好提示 */
 export const PERMISSION_LABEL: Record<Permission, string> = {
   comment: '发评论',
-  'post:rich': '发富文本贴',
+  'post:rich': '发长文贴 / 图文贴',
   'post:short': '发短内容贴',
   'post:image': '发帖带图',
   'post:video': '发视频贴',

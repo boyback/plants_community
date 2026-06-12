@@ -7,6 +7,10 @@ import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 import { CropImageDialog } from './CropImageDialog';
 import { useConcurrentUpload } from './useConcurrentUpload';
+import styles from './UploadField.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 export type UploadKind = 'image' | 'video';
 
@@ -27,7 +31,7 @@ interface Props {
 
 const ACCEPT: Record<UploadKind, string> = {
   image: 'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif',
-  video: 'video/mp4,video/webm,video/quicktime',
+  video: 'video/mp4,video/webm,video/quicktime'
 };
 
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
@@ -40,10 +44,10 @@ export function UploadField({
   max = kind === 'image' ? 999 : 1,
   className,
   gridClassName,
-  itemClassName = 'aspect-square',
-  itemImageClassName = 'object-cover',
+  itemClassName = styles.r_b59cd297,
+  itemImageClassName = styles.r_7d85d0c2,
   firstItemLabel,
-  showCropToggle = false,
+  showCropToggle = false
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -54,8 +58,8 @@ export function UploadField({
 
   const validateFile = (file: File): string | null => {
     const isHeic =
-      /\.(heic|heif)$/i.test(file.name) ||
-      /^image\/(heic|heif)$/i.test(file.type);
+    /\.(heic|heif)$/i.test(file.name) ||
+    /^image\/(heic|heif)$/i.test(file.type);
     if (kind === 'image' && !file.type.startsWith('image/') && !isHeic) {
       return '请选择图片文件';
     }
@@ -75,15 +79,15 @@ export function UploadField({
     isUploading,
     handleFiles,
     retryUpload,
-    removeUploadingItem,
+    removeUploadingItem
   } = useConcurrentUpload({
     value,
     onChange,
     max,
     validateFile,
-    onUploaded: cropEnabled && kind === 'image'
-      ? (urls) => setCropQueue((prev) => [...prev, ...urls])
-      : undefined,
+    onUploaded: cropEnabled && kind === 'image' ?
+    (urls) => setCropQueue((prev) => [...prev, ...urls]) :
+    undefined
   });
 
   const removeAt = (index: number) => onChange(value.filter((_, i) => i !== index));
@@ -105,7 +109,7 @@ export function UploadField({
       void handleFiles(event.dataTransfer.files);
       return;
     }
-    const url = event.dataTransfer.getData('text/uri-list') || event.dataTransfer.getData('text/plain');
+    const url = event.dataTransfer.getData("text/uri-list") || event.dataTransfer.getData('text/plain');
     if (url) pushUrl(url);
   };
 
@@ -125,19 +129,19 @@ export function UploadField({
   }
 
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn(styles.r_6f7e013d, className)}>
       <input
         ref={fileRef}
         type="file"
         accept={ACCEPT[kind]}
         multiple={kind === 'image' && max > 1}
-        className="hidden"
+        className={styles.r_99d72c7f}
         disabled={isUploading || remainingCount === 0}
         onChange={(event) => {
           if (event.target.files) void handleFiles(event.target.files);
           event.target.value = '';
-        }}
-      />
+        }} />
+
 
       <div
         onDragOver={(event) => {
@@ -146,117 +150,122 @@ export function UploadField({
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
-        className={cn(
-          'grid gap-2 p-2 transition-colors',
-          gridClassName,
-          dragOver && 'bg-leaf-50/40 ring-2 ring-leaf-400',
-        )}
-      >
-        {value.map((url, index) => (
-          <div key={`${url}-${index}`} className={cn('group relative overflow-hidden', itemClassName)}>
-            {kind === 'image' ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={url}
-                alt=""
-                className={cn('h-full w-full cursor-pointer transition-opacity hover:opacity-90', itemImageClassName)}
-                onClick={() => setLightboxIdx(index)}
-              />
-            ) : (
-              <video src={url} controls preload="metadata" className="h-full w-full object-cover" />
-            )}
+        className={cn(cx(styles.r_f3c543ad, styles.r_77a2a20e, styles.r_7660b450, styles.r_ceb69a6b),
+
+        gridClassName,
+        dragOver && cx(styles.r_efb55408, styles.r_16b1efa5, styles.r_5aa69808)
+        )}>
+
+        {value.map((url, index) =>
+        <div key={`${url}-${index}`} className={cn(cx(styles.r_64292b1c, styles.r_d89972fe, styles.r_2cd02d11), itemClassName)}>
+            {kind === 'image' ?
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={url}
+            alt=""
+            className={cn(cx(styles.r_668b21aa, styles.r_6da6a3c3, styles.r_34516836, styles.r_67d6184a, styles.r_961c6c3a), itemImageClassName)}
+            onClick={() => setLightboxIdx(index)} /> :
+
+
+          <video src={url} controls preload="metadata" className={cx(styles.r_668b21aa, styles.r_6da6a3c3, styles.r_7d85d0c2)} />
+          }
             <button
-              type="button"
-              onClick={() => removeAt(index)}
-              className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100"
-              title="移除"
-            >
+            type="button"
+            onClick={() => removeAt(index)}
+            className={cx(styles.r_da4dbfbc, styles.r_68d3fc19, styles.r_c55dcda2, styles.r_f3c543ad, styles.r_cd0d9c51, styles.r_72470489, styles.r_67d66567, styles.r_ac204c10, styles.r_db1c7bcb, styles.r_d058ca6d, styles.r_72a4c7cd, styles.r_7065497e, styles.r_67d6184a, styles.r_181f3d6c)}
+            title="移除">
+
               x
             </button>
-            {firstItemLabel && index === 0 && (
-              <span className="absolute bottom-1 left-1 bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+            {firstItemLabel && index === 0 &&
+          <span className={cx(styles.r_da4dbfbc, styles.r_57045bd8, styles.r_7971386c, styles.r_db1c7bcb, styles.r_45d82811, styles.r_465609a2, styles.r_1dc571a3, styles.r_72a4c7cd)}>
                 {firstItemLabel}
               </span>
-            )}
+          }
           </div>
-        ))}
+        )}
 
-        {uploadingItems.map((item) => (
-          <div key={item.id} className={cn('group relative overflow-hidden bg-leaf-50', itemClassName)}>
+        {uploadingItems.map((item) =>
+        <div key={item.id} className={cn(cx(styles.r_64292b1c, styles.r_d89972fe, styles.r_2cd02d11, styles.r_7ebecbb6), itemClassName)}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={item.url ?? item.localUrl}
-              alt=""
-              className={cn(
-                'h-full w-full',
-                item.status === 'uploading' ? 'opacity-60' : 'opacity-100',
-                itemImageClassName,
-              )}
-            />
-            {item.status !== 'uploaded' && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
-                {item.status === 'uploading' ? (
-                  <>
-                    <div className="mb-2 h-7 w-7 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    <div className="text-[10px] text-white">上传中</div>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="text-[10px] text-rose-300">失败</div>
-                    <button type="button" onClick={() => void retryUpload(item)} className="text-[10px] text-white underline">
+            src={item.url ?? item.localUrl}
+            alt=""
+            className={cn(cx(styles.r_668b21aa, styles.r_6da6a3c3),
+
+            item.status === 'uploading' ? styles.r_f2868c22 : styles.r_3972e98d,
+            itemImageClassName
+            )} />
+
+            {item.status !== 'uploaded' &&
+          <div className={cx(styles.r_da4dbfbc, styles.r_7b7df044, styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_86843cf1, styles.r_fd9dca32)}>
+                {item.status === 'uploading' ?
+            <>
+                    <div className={cx(styles.r_a77ed4d9, styles.r_d0a52b31, styles.r_cbbf90f9, styles.r_afbdd13a, styles.r_ac204c10, styles.r_65935df5, styles.r_0f9b8dce, styles.r_9fd93a7d)} />
+                    <div className={cx(styles.r_1dc571a3, styles.r_72a4c7cd)}>上传中</div>
+                  </> :
+
+            <div className={cx(styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_44ee8ba0)}>
+                    <div className={cx(styles.r_1dc571a3, styles.r_f554fc59)}>失败</div>
+                    <button type="button" onClick={() => void retryUpload(item)} className={cx(styles.r_1dc571a3, styles.r_72a4c7cd, styles.r_c82b67c8)}>
                       重试
                     </button>
                   </div>
-                )}
+            }
               </div>
-            )}
+          }
             <button
-              type="button"
-              onClick={() => removeUploadingItem(item.id)}
-              className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100"
-            >
+            type="button"
+            onClick={() => removeUploadingItem(item.id)}
+            className={cx(styles.r_da4dbfbc, styles.r_68d3fc19, styles.r_c55dcda2, styles.r_f3c543ad, styles.r_cd0d9c51, styles.r_72470489, styles.r_67d66567, styles.r_ac204c10, styles.r_db1c7bcb, styles.r_d058ca6d, styles.r_72a4c7cd, styles.r_7065497e, styles.r_67d6184a, styles.r_181f3d6c)}>
+
               x
             </button>
           </div>
-        ))}
-
-        {remainingCount > 0 && !isUploading && (
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className={cn(
-              'flex flex-col items-center justify-center gap-1 border-2 border-dashed text-xs transition-colors',
-              itemClassName,
-              dragOver
-                ? 'border-leaf-500 bg-leaf-50/60'
-                : 'border-leaf-200 bg-leaf-50/30 hover:border-leaf-400 hover:bg-leaf-50/50',
-            )}
-          >
-            <Icon name="plus" size={16} className="text-leaf-600" />
-            <span className="text-[10px] text-leaf-700/70">{kind === 'image' ? '图片' : '视频'}</span>
-          </button>
         )}
+
+        {remainingCount > 0 && !isUploading &&
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className={cn(cx(styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_86843cf1, styles.r_44ee8ba0, styles.r_65935df5, styles.r_a29b7a64, styles.r_359090c2, styles.r_ceb69a6b),
+
+          itemClassName,
+          dragOver ? cx(styles.r_d3b27cd9, styles.r_a8a62ca4) : cx(styles.r_691861bc, styles.r_54720a96, styles.r_0a7c2f87, styles.r_98dc6304)
+
+
+          )}>
+
+            {kind === 'video' ?
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src="/icons/upload-video.svg" alt="" className={cx(styles.r_f6fe9024, styles.r_ae2181c7)} /> :
+
+          <Icon name="plus" size={16} className={styles.r_b17d6a13} />
+          }
+            <span className={cx(styles.r_1dc571a3, styles.r_69335b95)}>{kind === 'image' ? '图片' : '上传视频'}</span>
+          </button>
+        }
       </div>
 
-      {showCropToggle && kind === 'image' && (
-        <label className="mt-1 flex cursor-pointer select-none items-center gap-2 text-xs text-leaf-700/70">
+      {showCropToggle && kind === 'image' &&
+      <label className={cx(styles.r_b6b02c0e, styles.r_60fbb771, styles.r_34516836, styles.r_7f691228, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_359090c2, styles.r_69335b95)}>
           <input
-            type="checkbox"
-            checked={cropEnabled}
-            onChange={(event) => setCropEnabled(event.target.checked)}
-            className="h-3.5 w-3.5 rounded accent-leaf-500"
-          />
+          type="checkbox"
+          checked={cropEnabled}
+          onChange={(event) => setCropEnabled(event.target.checked)}
+          className={cx(styles.r_7fc7f732, styles.r_bf600f8e, styles.r_07389a77, styles.r_5f66c7c0)} />
+
           上传后裁剪
         </label>
-      )}
+      }
 
-      {cropSrc && (
-        <CropImageDialog src={cropSrc} onCancel={onCropCancel} onConfirm={onCropConfirm} />
-      )}
+      {cropSrc &&
+      <CropImageDialog src={cropSrc} onCancel={onCropCancel} onConfirm={onCropConfirm} />
+      }
 
-      {kind === 'image' && value.length > 0 && (
-        <Lightbox images={value} index={lightboxIdx} onClose={() => setLightboxIdx(null)} onChange={setLightboxIdx} />
-      )}
-    </div>
-  );
+      {kind === 'image' && value.length > 0 &&
+      <Lightbox images={value} index={lightboxIdx} onClose={() => setLightboxIdx(null)} onChange={setLightboxIdx} />
+      }
+    </div>);
+
 }

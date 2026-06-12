@@ -11,18 +11,21 @@ import {
   type Dispatch,
   type MutableRefObject,
   type SetStateAction,
-  type SyntheticEvent,
-} from 'react';
+  type SyntheticEvent } from
+'react';
 import PhotoSwipe from 'photoswipe';
-import 'photoswipe/style.css';
-import type { TimelineItem } from 'react-chrono';
+import type { TimelineItem } from "react-chrono";
 import { useAuth } from '@/context/AuthContext';
 import { Icon } from '@/components/ui/Icon';
-import { api } from '@/lib/client-api';
-import { registerPhotoSwipeGalleryUi } from '@/lib/photoswipe-ui';
+import { api } from "@/lib/client-api";
+import { registerPhotoSwipeGalleryUi } from "@/lib/photoswipe-ui";
+import styles from './JournalChronoTimeline.module.scss';
+import { cx } from '@/lib/style-utils';
 
-const Chrono = dynamic(() => import('react-chrono').then((mod) => mod.Chrono), {
-  ssr: false,
+
+
+const Chrono = dynamic(() => import("react-chrono").then((mod) => mod.Chrono), {
+  ssr: false
 });
 
 export type JournalChronoEntry = {
@@ -55,20 +58,20 @@ type ImageSize = {
   height: number;
 };
 
-export function JournalChronoTimeline({ entries }: { entries: JournalChronoEntry[] }) {
+export function JournalChronoTimeline({ entries }: {entries: JournalChronoEntry[];}) {
   const pswpRef = useRef<PhotoSwipe | null>(null);
   const [imageSizes, setImageSizes] = useState<Record<string, ImageSize>>({});
   const allImages = useMemo(
     () =>
-      entries.flatMap((entry) =>
-        entry.images.map((image) => ({
-          image,
-          entryId: entry.id,
-          dateLabel: entry.dateLabel,
-          stageLabel: entry.stageLabel,
-        })),
-      ),
-    [entries],
+    entries.flatMap((entry) =>
+    entry.images.map((image) => ({
+      image,
+      entryId: entry.id,
+      dateLabel: entry.dateLabel,
+      stageLabel: entry.stageLabel
+    }))
+    ),
+    [entries]
   );
   const imageStartIndexByEntryId = useMemo(() => {
     const map = new Map<string, number>();
@@ -84,9 +87,9 @@ export function JournalChronoTimeline({ entries }: { entries: JournalChronoEntry
   const openPhotoSwipe = usePhotoSwipeOpener(slides, pswpRef);
   const items: TimelineItem[] = entries.map((entry) => ({
     id: entry.id,
-    title: (
-      <span className="plant-chrono-title-date">{entry.yearLabel}/{entry.monthDayLabel}</span>
-    ) as unknown as string,
+    title:
+    <span className={"plant-chrono-title-date"}>{entry.yearLabel}/{entry.monthDayLabel}</span> as
+    unknown as string
   }));
   const height = Math.max(420, entries.reduce((total, entry) => {
     const imageRows = entry.images.length > 0 ? 150 : 0;
@@ -96,14 +99,14 @@ export function JournalChronoTimeline({ entries }: { entries: JournalChronoEntry
 
   if (entries.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-leaf-200 bg-leaf-50/40 p-10 text-center text-sm text-ink-500">
-        还没有成长记录
-      </div>
-    );
+      <div className={cx(styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_efb55408, styles.r_a4d0f420, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_7b89cd85)}>
+        还没有记录
+      </div>);
+
   }
 
   return (
-    <div className="plant-chrono-timeline" style={{ width: '100%', minHeight: height }}>
+    <div className={"plant-chrono-timeline"} style={{ width: '100%', minHeight: height }}>
       <Chrono
         items={items}
         mode="VERTICAL"
@@ -115,35 +118,35 @@ export function JournalChronoTimeline({ entries }: { entries: JournalChronoEntry
         cardHeight={1}
         timelinePointDimension={16}
         theme={{
-          primary: 'rgb(var(--leaf-600))',
-          secondary: 'rgb(var(--leaf-100))',
-          cardBgColor: 'rgb(var(--surface))',
-          cardDetailsBackGround: 'rgb(var(--surface))',
-          cardDetailsColor: 'rgb(var(--ink-800))',
-          cardMediaBgColor: 'rgb(var(--leaf-50))',
-          cardTitleColor: 'rgb(var(--ink-900))',
-          cardSubtitleColor: 'rgb(var(--leaf-700))',
-          titleColor: 'rgb(var(--ink-700))',
-          titleColorActive: 'rgb(var(--leaf-700))',
-          textColor: 'rgb(var(--ink-800))',
-          iconBackgroundColor: 'rgb(var(--leaf-600))',
+          primary: "rgb(var(--leaf-600))",
+          secondary: "rgb(var(--leaf-100))",
+          cardBgColor: "rgb(var(--surface))",
+          cardDetailsBackGround: "rgb(var(--surface))",
+          cardDetailsColor: "rgb(var(--ink-800))",
+          cardMediaBgColor: "rgb(var(--leaf-50))",
+          cardTitleColor: "rgb(var(--ink-900))",
+          cardSubtitleColor: "rgb(var(--leaf-700))",
+          titleColor: "rgb(var(--ink-700))",
+          titleColorActive: "rgb(var(--leaf-700))",
+          textColor: "rgb(var(--ink-800))",
+          iconBackgroundColor: "rgb(var(--leaf-600))"
         }}
         fontSizes={{
-          title: '0.78rem',
-          cardTitle: '1rem',
-          cardSubtitle: '0.78rem',
-          cardText: '0.875rem',
-        }}
-      >
-        {entries.map((entry) => (
-          <TimelineCardContent
-            key={entry.id}
-            entry={entry}
-            imageStartIndex={imageStartIndexByEntryId.get(entry.id) ?? 0}
-            onImageLoad={handleImageLoad}
-            onPreview={openPhotoSwipe}
-          />
-        ))}
+          title: '12.48px',
+          cardTitle: '16px',
+          cardSubtitle: '12.48px',
+          cardText: '14px'
+        }}>
+
+        {entries.map((entry) =>
+        <TimelineCardContent
+          key={entry.id}
+          entry={entry}
+          imageStartIndex={imageStartIndexByEntryId.get(entry.id) ?? 0}
+          onImageLoad={handleImageLoad}
+          onPreview={openPhotoSwipe} />
+
+        )}
       </Chrono>
       <style jsx global>{`
         .plant-chrono-timeline,
@@ -259,11 +262,11 @@ export function JournalChronoTimeline({ entries }: { entries: JournalChronoEntry
           text-decoration: none;
         }
       `}</style>
-    </div>
-  );
+    </div>);
+
 }
 
-export function JournalImageThumbStrip({ images }: { images: JournalTimelineImage[] }) {
+export function JournalImageThumbStrip({ images }: {images: JournalTimelineImage[];}) {
   const pswpRef = useRef<PhotoSwipe | null>(null);
   const [imageSizes, setImageSizes] = useState<Record<string, ImageSize>>({});
   const slides = usePhotoSwipeSlides(images, imageSizes);
@@ -273,41 +276,41 @@ export function JournalImageThumbStrip({ images }: { images: JournalTimelineImag
   if (images.length === 0) return null;
 
   return (
-    <div className="mt-3 flex max-w-full gap-2 overflow-x-auto pb-1">
-      {images.map((item, index) => (
-        <button
-          key={`${item.entryId}-${item.image}-${index}`}
-          type="button"
-          onClick={() => openPhotoSwipe(index)}
-          title={`${item.dateLabel} ${item.stageLabel}`}
-          className="relative h-16 w-16 shrink-0 cursor-zoom-in overflow-hidden rounded-lg border border-leaf-100 bg-leaf-50 transition hover:border-leaf-300"
-          aria-label={`预览图片 ${index + 1}`}
-        >
+    <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_c0980a65, styles.r_77a2a20e, styles.r_1384f66f, styles.r_569eb162)}>
+      {images.map((item, index) =>
+      <button
+        key={`${item.entryId}-${item.image}-${index}`}
+        type="button"
+        onClick={() => openPhotoSwipe(index)}
+        title={`${item.dateLabel} ${item.stageLabel}`}
+        className={cx(styles.r_d89972fe, styles.r_acaee621, styles.r_baceed34, styles.r_012fbd12, styles.r_3bbc8c13, styles.r_2cd02d11, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_7ebecbb6, styles.r_56bf8ae8, styles.r_a5c39c39)}
+        aria-label={`预览图片 ${index + 1}`}>
+
           <Image
-            src={item.image}
-            alt={`${item.dateLabel} ${item.stageLabel}`}
-            fill
-            unoptimized
-            className="object-cover"
-            onLoad={(event) => handleImageLoad(item.image, event)}
-          />
+          src={item.image}
+          alt={`${item.dateLabel} ${item.stageLabel}`}
+          fill
+          unoptimized
+          className={styles.r_7d85d0c2}
+          onLoad={(event) => handleImageLoad(item.image, event)} />
+
         </button>
-      ))}
-    </div>
-  );
+      )}
+    </div>);
+
 }
 
 function TimelineCardContent({
   entry,
   imageStartIndex,
   onImageLoad,
-  onPreview,
-}: {
-  entry: JournalChronoEntry;
-  imageStartIndex: number;
-  onImageLoad: (src: string, event: SyntheticEvent<HTMLImageElement>) => void;
-  onPreview: (index: number) => void;
-}) {
+  onPreview
+
+
+
+
+
+}: {entry: JournalChronoEntry;imageStartIndex: number;onImageLoad: (src: string, event: SyntheticEvent<HTMLImageElement>) => void;onPreview: (index: number) => void;}) {
   const { user } = useAuth();
   const [liked, setLiked] = useState(entry.liked);
   const [likes, setLikes] = useState(entry.likes);
@@ -315,13 +318,13 @@ function TimelineCardContent({
 
   useEffect(() => {
     const handleCreated = (event: Event) => {
-      const detail = (event as CustomEvent<{ postId: string; entryId?: string }>).detail;
+      const detail = (event as CustomEvent<{postId: string;entryId?: string;}>).detail;
       if (detail?.postId === entry.postId && detail.entryId === entry.id) {
         setComments((count) => count + 1);
       }
     };
-    window.addEventListener('journal-entry-comment-created', handleCreated);
-    return () => window.removeEventListener('journal-entry-comment-created', handleCreated);
+    window.addEventListener("journal-entry-comment-created", handleCreated);
+    return () => window.removeEventListener("journal-entry-comment-created", handleCreated);
   }, [entry.id, entry.postId]);
 
   const toggleLike = async () => {
@@ -334,8 +337,8 @@ function TimelineCardContent({
     setLiked(!previousLiked);
     setLikes(Math.max(0, previousLikes + (previousLiked ? -1 : 1)));
     try {
-      const result = await api.post<{ liked: boolean; total: number }>(
-        `/api/posts/${entry.postId}/journal/${entry.id}/like`,
+      const result = await api.post<{liked: boolean;total: number;}>(
+        `/api/posts/${entry.postId}/journal/${entry.id}/like`
       );
       setLiked(result.liked);
       setLikes(result.total);
@@ -351,7 +354,7 @@ function TimelineCardContent({
       return;
     }
     window.dispatchEvent(
-      new CustomEvent('journal-entry-comment-target-selected', {
+      new CustomEvent("journal-entry-comment-target-selected", {
         detail: {
           postId: entry.postId,
           id: entry.id,
@@ -359,85 +362,85 @@ function TimelineCardContent({
           dateLabel: entry.dateLabel,
           stageLabel: entry.stageLabel,
           note: entry.note,
-          image: entry.images[0],
-        },
-      }),
+          image: entry.images[0]
+        }
+      })
     );
     document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   return (
-    <div id={`journal-entry-${entry.id}`} className="min-w-0 scroll-mt-28 px-5 py-4">
-      <span className="plant-chrono-title-stage">
+    <div id={`journal-entry-${entry.id}`} className={cx(styles.r_7e0b7cdf, styles.r_db454136, styles.r_d139dd09, styles.r_cb11fec3)}>
+      <span className={"plant-chrono-title-stage"}>
         <span>{entry.stageIcon}</span>
         <span>{entry.stageLabel}</span>
       </span>
-      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-ink-700">{entry.note || '暂无备注'}</p>
+      <p className={cx(styles.r_50d0d216, styles.r_a2edcb1a, styles.r_fc7473ca, styles.r_18550d59, styles.r_eb6abb1f)}>{entry.note || '暂无备注'}</p>
 
-      {entry.images.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {entry.images.slice(0, 3).map((image, index) => (
-            <button
-              key={`${entry.id}-${image}-${index}`}
-              type="button"
-              onClick={() => onPreview(imageStartIndex + index)}
-              className="relative h-[120px] w-[120px] cursor-zoom-in overflow-hidden rounded-lg bg-leaf-50"
-              aria-label={`预览 ${entry.stageLabel} 图片 ${index + 1}`}
-            >
+      {entry.images.length > 0 &&
+      <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_77a2a20e)}>
+          {entry.images.slice(0, 3).map((image, index) =>
+        <button
+          key={`${entry.id}-${image}-${index}`}
+          type="button"
+          onClick={() => onPreview(imageStartIndex + index)}
+          className={cx(styles.r_d89972fe, styles.r_afd5c303, styles.r_c1ca66f1, styles.r_3bbc8c13, styles.r_2cd02d11, styles.r_5f22e64f, styles.r_7ebecbb6)}
+          aria-label={`预览 ${entry.stageLabel} 图片 ${index + 1}`}>
+
               <Image
-                src={image}
-                alt={entry.postTitle}
-                fill
-                unoptimized
-                className="object-cover"
-                onLoad={(event) => onImageLoad(image, event)}
-              />
-            </button>
-          ))}
-        </div>
-      )}
+            src={image}
+            alt={entry.postTitle}
+            fill
+            unoptimized
+            className={styles.r_7d85d0c2}
+            onLoad={(event) => onImageLoad(image, event)} />
 
-      <div className="mt-3 flex justify-end gap-2 text-xs text-ink-500">
+            </button>
+        )}
+        </div>
+      }
+
+      <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_77c08e01, styles.r_77a2a20e, styles.r_359090c2, styles.r_7b89cd85)}>
         <button
           type="button"
           onClick={toggleLike}
           className={
-            liked
-              ? 'inline-flex h-8 min-w-[58px] items-center justify-center gap-1.5 rounded-lg border border-rose-100 bg-rose-50 px-3 text-rose-500 transition hover:border-rose-200 hover:bg-rose-100'
-              : 'inline-flex h-8 min-w-[58px] items-center justify-center gap-1.5 rounded-lg border border-leaf-100 bg-white px-3 text-ink-500 transition hover:border-leaf-200 hover:bg-leaf-50 hover:text-leaf-700'
+          liked ? cx(styles.r_52083e7d, styles.r_ed8a5df7, styles.r_63614f87, styles.r_3960ffc2, styles.r_86843cf1, styles.r_58284b4e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_3d496065, styles.r_0759a0f1, styles.r_0e17f2bd, styles.r_fa512798, styles.r_56bf8ae8, styles.r_fb10458c, styles.r_c29b4826) : cx(styles.r_52083e7d, styles.r_ed8a5df7, styles.r_63614f87, styles.r_3960ffc2, styles.r_86843cf1, styles.r_58284b4e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_0e17f2bd, styles.r_7b89cd85, styles.r_56bf8ae8, styles.r_5aae3db6, styles.r_5756b7b4, styles.r_9825203a)
+
+
           }
-          aria-pressed={liked}
-        >
+          aria-pressed={liked}>
+
           <Icon name="thumbs-up" size={14} fill={liked ? 'currentColor' : 'none'} />
           {likes}
         </button>
         <button
           type="button"
           onClick={selectCommentTarget}
-          className="inline-flex h-8 min-w-[58px] items-center justify-center gap-1.5 rounded-lg border border-leaf-100 bg-white px-3 text-ink-500 transition hover:border-leaf-200 hover:bg-leaf-50 hover:text-leaf-700"
-        >
+          className={cx(styles.r_52083e7d, styles.r_ed8a5df7, styles.r_63614f87, styles.r_3960ffc2, styles.r_86843cf1, styles.r_58284b4e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_0e17f2bd, styles.r_7b89cd85, styles.r_56bf8ae8, styles.r_5aae3db6, styles.r_5756b7b4, styles.r_9825203a)}>
+
           <Icon name="comment" size={14} />
           {comments}
         </button>
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 function usePhotoSwipeSlides(images: JournalTimelineImage[], imageSizes: Record<string, ImageSize>) {
   return useMemo(
     () =>
-      images.map((item) => {
-        const size = imageSizes[item.image] || { width: 1600, height: 1066 };
-        return {
-          src: item.image,
-          msrc: item.image,
-          thumbnail: item.image,
-          width: size.width,
-          height: size.height,
-        };
-      }),
-    [imageSizes, images],
+    images.map((item) => {
+      const size = imageSizes[item.image] || { width: 1600, height: 1066 };
+      return {
+        src: item.image,
+        msrc: item.image,
+        thumbnail: item.image,
+        width: size.width,
+        height: size.height
+      };
+    }),
+    [imageSizes, images]
   );
 }
 
@@ -448,11 +451,11 @@ function useImageSizeLoader(setImageSizes: Dispatch<SetStateAction<Record<string
       if (img.naturalWidth && img.naturalHeight) {
         setImageSizes((prev) => ({
           ...prev,
-          [src]: { width: img.naturalWidth, height: img.naturalHeight },
+          [src]: { width: img.naturalWidth, height: img.naturalHeight }
         }));
       }
     },
-    [setImageSizes],
+    [setImageSizes]
   );
 }
 
@@ -469,12 +472,12 @@ function usePhotoSwipeOpener(slides: ReturnType<typeof usePhotoSwipeSlides>, psw
         tapAction: false,
         doubleTapAction: false,
         zoom: false,
-        closeOnVerticalDrag: false,
+        closeOnVerticalDrag: false
       } as any);
       registerPhotoSwipeGalleryUi(pswpRef.current);
       pswpRef.current.init();
     },
-    [pswpRef, slides],
+    [pswpRef, slides]
   );
 
   useEffect(() => {

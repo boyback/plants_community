@@ -2,8 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import { toast } from '@/components/ui/Toast';
+import styles from './LevelExpManager.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 export type LevelExpRow = {
   level: number;
@@ -11,14 +15,14 @@ export type LevelExpRow = {
   expRequired: number;
 };
 
-export function LevelExpManager({ rows }: { rows: LevelExpRow[] }) {
+export function LevelExpManager({ rows }: {rows: LevelExpRow[];}) {
   const router = useRouter();
   const [items, setItems] = useState<LevelExpRow[]>(rows);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
 
   const updateItem = (level: number, patch: Partial<LevelExpRow>) => {
-    setItems((list) => list.map((item) => (item.level === level ? { ...item, ...patch } : item)));
+    setItems((list) => list.map((item) => item.level === level ? { ...item, ...patch } : item));
   };
 
   const save = async () => {
@@ -36,7 +40,7 @@ export function LevelExpManager({ rows }: { rows: LevelExpRow[] }) {
 
     setBusy(true);
     try {
-      await api.patch('/api/admin/level-exp', { levels: ordered, note });
+      await api.patch("/api/admin/level-exp", { levels: ordered, note });
       toast.success('已保存等级经验配置');
       router.refresh();
       setNote('');
@@ -48,64 +52,64 @@ export function LevelExpManager({ rows }: { rows: LevelExpRow[] }) {
   };
 
   return (
-    <section className="rounded-xl border border-ink-100 bg-white p-4">
-      <div className="mb-4">
-        <h2 className="text-base font-semibold text-ink-800">等级经验配置</h2>
-        <p className="mt-1 text-xs text-ink-500">
+    <section className={cx(styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_358505cf, styles.r_5e10cdb8, styles.r_8e63407b)}>
+      <div className={styles.r_da019856}>
+        <h2 className={cx(styles.r_4ee73492, styles.r_e83a7042, styles.r_399e11a5)}>等级经验配置</h2>
+        <p className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_7b89cd85)}>
           配置累计经验 EXP 达到多少时升到对应等级。这里不是积分余额，积分余额用于消费和兑换。
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-ink-100">
-        <table className="w-full text-xs">
-          <thead className="bg-ink-50 text-ink-600">
+      <div className={cx(styles.r_2cd02d11, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_358505cf)}>
+        <table className={cx(styles.r_6da6a3c3, styles.r_359090c2)}>
+          <thead className={cx(styles.r_ce27a834, styles.r_02eb621e)}>
             <tr>
-              <th className="px-3 py-2 text-left">等级</th>
-              <th className="px-3 py-2 text-left">等级名</th>
-              <th className="px-3 py-2 text-left">累计经验 EXP</th>
+              <th className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_2eba0d65)}>等级</th>
+              <th className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_2eba0d65)}>等级名</th>
+              <th className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_2eba0d65)}>累计经验 EXP</th>
             </tr>
           </thead>
           <tbody>
-            {items.map((item) => (
-              <tr key={item.level} className="border-t border-ink-100">
-                <td className="px-3 py-2 font-mono text-ink-600">Lv.{item.level}</td>
-                <td className="px-3 py-2">
+            {items.map((item) =>
+            <tr key={item.level} className={cx(styles.r_b950dda2, styles.r_358505cf)}>
+                <td className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_0e65706b, styles.r_02eb621e)}>Lv.{item.level}</td>
+                <td className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f)}>
                   <input
-                    value={item.name}
-                    onChange={(e) => updateItem(item.level, { name: e.target.value })}
-                    className="w-full rounded-lg border border-ink-200 px-2 py-1.5 outline-none focus:border-ink-400"
-                  />
+                  value={item.name}
+                  onChange={(e) => updateItem(item.level, { name: e.target.value })}
+                  className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_d5eab218, styles.r_ec0091ee, styles.r_df37b1fd, styles.r_1bd19725)} />
+
                 </td>
-                <td className="px-3 py-2">
+                <td className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f)}>
                   <input
-                    type="number"
-                    min={0}
-                    value={item.expRequired}
-                    disabled={item.level === 1}
-                    onChange={(e) =>
-                      updateItem(item.level, {
-                        expRequired: Math.max(0, Number(e.target.value) || 0),
-                      })
-                    }
-                    className="w-full rounded-lg border border-ink-200 px-2 py-1.5 outline-none focus:border-ink-400 disabled:bg-ink-50 disabled:text-ink-400"
-                  />
+                  type="number"
+                  min={0}
+                  value={item.expRequired}
+                  disabled={item.level === 1}
+                  onChange={(e) =>
+                  updateItem(item.level, {
+                    expRequired: Math.max(0, Number(e.target.value) || 0)
+                  })
+                  }
+                  className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_d5eab218, styles.r_ec0091ee, styles.r_df37b1fd, styles.r_1bd19725, styles.r_37f9fb2e, styles.r_ef460f6b)} />
+
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
 
       <textarea
-        className="mt-3 w-full rounded-lg border border-ink-200 px-3 py-2 text-xs outline-none focus:border-ink-400"
+        className={cx(styles.r_eccd13ef, styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_df37b1fd, styles.r_1bd19725)}
         rows={2}
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        placeholder="备注原因(可选)"
-      />
-      <button type="button" className="btn-primary mt-3 w-full !text-xs" disabled={busy} onClick={save}>
+        placeholder="备注原因(可选)" />
+
+      <button type="button" className={cx(styles.r_eccd13ef, styles.r_6da6a3c3, styles.r_dd702538)} disabled={busy} onClick={save}>
         {busy ? '保存中...' : '保存等级经验配置'}
       </button>
-    </section>
-  );
+    </section>);
+
 }

@@ -1,8 +1,11 @@
+import styles from './CookiesKo.module.scss';
+import { cx } from '@/lib/style-utils';
+
 export function CookiesKo() {
   return (
     <>
       <h1>RouYou 쿠키 정책</h1>
-      <p className="text-leaf-500">최근 개정일: 2026 년 5 월 7 일 · 시행일: 공지일</p>
+      <p className={styles.r_eb16169c}>최근 개정일: 2026 년 5 월 7 일 · 시행일: 공지일</p>
 
       <p>
         본 정책은 RouYou(이하 &quot;서비스&quot;)가 쿠키와 유사 기술(localStorage, sessionStorage, 픽셀 태그 등)을 어떻게 사용하는지 설명합니다.
@@ -76,7 +79,7 @@ export function CookiesKo() {
       <p>쿠키 사용 방식에 대한 문의는 <code>support@rouyou.example</code> 로 연락해 주십시오.</p>
 
       <hr />
-      <p className="text-xs text-leaf-500">Demo 버전이며, 법률 자문을 구성하지 않습니다.</p>
-    </>
-  );
+      <p className={cx(styles.r_359090c2, styles.r_eb16169c)}>Demo 버전이며, 법률 자문을 구성하지 않습니다.</p>
+    </>);
+
 }

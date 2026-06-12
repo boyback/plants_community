@@ -2,6 +2,7 @@
   "post": {
     "types": {
       "rich": "Long post",
+      "image": "Photo post",
       "short": "Note",
       "vote": "Poll",
       "video": "Video",
@@ -11,6 +12,7 @@
     },
     "typeDesc": {
       "rich": "For tutorials and long-form content (PC & app)",
+      "image": "Upload photos only, for quick image sharing",
       "short": "Quick shares and casual notes (PC & app)",
       "vote": "Start a poll, gather opinions (PC only)",
       "video": "Record with video (PC & app)",
@@ -19,7 +21,8 @@
       "journal": "Track plant growth on a timeline"
     },
     "typeBadge": {
-      "rich": "Rich text",
+      "rich": "Long post",
+      "image": "Photo post",
       "short": "Short post",
       "vote": "Poll",
       "video": "Video",
@@ -28,7 +31,8 @@
       "journal": "Journal Post"
     },
     "typeShort": {
-      "rich": "Rich",
+      "rich": "Long",
+      "image": "Photo",
       "short": "Short",
       "vote": "Poll",
       "video": "Video",

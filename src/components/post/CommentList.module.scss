@@ -1,0 +1,68 @@
+/* Generated from src/components/post/CommentList.tsx. Keep component-local styles here. */.r_b6b02c0e{margin-top:4px}.r_bb0c4bfc{display:inline-block}.r_c0980a65{max-width:100%}.r_0c5e9137{border-radius:0}.r_d5eab218{padding-left:8px;padding-right:8px}.r_660d2eff{padding-top:4px;padding-bottom:4px}.r_438b2237{--tw-shadow:0 1px 2px 0 #0000000d;--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color)}.r_438b2237{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.r_52083e7d{display:inline-flex}.r_3960ffc2{align-items:center}.r_44ee8ba0{gap:4px}.r_f3c543ad{display:grid}.r_2cd02d11{overflow:hidden}.r_10ac69a1{transition-property:grid-template-rows,opacity,margin-top;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.r_625a4c3f{transition-duration:.2s}.r_d905a812{transition-timing-function:cubic-bezier(0,0,.2,1)}
+
+
+/* Recovered utility rules referenced by this CSS module. */
+.r_bcb611e1{max-height:384px}
+.r_92bf82f4{overflow-y:auto}
+.r_65fdbade{border-bottom-width:1px}
+.r_88b684d2{--tw-border-opacity:1;border-color:rgb(var(--leaf-100)/var(--tw-border-opacity))}
+.r_b4cf72cd:last-child{border-bottom-width:0}
+.r_eb6e8b88{padding:12px}
+.r_60fbb771{display:flex}
+.r_77a2a20e{gap:8px}
+.r_7e0b7cdf{min-width:0}
+.r_36e579c0{flex:1 1 0%}
+.r_b7012bb2{align-items:baseline}
+.r_58284b4e{gap:6px}
+.r_359090c2{font-size:12px;line-height:16px}
+.r_2689f395{font-weight:500}
+.r_399e11a5{--tw-text-opacity:1;color:rgb(var(--ink-800)/var(--tw-text-opacity))}
+.r_9825203a:hover{--tw-text-opacity:1;color:rgb(var(--leaf-700)/var(--tw-text-opacity))}
+.r_1dc571a3{font-size:10px}
+.r_6c4cc49e{color:rgb(var(--leaf-700)/.6)}
+.r_aac62f0e{margin-top:6px}
+.r_d058ca6d{font-size:11px}
+.r_fa512798{--tw-text-opacity:1;color:rgb(244 63 94/var(--tw-text-opacity))}
+.r_69335b95{color:rgb(var(--leaf-700)/.7)}
+.r_d0a52b31{height:28px}
+.r_cbbf90f9{width:28px}
+.r_67d66567{place-items:center}
+.r_421ac2be{border-radius:6px}
+.r_ceb69a6b{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}
+.r_5756b7b4:hover{--tw-bg-opacity:1;background-color:rgb(var(--leaf-50)/var(--tw-bg-opacity))}
+.r_50d0d216{margin-top:8px}
+.r_b6c6acc9{grid-template-rows:1fr}
+.r_3972e98d{opacity:1}
+.r_23a401b9{margin-top:0}
+.r_a4571f14{grid-template-rows:0fr}
+.r_7065497e{opacity:0}
+.r_a4326536{pointer-events:none}
+.r_fb7302e5{min-height:0}
+.r_6f7e013d>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(8px*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(8px*var(--tw-space-y-reverse))}
+.r_a8a62ca4{background-color:rgb(var(--leaf-50)/.6)}
+.r_7660b450{padding:8px}
+.r_e83a7042{font-weight:600}
+.r_5f6a59f1{--tw-text-opacity:1;color:rgb(var(--leaf-700)/var(--tw-text-opacity))}
+.r_56bf8ae8{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}
+.r_29687528:hover{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity))}
+.r_5eca0425:hover{--tw-text-opacity:1;color:rgb(var(--leaf-900)/var(--tw-text-opacity))}
+.r_6da6a3c3{width:100%}
+.r_5f22e64f{border-radius:8px}
+.r_ca6bcd4b{border-width:1px}
+.r_5e10cdb8{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity))}
+.r_0e17f2bd{padding-left:12px;padding-right:12px}
+.r_03b4dd7f{padding-top:8px;padding-bottom:8px}
+.r_c67dcce9:hover{--tw-text-opacity:1;color:rgb(var(--leaf-600)/var(--tw-text-opacity))}
+.r_f58b0257{margin-left:4px}
+.r_15e1b1f4{margin-top:2px}
+.r_77c08e01{justify-content:flex-end}
+.r_f6fe9024{height:24px}
+.r_8ef2268e{justify-content:space-between}
+.r_7ebecbb6{--tw-bg-opacity:1;background-color:rgb(var(--leaf-50)/var(--tw-bg-opacity))}
+.r_f0faeb26{padding-left:16px;padding-right:16px}
+.r_1b2d54a3{padding-top:12px;padding-bottom:12px}
+.r_fc7473ca{font-size:14px;line-height:20px}
+.r_ed8a5df7{height:32px}
+.r_23b4e5ed{padding-left:12px!important;padding-right:12px!important}
+.r_dd702538{font-size:12px!important;line-height:16px!important}
+.r_1004c0c3{gap:12px}

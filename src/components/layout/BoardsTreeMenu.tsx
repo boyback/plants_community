@@ -3,17 +3,21 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { api } from '@/lib/client-api';
+import { api } from "@/lib/client-api";
 import { cn } from '@/lib/utils';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
-import { isJsonDifferent, loadLocalJson, saveLocalJson } from '@/lib/local-json-cache';
+import { isJsonDifferent, loadLocalJson, saveLocalJson } from "@/lib/local-json-cache";
+import styles from './BoardsTreeMenu.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface GenusLite {
   id: string;
   slug: string;
   name: string;
   latinName: string | null;
-  _count: { posts: number; species: number };
+  _count: {posts: number;species: number;};
 }
 
 interface BoardFull {
@@ -22,12 +26,12 @@ interface BoardFull {
   name: string;
   latinName: string | null;
   icon: string;
-  _count: { posts: number; genera: number };
+  _count: {posts: number;genera: number;};
   genera: GenusLite[];
 }
 
 // 全局缓存，避免重复加载
-const STORAGE_KEY = 'rouyou.boards-tree.v1';
+const STORAGE_KEY = "rouyou.boards-tree.v1";
 let cachedData: BoardFull[] | null = null;
 let cachePromise: Promise<BoardFull[]> | null = null;
 
@@ -37,29 +41,29 @@ function loadBoardsCache() {
 
 function syncBoardsTree() {
   if (!cachePromise) {
-    cachePromise = api
-      .get<BoardFull[]>('/api/boards?kind=family&withGenera=1')
-      .then((list) => {
-        const fresh = list || [];
-        if (isJsonDifferent(cachedData, fresh)) {
-          cachedData = fresh;
-          saveLocalJson(STORAGE_KEY, fresh);
-        }
-        return cachedData ?? fresh;
-      })
-      .catch(() => cachedData ?? loadBoardsCache() ?? [])
-      .finally(() => {
-        cachePromise = null;
-      });
+    cachePromise = api.
+    get<BoardFull[]>('/api/boards?kind=family&withGenera=1').
+    then((list) => {
+      const fresh = list || [];
+      if (isJsonDifferent(cachedData, fresh)) {
+        cachedData = fresh;
+        saveLocalJson(STORAGE_KEY, fresh);
+      }
+      return cachedData ?? fresh;
+    }).
+    catch(() => cachedData ?? loadBoardsCache() ?? []).
+    finally(() => {
+      cachePromise = null;
+    });
   }
   return cachePromise;
 }
 
 export function BoardsTreeMenu({
-  onNavigate,
-}: {
-  onNavigate?: () => void;
-}) {
+  onNavigate
+
+
+}: {onNavigate?: () => void;}) {
   const pathname = usePathname();
   const [data, setData] = useState<BoardFull[] | null>(() => {
     if (cachedData) return cachedData;
@@ -71,15 +75,15 @@ export function BoardsTreeMenu({
   const [openCatIds, setOpenCatIds] = useState<Set<string>>(new Set());
 
   // 解析当前路径，提取 categorySlug 和 genusSlug
-  const currentPath = pathname?.startsWith('/board/') 
-    ? pathname.slice(7).split('/').filter(Boolean) 
-    : [];
+  const currentPath = pathname?.startsWith('/board/') ?
+  pathname.slice(7).split('/').filter(Boolean) :
+  [];
   const [currentCategorySlug, currentGenusSlug] = currentPath;
 
   // 首次加载数据（使用全局缓存）
   useEffect(() => {
     syncBoardsTree().then((list) => {
-      setData((prev) => (isJsonDifferent(prev, list) ? list : prev));
+      setData((prev) => isJsonDifferent(prev, list) ? list : prev);
       setLoaded(true);
     });
   }, []);
@@ -101,8 +105,8 @@ export function BoardsTreeMenu({
   const toggleCat = (id: string) => {
     setOpenCatIds((s) => {
       const n = new Set(s);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
+      if (n.has(id)) n.delete(id);else
+      n.add(id);
       return n;
     });
   };
@@ -111,11 +115,11 @@ export function BoardsTreeMenu({
     return null;
   }
   if (loaded && data.length === 0) {
-    return <div className="px-3 py-2 text-[11px] text-leaf-700/50">暂无板块</div>;
+    return <div className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_d058ca6d, styles.r_3353f144)}>暂无板块</div>;
   }
 
   return (
-    <div className="space-y-0.5">
+    <div className={styles.r_e2eedc57}>
       {data.map((c) => {
         const open = openCatIds.has(c.id);
         const isActiveCategory = c.slug === currentCategorySlug;
@@ -124,67 +128,67 @@ export function BoardsTreeMenu({
             <button
               type="button"
               onClick={() => toggleCat(c.id)}
-              className={cn(
-                'flex w-full items-center gap-2 rounded-none px-3 py-2 text-sm transition-colors',
-                isActiveCategory
-                  ? 'bg-leaf-100 font-medium text-leaf-800'
-                  : 'text-ink-800 hover:bg-leaf-50 hover:text-leaf-700',
-              )}
-            >
+              className={cn(cx(styles.r_60fbb771, styles.r_6da6a3c3, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_0c5e9137, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_fc7473ca, styles.r_ceb69a6b),
+
+              isActiveCategory ? cx(styles.r_f2b23104, styles.r_2689f395, styles.r_e7eab4cb) : cx(styles.r_399e11a5, styles.r_5756b7b4, styles.r_9825203a)
+
+
+              )}>
+
               <CategoryIcon icon={c.icon} name={c.name} size="md" />
-              <span className="truncate">{c.name}</span>
-              <span className="ml-auto shrink-0 text-[10px] text-leaf-700/40">
+              <span className={styles.r_f283ea9b}>{c.name}</span>
+              <span className={cx(styles.r_fb56d9cf, styles.r_012fbd12, styles.r_1dc571a3, styles.r_4d094717)}>
                 {open ? '▾' : '▸'}
               </span>
             </button>
 
-            {open && (
-              <div className="ml-4 mt-0.5 space-y-0.5 border-l border-leaf-100 pl-2">
-                {!c.genera || c.genera.length === 0 ? (
-                  <div className="px-2 py-1.5 text-[11px] text-leaf-700/50">
+            {open &&
+            <div className={cx(styles.r_f242aff2, styles.r_15e1b1f4, styles.r_e2eedc57, styles.r_d4f78465, styles.r_88b684d2, styles.r_989541ad)}>
+                {!c.genera || c.genera.length === 0 ?
+              <div className={cx(styles.r_d5eab218, styles.r_ec0091ee, styles.r_d058ca6d, styles.r_3353f144)}>
                     该科暂无属
-                  </div>
-                ) : (
-                  c.genera.map((g) => {
-                    const isActive = c.slug === currentCategorySlug && g.slug === currentGenusSlug;
-                    return (
-                      <Link
-                        key={g.id}
-                        href={`/board/${c.slug}/${g.slug}`}
-                        onClick={onNavigate}
-                        className={cn(
-                          "flex items-center justify-between gap-2 rounded-none px-2 py-1.5 text-xs transition-colors",
-                          isActive
-                            ? "bg-leaf-500 text-white font-medium"
-                            : "text-ink-700 hover:bg-leaf-50 hover:text-leaf-700"
-                        )}
-                      >
-                        <span className="min-w-0">
-                          <span className="block truncate">{g.name}</span>
-                          {g.latinName && (
-                            <span className={cn(
-                              "block truncate text-[10px] italic",
-                              isActive ? "text-white/80" : "text-leaf-700/50"
-                            )}>
+                  </div> :
+
+              c.genera.map((g) => {
+                const isActive = c.slug === currentCategorySlug && g.slug === currentGenusSlug;
+                return (
+                  <Link
+                    key={g.id}
+                    href={`/board/${c.slug}/${g.slug}`}
+                    onClick={onNavigate}
+                    className={cn(cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_77a2a20e, styles.r_0c5e9137, styles.r_d5eab218, styles.r_ec0091ee, styles.r_359090c2, styles.r_ceb69a6b),
+
+                    isActive ? cx(styles.r_45499621, styles.r_72a4c7cd, styles.r_2689f395) : cx(styles.r_eb6abb1f, styles.r_5756b7b4, styles.r_9825203a)
+
+
+                    )}>
+
+                        <span className={styles.r_7e0b7cdf}>
+                          <span className={cx(styles.r_0214b4b3, styles.r_f283ea9b)}>{g.name}</span>
+                          {g.latinName &&
+                      <span className={cn(cx(styles.r_0214b4b3, styles.r_f283ea9b, styles.r_1dc571a3, styles.r_90665ca6),
+
+                      isActive ? styles.r_201d4d37 : styles.r_3353f144
+                      )}>
                               {g.latinName}
                             </span>
-                          )}
+                      }
                         </span>
-                        <span className={cn(
-                          "shrink-0 text-[10px]",
-                          isActive ? "text-white/80" : "text-leaf-700/40"
-                        )}>
+                        <span className={cn(cx(styles.r_012fbd12, styles.r_1dc571a3),
+
+                    isActive ? styles.r_201d4d37 : styles.r_4d094717
+                    )}>
                           {g._count.posts}
                         </span>
-                      </Link>
-                    );
-                  })
-                )}
+                      </Link>);
+
+              })
+              }
               </div>
-            )}
-          </div>
-        );
+            }
+          </div>);
+
       })}
-    </div>
-  );
+    </div>);
+
 }

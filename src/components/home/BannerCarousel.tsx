@@ -5,6 +5,10 @@ import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { BannerItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import styles from './BannerCarousel.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 const DEFAULT_INTERVAL_MS = 3000;
 const TRANSITION_MS = 500;
@@ -22,11 +26,11 @@ const TRANSITION_MS = 500;
  */
 export function BannerCarousel({
   items,
-  defaultIntervalMs = DEFAULT_INTERVAL_MS,
-}: {
-  items: BannerItem[];
-  defaultIntervalMs?: number;
-}) {
+  defaultIntervalMs = DEFAULT_INTERVAL_MS
+
+
+
+}: {items: BannerItem[];defaultIntervalMs?: number;}) {
   const [idx, setIdx] = useState(1); // 初始指向真实第一张(items[0])
   const [trans, setTrans] = useState(true);
   const [paused, setPaused] = useState(false);
@@ -60,9 +64,9 @@ export function BannerCarousel({
   useEffect(() => {
     if (paused || N <= 1) return;
     if (timerRef.current) clearTimeout(timerRef.current);
-    const ms = items[realIdx]?.durationMs && items[realIdx].durationMs! > 0
-      ? items[realIdx].durationMs!
-      : defaultIntervalMs;
+    const ms = items[realIdx]?.durationMs && items[realIdx].durationMs! > 0 ?
+    items[realIdx].durationMs! :
+    defaultIntervalMs;
     timerRef.current = setTimeout(goNext, ms);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -88,34 +92,34 @@ export function BannerCarousel({
     // 单张直接渲染,不做轮播
     const it = items[0];
     return (
-      <div className="overflow-hidden rounded-none border border-leaf-100 bg-white">
+      <div className={cx(styles.r_2cd02d11, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8)}>
         <BannerSlide item={it} />
-      </div>
-    );
+      </div>);
+
   }
 
   return (
     <div
-      className="relative overflow-hidden rounded-none border border-leaf-100 bg-white group"
+      className={cx(styles.r_d89972fe, styles.r_2cd02d11, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_64292b1c)}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={() => setPaused(true)}
-      onTouchEnd={() => setTimeout(() => setPaused(false), 1500)}
-    >
+      onTouchEnd={() => setTimeout(() => setPaused(false), 1500)}>
+
       <div
         ref={trackRef}
-        className="flex"
+        className={styles.r_60fbb771}
         style={{
           width: `${slides.length * 100}%`,
-          transform: `translate3d(${(-idx * 100) / slides.length}%, 0, 0)`,
-          transition: trans ? `transform ${TRANSITION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)` : 'none',
-        }}
-      >
-        {slides.map((it, i) => (
-          <div key={`${it.id}-${i}`} style={{ width: `${100 / slides.length}%` }} className="shrink-0">
+          transform: `translate3d(${-idx * 100 / slides.length}%, 0, 0)`,
+          transition: trans ? `transform ${TRANSITION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)` : 'none'
+        }}>
+
+        {slides.map((it, i) =>
+        <div key={`${it.id}-${i}`} style={{ width: `${100 / slides.length}%` }} className={styles.r_012fbd12}>
             <BannerSlide item={it} priority={i === 1} />
           </div>
-        ))}
+        )}
       </div>
 
       {/* 左右切换箭头(hover 时显示)*/}
@@ -123,57 +127,57 @@ export function BannerCarousel({
         type="button"
         onClick={goPrev}
         aria-label="上一张"
-        className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/30 text-white opacity-0 backdrop-blur transition-opacity hover:bg-black/50 group-hover:opacity-100"
-      >
+        className={cx(styles.r_da4dbfbc, styles.r_d83be576, styles.r_d694ba66, styles.r_f3c543ad, styles.r_e7a768f9, styles.r_ae2181c7, styles.r_36b381be, styles.r_67d66567, styles.r_ac204c10, styles.r_b0d7388d, styles.r_72a4c7cd, styles.r_7065497e, styles.r_0b2e8c28, styles.r_67d6184a, styles.r_c9960c01, styles.r_181f3d6c)}>
+
         ‹
       </button>
       <button
         type="button"
         onClick={goNext}
         aria-label="下一张"
-        className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/30 text-white opacity-0 backdrop-blur transition-opacity hover:bg-black/50 group-hover:opacity-100"
-      >
+        className={cx(styles.r_da4dbfbc, styles.r_7b2d6393, styles.r_d694ba66, styles.r_f3c543ad, styles.r_e7a768f9, styles.r_ae2181c7, styles.r_36b381be, styles.r_67d66567, styles.r_ac204c10, styles.r_b0d7388d, styles.r_72a4c7cd, styles.r_7065497e, styles.r_0b2e8c28, styles.r_67d6184a, styles.r_c9960c01, styles.r_181f3d6c)}>
+
         ›
       </button>
 
       {/* 圆点指示器 */}
-      <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
-        {items.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => goTo(i)}
-            className={cn(
-              'h-1.5 rounded-full transition-all',
-              i === realIdx ? 'w-6 bg-white' : 'w-1.5 bg-white/60'
-            )}
-            aria-label={`切换到第 ${i + 1} 张`}
-          />
-        ))}
+      <div className={cx(styles.r_da4dbfbc, styles.r_49af11eb, styles.r_e632769a, styles.r_60fbb771, styles.r_efaa0701, styles.r_58284b4e)}>
+        {items.map((_, i) =>
+        <button
+          key={i}
+          type="button"
+          onClick={() => goTo(i)}
+          className={cn(cx(styles.r_095acb27, styles.r_ac204c10, styles.r_0fe7d7d8),
+
+          i === realIdx ? cx(styles.r_7ec10f86, styles.r_5e10cdb8) : cx(styles.r_c696a089, styles.r_d2fa6cb5)
+          )}
+          aria-label={`切换到第 ${i + 1} 张`} />
+
+        )}
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
-function BannerSlide({ item, priority }: { item: BannerItem; priority?: boolean }) {
+function BannerSlide({ item, priority }: {item: BannerItem;priority?: boolean;}) {
   return (
-    <Link href={item.link} className="relative block aspect-[21/8] md:aspect-[21/7]">
+    <Link href={item.link} className={cx(styles.r_d89972fe, styles.r_0214b4b3, styles.r_188a6e22, styles.r_d65e7392)}>
       <Image
         src={item.image}
         alt={item.title}
         fill
         priority={priority}
         sizes="(max-width: 768px) 100vw, 800px"
-        className="object-cover"
-        unoptimized
-      />
-      <div className={cn('absolute inset-0 bg-gradient-to-r to-transparent', item.tint)} />
-      <div className="absolute inset-0 flex flex-col justify-center p-6 md:p-10 text-white">
-        <span className="mb-2 inline-flex w-fit items-center rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] backdrop-blur">
+        className={styles.r_7d85d0c2}
+        unoptimized />
+
+      <div className={cn(cx(styles.r_da4dbfbc, styles.r_7b7df044, styles.r_6ae7db2c, styles.r_0fe2b3da), item.tint)} />
+      <div className={cx(styles.r_da4dbfbc, styles.r_7b7df044, styles.r_60fbb771, styles.r_8dddea07, styles.r_86843cf1, styles.r_0478c89a, styles.r_4221753f, styles.r_72a4c7cd)}>
+        <span className={cx(styles.r_a77ed4d9, styles.r_52083e7d, styles.r_92e7450a, styles.r_3960ffc2, styles.r_ac204c10, styles.r_2cf6fd42, styles.r_0b91436d, styles.r_465609a2, styles.r_d058ca6d, styles.r_0b2e8c28)}>
           精选活动
         </span>
-        <h2 className="text-xl font-bold md:text-3xl">{item.title}</h2>
+        <h2 className={cx(styles.r_d5c9b000, styles.r_69450ef1, styles.r_c58992ca)}>{item.title}</h2>
       </div>
-    </Link>
-  );
+    </Link>);
+
 }

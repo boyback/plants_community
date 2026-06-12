@@ -26,7 +26,7 @@ export const dynamic = 'force-dynamic';
 const Query = z.object({
   tab: z.enum(['recommend', 'following', 'hot', 'latest']).default('recommend'),
   type: z
-    .enum(['rich', 'short', 'vote', 'video', 'event', 'help', 'journal'])
+    .enum(['rich', 'image', 'short', 'vote', 'video', 'event', 'help', 'journal'])
     .optional(),
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),

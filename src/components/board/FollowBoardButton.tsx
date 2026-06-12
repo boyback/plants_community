@@ -2,11 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
+import styles from './FollowBoardButton.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 /**
  * 板块关注按钮。
@@ -19,15 +23,15 @@ export function FollowBoardButton({
   categorySlug,
   genusSlug,
   size = 'md',
-  className,
-}: {
-  type: 'board' | 'genus' | 'species';
-  slug: string;
-  categorySlug?: string;
-  genusSlug?: string;
-  size?: 'sm' | 'md' | 'lg';
-  className?: string;
-}) {
+  className
+
+
+
+
+
+
+
+}: {type: 'board' | 'genus' | 'species';slug: string;categorySlug?: string;genusSlug?: string;size?: 'sm' | 'md' | 'lg';className?: string;}) {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useI18n();
@@ -39,17 +43,17 @@ export function FollowBoardButton({
       setFollowed(null);
       return;
     }
-    api
-      .get<Array<{ level: string; slug: string; path: Array<{ level: string; slug: string }> }>>(
-        '/api/boards/followed'
-      )
-      .then((list) => {
-        const hit = list.some(
-          (b) => b.level === type && b.slug === slug && matchContext(b, categorySlug, genusSlug)
-        );
-        setFollowed(hit);
-      })
-      .catch(() => setFollowed(false));
+    api.
+    get<Array<{level: string;slug: string;path: Array<{level: string;slug: string;}>;}>>(
+      '/api/boards/followed'
+    ).
+    then((list) => {
+      const hit = list.some(
+        (b) => b.level === type && b.slug === slug && matchContext(b, categorySlug, genusSlug)
+      );
+      setFollowed(hit);
+    }).
+    catch(() => setFollowed(false));
   }, [user, type, slug, categorySlug, genusSlug]);
 
   const toggle = async () => {
@@ -75,18 +79,18 @@ export function FollowBoardButton({
   };
 
   const sizeCls =
-    size === 'sm' ? '!text-xs !px-2 !py-0.5' : size === 'lg' ? '!text-sm !px-4' : '!text-xs !px-3';
+  size === 'sm' ? cx(styles.r_dd702538, styles.r_92172c7d, styles.r_95e16551) : size === 'lg' ? cx(styles.r_4f43b5cb, styles.r_af7490b1) : cx(styles.r_dd702538, styles.r_23b4e5ed);
 
   if (!user) {
     return (
       <button
         type="button"
         onClick={toggle}
-        className={cn('btn-outline', sizeCls, className)}
-      >
+        className={cn('btn-outline', sizeCls, className)}>
+
         {t('detail.board.followShort')}
-      </button>
-    );
+      </button>);
+
   }
 
   return (
@@ -97,22 +101,22 @@ export function FollowBoardButton({
       className={cn(
         'btn',
         sizeCls,
-        followed
-          ? 'bg-leaf-100 text-leaf-700 hover:bg-leaf-200'
-          : 'bg-leaf-500 text-white hover:bg-leaf-600',
+        followed ? cx(styles.r_f2b23104, styles.r_5f6a59f1, styles.r_d8a68f7c) : cx(styles.r_45499621, styles.r_72a4c7cd, styles.r_24f5f8c9),
+
+
         className
-      )}
-    >
+      )}>
+
       {followed === null ? '⋯' : followed ? t('detail.board.following') : t('detail.board.followFull')}
-    </button>
-  );
+    </button>);
+
 }
 
 function matchContext(
-  board: { path: Array<{ level: string; slug: string }> },
-  categorySlug?: string,
-  genusSlug?: string
-): boolean {
+board: {path: Array<{level: string;slug: string;}>;},
+categorySlug?: string,
+genusSlug?: string)
+: boolean {
   if (categorySlug) {
     const c = board.path.find((p) => p.level === 'category');
     if (!c || c.slug !== categorySlug) return false;

@@ -19,6 +19,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { LivePhotoView } from '@/components/upload/LivePhotoView';
+import { useBodyScrollLock } from '@/lib/hooks/useBodyScrollLock';
+import styles from './Lightbox.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface Props {
   images: string[];
@@ -40,6 +45,7 @@ export function Lightbox({ images, index, onClose, onChange, livePhotoMap }: Pro
   const [drag, setDrag] = useState({ dx: 0, dy: 0, dragging: false });
 
   const open = index !== null;
+  useBodyScrollLock(open);
 
   useEffect(() => {
     if (open) {
@@ -51,17 +57,10 @@ export function Lightbox({ images, index, onClose, onChange, livePhotoMap }: Pro
 
   useEffect(() => {
     if (!open) return;
-    const orig = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = orig; };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      else if (e.key === 'ArrowLeft' && index! > 0) onChange?.(index! - 1);
-      else if (e.key === 'ArrowRight' && index! < images.length - 1) onChange?.(index! + 1);
+      if (e.key === 'Escape') onClose();else
+      if (e.key === 'ArrowLeft' && index! > 0) onChange?.(index! - 1);else
+      if (e.key === 'ArrowRight' && index! < images.length - 1) onChange?.(index! + 1);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -95,8 +94,8 @@ export function Lightbox({ images, index, onClose, onChange, livePhotoMap }: Pro
     }
     // 左右切图(阈值 60px)
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
-      if (dx < 0 && index! < images.length - 1) onChange?.(index! + 1);
-      else if (dx > 0 && index! > 0) onChange?.(index! - 1);
+      if (dx < 0 && index! < images.length - 1) onChange?.(index! + 1);else
+      if (dx > 0 && index! > 0) onChange?.(index! - 1);
     }
   };
 
@@ -104,73 +103,73 @@ export function Lightbox({ images, index, onClose, onChange, livePhotoMap }: Pro
     <div
       role="dialog"
       aria-modal="true"
-      className={cn(
-        'fixed inset-0 z-[60] flex flex-col bg-ink-900 transition-opacity duration-200',
-        animOpen ? 'opacity-100' : 'opacity-0'
-      )}
-    >
-      <header className="flex items-center justify-between px-4 py-3 text-xs text-white/80">
-        <div className="font-mono">{index! + 1} / {images.length}</div>
+      className={cn(cx(styles.r_7bc55599, styles.r_7b7df044, styles.r_7f74fd84, styles.r_60fbb771, styles.r_8dddea07, styles.r_c8d2a7ca, styles.r_67d6184a, styles.r_625a4c3f),
+
+      animOpen ? styles.r_3972e98d : styles.r_7065497e
+      )}>
+
+      <header className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_f0faeb26, styles.r_1b2d54a3, styles.r_359090c2, styles.r_201d4d37)}>
+        <div className={styles.r_0e65706b}>{index! + 1} / {images.length}</div>
         <button
           type="button"
           onClick={onClose}
-          className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-base"
-          aria-label="close"
-        >
+          className={cx(styles.r_f3c543ad, styles.r_e7a768f9, styles.r_ae2181c7, styles.r_67d66567, styles.r_ac204c10, styles.r_793aec7a, styles.r_4ee73492)}
+          aria-label="close">
+
           ✕
         </button>
       </header>
 
       <div
         ref={tracksRef}
-        className="relative flex-1 overflow-hidden"
+        className={cx(styles.r_d89972fe, styles.r_36e579c0, styles.r_2cd02d11)}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         onClick={(e) => {
           // 点击背景(非图片本身)关闭
           if ((e.target as HTMLElement).tagName !== 'IMG') onClose();
-        }}
-      >
+        }}>
+
         <div
-          className="flex h-full will-change-transform"
+          className={cx(styles.r_60fbb771, styles.r_668b21aa, styles.r_220841ab)}
           style={{
             width: `${images.length * 100}%`,
             transform: `translate3d(calc(${-index! * 100 / images.length}% + ${drag.dx}px), ${drag.dy}px, 0)`,
-            transition: drag.dragging ? 'none' : 'transform 200ms cubic-bezier(0.22, 1, 0.36, 1)',
-            opacity: drag.dragging ? Math.max(0.4, 1 - Math.abs(drag.dy) / 400) : 1,
-          }}
-        >
+            transition: drag.dragging ? 'none' : "transform 200ms cubic-bezier(0.22, 1, 0.36, 1)",
+            opacity: drag.dragging ? Math.max(0.4, 1 - Math.abs(drag.dy) / 400) : 1
+          }}>
+
           {images.map((src, i) => {
             const liveUrl = livePhotoMap?.[src];
             return (
               <div
                 key={i}
-                className="grid h-full place-items-center"
-                style={{ width: `${100 / images.length}%` }}
-              >
-                {liveUrl ? (
-                  <LivePhotoView
-                    imageUrl={src}
-                    videoUrl={liveUrl}
-                    alt={`图片 ${i + 1}`}
-                    className="max-h-full max-w-full"
-                    imgClassName="max-h-[90vh] object-contain"
-                  />
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={src}
-                    alt={`图片 ${i + 1}`}
-                    className="max-h-full max-w-full select-none object-contain"
-                    draggable={false}
-                  />
-                )}
-              </div>
-            );
+                className={cx(styles.r_f3c543ad, styles.r_668b21aa, styles.r_67d66567)}
+                style={{ width: `${100 / images.length}%` }}>
+
+                {liveUrl ?
+                <LivePhotoView
+                  imageUrl={src}
+                  videoUrl={liveUrl}
+                  alt={`图片 ${i + 1}`}
+                  className={cx(styles.r_a201da4b, styles.r_c0980a65)}
+                  imgClassName={cx(styles.r_b4168890, styles.r_b1104f41)} /> :
+
+
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={src}
+                  alt={`图片 ${i + 1}`}
+                  className={cx(styles.r_a201da4b, styles.r_c0980a65, styles.r_7f691228, styles.r_b1104f41)}
+                  draggable={false} />
+
+                }
+              </div>);
+
           })}
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }

@@ -338,7 +338,7 @@ type PostViewer = {
   moderatorScopes?: { type: 'board' | 'genus' | 'species'; targetId: string }[] | null;
 } | null | undefined;
 
-const EDITABLE_POST_TYPES = new Set(['rich', 'short', 'video', 'vote', 'event', 'journal', 'help']);
+const EDITABLE_POST_TYPES = new Set(['rich', 'image', 'short', 'video', 'vote', 'event', 'journal', 'help']);
 
 function moderatorCanManagePost(
   p: { boardId?: string | null; genusId?: string | null; speciesId?: string | null },

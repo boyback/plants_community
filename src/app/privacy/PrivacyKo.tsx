@@ -1,8 +1,11 @@
+import styles from './PrivacyKo.module.scss';
+import { cx } from '@/lib/style-utils';
+
 export function PrivacyKo() {
   return (
     <>
       <h1>RouYou 개인정보 처리방침</h1>
-      <p className="text-leaf-500">최근 개정일: 2026 년 5 월 7 일 · 시행일: 공지일</p>
+      <p className={styles.r_eb16169c}>최근 개정일: 2026 년 5 월 7 일 · 시행일: 공지일</p>
 
       <p>
         RouYou(이하 &quot;회사&quot;)는 이용자의 개인정보를 매우 중요하게 여깁니다. 본 방침은 회사가 이용자의 개인정보를 어떻게 수집, 이용, 보관, 공유, 보호하는지,
@@ -97,9 +100,9 @@ export function PrivacyKo() {
       </p>
 
       <hr />
-      <p className="text-xs text-leaf-500">
+      <p className={cx(styles.r_359090c2, styles.r_eb16169c)}>
         본 방침은 Demo 버전이며, 법률 자문을 구성하지 않습니다. 실제 서비스 개시 전 반드시 전문가 검토를 받으십시오.
       </p>
-    </>
-  );
+    </>);
+
 }

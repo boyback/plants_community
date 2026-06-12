@@ -3,8 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PostCard } from '@/components/post/PostCard';
 import { PostCardSkeleton } from '@/components/post/PostCardSkeleton';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import type { Post } from '@/lib/types';
+import styles from './PostMasonry.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 /**
  * 通用网格帖子列表(板块页/作者页/搜索通用)
@@ -35,7 +39,7 @@ export function PostMasonry({
   loadMoreUrl,
   source = 'masonry',
   className,
-  empty,
+  empty
 }: Props) {
   const [items, setItems] = useState<Post[]>(initial);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
@@ -88,39 +92,39 @@ export function PostMasonry({
   return (
     <div className={className}>
       {/* CSS columns 瀑布流 */}
-      <div className="columns-2 gap-3 md:columns-3">
-        {items.map((p) => (
-          <div key={p.id} className="mb-3 break-inside-avoid">
+      <div className={cx(styles.r_f61d7b0f, styles.r_1004c0c3, styles.r_cee69443)}>
+        {items.map((p) =>
+        <div key={p.id} className={cx(styles.r_1bb88326, styles.r_26ee10b3)}>
             <ObservedCard post={p} source={source} />
           </div>
-        ))}
+        )}
         {loading &&
-          Array.from({ length: 6 }).map((_, i) => (
-            <div key={`sk-${i}`} className="mb-3 break-inside-avoid">
+        Array.from({ length: 6 }).map((_, i) =>
+        <div key={`sk-${i}`} className={cx(styles.r_1bb88326, styles.r_26ee10b3)}>
               <PostCardSkeleton variant={i} />
             </div>
-          ))}
+        )}
       </div>
 
-      {err && (
-        <div className="mt-4 flex flex-col items-center gap-2 text-xs">
-          <div className="rounded-none bg-rose-50 px-3 py-2 text-rose-700">{err}</div>
-          <button type="button" onClick={loadMore} className="btn-outline !text-xs">
+      {err &&
+      <div className={cx(styles.r_0ab86672, styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_359090c2)}>
+          <div className={cx(styles.r_0c5e9137, styles.r_0759a0f1, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_b54428d1)}>{err}</div>
+          <button type="button" onClick={loadMore} className={styles.r_dd702538}>
             重试
           </button>
         </div>
-      )}
+      }
 
-      {cursor && !err && <div ref={sentinelRef} className="h-1 w-full" aria-hidden />}
+      {cursor && !err && <div ref={sentinelRef} className={cx(styles.r_3a1268a4, styles.r_6da6a3c3)} aria-hidden />}
 
-      {!cursor && !err && items.length > 0 && (
-        <div className="py-6 text-center text-xs text-leaf-700/60">— 没有更多了 —</div>
-      )}
-    </div>
-  );
+      {!cursor && !err && items.length > 0 &&
+      <div className={cx(styles.r_940911bf, styles.r_ca6bf630, styles.r_359090c2, styles.r_6c4cc49e)}>— 没有更多了 —</div>
+      }
+    </div>);
+
 }
 
-function ObservedCard({ post, source }: { post: Post; source: string }) {
+function ObservedCard({ post, source }: {post: Post;source: string;}) {
   const ref = useRef<HTMLDivElement>(null);
   const sentRef = useRef(false);
   useEffect(() => {
@@ -132,9 +136,9 @@ function ObservedCard({ post, source }: { post: Post; source: string }) {
         for (const e of entries) {
           if (e.isIntersecting) {
             sentRef.current = true;
-            void api
-              .post(`/api/posts/${post.id}/view`, { source })
-              .catch(() => null);
+            void api.
+            post(`/api/posts/${post.id}/view`, { source }).
+            catch(() => null);
             io.disconnect();
             break;
           }
@@ -148,6 +152,6 @@ function ObservedCard({ post, source }: { post: Post; source: string }) {
   return (
     <div ref={ref}>
       <PostCard post={post} />
-    </div>
-  );
+    </div>);
+
 }

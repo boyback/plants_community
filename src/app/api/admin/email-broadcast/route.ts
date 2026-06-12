@@ -77,7 +77,7 @@ export const POST = handler(async (req) => {
     text = body.text;
   }
 
-  // —— 2. 解析收件人 —— 
+  // —— 2. 解析收件人 ——
   const where: Record<string, unknown> = {
     email: { not: null },
   };
@@ -94,7 +94,7 @@ export const POST = handler(async (req) => {
   });
   if (users.length === 0) return fail(400, '没有匹配的收件人');
 
-  // —— 3. 创建 broadcast 任务 + 收件人快照 —— 
+  // —— 3. 创建 broadcast 任务 + 收件人快照 ——
   const created = await prisma.emailBroadcast.create({
     data: {
       subject,

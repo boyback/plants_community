@@ -1,8 +1,11 @@
+import styles from './TermsJa.module.scss';
+import { cx } from '@/lib/style-utils';
+
 export function TermsJa() {
   return (
     <>
       <h1>RouYou 利用規約</h1>
-      <p className="text-leaf-500">
+      <p className={styles.r_eb16169c}>
         最終更新日:2026 年 5 月 7 日 · 発効日:本規約の公開日
       </p>
 
@@ -91,9 +94,9 @@ export function TermsJa() {
       </p>
 
       <hr />
-      <p className="text-xs text-leaf-500">
+      <p className={cx(styles.r_359090c2, styles.r_eb16169c)}>
         本規約は Demo 版であり、法的助言を構成するものではありません。本番運用前に必ず専門家の確認を受けてください。
       </p>
-    </>
-  );
+    </>);
+
 }

@@ -9,10 +9,14 @@ import { Empty } from '@/components/ui/Empty';
 import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import { cn } from '@/lib/utils';
 import { SkinPreview } from '@/components/skin/SkinCard';
 import type { SkinItem, TaskItem, User } from '@/lib/types';
+import styles from './page.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 type Tab = 'tasks' | 'rewards' | 'ranking';
 
@@ -44,10 +48,10 @@ export default function TasksPage() {
     achievement: TaskItem[];
   }>({ daily: [], monthly: [], achievement: [] });
 
-  const [activity, setActivity] = useState<{ score: number; rank: number | null; total: number }>({
+  const [activity, setActivity] = useState<{score: number;rank: number | null;total: number;}>({
     score: 0,
     rank: null,
-    total: 0,
+    total: 0
   });
   const [rewards, setRewards] = useState<ActivityRewardFromAPI[]>([]);
   const [ranking, setRanking] = useState<RankingRow[]>([]);
@@ -58,26 +62,26 @@ export default function TasksPage() {
     setLoading(true);
     try {
       const [t, a, rw, rk] = await Promise.all([
-        user
-          ? api.get<typeof tasks>('/api/tasks').catch(() => ({
-              daily: [],
-              monthly: [],
-              achievement: [],
-            }))
-          : Promise.resolve({ daily: [], monthly: [], achievement: [] }),
-        user
-          ? api.get<{ score: number; rank: number | null; totalParticipants: number }>(
-              '/api/activity/me'
-            )
-          : Promise.resolve({ score: 0, rank: null, totalParticipants: 0 }),
-        api.get<{ items: ActivityRewardFromAPI[] }>('/api/activity/rewards'),
-        api.get<{ items: RankingRow[] }>('/api/activity/ranking?limit=50'),
-      ]);
+      user ?
+      api.get<typeof tasks>('/api/tasks').catch(() => ({
+        daily: [],
+        monthly: [],
+        achievement: []
+      })) :
+      Promise.resolve({ daily: [], monthly: [], achievement: [] }),
+      user ?
+      api.get<{score: number;rank: number | null;totalParticipants: number;}>(
+        '/api/activity/me'
+      ) :
+      Promise.resolve({ score: 0, rank: null, totalParticipants: 0 }),
+      api.get<{items: ActivityRewardFromAPI[];}>('/api/activity/rewards'),
+      api.get<{items: RankingRow[];}>('/api/activity/ranking?limit=50')]
+      );
       setTasks(t);
       setActivity({
         score: a.score,
         rank: a.rank,
-        total: 'totalParticipants' in a ? a.totalParticipants : 0,
+        total: 'totalParticipants' in a ? a.totalParticipants : 0
       });
       setRewards(rw.items);
       setRanking(rk.items);
@@ -95,7 +99,7 @@ export default function TasksPage() {
   const claimTask = async (task: TaskItem) => {
     setBusyId(task.id);
     try {
-      const r = await api.post<{ rewardPoints: number; rewardActivity: number }>(
+      const r = await api.post<{rewardPoints: number;rewardActivity: number;}>(
         '/api/tasks/claim',
         { taskId: task.id }
       );
@@ -112,13 +116,13 @@ export default function TasksPage() {
   const claimReward = async (reward: ActivityRewardFromAPI) => {
     setBusyId(reward.id);
     try {
-      const r = await api.post<{ rewardPoints: number; rewardSkinId: string | null }>(
+      const r = await api.post<{rewardPoints: number;rewardSkinId: string | null;}>(
         `/api/activity/rewards/${reward.id}/claim`
       );
       toast.success(
         t('tasks.rewardClaimed', {
           points: r.rewardPoints,
-          skin: r.rewardSkinId ? t('tasks.rewardClaimedSkin') : '',
+          skin: r.rewardSkinId ? t('tasks.rewardClaimedSkin') : ''
         })
       );
       load();
@@ -133,48 +137,48 @@ export default function TasksPage() {
   if (!authLoading && !user) {
     return (
       <Shell>
-        <div className="card mx-auto max-w-md p-10 text-center">
-          <div className="text-4xl">🏆</div>
-          <div className="mt-3 text-lg font-semibold">{t('tasks.loginRequired')}</div>
-          <Link href="/login?redirect=/tasks" className="btn-primary mt-4 inline-flex">{t('nav.login')}</Link>
+        <div className={cx(styles.r_0e12dc7d, styles.r_9794ab45, styles.r_a4d0f420, styles.r_ca6bf630)}>
+          <div className={styles.r_a95699d9}>🏆</div>
+          <div className={cx(styles.r_eccd13ef, styles.r_42536e69, styles.r_e83a7042)}>{t('tasks.loginRequired')}</div>
+          <Link href="/login?redirect=/tasks" className={cx(styles.r_0ab86672, styles.r_52083e7d)}>{t('nav.login')}</Link>
         </div>
-      </Shell>
-    );
+      </Shell>);
+
   }
 
   return (
     <Shell>
       {/* 月度活跃度概览 */}
-      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
-        <div className="card overflow-hidden">
-          <div className="bg-gradient-to-br from-violet-500 via-violet-600 to-indigo-700 p-5 text-white">
-            <div className="flex flex-wrap items-baseline gap-4">
+      <div className={cx(styles.r_b6777c6d, styles.r_f3c543ad, styles.r_d7c83398, styles.r_0c3bc985, styles.r_8074f1c1)}>
+        <div className={styles.r_2cd02d11}>
+          <div className={cx(styles.r_39b2e003, styles.r_0859a5d5, styles.r_bd67cf78, styles.r_de32bcb5, styles.r_c07e54fd, styles.r_72a4c7cd)}>
+            <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_b7012bb2, styles.r_0c3bc985)}>
               <div>
-                <div className="text-xs opacity-80">{t('tasks.monthly.title')}</div>
-                <div className="mt-1 text-4xl font-bold">{activity.score}</div>
+                <div className={cx(styles.r_359090c2, styles.r_714816ef)}>{t('tasks.monthly.title')}</div>
+                <div className={cx(styles.r_b6b02c0e, styles.r_a95699d9, styles.r_69450ef1)}>{activity.score}</div>
               </div>
               <div>
-                <div className="text-xs opacity-80">{t('tasks.monthly.ranking')}</div>
-                <div className="mt-1 text-2xl font-semibold">
+                <div className={cx(styles.r_359090c2, styles.r_714816ef)}>{t('tasks.monthly.ranking')}</div>
+                <div className={cx(styles.r_b6b02c0e, styles.r_3febee09, styles.r_e83a7042)}>
                   {activity.rank ? `#${activity.rank}` : '—'}
-                  <span className="ml-1 text-xs opacity-70">/ {activity.total}</span>
+                  <span className={cx(styles.r_f58b0257, styles.r_359090c2, styles.r_0c67ca47)}>/ {activity.total}</span>
                 </div>
               </div>
-              {vip.isVip && (
-                <span className="ml-auto rounded-full bg-amber-300 px-2 py-0.5 text-[10px] font-bold text-amber-900">
+              {vip.isVip &&
+              <span className={cx(styles.r_fb56d9cf, styles.r_ac204c10, styles.r_a25e135b, styles.r_d5eab218, styles.r_465609a2, styles.r_1dc571a3, styles.r_69450ef1, styles.r_67e74965)}>
                   {t('tasks.monthly.vipBoost')}
                 </span>
-              )}
+              }
             </div>
-            <div className="mt-3 text-[11px] opacity-80">
+            <div className={cx(styles.r_eccd13ef, styles.r_d058ca6d, styles.r_714816ef)}>
               {t('tasks.monthly.desc')}
             </div>
           </div>
         </div>
 
-        <div className="card p-4">
-          <div className="text-sm font-semibold">{t('tasks.howto.title')}</div>
-          <ul className="mt-2 space-y-1 text-xs text-leaf-700/80">
+        <div className={styles.r_8e63407b}>
+          <div className={cx(styles.r_fc7473ca, styles.r_e83a7042)}>{t('tasks.howto.title')}</div>
+          <ul className={cx(styles.r_50d0d216, styles.r_da7c36cd, styles.r_359090c2, styles.r_21d33c50)}>
             <li>{t('tasks.howto.items.signin')}</li>
             <li>{t('tasks.howto.items.post')}</li>
             <li>{t('tasks.howto.items.comment')}</li>
@@ -186,70 +190,70 @@ export default function TasksPage() {
       </div>
 
       {/* Tab */}
-      <div className="mb-5 flex items-center gap-1 border-b border-leaf-100">
-        {(
-          [
-            { key: 'tasks' as Tab, labelKey: 'tasks.tabs.tasks' },
-            { key: 'rewards' as Tab, labelKey: 'tasks.tabs.rewards' },
-            { key: 'ranking' as Tab, labelKey: 'tasks.tabs.ranking' },
-          ]
-        ).map((item) => (
-          <button
-            key={item.key}
-            onClick={() => setTab(item.key)}
-            className={cn(
-              'relative px-4 py-2.5 text-sm transition-colors',
-              tab === item.key
-                ? 'text-leaf-700 font-medium'
-                : 'text-ink-700/60 hover:text-leaf-700'
-            )}
-          >
+      <div className={cx(styles.r_fb88ccaa, styles.r_60fbb771, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_65fdbade, styles.r_88b684d2)}>
+        {
+        [
+        { key: 'tasks' as Tab, labelKey: 'tasks.tabs.tasks' },
+        { key: 'rewards' as Tab, labelKey: 'tasks.tabs.rewards' },
+        { key: 'ranking' as Tab, labelKey: 'tasks.tabs.ranking' }].
+
+        map((item) =>
+        <button
+          key={item.key}
+          onClick={() => setTab(item.key)}
+          className={cn(cx(styles.r_d89972fe, styles.r_f0faeb26, styles.r_e7ee55ac, styles.r_fc7473ca, styles.r_ceb69a6b),
+
+          tab === item.key ? cx(styles.r_5f6a59f1, styles.r_2689f395) : cx(styles.r_5fa66415, styles.r_9825203a)
+
+
+          )}>
+
             {t(item.labelKey)}
-            {tab === item.key && (
-              <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-leaf-500" />
-            )}
+            {tab === item.key &&
+          <span className={cx(styles.r_da4dbfbc, styles.r_b6027879, styles.r_189f036c, styles.r_10db0d55, styles.r_ac204c10, styles.r_45499621)} />
+          }
           </button>
-        ))}
+        )}
       </div>
 
-      {loading ? (
-        <div className="py-10 text-center text-sm text-leaf-700/60">{t('common.loading')}</div>
-      ) : tab === 'tasks' ? (
-        <div className="space-y-6">
+      {loading ?
+      <div className={cx(styles.r_1100bef6, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>{t('common.loading')}</div> :
+      tab === 'tasks' ?
+      <div className={styles.r_b3542e05}>
           <TaskGroup
-            title={t('tasks.sections.dailyTitle')}
-            subtitle={t('tasks.sections.dailySubtitle')}
-            tasks={tasks.daily}
-            busyId={busyId}
-            onClaim={claimTask}
-          />
-          <TaskGroup
-            title={t('tasks.sections.monthlyTitle')}
-            subtitle={t('tasks.sections.monthlySubtitle')}
-            tasks={tasks.monthly}
-            busyId={busyId}
-            onClaim={claimTask}
-          />
-          <TaskGroup
-            title={t('tasks.sections.achievementTitle')}
-            subtitle={t('tasks.sections.achievementSubtitle')}
-            tasks={tasks.achievement}
-            busyId={busyId}
-            onClaim={claimTask}
-          />
-        </div>
-      ) : tab === 'rewards' ? (
-        <RewardsPanel
-          rewards={rewards}
-          myScore={activity.score}
+          title={t('tasks.sections.dailyTitle')}
+          subtitle={t('tasks.sections.dailySubtitle')}
+          tasks={tasks.daily}
           busyId={busyId}
-          onClaim={claimReward}
-        />
-      ) : (
-        <Ranking ranking={ranking} myUserId={user?.id} />
-      )}
-    </Shell>
-  );
+          onClaim={claimTask} />
+
+          <TaskGroup
+          title={t('tasks.sections.monthlyTitle')}
+          subtitle={t('tasks.sections.monthlySubtitle')}
+          tasks={tasks.monthly}
+          busyId={busyId}
+          onClaim={claimTask} />
+
+          <TaskGroup
+          title={t('tasks.sections.achievementTitle')}
+          subtitle={t('tasks.sections.achievementSubtitle')}
+          tasks={tasks.achievement}
+          busyId={busyId}
+          onClaim={claimTask} />
+
+        </div> :
+      tab === 'rewards' ?
+      <RewardsPanel
+        rewards={rewards}
+        myScore={activity.score}
+        busyId={busyId}
+        onClaim={claimReward} /> :
+
+
+      <Ranking ranking={ranking} myUserId={user?.id} />
+      }
+    </Shell>);
+
 }
 
 function TaskGroup({
@@ -257,234 +261,234 @@ function TaskGroup({
   subtitle,
   tasks,
   busyId,
-  onClaim,
-}: {
-  title: string;
-  subtitle: string;
-  tasks: TaskItem[];
-  busyId: string | null;
-  onClaim: (t: TaskItem) => void;
-}) {
+  onClaim
+
+
+
+
+
+
+}: {title: string;subtitle: string;tasks: TaskItem[];busyId: string | null;onClaim: (t: TaskItem) => void;}) {
   if (tasks.length === 0) return null;
   return (
     <section>
-      <div className="mb-2 flex items-center justify-between">
+      <div className={cx(styles.r_a77ed4d9, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e)}>
         <div>
-          <h3 className="text-sm font-semibold text-ink-800">{title}</h3>
-          <div className="text-[11px] text-leaf-700/60">{subtitle}</div>
+          <h3 className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>{title}</h3>
+          <div className={cx(styles.r_d058ca6d, styles.r_6c4cc49e)}>{subtitle}</div>
         </div>
-        <div className="text-[11px] text-leaf-700/60">
+        <div className={cx(styles.r_d058ca6d, styles.r_6c4cc49e)}>
           已完成 {tasks.filter((t) => t.completed).length} / {tasks.length}
         </div>
       </div>
-      <ul className="space-y-2">
+      <ul className={styles.r_6f7e013d}>
         {tasks.map((t) => {
-          const percent = Math.min(100, Math.round((t.progress / t.target) * 100));
+          const percent = Math.min(100, Math.round(t.progress / t.target * 100));
           return (
-            <li key={t.id} className="card flex items-center gap-3 p-4">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-leaf-50 text-2xl">
+            <li key={t.id} className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_8e63407b)}>
+              <div className={cx(styles.r_f3c543ad, styles.r_508ebf85, styles.r_e7e37107, styles.r_012fbd12, styles.r_67d66567, styles.r_a217b4ea, styles.r_7ebecbb6, styles.r_3febee09)}>
                 {t.icon}
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-medium">{t.title}</span>
-                  {t.completed && (
-                    <span className="rounded-full bg-leaf-100 px-1.5 py-px text-[10px] text-leaf-700">
+              <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
+                <div className={cx(styles.r_60fbb771, styles.r_b7012bb2, styles.r_77a2a20e)}>
+                  <span className={cx(styles.r_fc7473ca, styles.r_2689f395)}>{t.title}</span>
+                  {t.completed &&
+                  <span className={cx(styles.r_ac204c10, styles.r_f2b23104, styles.r_45d82811, styles.r_c6e52cdb, styles.r_1dc571a3, styles.r_5f6a59f1)}>
                       ✓ 已完成
                     </span>
-                  )}
+                  }
                 </div>
-                <div className="mt-0.5 line-clamp-1 text-xs text-leaf-700/70">{t.description}</div>
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-leaf-100">
+                <div className={cx(styles.r_15e1b1f4, styles.r_f50e2015, styles.r_359090c2, styles.r_69335b95)}>{t.description}</div>
+                <div className={cx(styles.r_50d0d216, styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
+                  <div className={cx(styles.r_095acb27, styles.r_36e579c0, styles.r_2cd02d11, styles.r_ac204c10, styles.r_f2b23104)}>
                     <div
-                      className={cn(
-                        'h-full rounded-full transition-all',
-                        t.completed ? 'bg-leaf-500' : 'bg-leaf-300'
+                      className={cn(cx(styles.r_668b21aa, styles.r_ac204c10, styles.r_0fe7d7d8),
+
+                      t.completed ? styles.r_45499621 : styles.r_8b65c498
                       )}
-                      style={{ width: `${percent}%` }}
-                    />
+                      style={{ width: `${percent}%` }} />
+
                   </div>
-                  <span className="shrink-0 text-[11px] text-leaf-700/70">
+                  <span className={cx(styles.r_012fbd12, styles.r_d058ca6d, styles.r_69335b95)}>
                     {t.progress}/{t.target}
                   </span>
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-1">
-                <div className="text-[10px] text-leaf-700/70">奖励</div>
-                <div className="flex items-center gap-1 text-xs">
-                  {t.rewardPoints > 0 && (
-                    <span className="rounded bg-rose-50 px-1 text-rose-700">+{t.rewardPoints}💎</span>
-                  )}
-                  {t.rewardActivity > 0 && (
-                    <span className="rounded bg-violet-50 px-1 text-violet-700">+{t.rewardActivity}活</span>
-                  )}
-                  {t.rewardExp > 0 && (
-                    <span className="rounded bg-leaf-50 px-1 text-leaf-700">+{t.rewardExp}EXP</span>
-                  )}
+              <div className={cx(styles.r_60fbb771, styles.r_8dddea07, styles.r_6f27f4f7, styles.r_44ee8ba0)}>
+                <div className={cx(styles.r_1dc571a3, styles.r_69335b95)}>奖励</div>
+                <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_359090c2)}>
+                  {t.rewardPoints > 0 &&
+                  <span className={cx(styles.r_07389a77, styles.r_0759a0f1, styles.r_d8e0e382, styles.r_b54428d1)}>+{t.rewardPoints}💎</span>
+                  }
+                  {t.rewardActivity > 0 &&
+                  <span className={cx(styles.r_07389a77, styles.r_3b5cf6c0, styles.r_d8e0e382, styles.r_06fd2bc1)}>+{t.rewardActivity}活</span>
+                  }
+                  {t.rewardExp > 0 &&
+                  <span className={cx(styles.r_07389a77, styles.r_7ebecbb6, styles.r_d8e0e382, styles.r_5f6a59f1)}>+{t.rewardExp}EXP</span>
+                  }
                 </div>
-                {t.completed && !t.claimed ? (
-                  <button
-                    type="button"
-                    onClick={() => onClaim(t)}
-                    disabled={busyId === t.id}
-                    className="btn-primary !px-3 !py-1 !text-xs"
-                  >
+                {t.completed && !t.claimed ?
+                <button
+                  type="button"
+                  onClick={() => onClaim(t)}
+                  disabled={busyId === t.id}
+                  className={cx(styles.r_23b4e5ed, styles.r_ebb407e8, styles.r_dd702538)}>
+
                     领取
-                  </button>
-                ) : t.claimed ? (
-                  <span className="text-[10px] text-leaf-700/60">已领取</span>
-                ) : (
-                  <span className="text-[10px] text-leaf-700/60">进行中</span>
-                )}
+                  </button> :
+                t.claimed ?
+                <span className={cx(styles.r_1dc571a3, styles.r_6c4cc49e)}>已领取</span> :
+
+                <span className={cx(styles.r_1dc571a3, styles.r_6c4cc49e)}>进行中</span>
+                }
               </div>
-            </li>
-          );
+            </li>);
+
         })}
       </ul>
-    </section>
-  );
+    </section>);
+
 }
 
 function RewardsPanel({
   rewards,
   myScore,
   busyId,
-  onClaim,
-}: {
-  rewards: ActivityRewardFromAPI[];
-  myScore: number;
-  busyId: string | null;
-  onClaim: (r: ActivityRewardFromAPI) => void;
-}) {
+  onClaim
+
+
+
+
+
+}: {rewards: ActivityRewardFromAPI[];myScore: number;busyId: string | null;onClaim: (r: ActivityRewardFromAPI) => void;}) {
   if (rewards.length === 0) return <Empty icon="🎁" title="暂无活跃度奖励" />;
   const max = rewards[rewards.length - 1].threshold;
-  const overall = Math.min(100, (myScore / max) * 100);
+  const overall = Math.min(100, myScore / max * 100);
 
   return (
     <div>
-      <div className="mb-4 card p-4">
-        <div className="mb-2 flex items-baseline justify-between text-xs">
-          <span className="text-leaf-700/70">本月进度</span>
-          <span className="text-ink-800 font-semibold">{myScore} / {max}</span>
+      <div className={cx(styles.r_da019856, styles.r_8e63407b)}>
+        <div className={cx(styles.r_a77ed4d9, styles.r_60fbb771, styles.r_b7012bb2, styles.r_8ef2268e, styles.r_359090c2)}>
+          <span className={styles.r_69335b95}>本月进度</span>
+          <span className={cx(styles.r_399e11a5, styles.r_e83a7042)}>{myScore} / {max}</span>
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-leaf-100">
+        <div className={cx(styles.r_2f2a842e, styles.r_2cd02d11, styles.r_ac204c10, styles.r_f2b23104)}>
           <div
-            className="h-full bg-gradient-to-r from-leaf-400 via-leaf-500 to-leaf-700"
-            style={{ width: `${overall}%` }}
-          />
+            className={cx(styles.r_668b21aa, styles.r_6ae7db2c, styles.r_78ce000e, styles.r_6307c852, styles.r_70203aca)}
+            style={{ width: `${overall}%` }} />
+
         </div>
-        <div className="mt-2 flex justify-between text-[10px] text-leaf-700/60">
-          {rewards.map((r) => (
-            <span key={r.id}>{r.threshold}</span>
-          ))}
+        <div className={cx(styles.r_50d0d216, styles.r_60fbb771, styles.r_8ef2268e, styles.r_1dc571a3, styles.r_6c4cc49e)}>
+          {rewards.map((r) =>
+          <span key={r.id}>{r.threshold}</span>
+          )}
         </div>
       </div>
 
-      <ul className="space-y-2">
+      <ul className={styles.r_6f7e013d}>
         {rewards.map((r) => {
           const reached = myScore >= r.threshold;
           return (
-            <li key={r.id} className={cn('card flex items-center gap-4 p-4', !reached && 'opacity-70')}>
-              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-leaf-50 to-violet-50">
-                {r.rewardSkin ? <SkinPreview skin={r.rewardSkin} size="sm" /> : <span className="text-2xl">🎁</span>}
+            <li key={r.id} className={cn(cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_0c3bc985, styles.r_8e63407b), !reached && styles.r_0c67ca47)}>
+              <div className={cx(styles.r_f3c543ad, styles.r_73a13409, styles.r_7e74e5fe, styles.r_012fbd12, styles.r_67d66567, styles.r_a217b4ea, styles.r_39b2e003, styles.r_49a47a82, styles.r_f62af50e)}>
+                {r.rewardSkin ? <SkinPreview skin={r.rewardSkin} size="sm" /> : <span className={styles.r_3febee09}>🎁</span>}
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold">{r.title}</span>
-                  <span className="text-[11px] text-leaf-700/60">
+              <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
+                <div className={cx(styles.r_60fbb771, styles.r_b7012bb2, styles.r_77a2a20e)}>
+                  <span className={cx(styles.r_fc7473ca, styles.r_e83a7042)}>{r.title}</span>
+                  <span className={cx(styles.r_d058ca6d, styles.r_6c4cc49e)}>
                     需要活跃度 {r.threshold}
                   </span>
                 </div>
-                <div className="mt-0.5 line-clamp-2 text-xs text-leaf-700/70">{r.description}</div>
-                <div className="mt-1 flex flex-wrap gap-1 text-[11px]">
-                  <span className="rounded bg-rose-50 px-1.5 text-rose-700">+{r.rewardPoints}💎</span>
-                  {r.rewardSkin && (
-                    <span className="rounded bg-violet-50 px-1.5 text-violet-700">
+                <div className={cx(styles.r_15e1b1f4, styles.r_054cb4e3, styles.r_359090c2, styles.r_69335b95)}>{r.description}</div>
+                <div className={cx(styles.r_b6b02c0e, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_44ee8ba0, styles.r_d058ca6d)}>
+                  <span className={cx(styles.r_07389a77, styles.r_0759a0f1, styles.r_45d82811, styles.r_b54428d1)}>+{r.rewardPoints}💎</span>
+                  {r.rewardSkin &&
+                  <span className={cx(styles.r_07389a77, styles.r_3b5cf6c0, styles.r_45d82811, styles.r_06fd2bc1)}>
                       皮肤「{r.rewardSkin.name}」
                     </span>
-                  )}
+                  }
                 </div>
               </div>
-              {r.claimedThisMonth ? (
-                <span className="text-[11px] text-leaf-700/60">本月已领</span>
-              ) : reached ? (
-                <button
-                  type="button"
-                  disabled={busyId === r.id}
-                  onClick={() => onClaim(r)}
-                  className="btn-primary !text-xs"
-                >
+              {r.claimedThisMonth ?
+              <span className={cx(styles.r_d058ca6d, styles.r_6c4cc49e)}>本月已领</span> :
+              reached ?
+              <button
+                type="button"
+                disabled={busyId === r.id}
+                onClick={() => onClaim(r)}
+                className={styles.r_dd702538}>
+
                   领取
-                </button>
-              ) : (
-                <span className="text-[11px] text-leaf-700/60">未达到</span>
-              )}
-            </li>
-          );
+                </button> :
+
+              <span className={cx(styles.r_d058ca6d, styles.r_6c4cc49e)}>未达到</span>
+              }
+            </li>);
+
         })}
       </ul>
-    </div>
-  );
+    </div>);
+
 }
 
 function Ranking({
   ranking,
-  myUserId,
-}: {
-  ranking: RankingRow[];
-  myUserId?: string;
-}) {
+  myUserId
+
+
+
+}: {ranking: RankingRow[];myUserId?: string;}) {
   if (ranking.length === 0) return <Empty icon="🏆" title="本月还没有数据" desc="发帖、评论、签到都会上榜" />;
   const top3 = ranking.slice(0, 3);
   const rest = ranking.slice(3);
 
   return (
-    <div className="space-y-4">
+    <div className={styles.r_3e7ce58d}>
       {/* TOP 3 */}
-      {top3.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 md:gap-4">
+      {top3.length > 0 &&
+      <div className={cx(styles.r_f3c543ad, styles.r_be2e831b, styles.r_77a2a20e, styles.r_15121b08)}>
           {top3.map((r) => {
-            const podiumClass =
-              r.rank === 1
-                ? 'order-2 from-amber-300 to-amber-100'
-                : r.rank === 2
-                ? 'order-1 from-leaf-200 to-leaf-50'
-                : 'order-3 from-rose-200 to-rose-50';
-            return (
-              <div
-                key={r.user.id}
-                className={cn(
-                  'flex flex-col items-center rounded-2xl bg-gradient-to-br p-4',
-                  podiumClass
-                )}
-              >
-                <div className="text-2xl">{r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : '🥉'}</div>
-                <Avatar src={r.user.avatar} alt={r.user.name} size={48} ring />
-                <UserName user={r.user} className="mt-2" size="sm" />
-                <div className="mt-1 text-xs font-semibold text-ink-800">{r.score} 活跃度</div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+          const podiumClass =
+          r.rank === 1 ? cx(styles.r_ef72121a, styles.r_96b881c8, styles.r_a3c287d9) :
 
-      <ul className="card divide-y divide-leaf-50">
-        {rest.map((r) => (
-          <li
-            key={r.user.id}
-            className={cn(
-              'flex items-center gap-3 px-5 py-3',
-              r.user.id === myUserId && 'bg-leaf-50/50'
-            )}
-          >
-            <span className="w-6 text-center text-sm font-semibold text-leaf-700">{r.rank}</span>
+          r.rank === 2 ? cx(styles.r_ea37b42b, styles.r_50f960a5, styles.r_6d112f9a) : cx(styles.r_6ca7ddb0, styles.r_b0653f25, styles.r_19e980a1);
+
+
+          return (
+            <div
+              key={r.user.id}
+              className={cn(cx(styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_68f2db62, styles.r_39b2e003, styles.r_8e63407b),
+
+              podiumClass
+              )}>
+
+                <div className={styles.r_3febee09}>{r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : '🥉'}</div>
+                <Avatar src={r.user.avatar} alt={r.user.name} size={48} ring />
+                <UserName user={r.user} className={styles.r_50d0d216} size="sm" />
+                <div className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_e83a7042, styles.r_399e11a5)}>{r.score} 活跃度</div>
+              </div>);
+
+        })}
+        </div>
+      }
+
+      <ul className={cx(styles.r_fa6acbf8, styles.r_6f8e581a)}>
+        {rest.map((r) =>
+        <li
+          key={r.user.id}
+          className={cn(cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_d139dd09, styles.r_1b2d54a3),
+
+          r.user.id === myUserId && styles.r_9ac94195
+          )}>
+
+            <span className={cx(styles.r_7ec10f86, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_e83a7042, styles.r_5f6a59f1)}>{r.rank}</span>
             <Avatar src={r.user.avatar} alt={r.user.name} size={32} />
             <UserName user={r.user} size="sm" />
-            <span className="ml-auto text-sm font-semibold text-ink-800">{r.score}</span>
+            <span className={cx(styles.r_fb56d9cf, styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>{r.score}</span>
           </li>
-        ))}
+        )}
       </ul>
-    </div>
-  );
+    </div>);
+
 }

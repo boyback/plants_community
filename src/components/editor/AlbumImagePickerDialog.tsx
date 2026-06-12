@@ -4,9 +4,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { Dialog } from '@/components/ui/Dialog';
 import { Icon } from '@/components/ui/Icon';
 import { Input } from '@/components/ui/Input';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import { toast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
+import styles from './AlbumImagePickerDialog.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 type AlbumImage = {
   id: string;
@@ -38,7 +42,7 @@ export function AlbumImagePickerDialog({
   open,
   mode,
   onClose,
-  onConfirm,
+  onConfirm
 }: AlbumImagePickerDialogProps) {
   const [albums, setAlbums] = useState<AlbumItem[]>([]);
   const [activeAlbumId, setActiveAlbumId] = useState('');
@@ -56,7 +60,7 @@ export function AlbumImagePickerDialog({
   const loadAlbums = async () => {
     setLoading(true);
     try {
-      const data = await api.get<{ items: AlbumItem[] }>('/api/albums/mine');
+      const data = await api.get<{items: AlbumItem[];}>('/api/albums/mine');
       setAlbums(data.items);
       setActiveAlbumId((current) => current || data.items[0]?.id || '');
     } catch (error) {
@@ -88,113 +92,113 @@ export function AlbumImagePickerDialog({
       title={mode === 'cover' ? '从我的晒图选择封面' : '从我的晒图选择图片'}
       maxWidth="xl"
       actions={
-        <>
-          <button type="button" className="btn-outline flex-1 justify-center" onClick={onClose}>
+      <>
+          <button type="button" className={cx(styles.r_36e579c0, styles.r_86843cf1)} onClick={onClose}>
             取消
           </button>
           <button
-            type="button"
-            className="btn-primary flex-1 justify-center"
-            disabled={selectedUrls.length === 0}
-            onClick={() => {
-              onConfirm(selectedUrls);
-              onClose();
-            }}
-          >
+          type="button"
+          className={cx(styles.r_36e579c0, styles.r_86843cf1)}
+          disabled={selectedUrls.length === 0}
+          onClick={() => {
+            onConfirm(selectedUrls);
+            onClose();
+          }}>
+
             {mode === 'cover' ? '设为封面' : `插入 ${selectedUrls.length} 张`}
           </button>
         </>
-      }
-    >
-      <div className="grid min-h-[420px] gap-4 md:grid-cols-[190px_minmax(0,1fr)]">
-        <aside className="min-h-0 rounded-lg border border-leaf-100 bg-leaf-50/40 p-2">
-          <div className="mb-2 flex items-center justify-between px-1 text-xs font-semibold text-ink-700">
+      }>
+
+      <div className={cx(styles.r_f3c543ad, styles.r_afc45e21, styles.r_0c3bc985, styles.r_be080d6f)}>
+        <aside className={cx(styles.r_fb7302e5, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_efb55408, styles.r_7660b450)}>
+          <div className={cx(styles.r_a77ed4d9, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_d8e0e382, styles.r_359090c2, styles.r_e83a7042, styles.r_eb6abb1f)}>
             <span>我的相册</span>
-            <span className="text-ink-400">{albums.length}</span>
+            <span className={styles.r_66a36c90}>{albums.length}</span>
           </div>
-          <div className="max-h-[360px] space-y-1 overflow-y-auto pr-1">
-            {albums.map((album) => (
-              <button
-                key={album.id}
-                type="button"
-                onClick={() => setActiveAlbumId(album.id)}
-                className={cn(
-                  'flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition',
-                  activeAlbum?.id === album.id ? 'bg-white text-leaf-800 shadow-sm' : 'text-ink-600 hover:bg-white/70',
-                )}
-              >
-                <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-md bg-white">
-                  {album.cover ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={album.cover} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <Icon name="image" size={15} className="text-leaf-500" />
-                  )}
+          <div className={cx(styles.r_d6c1b980, styles.r_da7c36cd, styles.r_92bf82f4, styles.r_eda95540)}>
+            {albums.map((album) =>
+            <button
+              key={album.id}
+              type="button"
+              onClick={() => setActiveAlbumId(album.id)}
+              className={cn(cx(styles.r_60fbb771, styles.r_6da6a3c3, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_5f22e64f, styles.r_d5eab218, styles.r_03b4dd7f, styles.r_2eba0d65, styles.r_56bf8ae8),
+
+              activeAlbum?.id === album.id ? cx(styles.r_5e10cdb8, styles.r_e7eab4cb, styles.r_438b2237) : cx(styles.r_02eb621e, styles.r_78541963)
+              )}>
+
+                <span className={cx(styles.r_f3c543ad, styles.r_e7a768f9, styles.r_ae2181c7, styles.r_012fbd12, styles.r_67d66567, styles.r_2cd02d11, styles.r_421ac2be, styles.r_5e10cdb8)}>
+                  {album.cover ?
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={album.cover} alt="" className={cx(styles.r_668b21aa, styles.r_6da6a3c3, styles.r_7d85d0c2)} /> :
+
+                <Icon name="image" size={15} className={styles.r_eb16169c} />
+                }
                 </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold">{album.title}</span>
-                  <span className="block text-xs text-ink-400">{album.imageCount} 张</span>
+                <span className={styles.r_7e0b7cdf}>
+                  <span className={cx(styles.r_0214b4b3, styles.r_f283ea9b, styles.r_fc7473ca, styles.r_e83a7042)}>{album.title}</span>
+                  <span className={cx(styles.r_0214b4b3, styles.r_359090c2, styles.r_66a36c90)}>{album.imageCount} 张</span>
                 </span>
               </button>
-            ))}
-            {!loading && albums.length === 0 && (
-              <div className="px-2 py-10 text-center text-xs text-ink-400">还没有晒图相册</div>
             )}
+            {!loading && albums.length === 0 &&
+            <div className={cx(styles.r_d5eab218, styles.r_1100bef6, styles.r_ca6bf630, styles.r_359090c2, styles.r_66a36c90)}>还没有晒图相册</div>
+            }
           </div>
         </aside>
 
-        <section className="min-w-0">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
+        <section className={styles.r_7e0b7cdf}>
+          <div className={cx(styles.r_1bb88326, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_77a2a20e)}>
             <Input
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               placeholder="搜索图片备注或 URL"
-              wrapperClassName="min-w-[220px] flex-1"
-            />
-            <div className="rounded-lg bg-leaf-50 px-3 py-2 text-xs text-ink-500">
+              wrapperClassName={cx(styles.r_cbc20887, styles.r_36e579c0)} />
+
+            <div className={cx(styles.r_5f22e64f, styles.r_7ebecbb6, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_7b89cd85)}>
               只显示你自己的晒图图片，帖子会保存图片 URL 快照
             </div>
           </div>
 
-          <div className="max-h-[360px] overflow-y-auto rounded-lg border border-leaf-100 p-2">
-            {loading ? (
-              <div className="grid h-52 place-items-center text-sm text-ink-400">加载中...</div>
-            ) : images.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          <div className={cx(styles.r_d6c1b980, styles.r_92bf82f4, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_7660b450)}>
+            {loading ?
+            <div className={cx(styles.r_f3c543ad, styles.r_9ce7ff7a, styles.r_67d66567, styles.r_fc7473ca, styles.r_66a36c90)}>加载中...</div> :
+            images.length > 0 ?
+            <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_77a2a20e, styles.r_ab1b20c2, styles.r_4558bce6)}>
                 {images.map((image) => {
-                  const selected = selectedUrls.includes(image.url);
-                  return (
-                    <button
-                      key={image.id}
-                      type="button"
-                      onClick={() => toggleUrl(image.url)}
-                      className={cn(
-                        'group relative aspect-square overflow-hidden rounded-lg border bg-leaf-50 text-left outline-none transition',
-                        selected ? 'border-leaf-500 ring-2 ring-leaf-100' : 'border-leaf-100 hover:border-leaf-300',
-                      )}
-                    >
+                const selected = selectedUrls.includes(image.url);
+                return (
+                  <button
+                    key={image.id}
+                    type="button"
+                    onClick={() => toggleUrl(image.url)}
+                    className={cn(cx(styles.r_64292b1c, styles.r_d89972fe, styles.r_b59cd297, styles.r_2cd02d11, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ebecbb6, styles.r_2eba0d65, styles.r_df37b1fd, styles.r_56bf8ae8),
+
+                    selected ? cx(styles.r_d3b27cd9, styles.r_16b1efa5, styles.r_52c47100) : cx(styles.r_88b684d2, styles.r_a5c39c39)
+                    )}>
+
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={image.url} alt={image.caption ?? ''} className="h-full w-full object-cover" />
+                      <img src={image.url} alt={image.caption ?? ''} className={cx(styles.r_668b21aa, styles.r_6da6a3c3, styles.r_7d85d0c2)} />
                       <span
-                        className={cn(
-                          'absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full border text-xs shadow-sm transition',
-                          selected
-                            ? 'border-leaf-500 bg-leaf-600 text-white'
-                            : 'border-white/80 bg-black/25 text-white group-hover:bg-leaf-600',
-                        )}
-                      >
+                      className={cn(cx(styles.r_da4dbfbc, styles.r_7b2d6393, styles.r_9a2db8f9, styles.r_f3c543ad, styles.r_f6fe9024, styles.r_7ec10f86, styles.r_67d66567, styles.r_ac204c10, styles.r_ca6bcd4b, styles.r_359090c2, styles.r_438b2237, styles.r_56bf8ae8),
+
+                      selected ? cx(styles.r_d3b27cd9, styles.r_6bceb016, styles.r_72a4c7cd) : cx(styles.r_4c40914e, styles.r_ded46938, styles.r_72a4c7cd, styles.r_3b4e6d3a)
+
+
+                      )}>
+
                         {selected ? <Icon name="check" size={13} /> : null}
                       </span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="grid h-52 place-items-center text-sm text-ink-400">当前相册没有可选图片</div>
-            )}
+                    </button>);
+
+              })}
+              </div> :
+
+            <div className={cx(styles.r_f3c543ad, styles.r_9ce7ff7a, styles.r_67d66567, styles.r_fc7473ca, styles.r_66a36c90)}>当前相册没有可选图片</div>
+            }
           </div>
         </section>
       </div>
-    </Dialog>
-  );
+    </Dialog>);
+
 }

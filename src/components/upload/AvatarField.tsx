@@ -7,6 +7,10 @@ import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
 import { CropAvatarDialog } from './CropAvatarDialog';
 import { toast } from '@/components/ui/Toast';
+import styles from './AvatarField.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface Props {
   value: string;
@@ -17,7 +21,7 @@ interface Props {
 }
 
 const ACCEPT =
-  'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif';
+'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif';
 
 /**
  * 头像专用上传组件
@@ -31,7 +35,7 @@ export function AvatarField({
   onChange,
   alt = '头像',
   size = 96,
-  className,
+  className
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -46,8 +50,8 @@ export function AvatarField({
     if (!file) return;
     // HEIC 浏览器不能本地展示;直接走「不裁剪」路径,直接上传
     const isHeic =
-      /\.(heic|heif)$/i.test(file.name) ||
-      /^image\/(heic|heif)$/.test(file.type);
+    /\.(heic|heif)$/i.test(file.name) ||
+    /^image\/(heic|heif)$/.test(file.type);
     if (isHeic) {
       const r = await upload(file, 'image');
       if (r?.url) {
@@ -63,13 +67,13 @@ export function AvatarField({
   };
 
   /** 裁剪确认 → 把 blob 包成 File 喂上传 */
-  const onCropConfirm = async (out: { blob: Blob; preview: string }) => {
+  const onCropConfirm = async (out: {blob: Blob;preview: string;}) => {
     if (cropSrc) URL.revokeObjectURL(cropSrc);
     setCropSrc(null);
 
     const ext = out.blob.type === 'image/gif' ? 'gif' : 'png';
     const file = new File([out.blob], `avatar_${Date.now()}.${ext}`, {
-      type: out.blob.type || 'image/png',
+      type: out.blob.type || 'image/png'
     });
     const r = await upload(file, 'image');
     URL.revokeObjectURL(out.preview);
@@ -92,19 +96,19 @@ export function AvatarField({
   };
 
   return (
-    <div className={cn('inline-block', className)}>
+    <div className={cn(styles.r_bb0c4bfc, className)}>
       <input
         ref={inputRef}
         type="file"
         accept={ACCEPT}
-        className="hidden"
+        className={styles.r_99d72c7f}
         disabled={busy}
         onChange={(e) => {
           const f = e.target.files?.[0];
           e.target.value = '';
           void onPickFile(f);
-        }}
-      />
+        }} />
+
 
       <button
         type="button"
@@ -116,66 +120,66 @@ export function AvatarField({
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
         disabled={busy}
-        className={cn(
-          'group relative grid place-items-center rounded-full transition-all',
-          dragOver && 'ring-4 ring-leaf-300',
-          busy && 'cursor-progress',
-          !busy && 'cursor-pointer hover:opacity-90'
+        className={cn(cx(styles.r_64292b1c, styles.r_d89972fe, styles.r_f3c543ad, styles.r_67d66567, styles.r_ac204c10, styles.r_0fe7d7d8),
+
+        dragOver && cx(styles.r_44559afb, styles.r_9b87abcd),
+        busy && styles.r_1dc351fa,
+        !busy && cx(styles.r_34516836, styles.r_961c6c3a)
         )}
         style={{ width: size, height: size }}
-        title="点击或拖拽更换头像"
-      >
-        <Avatar src={value || '/default-avatar.svg'} alt={alt} size={size} />
+        title="点击或拖拽更换头像">
+
+        <Avatar src={value || "/default-avatar.svg"} alt={alt} size={size} />
 
         <div
-          className={cn(
-            'pointer-events-none absolute inset-0 grid place-items-center rounded-full bg-black/40 text-white opacity-0 transition-opacity',
-            !busy && 'group-hover:opacity-100'
-          )}
-        >
-          <div className="flex flex-col items-center gap-1 text-[10px]">
+          className={cn(cx(styles.r_a4326536, styles.r_da4dbfbc, styles.r_7b7df044, styles.r_f3c543ad, styles.r_67d66567, styles.r_ac204c10, styles.r_fd9dca32, styles.r_72a4c7cd, styles.r_7065497e, styles.r_67d6184a),
+
+          !busy && styles.r_181f3d6c
+          )}>
+
+          <div className={cx(styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_1dc571a3)}>
             <Icon name="plus" size={20} />
             <span>更换头像</span>
           </div>
         </div>
 
-        {busy && (
-          <div className="absolute inset-0 grid place-items-center rounded-full bg-black/55 text-white">
-            <div className="flex flex-col items-center gap-1 text-[10px]">
-              <span className="text-sm font-semibold">
+        {busy &&
+        <div className={cx(styles.r_da4dbfbc, styles.r_7b7df044, styles.r_f3c543ad, styles.r_67d66567, styles.r_ac204c10, styles.r_f62eee65, styles.r_72a4c7cd)}>
+            <div className={cx(styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_1dc571a3)}>
+              <span className={cx(styles.r_fc7473ca, styles.r_e83a7042)}>
                 {Math.round(progress * 100)}%
               </span>
-              <span className="text-[10px] opacity-80">
+              <span className={cx(styles.r_1dc571a3, styles.r_714816ef)}>
                 {status === 'hashing' ? '校验中…' : '上传中…'}
               </span>
             </div>
           </div>
-        )}
+        }
       </button>
 
-      {(busy || error) && (
-        <div className="mt-2 flex items-center gap-2 text-[11px]">
-          {busy && (
-            <button
-              type="button"
-              onClick={abort}
-              className="text-rose-600 hover:underline"
-            >
+      {(busy || error) &&
+      <div className={cx(styles.r_50d0d216, styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_d058ca6d)}>
+          {busy &&
+        <button
+          type="button"
+          onClick={abort}
+          className={cx(styles.r_595fceba, styles.r_f673f4a7)}>
+
               取消
             </button>
-          )}
-          {error && <span className="text-rose-600">{error}</span>}
+        }
+          {error && <span className={styles.r_595fceba}>{error}</span>}
         </div>
-      )}
+      }
 
-      {cropSrc && (
-        <CropAvatarDialog
-          src={cropSrc}
-          isGif={cropIsGif}
-          onCancel={onCropCancel}
-          onConfirm={onCropConfirm}
-        />
-      )}
-    </div>
-  );
+      {cropSrc &&
+      <CropAvatarDialog
+        src={cropSrc}
+        isGif={cropIsGif}
+        onCancel={onCropCancel}
+        onConfirm={onCropConfirm} />
+
+      }
+    </div>);
+
 }

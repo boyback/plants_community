@@ -17,6 +17,10 @@
  */
 
 import Link from 'next/link';
+import styles from './AppDownloadCard.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 /**
  * 生成稳定的 25x25 模块矩阵(确定性,SSR/CSR 一致)
@@ -47,9 +51,9 @@ function buildModules(size = 25): boolean[][] {
 
   // 伪随机填充其它位置
   const rand = (r: number, c: number) => {
-    let h = (r * 73856093) ^ (c * 19349663) ^ 0xa3e1;
-    h = (h ^ (h >>> 13)) * 1274126177;
-    return ((h ^ (h >>> 16)) >>> 0) % 100;
+    let h = r * 73856093 ^ c * 19349663 ^ 0xa3e1;
+    h = (h ^ h >>> 13) * 1274126177;
+    return ((h ^ h >>> 16) >>> 0) % 100;
   };
 
   for (let r = 0; r < size; r++) {
@@ -75,33 +79,33 @@ const QR_SIZE = MODULES.length * MODULE_PX;
 
 export function AppDownloadCard() {
   return (
-    <div className="card p-4">
-      <div className="flex gap-3">
+    <div className={styles.r_8e63407b}>
+      <div className={cx(styles.r_60fbb771, styles.r_1004c0c3)}>
         {/* 左:二维码 */}
-        <div className="grid h-[120px] w-[120px] shrink-0 place-items-center rounded-none bg-white p-1 ring-1 ring-leaf-100/60">
+        <div className={cx(styles.r_f3c543ad, styles.r_afd5c303, styles.r_c1ca66f1, styles.r_012fbd12, styles.r_67d66567, styles.r_0c5e9137, styles.r_5e10cdb8, styles.r_eb6a3cef, styles.r_3daca9af, styles.r_19b179a6)}>
           <svg
             viewBox={`0 0 ${QR_SIZE} ${QR_SIZE}`}
-            className="h-full w-full"
+            className={cx(styles.r_668b21aa, styles.r_6da6a3c3)}
             shapeRendering="crispEdges"
-            aria-label="肉友社 APP 下载二维码"
-          >
+            aria-label="肉友社 APP 下载二维码">
+
             {/* 白底 */}
             <rect width={QR_SIZE} height={QR_SIZE} fill="#ffffff" />
 
             {/* 模块 */}
             {MODULES.flatMap((row, r) =>
-              row.map((on, c) =>
-                on ? (
-                  <rect
-                    key={`${r}-${c}`}
-                    x={c * MODULE_PX}
-                    y={r * MODULE_PX}
-                    width={MODULE_PX}
-                    height={MODULE_PX}
-                    fill="#0f172a"
-                  />
-                ) : null,
-              ),
+            row.map((on, c) =>
+            on ?
+            <rect
+              key={`${r}-${c}`}
+              x={c * MODULE_PX}
+              y={r * MODULE_PX}
+              width={MODULE_PX}
+              height={MODULE_PX}
+              fill="#0f172a" /> :
+
+            null
+            )
             )}
 
             {/* 中心 logo 圆底 + 叶子 emoji 替身 */}
@@ -114,27 +118,27 @@ export function AppDownloadCard() {
                 rx={6}
                 fill="#ffffff"
                 stroke="#16a34a"
-                strokeWidth={1.5}
-              />
+                strokeWidth={1.5} />
+
               {/* 简化叶子图标 */}
               <path
                 d="M -7 4 C -7 -6, 3 -10, 8 -7 C 8 3, -2 9, -7 4 Z"
-                fill="#16a34a"
-              />
+                fill="#16a34a" />
+
               <path
                 d="M -7 4 L 6 -8"
                 stroke="#0f5132"
                 strokeWidth={0.8}
-                strokeLinecap="round"
-              />
+                strokeLinecap="round" />
+
             </g>
           </svg>
         </div>
 
         {/* 右:标题 + 描述 */}
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="text-sm font-semibold text-ink-800">🌱 肉友社 APP</div>
-          <div className="text-[11px] leading-5 text-leaf-700/70">
+        <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0, styles.r_da7c36cd)}>
+          <div className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>🌱 肉友社 APP</div>
+          <div className={cx(styles.r_d058ca6d, styles.r_7054e276, styles.r_69335b95)}>
             扫码下载,随时记录你的多肉时光
             <br />
             离线相册 · 浇水提醒 · 比网页更顺手
@@ -143,15 +147,15 @@ export function AppDownloadCard() {
       </div>
 
       {/* 底部:用户协议 / 隐私政策(纯文字链) */}
-      <div className="mt-3 flex items-center justify-center gap-3 text-[11px] text-leaf-700/70">
-        <Link href="/terms" className="hover:text-leaf-700 hover:underline">
+      <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_3960ffc2, styles.r_86843cf1, styles.r_1004c0c3, styles.r_d058ca6d, styles.r_69335b95)}>
+        <Link href="/terms" className={cx(styles.r_9825203a, styles.r_f673f4a7)}>
           用户协议
         </Link>
-        <span className="text-leaf-700/30">·</span>
-        <Link href="/privacy" className="hover:text-leaf-700 hover:underline">
+        <span className={styles.r_17825598}>·</span>
+        <Link href="/privacy" className={cx(styles.r_9825203a, styles.r_f673f4a7)}>
           隐私政策
         </Link>
       </div>
-    </div>
-  );
+    </div>);
+
 }

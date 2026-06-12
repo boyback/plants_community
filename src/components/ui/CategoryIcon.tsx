@@ -2,6 +2,10 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import styles from './CategoryIcon.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface CategoryIconProps {
   icon: string;
@@ -11,15 +15,15 @@ interface CategoryIconProps {
 }
 
 const sizeMap = {
-  sm: 'h-4 w-4 text-xs',
-  md: 'h-5 w-5 text-sm',
-  lg: 'h-6 w-6 text-base',
+  sm: cx(styles.r_11e59c6d, styles.r_dc7972eb, styles.r_359090c2),
+  md: cx(styles.r_cd0d9c51, styles.r_72470489, styles.r_fc7473ca),
+  lg: cx(styles.r_f6fe9024, styles.r_7ec10f86, styles.r_4ee73492)
 };
 
 const imgSizeMap = {
-  sm: 'h-4 w-4',
-  md: 'h-5 w-5',
-  lg: 'h-6 w-6',
+  sm: cx(styles.r_11e59c6d, styles.r_dc7972eb),
+  md: cx(styles.r_cd0d9c51, styles.r_72470489),
+  lg: cx(styles.r_f6fe9024, styles.r_7ec10f86)
 };
 
 /**
@@ -38,14 +42,14 @@ export function CategoryIcon({ icon, name, size = 'md', className }: CategoryIco
       <img
         src={icon}
         alt={name}
-        className={cn('shrink-0 rounded object-cover', imgSizeMap[size], className)}
-        onError={() => setImgError(true)}
-      />
-    );
+        className={cn(cx(styles.r_012fbd12, styles.r_07389a77, styles.r_7d85d0c2), imgSizeMap[size], className)}
+        onError={() => setImgError(true)} />);
+
+
   }
 
   if (icon && !isImageUrl) {
-    return <span className={cn('shrink-0', sizeMap[size], className)}>{icon}</span>;
+    return <span className={cn(styles.r_012fbd12, sizeMap[size], className)}>{icon}</span>;
   }
 
   return null;
@@ -58,12 +62,12 @@ export function CategoryIconName({
   icon,
   name,
   size = 'md',
-  className,
-}: CategoryIconProps & { className?: string }) {
+  className
+}: CategoryIconProps & {className?: string;}) {
   return (
-    <span className={cn('inline-flex items-center gap-1.5', className)}>
+    <span className={cn(cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_58284b4e), className)}>
       <CategoryIcon icon={icon} name={name} size={size} />
-      <span className="truncate">{name}</span>
-    </span>
-  );
+      <span className={styles.r_f283ea9b}>{name}</span>
+    </span>);
+
 }

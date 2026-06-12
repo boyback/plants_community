@@ -19,14 +19,18 @@ import Link from 'next/link';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import { cn } from '@/lib/utils';
+import styles from './SpeciesRatingPanel.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface RaterItem {
   id: string;
   score: number;
   createdAt: string;
-  user: { id: string; name: string; avatar: string; level: number };
+  user: {id: string;name: string;avatar: string;level: number;};
 }
 interface RatersResp {
   avg: number;
@@ -37,11 +41,11 @@ interface RatersResp {
 
 export function SpeciesRatingPanel({
   speciesId,
-  fallbackAvg, // species.difficulty(没人打分时显示这个)
-}: {
-  speciesId: string;
-  fallbackAvg: number;
-}) {
+  fallbackAvg // species.difficulty(没人打分时显示这个)
+
+
+
+}: {speciesId: string;fallbackAvg: number;}) {
   const { user } = useAuth();
   const { t } = useI18n();
   const [data, setData] = useState<RatersResp | null>(null);
@@ -50,9 +54,9 @@ export function SpeciesRatingPanel({
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    api.get<RatersResp>(`/api/species/${speciesId}/raters?limit=10`)
-      .then(setData)
-      .catch(() => null);
+    api.get<RatersResp>(`/api/species/${speciesId}/raters?limit=10`).
+    then(setData).
+    catch(() => null);
   }, [speciesId]);
 
   const avg = data?.avg ?? fallbackAvg;
@@ -95,93 +99,93 @@ export function SpeciesRatingPanel({
   const display = hover ?? myScore ?? Math.round(avg);
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-baseline gap-3">
-        <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-bold text-amber-600">{avg.toFixed(1)}</span>
-          <span className="text-xs text-leaf-700/60">/ 5</span>
+    <div className={styles.r_6ed543e2}>
+      <div className={cx(styles.r_60fbb771, styles.r_b7012bb2, styles.r_1004c0c3)}>
+        <div className={cx(styles.r_60fbb771, styles.r_b7012bb2, styles.r_44ee8ba0)}>
+          <span className={cx(styles.r_751fb0d1, styles.r_69450ef1, styles.r_47d65ecb)}>{avg.toFixed(1)}</span>
+          <span className={cx(styles.r_359090c2, styles.r_6c4cc49e)}>/ 5</span>
         </div>
-        <div className="text-xs text-leaf-700/70">
+        <div className={cx(styles.r_359090c2, styles.r_69335b95)}>
           {count > 0 ? `${count} 人参与打分` : '还没有人打分'}
         </div>
       </div>
 
       {/* 1-5 星交互 */}
-      <div className="flex items-center gap-3">
+      <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3)}>
         <div
-          className="flex items-center gap-1"
-          onMouseLeave={() => setHover(null)}
-        >
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              type="button"
-              disabled={busy}
-              onMouseEnter={() => setHover(n)}
-              onClick={() => submit(n)}
-              className={cn(
-                'text-2xl transition-transform hover:scale-110',
-                n <= display ? 'text-amber-500' : 'text-leaf-200',
-                busy && 'opacity-50'
-              )}
-              title={`${n} 星`}
-            >
+          className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_44ee8ba0)}
+          onMouseLeave={() => setHover(null)}>
+
+          {[1, 2, 3, 4, 5].map((n) =>
+          <button
+            key={n}
+            type="button"
+            disabled={busy}
+            onMouseEnter={() => setHover(n)}
+            onClick={() => submit(n)}
+            className={cn(cx(styles.r_3febee09, styles.r_eadef238, styles.r_7abf679f),
+
+            n <= display ? styles.r_1dd48761 : styles.r_47eb8768,
+            busy && styles.r_0b8c506a
+            )}
+            title={`${n} 星`}>
+
               {n <= display ? '★' : '☆'}
             </button>
-          ))}
+          )}
         </div>
-        {myScore !== null && (
-          <button
-            type="button"
-            onClick={remove}
-            disabled={busy}
-            className="text-[11px] text-leaf-700/70 underline hover:text-rose-600"
-          >
+        {myScore !== null &&
+        <button
+          type="button"
+          onClick={remove}
+          disabled={busy}
+          className={cx(styles.r_d058ca6d, styles.r_69335b95, styles.r_c82b67c8, styles.r_744ff542)}>
+
             撤回我的打分
           </button>
-        )}
+        }
       </div>
 
-      {!user && (
-        <div className="text-[11px] text-leaf-700/60">
-          <Link href={`/login`} className="text-leaf-700 underline">登录</Link> 后参与打分
+      {!user &&
+      <div className={cx(styles.r_d058ca6d, styles.r_6c4cc49e)}>
+          <Link href={`/login`} className={cx(styles.r_5f6a59f1, styles.r_c82b67c8)}>登录</Link> 后参与打分
         </div>
-      )}
-      {myScore !== null && (
-        <div className="text-[11px] text-leaf-700/70">
-          你打了 <span className="text-amber-600 font-medium">{myScore}</span> 星
+      }
+      {myScore !== null &&
+      <div className={cx(styles.r_d058ca6d, styles.r_69335b95)}>
+          你打了 <span className={cx(styles.r_47d65ecb, styles.r_2689f395)}>{myScore}</span> 星
         </div>
-      )}
-      {err && (
-        <div className="rounded-lg bg-rose-50 px-2 py-1 text-[11px] text-rose-700">{err}</div>
-      )}
+      }
+      {err &&
+      <div className={cx(styles.r_5f22e64f, styles.r_0759a0f1, styles.r_d5eab218, styles.r_660d2eff, styles.r_d058ca6d, styles.r_b54428d1)}>{err}</div>
+      }
 
       {/* 头像墙 */}
-      {data && data.items.length > 0 && (
-        <div className="border-t border-leaf-100 pt-3">
-          <div className="mb-2 text-[11px] text-leaf-700/70">
+      {data && data.items.length > 0 &&
+      <div className={cx(styles.r_b950dda2, styles.r_88b684d2, styles.r_ce335a8e)}>
+          <div className={cx(styles.r_a77ed4d9, styles.r_d058ca6d, styles.r_69335b95)}>
             最近 {data.items.length} 位打分肉友
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {data.items.map((r) => (
-              <Link
-                key={r.id}
-                href={`/user/${r.user.id}`}
-                title={`${r.user.name} · ${r.score} 星`}
-                className="group relative"
-              >
+          <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_58284b4e)}>
+            {data.items.map((r) =>
+          <Link
+            key={r.id}
+            href={`/user/${r.user.id}`}
+            title={`${r.user.name} · ${r.score} 星`}
+            className={cx(styles.r_64292b1c, styles.r_d89972fe)}>
+
                 <Avatar src={r.user.avatar} alt={r.user.name} size={32} />
                 <span
-                  className="absolute -bottom-1 -right-1 rounded-full bg-amber-500 px-1 text-[8px] font-bold text-white"
-                  style={{ minWidth: 14, textAlign: 'center' }}
-                >
+              className={cx(styles.r_da4dbfbc, styles.r_1b60f5e1, styles.r_c9e05721, styles.r_ac204c10, styles.r_931bc423, styles.r_d8e0e382, styles.r_05ef0977, styles.r_69450ef1, styles.r_72a4c7cd)}
+              style={{ minWidth: 14, textAlign: 'center' }}>
+
                   {r.score}
                 </span>
               </Link>
-            ))}
+          )}
           </div>
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }

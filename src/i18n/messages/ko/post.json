@@ -2,6 +2,7 @@
   "post": {
     "types": {
       "rich": "긴 글",
+      "image": "사진 글",
       "short": "짧은 글",
       "vote": "투표",
       "video": "동영상",
@@ -11,6 +12,7 @@
     },
     "typeDesc": {
       "rich": "튜토리얼·장문에 적합 (PC & 앱)",
+      "image": "사진만 올려 빠르게 공유",
       "short": "가볍게 공유 (PC & 앱)",
       "vote": "투표 개설 (PC 전용)",
       "video": "동영상으로 기록 (PC & 앱)",
@@ -19,7 +21,8 @@
       "journal": "식물 성장 단계를 시간순으로 기록"
     },
     "typeBadge": {
-      "rich": "리치텍스트",
+      "rich": "긴 글",
+      "image": "사진 글",
       "short": "짧은 글",
       "vote": "투표",
       "video": "동영상",
@@ -28,7 +31,8 @@
       "journal": "성장 일지 게시"
     },
     "typeShort": {
-      "rich": "리치",
+      "rich": "긴 글",
+      "image": "사진",
       "short": "짧은",
       "vote": "투표",
       "video": "동영상",

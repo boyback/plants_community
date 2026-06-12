@@ -17,34 +17,38 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Shell } from '@/components/layout/Shell';
 import { prisma } from '@/lib/db';
-import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
+import { REVIEW_FILTER_ENABLED } from "@/lib/feature-flags";
 import { Avatar } from '@/components/ui/Avatar';
 import { Highlight } from '@/components/ui/Highlight';
+import styles from './page.module.scss';
+import { cx } from '@/lib/style-utils';
 
-export const dynamic = 'force-dynamic';
+
+
+export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 20;
 
 export async function generateMetadata({
-  params,
-}: {
-  params: { name: string };
-}): Promise<Metadata> {
+  params
+
+
+}: {params: {name: string;};}): Promise<Metadata> {
   const name = decodeURIComponent(params.name || '').trim();
   if (!name) return { title: '话题 · 肉友社' };
   return {
     title: `#${name} · 话题 · 肉友社`,
-    description: `查看「${name}」相关的多肉帖子、养护经验与精彩瞬间`,
+    description: `查看「${name}」相关的多肉帖子、养护经验与精彩瞬间`
   };
 }
 
 export default async function TopicPage({
   params,
-  searchParams,
-}: {
-  params: { name: string };
-  searchParams: { page?: string };
-}) {
+  searchParams
+
+
+
+}: {params: {name: string;};searchParams: {page?: string;};}) {
   const name = decodeURIComponent(params.name || '').trim();
   if (!name) notFound();
 
@@ -63,40 +67,40 @@ export default async function TopicPage({
     deleted: false,
     ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' as const } : {}),
     OR: [
-      // tags 列存的是 JSON.stringify 的数组,精准匹配 "<tag>"
-      { tags: { contains: `"${name}"` } },
-      { title: { contains: name } },
-      { content: { contains: name } },
-    ],
+    // tags 列存的是 JSON.stringify 的数组,精准匹配 "<tag>"
+    { tags: { contains: `"${name}"` } },
+    { title: { contains: name } },
+    { content: { contains: name } }]
+
   };
 
   const [posts, total, matchedSpecies] = await Promise.all([
-    prisma.post.findMany({
-      where,
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        cover: true,
-        createdAt: true,
-        author: { select: { id: true, name: true, handle: true, avatar: true } },
-        _count: { select: { likes: true, comments: true } },
-        pins: {
-          select: { id: true, scope: true, targetId: true, orderIdx: true, pinnedAt: true },
-          orderBy: [{ orderIdx: 'asc' }, { pinnedAt: 'desc' }],
-        },
-      },
-      orderBy: [{ hotScore: 'desc' }, { createdAt: 'desc' }],
-      skip,
-      take: PAGE_SIZE,
-    }),
-    prisma.post.count({ where }),
-    // 顺便看是否匹配到一个同名品种,匹配上就在顶部加跳转
-    prisma.species.findFirst({
-      where: { name },
-      include: { genus: { include: { board: true } } },
-    }),
-  ]);
+  prisma.post.findMany({
+    where,
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      cover: true,
+      createdAt: true,
+      author: { select: { id: true, name: true, handle: true, avatar: true } },
+      _count: { select: { likes: true, comments: true } },
+      pins: {
+        select: { id: true, scope: true, targetId: true, orderIdx: true, pinnedAt: true },
+        orderBy: [{ orderIdx: 'asc' }, { pinnedAt: 'desc' }]
+      }
+    },
+    orderBy: [{ hotScore: 'desc' }, { createdAt: 'desc' }],
+    skip,
+    take: PAGE_SIZE
+  }),
+  prisma.post.count({ where }),
+  // 顺便看是否匹配到一个同名品种,匹配上就在顶部加跳转
+  prisma.species.findFirst({
+    where: { name },
+    include: { genus: { include: { board: true } } }
+  })]
+  );
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const sortedPosts = sortTopicPosts(posts, name);
@@ -104,81 +108,81 @@ export default async function TopicPage({
   return (
     <Shell>
       {/* 话题头 */}
-      <div className="mb-5">
-        <div className="text-[11px] text-leaf-700/60">
-          <Link href="/" className="hover:text-leaf-700">首页</Link>
-          <span className="mx-1.5">/</span>
+      <div className={styles.r_fb88ccaa}>
+        <div className={cx(styles.r_d058ca6d, styles.r_6c4cc49e)}>
+          <Link href="/" className={styles.r_9825203a}>首页</Link>
+          <span className={styles.r_418ac28d}>/</span>
           <span>话题</span>
         </div>
-        <h1 className="mt-1 text-2xl font-bold text-ink-800">
-          <span className="text-leaf-700">#</span>
+        <h1 className={cx(styles.r_b6b02c0e, styles.r_3febee09, styles.r_69450ef1, styles.r_399e11a5)}>
+          <span className={styles.r_5f6a59f1}>#</span>
           {name}
         </h1>
-        <p className="mt-1 text-sm text-leaf-700/70">
+        <p className={cx(styles.r_b6b02c0e, styles.r_fc7473ca, styles.r_69335b95)}>
           共 {total} 条与「{name}」相关的帖子
         </p>
       </div>
 
       {/* 如果该话题恰好是一个品种 → 给一个跳到图鉴的入口卡 */}
-      {matchedSpecies && (
-        <Link
-          href={`/board/${matchedSpecies.genus.board?.slug ?? ''}/${matchedSpecies.genus.slug}/${matchedSpecies.slug}`}
-          className="card-hoverable mb-5 flex items-center gap-3 p-3"
-        >
-          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-leaf-50">
+      {matchedSpecies &&
+      <Link
+        href={`/board/${matchedSpecies.genus.board?.slug ?? ''}/${matchedSpecies.genus.slug}/${matchedSpecies.slug}`}
+        className={cx(styles.r_fb88ccaa, styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_eb6e8b88)}>
+
+          <div className={cx(styles.r_d89972fe, styles.r_acaee621, styles.r_baceed34, styles.r_012fbd12, styles.r_2cd02d11, styles.r_421ac2be, styles.r_7ebecbb6)}>
             <Image
-              src={matchedSpecies.cover}
-              alt={matchedSpecies.name}
-              fill
-              className="object-cover"
-              unoptimized
-            />
+            src={matchedSpecies.cover}
+            alt={matchedSpecies.name}
+            fill
+            className={styles.r_7d85d0c2}
+            unoptimized />
+
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-semibold text-ink-800">
+          <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
+            <div className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>
               🌱 {matchedSpecies.name}
             </div>
-            {matchedSpecies.latinName && (
-              <div className="truncate text-[11px] italic text-leaf-700/60">
+            {matchedSpecies.latinName &&
+          <div className={cx(styles.r_f283ea9b, styles.r_d058ca6d, styles.r_90665ca6, styles.r_6c4cc49e)}>
                 {matchedSpecies.latinName}
               </div>
-            )}
-            <div className="mt-0.5 text-[11px] text-leaf-700/60">
+          }
+            <div className={cx(styles.r_15e1b1f4, styles.r_d058ca6d, styles.r_6c4cc49e)}>
               点击查看品种图鉴 →
             </div>
           </div>
         </Link>
-      )}
+      }
 
       {/* 帖子列表 */}
-      {sortedPosts.length === 0 ? (
-        <div className="card p-12 text-center text-sm text-leaf-700/60">
+      {sortedPosts.length === 0 ?
+      <div className={cx(styles.r_16a5872e, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>
           还没有「{name}」相关的帖子,快来发第一篇 🌱
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {sortedPosts.map((p) => (
-            <Link
-              key={p.id}
-              href={`/post/${p.id}`}
-              className="card-hoverable group flex gap-3 p-3"
-            >
-              {p.cover && (
-                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-leaf-50">
-                  <Image src={p.cover} alt={p.title} fill className="object-cover" unoptimized />
+        </div> :
+
+      <div className={styles.r_6ed543e2}>
+          {sortedPosts.map((p) =>
+        <Link
+          key={p.id}
+          href={`/post/${p.id}`}
+          className={cx(styles.r_64292b1c, styles.r_60fbb771, styles.r_1004c0c3, styles.r_eb6e8b88)}>
+
+              {p.cover &&
+          <div className={cx(styles.r_d89972fe, styles.r_0a769880, styles.r_ed831a4d, styles.r_012fbd12, styles.r_2cd02d11, styles.r_421ac2be, styles.r_7ebecbb6)}>
+                  <Image src={p.cover} alt={p.title} fill className={styles.r_7d85d0c2} unoptimized />
                 </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <h3 className="line-clamp-1 text-sm font-semibold text-ink-800 group-hover:text-leaf-700">
+          }
+              <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
+                <h3 className={cx(styles.r_f50e2015, styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5, styles.r_0eb80431)}>
                   <Highlight text={p.title} q={name} />
                 </h3>
-                <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-ink-700/70">
+                <p className={cx(styles.r_b6b02c0e, styles.r_054cb4e3, styles.r_69cdf25a, styles.r_6b189c6e, styles.r_e3622902)}>
                   <Highlight
-                    text={(p.content || '').replace(/<[^>]+>/g, '').slice(0, 120)}
-                    q={name}
-                  />
+                text={(p.content || '').replace(/<[^>]+>/g, '').slice(0, 120)}
+                q={name} />
+
                 </p>
-                <div className="mt-1.5 flex items-center gap-2 text-[11px] text-leaf-700/60">
+                <div className={cx(styles.r_aac62f0e, styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_d058ca6d, styles.r_6c4cc49e)}>
                   <Avatar src={p.author.avatar} alt={p.author.name} size={16} />
                   <span>{p.author.name}</span>
                   <span>·</span>
@@ -190,36 +194,36 @@ export default async function TopicPage({
                 </div>
               </div>
             </Link>
-          ))}
+        )}
         </div>
-      )}
+      }
 
       {/* 分页 */}
-      {totalPages > 1 && (
-        <nav className="mt-6 flex items-center justify-center gap-2 text-sm">
-          {page > 1 && (
-            <Link
-              href={`/topic/${encodeURIComponent(name)}?page=${page - 1}`}
-              className="rounded-md border border-leaf-200 px-3 py-1.5 text-leaf-700 hover:bg-leaf-50"
-            >
+      {totalPages > 1 &&
+      <nav className={cx(styles.r_31f25533, styles.r_60fbb771, styles.r_3960ffc2, styles.r_86843cf1, styles.r_77a2a20e, styles.r_fc7473ca)}>
+          {page > 1 &&
+        <Link
+          href={`/topic/${encodeURIComponent(name)}?page=${page - 1}`}
+          className={cx(styles.r_421ac2be, styles.r_ca6bcd4b, styles.r_691861bc, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_5f6a59f1, styles.r_5756b7b4)}>
+
               ← 上一页
             </Link>
-          )}
-          <span className="text-leaf-700/70">
+        }
+          <span className={styles.r_69335b95}>
             {page} / {totalPages}
           </span>
-          {page < totalPages && (
-            <Link
-              href={`/topic/${encodeURIComponent(name)}?page=${page + 1}`}
-              className="rounded-md border border-leaf-200 px-3 py-1.5 text-leaf-700 hover:bg-leaf-50"
-            >
+          {page < totalPages &&
+        <Link
+          href={`/topic/${encodeURIComponent(name)}?page=${page + 1}`}
+          className={cx(styles.r_421ac2be, styles.r_ca6bcd4b, styles.r_691861bc, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_5f6a59f1, styles.r_5756b7b4)}>
+
               下一页 →
             </Link>
-          )}
+        }
         </nav>
-      )}
-    </Shell>
-  );
+      }
+    </Shell>);
+
 }
 
 function fmtDate(d: Date): string {
@@ -229,10 +233,10 @@ function fmtDate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-function sortTopicPosts<T extends { createdAt: Date; pins?: Array<{ scope: string; targetId: string; orderIdx: number; pinnedAt: Date }> }>(
-  posts: T[],
-  topicName: string
-): T[] {
+function sortTopicPosts<T extends {createdAt: Date;pins?: Array<{scope: string;targetId: string;orderIdx: number;pinnedAt: Date;}>;}>(
+posts: T[],
+topicName: string)
+: T[] {
   return [...posts].sort((a, b) => {
     const ap = bestTopicPin(a, topicName);
     const bp = bestTopicPin(b, topicName);
@@ -248,14 +252,14 @@ function sortTopicPosts<T extends { createdAt: Date; pins?: Array<{ scope: strin
   });
 }
 
-function bestTopicPin<T extends { pins?: Array<{ scope: string; targetId: string; orderIdx: number; pinnedAt: Date }> }>(
-  post: T,
-  topicName: string
-) {
-  return post.pins
-    ?.filter((pin) => pin.scope === 'topic' && pin.targetId === topicName)
-    .sort((a, b) => {
-      if (a.orderIdx !== b.orderIdx) return a.orderIdx - b.orderIdx;
-      return b.pinnedAt.getTime() - a.pinnedAt.getTime();
-    })[0];
+function bestTopicPin<T extends {pins?: Array<{scope: string;targetId: string;orderIdx: number;pinnedAt: Date;}>;}>(
+post: T,
+topicName: string)
+{
+  return post.pins?.
+  filter((pin) => pin.scope === 'topic' && pin.targetId === topicName).
+  sort((a, b) => {
+    if (a.orderIdx !== b.orderIdx) return a.orderIdx - b.orderIdx;
+    return b.pinnedAt.getTime() - a.pinnedAt.getTime();
+  })[0];
 }

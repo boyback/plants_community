@@ -1,4 +1,4 @@
-export type PostType = 'rich' | 'short' | 'vote' | 'video' | 'event' | 'help' | 'journal';
+export type PostType = 'rich' | 'image' | 'short' | 'vote' | 'video' | 'event' | 'help' | 'journal';
 
 /** 成长日记日志阶段(与 prisma JournalStage 对齐) */
 export type JournalStage =
@@ -323,7 +323,7 @@ export interface BannerItem {
   title: string;
   image: string;
   link: string;
-  tint: string; // tailwind color class for overlay
+  tint: string; // overlay tone class
   /** 这张图停留毫秒数,0 = 用全站默认(3000ms) */
   durationMs?: number;
 }

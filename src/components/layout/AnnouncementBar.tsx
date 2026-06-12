@@ -12,8 +12,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/client-api';
+import { api } from "@/lib/client-api";
 import { cn } from '@/lib/utils';
+import styles from './AnnouncementBar.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface Announcement {
   id: string;
@@ -38,22 +42,22 @@ function dismiss(id: string) {
   } catch {}
 }
 
-const STYLE: Record<string, { bg: string; text: string; icon: string }> = {
+const STYLE: Record<string, {bg: string;text: string;icon: string;}> = {
   info: {
-    bg: 'bg-blue-50 border-blue-200',
-    text: 'text-blue-900',
-    icon: 'ℹ️',
+    bg: cx(styles.r_3cc00fe7, styles.r_cf740793),
+    text: styles.r_8f96417c,
+    icon: 'ℹ️'
   },
   warning: {
-    bg: 'bg-amber-50 border-amber-200',
-    text: 'text-amber-900',
-    icon: '⚠️',
+    bg: cx(styles.r_67d2289d, styles.r_97f24a4b),
+    text: styles.r_67e74965,
+    icon: '⚠️'
   },
   important: {
-    bg: 'bg-rose-50 border-rose-200',
-    text: 'text-rose-900',
-    icon: '📢',
-  },
+    bg: cx(styles.r_0759a0f1, styles.r_959f4a9f),
+    text: styles.r_7cb2b271,
+    icon: '📢'
+  }
 };
 
 export function AnnouncementBar() {
@@ -62,14 +66,14 @@ export function AnnouncementBar() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    api
-      .get<Announcement[]>('/api/announcements/active')
-      .then((arr) => {
-        const filtered = (arr || []).filter((a) => !isDismissed(a.id));
-        setList(filtered);
-      })
-      .catch(() => null)
-      .finally(() => setLoaded(true));
+    api.
+    get<Announcement[]>('/api/announcements/active').
+    then((arr) => {
+      const filtered = (arr || []).filter((a) => !isDismissed(a.id));
+      setList(filtered);
+    }).
+    catch(() => null).
+    finally(() => setLoaded(true));
   }, []);
 
   if (!loaded || list.length === 0) return null;
@@ -88,35 +92,35 @@ export function AnnouncementBar() {
   const onNext = () => setIdx((i) => (i + 1) % list.length);
 
   return (
-    <div className={cn('border-b', style.bg)}>
-      <div className="mx-auto flex max-w-[1280px] items-center gap-3 px-4 py-2 text-xs lg:px-6">
-        <span className="shrink-0 text-base leading-none">{style.icon}</span>
-        <div className={cn('min-w-0 flex-1 truncate', style.text)}>
-          <b className="mr-1.5">{cur.title}</b>
-          <span className="opacity-80">{cur.content}</span>
+    <div className={cn(styles.r_65fdbade, style.bg)}>
+      <div className={cx(styles.r_0e12dc7d, styles.r_60fbb771, styles.r_da310242, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_f0faeb26, styles.r_03b4dd7f, styles.r_359090c2, styles.r_2499ab8d)}>
+        <span className={cx(styles.r_012fbd12, styles.r_4ee73492, styles.r_c2385a46)}>{style.icon}</span>
+        <div className={cn(cx(styles.r_7e0b7cdf, styles.r_36e579c0, styles.r_f283ea9b), style.text)}>
+          <b className={styles.r_82cc6c65}>{cur.title}</b>
+          <span className={styles.r_714816ef}>{cur.content}</span>
         </div>
-        {list.length > 1 && (
-          <button
-            type="button"
-            onClick={onNext}
-            className={cn(
-              'shrink-0 rounded-full px-2 py-0.5 text-[10px] hover:bg-white/40',
-              style.text,
-            )}
-            title="下一条"
-          >
+        {list.length > 1 &&
+        <button
+          type="button"
+          onClick={onNext}
+          className={cn(cx(styles.r_012fbd12, styles.r_ac204c10, styles.r_d5eab218, styles.r_465609a2, styles.r_1dc571a3, styles.r_bf068a78),
+
+          style.text
+          )}
+          title="下一条">
+
             {idx + 1}/{list.length} →
           </button>
-        )}
+        }
         <button
           type="button"
           onClick={onDismiss}
-          className={cn('shrink-0 opacity-50 hover:opacity-100', style.text)}
-          title="关闭(24 小时不再显示这条)"
-        >
+          className={cn(cx(styles.r_012fbd12, styles.r_0b8c506a, styles.r_5da1d525), style.text)}
+          title="关闭(24 小时不再显示这条)">
+
           ✕
         </button>
       </div>
-    </div>
-  );
+    </div>);
+
 }

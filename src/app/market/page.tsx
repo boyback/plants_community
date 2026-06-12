@@ -2,18 +2,22 @@ import Link from 'next/link';
 import { Shell } from '@/components/layout/Shell';
 import { Icon } from '@/components/ui/Icon';
 import { MarketIndexClient } from './MarketIndexClient';
+import styles from './page.module.scss';
+import { cx } from '@/lib/style-utils';
 
-export const dynamic = 'force-dynamic';
+
+
+export const dynamic = "force-dynamic";
 
 export default function MarketPage() {
   return (
     <Shell withSidebar={false}>
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_240px]">
-        <div className="min-w-0">
+      <div className={cx(styles.r_f3c543ad, styles.r_d7c83398, styles.r_b39e60c3, styles.r_45a6528e)}>
+        <div className={styles.r_7e0b7cdf}>
           <MarketIndexClient />
         </div>
 
-        <aside className="space-y-3">
+        <aside className={styles.r_6ed543e2}>
           <SidebarLink href="/market/sell" icon="plus" tone="primary">
             我要出售
           </SidebarLink>
@@ -24,40 +28,40 @@ export default function MarketPage() {
             收货地址
           </SidebarLink>
 
-          <div className="rounded-xl border border-leaf-100 bg-leaf-50/50 p-3 text-[11px] leading-5 text-leaf-700/80">
-            <div className="mb-1 font-medium text-leaf-700">安全交易</div>
+          <div className={cx(styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_9ac94195, styles.r_eb6e8b88, styles.r_d058ca6d, styles.r_7054e276, styles.r_21d33c50)}>
+            <div className={cx(styles.r_65281709, styles.r_2689f395, styles.r_5f6a59f1)}>安全交易</div>
             支持 支付宝 / 微信 / 官方中介担保<br />
             纠纷可申请客服仲裁
           </div>
         </aside>
       </div>
-    </Shell>
-  );
+    </Shell>);
+
 }
 
 function SidebarLink({
   href,
   icon,
   tone = 'default',
-  children,
-}: {
-  href: string;
-  icon: 'plus' | 'package' | 'mail';
-  tone?: 'default' | 'primary';
-  children: React.ReactNode;
-}) {
+  children
+
+
+
+
+
+}: {href: string;icon: 'plus' | 'package' | 'mail';tone?: 'default' | 'primary';children: React.ReactNode;}) {
   return (
     <Link
       href={href}
       className={
-        tone === 'primary'
-          ? 'flex items-center gap-2 rounded-xl bg-leaf-500 px-4 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-leaf-600'
-          : 'flex items-center gap-2 rounded-xl border border-leaf-100 bg-white px-4 py-3 text-sm text-ink-800 transition-colors hover:border-leaf-300 hover:bg-leaf-50'
-      }
-    >
+      tone === 'primary' ? cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_a217b4ea, styles.r_45499621, styles.r_f0faeb26, styles.r_1b2d54a3, styles.r_fc7473ca, styles.r_2689f395, styles.r_72a4c7cd, styles.r_438b2237, styles.r_ceb69a6b, styles.r_24f5f8c9) : cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_f0faeb26, styles.r_1b2d54a3, styles.r_fc7473ca, styles.r_399e11a5, styles.r_ceb69a6b, styles.r_a5c39c39, styles.r_5756b7b4)
+
+
+      }>
+
       <Icon name={icon} size={16} />
       <span>{children}</span>
-      <span className="ml-auto text-xs opacity-50">→</span>
-    </Link>
-  );
+      <span className={cx(styles.r_fb56d9cf, styles.r_359090c2, styles.r_0b8c506a)}>→</span>
+    </Link>);
+
 }

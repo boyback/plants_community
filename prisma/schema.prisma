@@ -326,6 +326,7 @@ model SystemMenu {
 
 enum PostType {
   rich
+  image
   short
   vote
   video

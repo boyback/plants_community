@@ -2,20 +2,24 @@ import { notFound, redirect } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { prisma } from '@/lib/db';
 import { serializeUser, serializePost } from '@/lib/serializers';
-import { postInclude } from '@/lib/post-include';
+import { postInclude } from "@/lib/post-include";
 import { getCurrentUser } from '@/lib/auth';
 import { isVipActive } from '@/lib/vip';
 import { UserPageClient } from './UserPageClient';
+import styles from './page.module.scss';
+import { cx } from '@/lib/style-utils';
 
-export const dynamic = 'force-dynamic';
+
+
+export const dynamic = "force-dynamic";
 
 export default async function UserPage({
   params,
-  searchParams,
-}: {
-  params: { id: string };
-  searchParams?: { tab?: string };
-}) {
+  searchParams
+
+
+
+}: {params: {id: string;};searchParams?: {tab?: string;};}) {
   if (params.id === 'me') {
     const me = await getCurrentUser();
     if (!me) redirect('/login?redirect=/user/me');
@@ -27,104 +31,104 @@ export default async function UserPage({
     where: { id: params.id },
     include: {
       _count: { select: { posts: true, followers: true, following: true } },
-      badges: { include: { badge: true } },
-    },
+      badges: { include: { badge: true } }
+    }
   });
   if (!uRaw) notFound();
 
   const user = serializeUser(uRaw);
 
   const [postsRaw, likedPostsRaw, collectedPostsRaw, commentsRaw, marketProductsRaw] = await Promise.all([
-    prisma.post.findMany({
-      where: { authorId: user.id },
-      take: 20,
-      orderBy: { createdAt: 'desc' },
-      include: postInclude(),
-    }),
-    prisma.post.findMany({
-      where: { likes: { some: { userId: user.id } } },
-      take: 20,
-      orderBy: { createdAt: 'desc' },
-      include: postInclude(),
-    }),
-    prisma.post.findMany({
-      where: { collects: { some: { userId: user.id } } },
-      take: 20,
-      orderBy: { createdAt: 'desc' },
-      include: postInclude(),
-    }),
-    prisma.comment.findMany({
-      where: {
-        authorId: user.id,
+  prisma.post.findMany({
+    where: { authorId: user.id },
+    take: 20,
+    orderBy: { createdAt: 'desc' },
+    include: postInclude()
+  }),
+  prisma.post.findMany({
+    where: { likes: { some: { userId: user.id } } },
+    take: 20,
+    orderBy: { createdAt: 'desc' },
+    include: postInclude()
+  }),
+  prisma.post.findMany({
+    where: { collects: { some: { userId: user.id } } },
+    take: 20,
+    orderBy: { createdAt: 'desc' },
+    include: postInclude()
+  }),
+  prisma.comment.findMany({
+    where: {
+      authorId: user.id,
+      deleted: false,
+      post: {
         deleted: false,
-        post: {
-          deleted: false,
-          reviewStatus: 'published',
-        },
-      },
-      take: 80,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        content: true,
-        contentText: true,
-        likes: true,
-        createdAt: true,
-        post: {
-          select: {
-            id: true,
-            title: true,
-            contentText: true,
-          },
-        },
-      },
-    }),
-    prisma.marketListingItem.findMany({
-      where: {
-        status: { not: 'off_shelf' },
-        listing: {
-          sellerId: user.id,
-          status: { in: ['on_sale', 'sold_out'] },
-        },
-      },
-      take: 80,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        listing: {
-          select: {
-            id: true,
-            title: true,
-            shipFrom: true,
-            status: true,
-            viewCount: true,
-            commentCount: true,
-            taxons: {
-              orderBy: { id: 'asc' },
-              select: { categorySlug: true, genusSlug: true, speciesSlug: true, label: true },
-            },
-          },
-        },
-      },
-    }),
-  ]);
+        reviewStatus: 'published'
+      }
+    },
+    take: 80,
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      content: true,
+      contentText: true,
+      likes: true,
+      createdAt: true,
+      post: {
+        select: {
+          id: true,
+          title: true,
+          contentText: true
+        }
+      }
+    }
+  }),
+  prisma.marketListingItem.findMany({
+    where: {
+      status: { not: 'off_shelf' },
+      listing: {
+        sellerId: user.id,
+        status: { in: ['on_sale', 'sold_out'] }
+      }
+    },
+    take: 80,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      listing: {
+        select: {
+          id: true,
+          title: true,
+          shipFrom: true,
+          status: true,
+          viewCount: true,
+          commentCount: true,
+          taxons: {
+            orderBy: { id: 'asc' },
+            select: { categorySlug: true, genusSlug: true, speciesSlug: true, label: true }
+          }
+        }
+      }
+    }
+  })]
+  );
 
   const me = await getCurrentUser();
   let followed = false;
   if (me && me.id !== user.id) {
     const f = await prisma.follow.findUnique({
-      where: { followerId_followeeId: { followerId: me.id, followeeId: user.id } },
+      where: { followerId_followeeId: { followerId: me.id, followeeId: user.id } }
     });
     followed = !!f;
   }
 
   const isVip = isVipActive(uRaw);
   const daysLeft =
-    !uRaw.vipLifetime && uRaw.vipExpireAt
-      ? Math.max(0, Math.ceil((uRaw.vipExpireAt.getTime() - Date.now()) / 86400_000))
-      : null;
+  !uRaw.vipLifetime && uRaw.vipExpireAt ?
+  Math.max(0, Math.ceil((uRaw.vipExpireAt.getTime() - Date.now()) / 86400_000)) :
+  null;
 
   return (
-    <AppShell showFloatingAi={false} className="!max-w-[1280px] pt-4">
+    <AppShell showFloatingAi={false} className={cx(styles.r_d14dc4ed, styles.r_173fa8f0)}>
       <UserPageClient
         user={user}
         isMe={me?.id === user.id}
@@ -141,8 +145,8 @@ export default async function UserPage({
           post: {
             id: comment.post.id,
             title: comment.post.title,
-            contentText: comment.post.contentText,
-          },
+            contentText: comment.post.contentText
+          }
         }))}
         products={marketProductsRaw.map((item) => {
           const images = parseJsonArray(item.images);
@@ -162,19 +166,19 @@ export default async function UserPage({
             shipFrom: item.listing.shipFrom,
             views: item.listing.viewCount,
             comments: item.listing.commentCount,
-            taxons: item.listing.taxons,
+            taxons: item.listing.taxons
           };
         })}
         exp={uRaw.exp}
         vip={{
           isVip,
           lifetime: uRaw.vipLifetime,
-          expireAt: uRaw.vipExpireAt?.toISOString() ?? null,
+          expireAt: uRaw.vipExpireAt?.toISOString() ?? null
         }}
-        daysLeft={daysLeft}
-      />
-    </AppShell>
-  );
+        daysLeft={daysLeft} />
+
+    </AppShell>);
+
 }
 
 function parseJsonArray(raw: string | null | undefined): string[] {

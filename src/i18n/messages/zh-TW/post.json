@@ -1,40 +1,44 @@
 {
   "post": {
     "types": {
-      "rich": "長圖文",
+      "rich": "長文貼",
+      "image": "圖文貼",
       "short": "短動態",
       "vote": "投票",
       "video": "影片",
       "event": "活動",
       "help": "求助",
-      "journal": "成長日記"
+      "journal": "記錄貼"
     },
     "typeDesc": {
       "rich": "適合教學、長篇心得(PC & APP 發佈)",
+      "image": "只上傳圖片,適合曬圖分享",
       "short": "隨手一發,即興分享(PC & APP 發佈)",
       "vote": "發起投票,集思廣益(僅 PC 發佈)",
       "video": "上傳影片紀錄(PC & APP 均可發佈)",
       "event": "組織線下活動(僅 PC 可發佈)",
       "help": "遇到問題求助,可設置懸賞積分",
-      "journal": "時間線記錄植物成長各階段"
+      "journal": "按時間線記錄植物狀態"
     },
     "typeBadge": {
-      "rich": "富文本貼",
+      "rich": "長文貼",
+      "image": "圖文貼",
       "short": "短內容貼",
       "vote": "投票貼",
       "video": "影片貼",
       "event": "EVENT 貼",
       "help": "求助貼",
-      "journal": "成長日記貼"
+      "journal": "記錄貼"
     },
     "typeShort": {
-      "rich": "富文本",
+      "rich": "長文",
+      "image": "圖文",
       "short": "短內容",
       "vote": "投票",
       "video": "影片",
       "event": "活動",
       "help": "求助",
-      "journal": "成長日記"
+      "journal": "記錄貼"
     },
     "actions": {
       "like": "讚",

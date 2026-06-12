@@ -1,6 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import styles from './SystemMenuShortcutsRight.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface MenuItem {
   id: string;
@@ -9,45 +13,45 @@ interface MenuItem {
   path: string | null;
 }
 
-export function SystemMenuShortcutsRight({ menus }: { menus?: MenuItem[] }) {
+export function SystemMenuShortcutsRight({ menus }: {menus?: MenuItem[];}) {
   const displayMenus = menus || [];
 
   if (displayMenus.length === 0) return null;
 
   return (
-    <div className="card overflow-hidden">
-      <div className="px-4 py-3">
-        <div className="flex flex-wrap gap-2">
-          {displayMenus.map((menu) => (
-            menu.path ? (
-              <Link
-                key={menu.id}
-                href={menu.path}
-                className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-2.5 py-1 text-[11px] text-leaf-700 transition-colors hover:bg-leaf-100"
-              >
-                {menu.icon?.startsWith('http') ? (
-                  <img src={menu.icon} alt="" className="h-3.5 w-3.5 rounded-none object-cover" />
-                ) : (
-                  <span className="text-sm">{menu.icon}</span>
-                )}
+    <div className={styles.r_2cd02d11}>
+      <div className={cx(styles.r_f0faeb26, styles.r_1b2d54a3)}>
+        <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_77a2a20e)}>
+          {displayMenus.map((menu) =>
+          menu.path ?
+          <Link
+            key={menu.id}
+            href={menu.path}
+            className={cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_58284b4e, styles.r_ac204c10, styles.r_7ebecbb6, styles.r_0b91436d, styles.r_660d2eff, styles.r_d058ca6d, styles.r_5f6a59f1, styles.r_ceb69a6b, styles.r_2efc423a)}>
+
+                {menu.icon?.startsWith('http') ?
+            <img src={menu.icon} alt="" className={cx(styles.r_7fc7f732, styles.r_bf600f8e, styles.r_0c5e9137, styles.r_7d85d0c2)} /> :
+
+            <span className={styles.r_fc7473ca}>{menu.icon}</span>
+            }
                 {menu.name}
-              </Link>
-            ) : (
-              <span
-                key={menu.id}
-                className="inline-flex items-center gap-1.5 rounded-full bg-ink-100 px-2.5 py-1 text-[11px] text-ink-400 cursor-default"
-              >
-                {menu.icon?.startsWith('http') ? (
-                  <img src={menu.icon} alt="" className="h-3.5 w-3.5 rounded-none object-cover" />
-                ) : (
-                  <span className="text-sm">{menu.icon}</span>
-                )}
+              </Link> :
+
+          <span
+            key={menu.id}
+            className={cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_58284b4e, styles.r_ac204c10, styles.r_febec8f2, styles.r_0b91436d, styles.r_660d2eff, styles.r_d058ca6d, styles.r_66a36c90, styles.r_50ca6ba5)}>
+
+                {menu.icon?.startsWith('http') ?
+            <img src={menu.icon} alt="" className={cx(styles.r_7fc7f732, styles.r_bf600f8e, styles.r_0c5e9137, styles.r_7d85d0c2)} /> :
+
+            <span className={styles.r_fc7473ca}>{menu.icon}</span>
+            }
                 {menu.name}
               </span>
-            )
-          ))}
+
+          )}
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }

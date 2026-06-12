@@ -23,8 +23,8 @@ import {
   useMemo,
   useRef,
   useState,
-  type ReactNode,
-} from 'react';
+  type ReactNode } from
+'react';
 import { Locale, COOKIE_LOCALE, defaultLocale, locales } from './config';
 
 type Messages = Record<string, unknown>;
@@ -57,7 +57,7 @@ function resolveKey(msgs: Messages | undefined, key: string): string | undefined
 function interpolate(tpl: string, vars?: Record<string, string | number>): string {
   if (!vars) return tpl;
   return tpl.replace(/\{(\w+)\}/g, (_, k) =>
-    k in vars ? String(vars[k]) : `{${k}}`,
+  k in vars ? String(vars[k]) : `{${k}}`
   );
 }
 
@@ -69,9 +69,9 @@ async function loadLocale(locale: Locale): Promise<Messages> {
   if (cached) return cached;
   const p = (async () => {
     try {
-      const res = await fetch(`/api/i18n/${locale}`, { cache: 'force-cache' });
+      const res = await fetch(`/api/i18n/${locale}`, { cache: "force-cache" });
       if (!res.ok) return {};
-      const body = (await res.json()) as { ok: boolean; data?: Messages };
+      const body = (await res.json()) as {ok: boolean;data?: Messages;};
       return body.data ?? {};
     } catch {
       return {};
@@ -84,13 +84,13 @@ async function loadLocale(locale: Locale): Promise<Messages> {
 export function I18nProvider({
   children,
   initialLocale = defaultLocale,
-  initialMessages,
-}: {
-  children: ReactNode;
-  initialLocale?: Locale;
-  /** SSR 时从服务器磁盘直读的翻译,避免 hydration 阶段裸露 key */
-  initialMessages?: Partial<Record<Locale, Messages>>;
-}) {
+  initialMessages
+
+
+
+
+
+}: {children: ReactNode;initialLocale?: Locale; /** SSR 时从服务器磁盘直读的翻译,避免 hydration 阶段裸露 key */initialMessages?: Partial<Record<Locale, Messages>>;}) {
   const [locale, setLocaleState] = useState<Locale>(initialLocale);
   // 翻译数据存 ref,避免死循环 + 避免 render-time 读取 stale state
   // SSR 时用 initialMessages 初始化,保证 server render 立即出文案
@@ -99,7 +99,7 @@ export function I18nProvider({
   const [tick, setTick] = useState(0);
   // 有 initialMessages 且当前 locale 已就绪,视为 ready
   const [ready, setReady] = useState(
-    !!initialMessages && (!!initialMessages[initialLocale] || !!initialMessages[defaultLocale]),
+    !!initialMessages && (!!initialMessages[initialLocale] || !!initialMessages[defaultLocale])
   );
 
   // 启动时:确保默认 locale 和当前 locale 都在缓存里
@@ -143,11 +143,11 @@ export function I18nProvider({
     // 同步后端(不阻塞 UI)
     fetch('/api/users/me/locale', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ locale: l }),
+      headers: { "Content-Type": 'application/json' },
+      body: JSON.stringify({ locale: l })
     }).catch(() => {
-      /* 未登录也不影响 */
-    });
+
+      /* 未登录也不影响 */});
 
     setLocaleState(l);
     setTick((x) => x + 1);
@@ -162,12 +162,12 @@ export function I18nProvider({
       if (fallback !== undefined) return interpolate(fallback, vars);
       return key;
     },
-    [locale, tick],
+    [locale, tick]
   );
 
   const value = useMemo(
     () => ({ locale, setLocale, t, ready }),
-    [locale, setLocale, t, ready],
+    [locale, setLocale, t, ready]
   );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
@@ -181,7 +181,7 @@ export function useI18n(): I18nContextValue {
       locale: defaultLocale,
       setLocale: async () => {},
       t: (k) => k,
-      ready: false,
+      ready: false
     };
   }
   return ctx;

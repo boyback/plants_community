@@ -1,8 +1,8 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { api } from '@/lib/client-api';
-import { isJsonDifferent, loadLocalJson, saveLocalJson } from '@/lib/local-json-cache';
+import { api } from "@/lib/client-api";
+import { isJsonDifferent, loadLocalJson, saveLocalJson } from "@/lib/local-json-cache";
 
 interface SystemMenu {
   id: string;
@@ -26,7 +26,7 @@ interface FeatureFlags {
   _loaded: boolean;
 }
 
-const STORAGE_KEY = 'system-menus-cache';
+const STORAGE_KEY = "system-menus-cache";
 
 function loadFromCache(): SystemMenu[] {
   return loadLocalJson<SystemMenu[]>(STORAGE_KEY) ?? [];
@@ -41,26 +41,26 @@ const defaultFlags: FeatureFlags = {
   'feature.market.enabled': true,
   'feature.contests.enabled': false,
   systemMenus: [],
-  _loaded: false,
+  _loaded: false
 };
 
 const FeatureFlagsContext = createContext<FeatureFlags>(defaultFlags);
 
-export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
+export function FeatureFlagsProvider({ children }: {children: ReactNode;}) {
   const [flags, setFlags] = useState<FeatureFlags>(() => {
     const cached = loadFromCache();
     return {
       ...defaultFlags,
       systemMenus: cached,
-      _loaded: cached.length > 0, // 有缓存就标记为已加载
+      _loaded: cached.length > 0 // 有缓存就标记为已加载
     };
   });
 
   useEffect(() => {
     Promise.all([
-      api.get<Record<string, boolean>>('/api/features'),
-      api.get<SystemMenu[]>('/api/system-menus').catch(() => [] as SystemMenu[]),
-    ]).then(([featureFlags, systemMenus]) => {
+    api.get<Record<string, boolean>>('/api/features'),
+    api.get<SystemMenu[]>("/api/system-menus").catch(() => [] as SystemMenu[])]
+    ).then(([featureFlags, systemMenus]) => {
       const cached = loadFromCache();
       const changed = isJsonDifferent(cached, systemMenus);
       // 有缓存且数据不同则更新本地缓存
@@ -74,10 +74,10 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
         ...defaultFlags,
         ...featureFlags,
         systemMenus: systemMenusFromCache,
-        _loaded: true,
+        _loaded: true
       });
     }).catch((err) => {
-      console.error('加载功能配置失败:', err);
+      console.error("加载功能配置失败:", err);
       setFlags((prev) => ({ ...prev, _loaded: true }));
     });
   }, []);

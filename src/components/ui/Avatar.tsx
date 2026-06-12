@@ -1,7 +1,11 @@
 'use client';
 
-import { Avatar as RadixAvatar } from 'radix-ui';
+import { Avatar as RadixAvatar } from "radix-ui";
 import { cn } from '@/lib/utils';
+import styles from './Avatar.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface AvatarProps {
   src: string;
@@ -15,27 +19,26 @@ export function Avatar({ src, alt, size = 40, className, ring }: AvatarProps) {
   return (
     <RadixAvatar.Root
       className={cn(
-        // shrink-0 + min-w/h:flex 容器里不被挤压
-        // aspect-square 兜底,即便外层强行拉宽也保持正方
-        'inline-flex shrink-0 overflow-hidden rounded-full bg-leaf-50 aspect-square',
-        ring && 'ring-2 ring-white shadow-sm',
-        className
+      // 固定宽高并禁止收缩,避免在弹性容器里被挤压变形
+      cx(styles.r_52083e7d, styles.r_012fbd12, styles.r_2cd02d11, styles.r_ac204c10, styles.r_7ebecbb6, styles.r_b59cd297),
+      ring && cx(styles.r_16b1efa5, styles.r_0af61200, styles.r_438b2237),
+      className
       )}
       style={{
         width: size,
         height: size,
         minWidth: size,
-        minHeight: size,
-      }}
-    >
+        minHeight: size
+      }}>
+
       <RadixAvatar.Image
         src={src}
         alt={alt}
-        className="block h-full w-full object-cover"
-      />
-      <RadixAvatar.Fallback className="grid h-full w-full place-items-center bg-leaf-100 text-xs font-semibold text-leaf-700">
+        className={cx(styles.r_0214b4b3, styles.r_668b21aa, styles.r_6da6a3c3, styles.r_7d85d0c2)} />
+
+      <RadixAvatar.Fallback className={cx(styles.r_f3c543ad, styles.r_668b21aa, styles.r_6da6a3c3, styles.r_67d66567, styles.r_f2b23104, styles.r_359090c2, styles.r_e83a7042, styles.r_5f6a59f1)}>
         {alt?.trim()?.charAt(0) || '?'}
       </RadixAvatar.Fallback>
-    </RadixAvatar.Root>
-  );
+    </RadixAvatar.Root>);
+
 }

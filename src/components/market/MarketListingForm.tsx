@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Form } from 'radix-ui';
+import { Form } from "radix-ui";
 import { UserAccountCard } from '@/components/layout/UserAccountCard';
 import { PermissionGate } from '@/components/ui/PermissionGate';
 import { Icon } from '@/components/ui/Icon';
@@ -12,9 +12,13 @@ import { Textarea } from '@/components/ui/Textarea';
 import { MultiImageUploadGrid } from '@/components/upload/MultiImageUploadGrid';
 import { BoardSelect, type BoardSelection } from '@/components/editor/BoardSelect';
 import { useAuth } from '@/context/AuthContext';
-import { api, ApiError } from '@/lib/client-api';
+import { api, ApiError } from "@/lib/client-api";
 import { cn, formatPrice } from '@/lib/utils';
 import { toast } from '@/components/ui/Toast';
+import styles from './MarketListingForm.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 type TradeMode = 'platform_escrow' | 'online_payment' | 'external';
 type ValidationKey = string;
@@ -66,24 +70,24 @@ interface Props {
   initialValue?: MarketListingFormValue;
 }
 
-const TRADE_MODES: { key: TradeMode; title: string; desc: string; badge?: string }[] = [
-  {
-    key: 'platform_escrow',
-    title: '平台担保',
-    desc: '官方推荐，买家付款后平台协助担保，适合高价值交易。',
-    badge: '推荐',
-  },
-  {
-    key: 'online_payment',
-    title: '在线支付',
-    desc: '走支付宝在线下单，平台收取 1% 手续费。',
-  },
-  {
-    key: 'external',
-    title: '自行联系 / 三方平台',
-    desc: '只展示联系方式或外部链接，不在站内生成订单。',
-  },
-];
+const TRADE_MODES: {key: TradeMode;title: string;desc: string;badge?: string;}[] = [
+{
+  key: 'platform_escrow',
+  title: '平台担保',
+  desc: '官方推荐，买家付款后平台协助担保，适合高价值交易。',
+  badge: '推荐'
+},
+{
+  key: 'online_payment',
+  title: '在线支付',
+  desc: '走支付宝在线下单，平台收取 1% 手续费。'
+},
+{
+  key: 'external',
+  title: '自行联系 / 三方平台',
+  desc: '只展示联系方式或外部链接，不在站内生成订单。'
+}];
+
 
 function createClientId() {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
@@ -103,15 +107,15 @@ function emptyProduct(): ProductItem {
     tags: [],
     tagInput: '',
     images: [],
-    description: '',
+    description: ''
   };
 }
 
 function toProductItem(
-  item: MarketListingFormValue['items'][number],
-  fallbackTaxons: BoardSelection[],
-  fallbackTags: string[],
-): ProductItem {
+item: MarketListingFormValue['items'][number],
+fallbackTaxons: BoardSelection[],
+fallbackTags: string[])
+: ProductItem {
   return {
     id: item.id,
     clientId: item.id ?? createClientId(),
@@ -125,7 +129,7 @@ function toProductItem(
     tags: item.tags !== undefined ? item.tags : fallbackTags,
     tagInput: '',
     images: item.images,
-    description: item.description,
+    description: item.description
   };
 }
 
@@ -149,14 +153,14 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   const [shipFrom, setShipFrom] = useState(initialValue?.shipFrom ?? '');
   const description = initialValue?.description ?? firstInitialProduct?.description ?? '';
   const [tradeModes, setTradeModes] = useState<TradeMode[]>(
-    initialValue?.tradeModes?.length ? initialValue.tradeModes : [initialValue?.tradeMode ?? 'platform_escrow'],
+    initialValue?.tradeModes?.length ? initialValue.tradeModes : [initialValue?.tradeMode ?? 'platform_escrow']
   );
   const [externalUrl, setExternalUrl] = useState(initialValue?.externalUrl ?? '');
   const [contactNote, setContactNote] = useState(initialValue?.contactNote ?? '');
   const [products, setProducts] = useState<ProductItem[]>(
-    initialValue?.items?.length
-      ? initialValue.items.map((item) => toProductItem(item, initialValue?.taxons ?? [], initialValue?.tags ?? []))
-      : [emptyProduct()],
+    initialValue?.items?.length ?
+    initialValue.items.map((item) => toProductItem(item, initialValue?.taxons ?? [], initialValue?.tags ?? [])) :
+    [emptyProduct()]
   );
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -164,16 +168,16 @@ export function MarketListingForm({ mode, initialValue }: Props) {
 
   const prices = useMemo(
     () =>
-      products
-        .map((item) => Math.round(Number(item.priceYuan) * 100))
-        .filter((price) => Number.isFinite(price) && price > 0),
-    [products],
+    products.
+    map((item) => Math.round(Number(item.priceYuan) * 100)).
+    filter((price) => Number.isFinite(price) && price > 0),
+    [products]
   );
-  const priceSummary = prices.length
-    ? prices.length === 1
-      ? formatPrice(prices[0])
-      : `${formatPrice(Math.min(...prices))} - ${formatPrice(Math.max(...prices))}`
-    : '未填写';
+  const priceSummary = prices.length ?
+  prices.length === 1 ?
+  formatPrice(prices[0]) :
+  `${formatPrice(Math.min(...prices))} - ${formatPrice(Math.max(...prices))}` :
+  '未填写';
 
   const clearValidationError = (key: ValidationKey) => {
     setValidationErrors((prev) => {
@@ -187,7 +191,7 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   const productFieldKey = (clientId: string, field: string) => `product:${clientId}:${field}`;
 
   const updateProduct = (clientId: string, patch: Partial<ProductItem>) => {
-    setProducts((prev) => prev.map((item) => (item.clientId === clientId ? { ...item, ...patch } : item)));
+    setProducts((prev) => prev.map((item) => item.clientId === clientId ? { ...item, ...patch } : item));
     Object.keys(patch).forEach((field) => clearValidationError(productFieldKey(clientId, field)));
   };
 
@@ -202,7 +206,7 @@ export function MarketListingForm({ mode, initialValue }: Props) {
 
   const removeProductTag = (clientId: string, tag: string) => {
     updateProduct(clientId, {
-      tags: products.find((item) => item.clientId === clientId)?.tags.filter((item) => item !== tag) ?? [],
+      tags: products.find((item) => item.clientId === clientId)?.tags.filter((item) => item !== tag) ?? []
     });
   };
 
@@ -256,10 +260,10 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   const validate = () => {
     const errors = getRequiredErrors();
     setValidationErrors(errors);
-    if (errors.has('shipFrom')) toast.error('请输入发货地');
-    else if (errors.has('tradeModes')) toast.error('请至少选择一种交易方式');
-    else if (errors.has('externalContact')) toast.error('自行联系/三方平台交易请填写联系方式或外部链接');
-    else if (errors.size > 0) toast.error('请完善商品必填信息');
+    if (errors.has('shipFrom')) toast.error('请输入发货地');else
+    if (errors.has('tradeModes')) toast.error('请至少选择一种交易方式');else
+    if (errors.has('externalContact')) toast.error('自行联系/三方平台交易请填写联系方式或外部链接');else
+    if (errors.size > 0) toast.error('请完善商品必填信息');
     return errors.size === 0;
   };
 
@@ -287,8 +291,8 @@ export function MarketListingForm({ mode, initialValue }: Props) {
       taxons: item.taxons,
       tags: item.tags,
       images: item.images,
-      description: item.description.trim(),
-    })),
+      description: item.description.trim()
+    }))
   });
 
   const submit = async () => {
@@ -298,9 +302,9 @@ export function MarketListingForm({ mode, initialValue }: Props) {
     setSubmitting(true);
     try {
       const payload = buildPayload();
-      const result = isEdit && initialValue?.id
-        ? await api.patch<{ id: string }>(`/api/market/listings/${initialValue.id}`, payload)
-        : await api.post<{ id: string }>('/api/market/listings', payload);
+      const result = isEdit && initialValue?.id ?
+      await api.patch<{id: string;}>(`/api/market/listings/${initialValue.id}`, payload) :
+      await api.post<{id: string;}>('/api/market/listings', payload);
       toast.success(isEdit ? '保存成功' : '发布成功');
       router.push(isEdit ? `/market/${result.id}` : '/market');
       router.refresh();
@@ -312,391 +316,391 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   };
 
   if (loading) {
-    return <div className="py-10 text-center text-sm text-leaf-700/60">加载中...</div>;
+    return <div className={cx(styles.r_1100bef6, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>加载中...</div>;
   }
 
   if (!user) {
     return (
-      <div className="card mx-auto max-w-md p-10 text-center">
-        <div className="text-lg font-semibold">登录后才能{isEdit ? '编辑商品' : '发布商品'}</div>
-        <Link href={`/login?redirect=${encodeURIComponent(isEdit && initialValue?.id ? `/market/${initialValue.id}/edit` : '/market/sell')}`} className="btn-primary mt-4 inline-flex">
+      <div className={cx(styles.r_0e12dc7d, styles.r_9794ab45, styles.r_a4d0f420, styles.r_ca6bf630)}>
+        <div className={cx(styles.r_42536e69, styles.r_e83a7042)}>登录后才能{isEdit ? '编辑商品' : '发布商品'}</div>
+        <Link href={`/login?redirect=${encodeURIComponent(isEdit && initialValue?.id ? `/market/${initialValue.id}/edit` : '/market/sell')}`} className={cx(styles.r_0ab86672, styles.r_52083e7d)}>
           去登录
         </Link>
-      </div>
-    );
+      </div>);
+
   }
 
-  const form = (
-    <Form.Root
-      onInvalidCapture={() => setValidationErrors(getRequiredErrors())}
-      onSubmit={(event) => {
-        event.preventDefault();
-        void submit();
-      }}
-      className="space-y-4"
-    >
-      <section className="card space-y-4 p-5">
+  const form =
+  <Form.Root
+    onInvalidCapture={() => setValidationErrors(getRequiredErrors())}
+    onSubmit={(event) => {
+      event.preventDefault();
+      void submit();
+    }}
+    className={styles.r_3e7ce58d}>
+
+      <section className={cx(styles.formCard, styles.r_3e7ce58d, styles.r_c07e54fd)}>
         <SectionTitle title="交易方式" desc="官方推荐平台担保，也允许用户自行联系。" />
         <Field
-          name="tradeModes"
-          label="交易方式"
-          required
-          invalid={validationErrors.has('tradeModes')}
-          message="请至少选择一种交易方式"
-          hiddenValue={tradeModes.join(',')}
-        >
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            {TRADE_MODES.map((modeItem) => (
-              <button
-                key={modeItem.key}
-                type="button"
-                onClick={() => toggleTradeMode(modeItem.key)}
-                className={cn(
-                  'rounded-lg border p-4 text-left transition-colors',
-                  tradeModes.includes(modeItem.key)
-                    ? 'border-leaf-400 bg-leaf-50 ring-2 ring-leaf-100'
-                    : 'border-leaf-100 bg-white hover:border-leaf-300',
-                  validationErrors.has('tradeModes') && 'border-rose-300 bg-rose-50/30',
-                )}
-              >
-                <div className="flex items-center gap-2">
+        name="tradeModes"
+        label="交易方式"
+        required
+        invalid={validationErrors.has('tradeModes')}
+        message="请至少选择一种交易方式"
+        hiddenValue={tradeModes.join(',')}>
+
+          <div className={cx(styles.r_f3c543ad, styles.r_d7c83398, styles.r_1004c0c3, styles.r_9a638cfe)}>
+            {TRADE_MODES.map((modeItem) =>
+          <button
+            key={modeItem.key}
+            type="button"
+            onClick={() => toggleTradeMode(modeItem.key)}
+            className={cn(cx(styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_8e63407b, styles.r_2eba0d65, styles.r_ceb69a6b),
+
+            tradeModes.includes(modeItem.key) ? cx(styles.r_3883b0f9, styles.r_7ebecbb6, styles.r_16b1efa5, styles.r_52c47100) : cx(styles.r_88b684d2, styles.r_5e10cdb8, styles.r_a5c39c39),
+
+
+            validationErrors.has('tradeModes') && cx(styles.r_3b7f9781, styles.r_fdae7b46)
+            )}>
+
+                <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
                   <span
-                    className={cn(
-                      'grid h-4 w-4 place-items-center rounded border text-[10px]',
-                      tradeModes.includes(modeItem.key)
-                        ? 'border-leaf-600 bg-leaf-600 text-white'
-                        : 'border-leaf-200 bg-white text-transparent',
-                    )}
-                  >
+                className={cn(cx(styles.r_f3c543ad, styles.r_11e59c6d, styles.r_dc7972eb, styles.r_67d66567, styles.r_07389a77, styles.r_ca6bcd4b, styles.r_1dc571a3),
+
+                tradeModes.includes(modeItem.key) ? cx(styles.r_3bd65fe8, styles.r_6bceb016, styles.r_72a4c7cd) : cx(styles.r_691861bc, styles.r_5e10cdb8, styles.r_f8c8e86d)
+
+
+                )}>
+
                     ✓
                   </span>
-                  <span className="font-semibold text-ink-800">{modeItem.title}</span>
-                  {modeItem.badge && (
-                    <span className="rounded-full bg-leaf-600 px-1.5 py-0.5 text-[10px] text-white">
+                  <span className={cx(styles.r_e83a7042, styles.r_399e11a5)}>{modeItem.title}</span>
+                  {modeItem.badge &&
+              <span className={cx(styles.r_ac204c10, styles.r_6bceb016, styles.r_45d82811, styles.r_465609a2, styles.r_1dc571a3, styles.r_72a4c7cd)}>
                       {modeItem.badge}
                     </span>
-                  )}
+              }
                 </div>
-                <p className="mt-2 text-xs leading-5 text-leaf-700/70">{modeItem.desc}</p>
+                <p className={cx(styles.r_50d0d216, styles.r_359090c2, styles.r_7054e276, styles.r_69335b95)}>{modeItem.desc}</p>
               </button>
-            ))}
+          )}
           </div>
         </Field>
 
-        {tradeModes.includes('external') && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {tradeModes.includes('external') &&
+      <div className={cx(styles.r_f3c543ad, styles.r_d7c83398, styles.r_0c3bc985, styles.r_e4d6f343)}>
             <Field label="外部链接">
               <Input
-                value={externalUrl}
-                error={validationErrors.has('externalContact')}
-                onChange={(e) => {
-                  setExternalUrl(e.target.value);
-                  if (e.target.value.trim() || contactNote.trim()) clearValidationError('externalContact');
-                }}
-                placeholder="可填写闲鱼、淘宝等链接"
-              />
+            value={externalUrl}
+            error={validationErrors.has('externalContact')}
+            onChange={(e) => {
+              setExternalUrl(e.target.value);
+              if (e.target.value.trim() || contactNote.trim()) clearValidationError('externalContact');
+            }}
+            placeholder="可填写闲鱼、淘宝等链接" />
+
             </Field>
             <Field
-              name="externalContact"
-              label="联系方式 / 说明"
-              required
-              invalid={validationErrors.has('externalContact')}
-              message="请填写联系方式或外部链接"
-              hiddenValue={externalUrl.trim() || contactNote.trim()}
-            >
+          name="externalContact"
+          label="联系方式 / 说明"
+          required
+          invalid={validationErrors.has('externalContact')}
+          message="请填写联系方式或外部链接"
+          hiddenValue={externalUrl.trim() || contactNote.trim()}>
+
               <Input
-                value={contactNote}
-                error={validationErrors.has('externalContact')}
-                onChange={(e) => {
-                  setContactNote(e.target.value);
-                  if (e.target.value.trim() || externalUrl.trim()) clearValidationError('externalContact');
-                }}
-                maxLength={120}
-                placeholder="例如：私信我确认库存"
-              />
+            value={contactNote}
+            error={validationErrors.has('externalContact')}
+            onChange={(e) => {
+              setContactNote(e.target.value);
+              if (e.target.value.trim() || externalUrl.trim()) clearValidationError('externalContact');
+            }}
+            maxLength={120}
+            placeholder="例如：私信我确认库存" />
+
             </Field>
           </div>
-        )}
+      }
       </section>
 
-      {products.map((product, idx) => (
-        <section key={product.clientId} className="card space-y-4 p-5">
-          <div className="flex items-center justify-between gap-3">
+      {products.map((product, idx) =>
+    <section key={product.clientId} className={cx(styles.formCard, styles.r_3e7ce58d, styles.r_c07e54fd)}>
+          <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_1004c0c3)}>
             <SectionTitle
-              title={`#${idx + 1}`}
-              desc={idx === 0 ? '第一张图会作为商品封面。' : undefined}
-            />
-            {products.length > 1 && (
-              <button
-                type="button"
-                onClick={() => removeProduct(product.clientId)}
-                className="rounded-md border border-rose-200 px-2.5 py-1 text-xs text-rose-600 hover:bg-rose-50"
-              >
+          title={`#${idx + 1}`}
+          desc={idx === 0 ? '第一张图会作为商品封面。' : undefined} />
+
+            {products.length > 1 &&
+        <button
+          type="button"
+          onClick={() => removeProduct(product.clientId)}
+          className={cx(styles.r_421ac2be, styles.r_ca6bcd4b, styles.r_959f4a9f, styles.r_0b91436d, styles.r_660d2eff, styles.r_359090c2, styles.r_595fceba, styles.r_85cfcc24)}>
+
                 删除
               </button>
-            )}
+        }
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_160px_120px]">
+          <div className={cx(styles.r_f3c543ad, styles.r_d7c83398, styles.r_0c3bc985, styles.r_b28a6d85)}>
             <Field
-              name={productFieldKey(product.clientId, 'title')}
-              label="商品名称"
-              required
-              invalid={validationErrors.has(productFieldKey(product.clientId, 'title'))}
-              message="请输入商品名称"
-            >
+          name={productFieldKey(product.clientId, 'title')}
+          label="商品名称"
+          required
+          invalid={validationErrors.has(productFieldKey(product.clientId, 'title'))}
+          message="请输入商品名称">
+
               <Input
-                required
-                value={product.title}
-                error={validationErrors.has(productFieldKey(product.clientId, 'title'))}
-                onChange={(e) => updateProduct(product.clientId, { title: e.target.value })}
-                maxLength={50}
-                showCount
-                placeholder="例如：冰梅老桩"
-              />
+            required
+            value={product.title}
+            error={validationErrors.has(productFieldKey(product.clientId, 'title'))}
+            onChange={(e) => updateProduct(product.clientId, { title: e.target.value })}
+            maxLength={50}
+            showCount
+            placeholder="例如：冰梅老桩" />
+
             </Field>
             <Field
-              name={productFieldKey(product.clientId, 'priceYuan')}
-              label="价格（元）"
-              required
-              invalid={validationErrors.has(productFieldKey(product.clientId, 'priceYuan'))}
-              message="请输入有效价格"
-            >
+          name={productFieldKey(product.clientId, 'priceYuan')}
+          label="价格（元）"
+          required
+          invalid={validationErrors.has(productFieldKey(product.clientId, 'priceYuan'))}
+          message="请输入有效价格">
+
               <Input
-                required
-                value={product.priceYuan}
-                error={validationErrors.has(productFieldKey(product.clientId, 'priceYuan'))}
-                onChange={(e) => updateProduct(product.clientId, { priceYuan: e.target.value })}
-                inputMode="decimal"
-                placeholder="0.00"
-              />
+            required
+            value={product.priceYuan}
+            error={validationErrors.has(productFieldKey(product.clientId, 'priceYuan'))}
+            onChange={(e) => updateProduct(product.clientId, { priceYuan: e.target.value })}
+            inputMode="decimal"
+            placeholder="0.00" />
+
             </Field>
             <Field
-              name={productFieldKey(product.clientId, 'stock')}
-              label="库存"
-              required
-              invalid={validationErrors.has(productFieldKey(product.clientId, 'stock'))}
-              message="库存必须是正整数"
-            >
+          name={productFieldKey(product.clientId, 'stock')}
+          label="库存"
+          required
+          invalid={validationErrors.has(productFieldKey(product.clientId, 'stock'))}
+          message="库存必须是正整数">
+
               <Input
-                required
-                value={product.stock}
-                error={validationErrors.has(productFieldKey(product.clientId, 'stock'))}
-                onChange={(e) => updateProduct(product.clientId, { stock: e.target.value })}
-                inputMode="numeric"
-                placeholder="1"
-              />
+            required
+            value={product.stock}
+            error={validationErrors.has(productFieldKey(product.clientId, 'stock'))}
+            onChange={(e) => updateProduct(product.clientId, { stock: e.target.value })}
+            inputMode="numeric"
+            placeholder="1" />
+
             </Field>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className={cx(styles.r_f3c543ad, styles.r_d7c83398, styles.r_0c3bc985, styles.r_9a638cfe)}>
             <Field label="主头尺寸">
               <Input
-                value={product.mainHeadSize}
-                onChange={(e) => updateProduct(product.clientId, { mainHeadSize: e.target.value })}
-                maxLength={40}
-                placeholder="如：3.5cm"
-              />
+            value={product.mainHeadSize}
+            onChange={(e) => updateProduct(product.clientId, { mainHeadSize: e.target.value })}
+            maxLength={40}
+            placeholder="如：3.5cm" />
+
             </Field>
             <Field label="整体尺寸">
               <Input
-                value={product.overallSize}
-                onChange={(e) => updateProduct(product.clientId, { overallSize: e.target.value })}
-                maxLength={40}
-                placeholder="如：8cm × 7cm"
-              />
+            value={product.overallSize}
+            onChange={(e) => updateProduct(product.clientId, { overallSize: e.target.value })}
+            maxLength={40}
+            placeholder="如：8cm × 7cm" />
+
             </Field>
             <Field label="花盆外径">
               <Input
-                value={product.potDiameter}
-                onChange={(e) => updateProduct(product.clientId, { potDiameter: e.target.value })}
-                maxLength={40}
-                placeholder="如：10cm"
-              />
+            value={product.potDiameter}
+            onChange={(e) => updateProduct(product.clientId, { potDiameter: e.target.value })}
+            maxLength={40}
+            placeholder="如：10cm" />
+
             </Field>
           </div>
 
           <div
-            className={cn(
-              'grid grid-cols-1 gap-4',
-              idx === 0
-                ? 'lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.75fr)_180px]'
-                : 'lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.75fr)]',
-            )}
-          >
+        className={cn(cx(styles.r_f3c543ad, styles.r_d7c83398, styles.r_0c3bc985),
+
+        idx === 0 ? styles.r_f6e004e6 : styles.r_ba6415cd
+
+
+        )}>
+
             <Field
-              name={productFieldKey(product.clientId, 'taxons')}
-              label="板块 / 属 / 品种"
-              required
-              invalid={validationErrors.has(productFieldKey(product.clientId, 'taxons'))}
-              message="请选择至少一个板块或品种"
-              hiddenValue={product.taxons.map((item) => [item.categorySlug, item.genusSlug, item.speciesSlug].filter(Boolean).join('/')).join(',')}
-            >
+          name={productFieldKey(product.clientId, 'taxons')}
+          label="板块 / 属 / 品种"
+          required
+          invalid={validationErrors.has(productFieldKey(product.clientId, 'taxons'))}
+          message="请选择至少一个板块或品种"
+          hiddenValue={product.taxons.map((item) => [item.categorySlug, item.genusSlug, item.speciesSlug].filter(Boolean).join('/')).join(',')}>
+
               <BoardSelect
-                multiple
-                values={product.taxons}
-                onValuesChange={(next) => {
-                  updateProduct(product.clientId, { taxons: next });
-                  if (next.length > 0) clearValidationError(productFieldKey(product.clientId, 'taxons'));
-                }}
-                apiPath="/api/boards?kind=family&withSpecies=1"
-                placeholder="搜索并选择一个或多个品种"
-                invalid={validationErrors.has(productFieldKey(product.clientId, 'taxons'))}
-                max={12}
-              />
-              <div className="mt-1 text-[11px] text-leaf-700/60">
+            multiple
+            values={product.taxons}
+            onValuesChange={(next) => {
+              updateProduct(product.clientId, { taxons: next });
+              if (next.length > 0) clearValidationError(productFieldKey(product.clientId, 'taxons'));
+            }}
+            apiPath="/api/boards?kind=family&withSpecies=1"
+            placeholder="搜索并选择一个或多个品种"
+            invalid={validationErrors.has(productFieldKey(product.clientId, 'taxons'))}
+            max={12} />
+
+              <div className={cx(styles.r_b6b02c0e, styles.r_d058ca6d, styles.r_6c4cc49e)}>
                 可多选，用于这个商品的分类和搜索筛选。
               </div>
             </Field>
 
             <Field label="标签">
-              <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-lg border border-leaf-200 bg-white p-2">
-                {product.tags.map((tag) => (
-                  <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-leaf-100 px-2 py-0.5 text-xs text-leaf-700">
+              <div className={cx(styles.r_60fbb771, styles.r_b6c95e22, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_58284b4e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_691861bc, styles.r_5e10cdb8, styles.r_7660b450)}>
+                {product.tags.map((tag) =>
+            <span key={tag} className={cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_ac204c10, styles.r_f2b23104, styles.r_d5eab218, styles.r_465609a2, styles.r_359090c2, styles.r_5f6a59f1)}>
                     #{tag}
                     <button
-                      type="button"
-                      onClick={() => removeProductTag(product.clientId, tag)}
-                      className="text-leaf-600 hover:text-leaf-900"
-                    >
+                type="button"
+                onClick={() => removeProductTag(product.clientId, tag)}
+                className={cx(styles.r_b17d6a13, styles.r_5eca0425)}>
+
                       x
                     </button>
                   </span>
-                ))}
+            )}
                 <input
-                  className="min-w-[120px] flex-1 bg-transparent px-1 text-sm outline-none"
-                  value={product.tagInput}
-                  onChange={(e) => updateProduct(product.clientId, { tagInput: e.target.value })}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ',') {
-                      e.preventDefault();
-                      addProductTag(product.clientId);
-                    }
-                  }}
-                  placeholder={product.tags.length >= 8 ? '最多 8 个标签' : '输入后回车'}
-                  disabled={product.tags.length >= 8}
-                />
-                <button type="button" onClick={() => addProductTag(product.clientId)} className="btn-outline !px-2.5 !py-1 !text-xs">
+              className={cx(styles.r_a9ef791a, styles.r_36e579c0, styles.r_7f19cdf4, styles.r_d8e0e382, styles.r_fc7473ca, styles.r_df37b1fd)}
+              value={product.tagInput}
+              onChange={(e) => updateProduct(product.clientId, { tagInput: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ',') {
+                  e.preventDefault();
+                  addProductTag(product.clientId);
+                }
+              }}
+              placeholder={product.tags.length >= 8 ? '最多 8 个标签' : '输入后回车'}
+              disabled={product.tags.length >= 8} />
+
+                <button type="button" onClick={() => addProductTag(product.clientId)} className={cx(styles.r_2964b067, styles.r_ebb407e8, styles.r_dd702538)}>
                   添加
                 </button>
               </div>
-              <div className="mt-1 text-[11px] text-leaf-700/60">
+              <div className={cx(styles.r_b6b02c0e, styles.r_d058ca6d, styles.r_6c4cc49e)}>
                 最多 8 个，用于搜索和推荐。
               </div>
             </Field>
 
-            {idx === 0 && (
-              <Field
-                name="shipFrom"
-                label="发货地"
-                required
-                invalid={validationErrors.has('shipFrom')}
-                message="请输入发货地"
-              >
+            {idx === 0 &&
+        <Field
+          name="shipFrom"
+          label="发货地"
+          required
+          invalid={validationErrors.has('shipFrom')}
+          message="请输入发货地">
+
                 <Input
-                  required
-                  value={shipFrom}
-                  error={validationErrors.has('shipFrom')}
-                  onChange={(e) => {
-                    setShipFrom(e.target.value);
-                    if (e.target.value.trim()) clearValidationError('shipFrom');
-                  }}
-                  maxLength={40}
-                  placeholder="如：广东广州"
-                />
+            required
+            value={shipFrom}
+            error={validationErrors.has('shipFrom')}
+            onChange={(e) => {
+              setShipFrom(e.target.value);
+              if (e.target.value.trim()) clearValidationError('shipFrom');
+            }}
+            maxLength={40}
+            placeholder="如：广东广州" />
+
               </Field>
-            )}
+        }
           </div>
 
           <Field
-            name={productFieldKey(product.clientId, 'images')}
-            label="商品图片"
-            required
-            invalid={validationErrors.has(productFieldKey(product.clientId, 'images'))}
-            message="请至少上传一张图片"
-            hiddenValue={product.images.join(',')}
-          >
+        name={productFieldKey(product.clientId, 'images')}
+        label="商品图片"
+        required
+        invalid={validationErrors.has(productFieldKey(product.clientId, 'images'))}
+        message="请至少上传一张图片"
+        hiddenValue={product.images.join(',')}>
+
             <MultiImageUploadGrid
-              value={product.images}
-              onChange={(images) => {
-                updateProduct(product.clientId, { images });
-                if (images.length > 0) clearValidationError(productFieldKey(product.clientId, 'images'));
-              }}
-              max={9}
-              showCount={false}
-              gridClassName="grid-cols-[repeat(auto-fill,80px)] justify-start gap-2"
-              tileClassName="h-20 w-20 bg-white"
-              tileImageClassName="object-cover"
-              firstItemLabel="封面"
-              squareTiles
-            />
-            <div className="mt-1 text-[11px] text-leaf-700/60">
+          value={product.images}
+          onChange={(images) => {
+            updateProduct(product.clientId, { images });
+            if (images.length > 0) clearValidationError(productFieldKey(product.clientId, 'images'));
+          }}
+          max={9}
+          showCount={false}
+          gridClassName={cx(styles.r_2fa962f1, styles.r_4b5cc19b, styles.r_77a2a20e)}
+          tileClassName={cx(styles.r_0a769880, styles.r_ed831a4d, styles.r_5e10cdb8)}
+          tileImageClassName={styles.r_7d85d0c2}
+          firstItemLabel="封面"
+          squareTiles />
+
+            <div className={cx(styles.r_b6b02c0e, styles.r_d058ca6d, styles.r_6c4cc49e)}>
               最多 9 张。第一张作为商品封面，其余图片用于商品详情展示。
             </div>
           </Field>
 
           <Field
-            name={productFieldKey(product.clientId, 'description')}
-            label="商品描述"
-            required
-            invalid={validationErrors.has(productFieldKey(product.clientId, 'description'))}
-            message="请输入商品描述"
-          >
+        name={productFieldKey(product.clientId, 'description')}
+        label="商品描述"
+        required
+        invalid={validationErrors.has(productFieldKey(product.clientId, 'description'))}
+        message="请输入商品描述">
+
             <Textarea
-              required
-              value={product.description}
-              error={validationErrors.has(productFieldKey(product.clientId, 'description'))}
-              onChange={(e) => updateProduct(product.clientId, { description: e.target.value })}
-              maxLength={2000}
-              showCount
-              className="min-h-[112px]"
-              placeholder="描述尺寸、状态、瑕疵、养护环境、是否带盆土等。"
-            />
+          required
+          value={product.description}
+          error={validationErrors.has(productFieldKey(product.clientId, 'description'))}
+          onChange={(e) => updateProduct(product.clientId, { description: e.target.value })}
+          maxLength={2000}
+          showCount
+          className={styles.r_6a5890f4}
+          placeholder="描述尺寸、状态、瑕疵、养护环境、是否带盆土等。" />
+
           </Field>
 
         </section>
-      ))}
+    )}
 
-      {products.length < 20 && (
-        <button
-          type="button"
-          onClick={addProduct}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-leaf-200 py-4 text-sm text-leaf-700 transition-colors hover:border-leaf-400 hover:bg-leaf-50"
-        >
+      {products.length < 20 &&
+    <button
+      type="button"
+      onClick={addProduct}
+      className={cx(styles.r_60fbb771, styles.r_6da6a3c3, styles.r_3960ffc2, styles.r_86843cf1, styles.r_77a2a20e, styles.r_a217b4ea, styles.r_65935df5, styles.r_a29b7a64, styles.r_691861bc, styles.r_cb11fec3, styles.r_fc7473ca, styles.r_5f6a59f1, styles.r_ceb69a6b, styles.r_0a7c2f87, styles.r_5756b7b4)}>
+
           <Icon name="plus" size={15} />
           添加商品
         </button>
-      )}
+    }
 
-      {err && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{err}</div>}
+      {err && <div className={cx(styles.r_5f22e64f, styles.r_0759a0f1, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_fc7473ca, styles.r_b54428d1)}>{err}</div>}
 
-      <div className="sticky bottom-3 z-10 rounded-xl border border-leaf-100 bg-white/95 p-3 shadow-card backdrop-blur">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-xs text-leaf-700/70">
-            共 <span className="font-semibold text-ink-800">{products.length}</span> 个商品，价格区间：
-            <span className="font-semibold text-rose-600">{priceSummary}</span>
+      <div className={cx(styles.r_3e0fd166, styles.r_49af11eb, styles.r_236812d6, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_f5ebd4d0, styles.r_eb6e8b88, styles.r_21b12502, styles.r_0b2e8c28)}>
+        <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_1004c0c3)}>
+          <div className={cx(styles.r_359090c2, styles.r_69335b95)}>
+            共 <span className={cx(styles.r_e83a7042, styles.r_399e11a5)}>{products.length}</span> 个商品，价格区间：
+            <span className={cx(styles.r_e83a7042, styles.r_595fceba)}>{priceSummary}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
             <Link href={isEdit && initialValue?.id ? `/market/${initialValue.id}` : '/market'} className="btn-outline">
               取消
             </Link>
             <Form.Submit disabled={submitting} className="btn-primary">
               <Icon name="check" size={14} />
-              {submitting ? (isEdit ? '保存中...' : '发布中...') : (isEdit ? '保存修改' : '发布商品')}
+              {submitting ? isEdit ? '保存中...' : '发布中...' : isEdit ? '保存修改' : '发布商品'}
             </Form.Submit>
           </div>
         </div>
       </div>
-    </Form.Root>
-  );
+    </Form.Root>;
+
 
   return (
-    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_280px]">
-      <main className="min-w-0">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+    <div className={cx(styles.r_f3c543ad, styles.r_d7c83398, styles.r_0d304f90, styles.r_4c57394d)}>
+      <main className={styles.r_7e0b7cdf}>
+        <div className={cx(styles.r_da019856, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_6f27f4f7, styles.r_8ef2268e, styles.r_1004c0c3)}>
           <div>
-            <h1 className="text-2xl font-bold text-ink-800">{isEdit ? '编辑商品' : '发布商品'}</h1>
-            <p className="mt-1 text-sm text-leaf-700/70">
+            <h1 className={cx(styles.r_3febee09, styles.r_69450ef1, styles.r_399e11a5)}>{isEdit ? '编辑商品' : '发布商品'}</h1>
+            <p className={cx(styles.r_b6b02c0e, styles.r_fc7473ca, styles.r_69335b95)}>
               填写商品信息、品种分类、发货地和交易方式后即可发布。
             </p>
           </div>
@@ -708,13 +712,13 @@ export function MarketListingForm({ mode, initialValue }: Props) {
         {isEdit ? form : <PermissionGate perm="market:sell">{form}</PermissionGate>}
       </main>
 
-      <aside className="hidden xl:block">
-        <div className="sticky top-[60px] max-h-[calc(100vh-72px)] overflow-y-auto">
+      <aside className={cx(styles.r_99d72c7f, styles.r_c830740d)}>
+        <div className={cx(styles.r_3e0fd166, styles.r_317cfdc3, styles.r_2d538599, styles.r_92bf82f4)}>
           <UserAccountCard />
         </div>
       </aside>
-    </div>
-  );
+    </div>);
+
 }
 
 function Field({
@@ -724,59 +728,59 @@ function Field({
   invalid,
   message,
   hiddenValue,
-  children,
-}: {
-  label: string;
-  name?: string;
-  required?: boolean;
-  invalid?: boolean;
-  message?: string;
-  hiddenValue?: string;
-  children: React.ReactNode;
-}) {
+  children
+
+
+
+
+
+
+
+
+}: {label: string;name?: string;required?: boolean;invalid?: boolean;message?: string;hiddenValue?: string;children: React.ReactNode;}) {
   if (name) {
     return (
       <Form.Field name={name} serverInvalid={invalid}>
-        <Form.Label className="mb-1.5 block text-sm font-semibold text-ink-800">
-          {required && <span className="text-rose-500">*</span>} {label}
+        <Form.Label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>
+          {required && <span className={styles.r_fa512798}>*</span>} {label}
         </Form.Label>
-        {hiddenValue !== undefined && (
-          <Form.Control
-            value={hiddenValue}
-            required={required}
-            readOnly
-            tabIndex={-1}
-            aria-hidden
-            className="sr-only"
-          />
-        )}
+        {hiddenValue !== undefined &&
+        <Form.Control
+          value={hiddenValue}
+          required={required}
+          readOnly
+          tabIndex={-1}
+          aria-hidden
+          className={styles.r_2daa8e5e} />
+
+        }
         {children}
-        {message && (
-          <Form.Message
-            match="valueMissing"
-            forceMatch={invalid}
-            className="mt-1.5 block text-xs text-rose-600"
-          >
+        {message &&
+        <Form.Message
+          match="valueMissing"
+          forceMatch={invalid}
+          className={cx(styles.r_aac62f0e, styles.r_0214b4b3, styles.r_359090c2, styles.r_595fceba)}>
+
             {message}
           </Form.Message>
-        )}
-      </Form.Field>
-    );
+        }
+      </Form.Field>);
+
   }
 
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-semibold text-ink-800">{label}</label>
+      <label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>{label}</label>
       {children}
-    </div>
-  );
+    </div>);
+
 }
 
-function SectionTitle({ title, desc }: { title: string; desc?: string }) {
+function SectionTitle({ title, desc }: {title: string;desc?: string;}) {
   return (
     <div>
-      <h2 className="text-sm font-semibold text-ink-800">{title}</h2>
-      {desc && <p className="mt-0.5 text-xs text-leaf-700/60">{desc}</p>}
-    </div>
-  );
+      <h2 className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>{title}</h2>
+      {desc && <p className={cx(styles.r_15e1b1f4, styles.r_359090c2, styles.r_6c4cc49e)}>{desc}</p>}
+    </div>);
+
 }

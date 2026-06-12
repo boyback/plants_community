@@ -2,44 +2,48 @@ import Link from 'next/link';
 import { Shell } from '@/components/layout/Shell';
 import { Logo } from '@/components/ui/Logo';
 import { I18nText } from '@/components/ui/I18nText';
+import styles from './page.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 export default function AboutPage() {
   return (
     <Shell>
-      <div className="mx-auto max-w-3xl">
-        <div className="card overflow-hidden">
-          <div className="bg-gradient-to-br from-leaf-400 to-leaf-600 px-8 py-10 text-white">
-            <div className="flex items-center gap-3">
-              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/20 text-3xl backdrop-blur">
+      <div className={cx(styles.r_0e12dc7d, styles.r_fa3f7111)}>
+        <div className={styles.r_2cd02d11}>
+          <div className={cx(styles.r_39b2e003, styles.r_78ce000e, styles.r_0a6f1c29, styles.r_7e3e9a76, styles.r_1100bef6, styles.r_72a4c7cd)}>
+            <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3)}>
+              <div className={cx(styles.r_f3c543ad, styles.r_73a13409, styles.r_7e74e5fe, styles.r_67d66567, styles.r_68f2db62, styles.r_2cf6fd42, styles.r_751fb0d1, styles.r_0b2e8c28)}>
                 🌵
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-widest opacity-80">
+                <div className={cx(styles.r_d058ca6d, styles.r_117ec720, styles.r_08cc9b1d, styles.r_714816ef)}>
                   <I18nText k="about.tagline" fallback="About us" />
                 </div>
-                <h1 className="text-2xl font-bold">
+                <h1 className={cx(styles.r_3febee09, styles.r_69450ef1)}>
                   <I18nText k="about.brandName" fallback="肉友社 · RouYou Community" />
                 </h1>
               </div>
             </div>
-            <p className="mt-5 max-w-xl text-sm leading-relaxed opacity-90">
+            <p className={cx(styles.r_fb77735e, styles.r_9ef2b581, styles.r_fc7473ca, styles.r_6b189c6e, styles.r_4f5874c5)}>
               <I18nText
                 k="about.intro"
-                fallback="一个面向多肉植物爱好者的清新社区。我们相信:每一片叶子都值得被认真对待。"
-              />
+                fallback="一个面向多肉植物爱好者的清新社区。我们相信:每一片叶子都值得被认真对待。" />
+
             </p>
           </div>
 
-          <div className="space-y-6 p-8">
+          <div className={cx(styles.r_b3542e05, styles.r_845f5336)}>
             <Section titleKey="about.vision.title" titleFallback="我们的愿景" emoji="🌱">
               <I18nText
                 k="about.vision.body"
-                fallback="让每一位养肉人都能在这里找到知音。无论你是阳台党新手,还是大棚老玩家,都能在肉友社分享日常、交流心得、结识同好。"
-              />
+                fallback="让每一位养肉人都能在这里找到知音。无论你是阳台党新手,还是大棚老玩家,都能在肉友社分享日常、交流心得、结识同好。" />
+
             </Section>
 
             <Section titleKey="about.features.title" titleFallback="核心功能" emoji="✨">
-              <ul className="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <ul className={cx(styles.r_b6b02c0e, styles.r_f3c543ad, styles.r_d7c83398, styles.r_77a2a20e, styles.r_e00ad816)}>
                 <Feature><I18nText k="about.features.postTypes" fallback="📝 5 种帖子类型" /></Feature>
                 <Feature><I18nText k="about.features.boards" fallback="🏷️ 细分板块讨论" /></Feature>
                 <Feature><I18nText k="about.features.encyclopedia" fallback="📖 多肉图鉴" /></Feature>
@@ -52,7 +56,7 @@ export default function AboutPage() {
             </Section>
 
             <Section titleKey="about.rules.title" titleFallback="社区公约" emoji="🤝">
-              <ol className="mt-1 ml-5 list-decimal space-y-1 text-sm">
+              <ol className={cx(styles.r_b6b02c0e, styles.r_ee19a23d, styles.r_a0df6401, styles.r_da7c36cd, styles.r_fc7473ca)}>
                 <li><I18nText k="about.rules.item1" fallback="尊重每一位肉友,拒绝人身攻击" /></li>
                 <li><I18nText k="about.rules.item2" fallback="保持话题与多肉相关,严禁无关广告" /></li>
                 <li><I18nText k="about.rules.item3" fallback="交易请通过认证渠道,谨防受骗" /></li>
@@ -62,34 +66,34 @@ export default function AboutPage() {
             </Section>
 
             <Section titleKey="about.tech.title" titleFallback="技术信息" emoji="💻">
-              <div className="mt-1 space-y-1 text-sm text-leaf-700/80">
+              <div className={cx(styles.r_b6b02c0e, styles.r_da7c36cd, styles.r_fc7473ca, styles.r_21d33c50)}>
                 <div><I18nText k="about.tech.stack" fallback="前端框架:Next.js 14 + React 18 + TypeScript" /></div>
-                <div><I18nText k="about.tech.style" fallback="样式方案:Tailwind CSS" /></div>
+                <div><I18nText k="about.tech.style" fallback="样式方案:SCSS + px-vw" /></div>
                 <div><I18nText k="about.tech.demo" fallback="本站为演示站点,数据为 Mock,刷新后状态保留在本地" /></div>
               </div>
             </Section>
 
             <Section titleKey="about.contact.title" titleFallback="联系我们" emoji="📬">
-              <div className="mt-1 space-y-1 text-sm">
+              <div className={cx(styles.r_b6b02c0e, styles.r_da7c36cd, styles.r_fc7473ca)}>
                 <div><I18nText k="about.contact.email" fallback="📧 hello@rouyou.demo" /></div>
                 <div>
                   <I18nText k="about.contact.github" fallback="🐙 GitHub · " />
-                  <span className="text-leaf-700">@rouyou-community</span>
+                  <span className={styles.r_5f6a59f1}>@rouyou-community</span>
                 </div>
                 <div><I18nText k="about.contact.wechat" fallback="💬 微信交流群:入群请私信管理员" /></div>
               </div>
             </Section>
 
-            <div className="border-t border-leaf-100 pt-6 text-center">
-              <Logo className="justify-center" />
-              <div className="mt-2 text-[11px] text-leaf-700/60">
+            <div className={cx(styles.r_b950dda2, styles.r_88b684d2, styles.r_30c1d058, styles.r_ca6bf630)}>
+              <Logo className={styles.r_86843cf1} />
+              <div className={cx(styles.r_50d0d216, styles.r_d058ca6d, styles.r_6c4cc49e)}>
                 <I18nText
                   k="about.copyright"
                   vars={{ year: new Date().getFullYear() }}
-                  fallback={`© ${new Date().getFullYear()} RouYou Community — Made with 🌿 and ❤️`}
-                />
+                  fallback={`© ${new Date().getFullYear()} RouYou Community — Made with 🌿 and ❤️`} />
+
               </div>
-              <div className="mt-3 flex justify-center gap-4 text-xs">
+              <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_86843cf1, styles.r_0c3bc985, styles.r_359090c2)}>
                 <Link href="/" className="link">
                   <I18nText k="about.links.home" fallback="返回首页" />
                 </Link>
@@ -104,36 +108,36 @@ export default function AboutPage() {
           </div>
         </div>
       </div>
-    </Shell>
-  );
+    </Shell>);
+
 }
 
 function Section({
   titleKey,
   titleFallback,
   emoji,
-  children,
-}: {
-  titleKey: string;
-  titleFallback: string;
-  emoji: string;
-  children: React.ReactNode;
-}) {
+  children
+
+
+
+
+
+}: {titleKey: string;titleFallback: string;emoji: string;children: React.ReactNode;}) {
   return (
     <section>
-      <h2 className="flex items-center gap-2 text-base font-semibold text-ink-800">
+      <h2 className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_4ee73492, styles.r_e83a7042, styles.r_399e11a5)}>
         <span>{emoji}</span>
         <I18nText k={titleKey} fallback={titleFallback} />
       </h2>
-      <div className="mt-2 text-sm text-ink-700">{children}</div>
-    </section>
-  );
+      <div className={cx(styles.r_50d0d216, styles.r_fc7473ca, styles.r_eb6abb1f)}>{children}</div>
+    </section>);
+
 }
 
-function Feature({ children }: { children: React.ReactNode }) {
+function Feature({ children }: {children: React.ReactNode;}) {
   return (
-    <li className="flex items-center gap-2 rounded-lg bg-leaf-50/60 px-3 py-2 text-sm">
+    <li className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_5f22e64f, styles.r_a8a62ca4, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_fc7473ca)}>
       {children}
-    </li>
-  );
+    </li>);
+
 }

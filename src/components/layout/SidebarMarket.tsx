@@ -10,7 +10,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/client-api';
+import { api } from "@/lib/client-api";
+import styles from './SidebarMarket.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 interface ProductItem {
   id: string;
@@ -56,8 +60,8 @@ export function SidebarMarket() {
   const loadAuctions = async (shuffle = false) => {
     setAuctionRefreshing(true);
     try {
-      const data = await api.get<{ auctions: AuctionItem[] }>(
-        `/api/home/sidebar-market?only=auctions${shuffle ? '&shuffle=1' : ''}`,
+      const data = await api.get<{auctions: AuctionItem[];}>(
+        `/api/home/sidebar-market?only=auctions${shuffle ? '&shuffle=1' : ''}`
       );
       setAuctions(data?.auctions ?? []);
     } catch {
@@ -71,8 +75,8 @@ export function SidebarMarket() {
   const loadProducts = async (shuffle = false) => {
     setProductRefreshing(true);
     try {
-      const data = await api.get<{ products: ProductItem[] }>(
-        `/api/home/sidebar-market?only=products${shuffle ? '&shuffle=1' : ''}`,
+      const data = await api.get<{products: ProductItem[];}>(
+        `/api/home/sidebar-market?only=products${shuffle ? '&shuffle=1' : ''}`
       );
       setProducts(data?.products ?? []);
     } catch {
@@ -103,58 +107,58 @@ export function SidebarMarket() {
   if (!showAuction && !showProduct) return null;
 
   return (
-    <div className="mt-6 space-y-4">
-      {showAuction && (
-        <Block
-          title="拍卖会"
-          icon="🔨"
-          moreHref="/auction"
-          accent="rose"
-          refreshing={auctionRefreshing}
-          onRefresh={() => void loadAuctions(true)}
-          onDismiss={() => {
-            dismiss(KEY_AUCTION);
-            setAuctionHidden(true);
-          }}
-        >
-          {auctions!.map((a) => (
-            <Row
-              key={a.id}
-              href={`/auction/${a.id}`}
-              cover={a.cover}
-              title={a.title}
-              price={a.startPrice}
-              priceLabel="起拍"
-            />
-          ))}
-        </Block>
-      )}
+    <div className={cx(styles.r_31f25533, styles.r_3e7ce58d)}>
+      {showAuction &&
+      <Block
+        title="拍卖会"
+        icon="🔨"
+        moreHref="/auction"
+        accent="rose"
+        refreshing={auctionRefreshing}
+        onRefresh={() => void loadAuctions(true)}
+        onDismiss={() => {
+          dismiss(KEY_AUCTION);
+          setAuctionHidden(true);
+        }}>
 
-      {showProduct && (
-        <Block
-          title="商品推荐"
-          icon="🛒"
-          moreHref="/market"
-          refreshing={productRefreshing}
-          onRefresh={() => void loadProducts(true)}
-          onDismiss={() => {
-            dismiss(KEY_PRODUCT);
-            setProductHidden(true);
-          }}
-        >
-          {products!.map((p) => (
-            <Row
-              key={p.id}
-              href={`/market/${p.id}`}
-              cover={p.cover}
-              title={p.title}
-              price={p.price}
-            />
-          ))}
+          {auctions!.map((a) =>
+        <Row
+          key={a.id}
+          href={`/auction/${a.id}`}
+          cover={a.cover}
+          title={a.title}
+          price={a.startPrice}
+          priceLabel="起拍" />
+
+        )}
         </Block>
-      )}
-    </div>
-  );
+      }
+
+      {showProduct &&
+      <Block
+        title="商品推荐"
+        icon="🛒"
+        moreHref="/market"
+        refreshing={productRefreshing}
+        onRefresh={() => void loadProducts(true)}
+        onDismiss={() => {
+          dismiss(KEY_PRODUCT);
+          setProductHidden(true);
+        }}>
+
+          {products!.map((p) =>
+        <Row
+          key={p.id}
+          href={`/market/${p.id}`}
+          cover={p.cover}
+          title={p.title}
+          price={p.price} />
+
+        )}
+        </Block>
+      }
+    </div>);
+
 }
 
 function Block({
@@ -165,56 +169,56 @@ function Block({
   refreshing,
   onRefresh,
   onDismiss,
-  children,
-}: {
-  title: string;
-  icon: string;
-  moreHref: string;
-  accent?: 'rose';
-  refreshing: boolean;
-  onRefresh: () => void;
-  onDismiss: () => void;
-  children: React.ReactNode;
-}) {
+  children
+
+
+
+
+
+
+
+
+
+}: {title: string;icon: string;moreHref: string;accent?: 'rose';refreshing: boolean;onRefresh: () => void;onDismiss: () => void;children: React.ReactNode;}) {
   return (
     <div>
-      <div className="mb-1.5 flex items-center justify-between px-3 text-[11px]">
-        <span className="text-leaf-600/70">
+      <div className={cx(styles.r_d7c1392c, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_0e17f2bd, styles.r_d058ca6d)}>
+        <span className={styles.r_a1a0ad0b}>
           {icon} {title}
         </span>
-        <div className="flex items-center gap-2">
+        <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
           <button
             type="button"
             onClick={onRefresh}
             disabled={refreshing}
-            className="text-leaf-700/70 hover:text-leaf-700 disabled:opacity-50"
-            title="换一换"
-          >
+            className={cx(styles.r_69335b95, styles.r_9825203a, styles.r_b29d8adb)}
+            title="换一换">
+
             {refreshing ? '换…' : '换 ↻'}
           </button>
           <Link
             href={moreHref}
             className={
-              accent === 'rose'
-                ? 'text-rose-700 hover:underline'
-                : 'text-leaf-700 hover:underline'
-            }
-          >
+            accent === 'rose' ? cx(styles.r_b54428d1, styles.r_f673f4a7) : cx(styles.r_5f6a59f1, styles.r_f673f4a7)
+
+
+            }>
+
             全部 →
           </Link>
           <button
             type="button"
             onClick={onDismiss}
-            className="text-leaf-700/40 hover:text-rose-600"
-            title="关闭(6 小时内不再显示)"
-          >
+            className={cx(styles.r_4d094717, styles.r_744ff542)}
+            title="关闭(6 小时内不再显示)">
+
             ✕
           </button>
         </div>
       </div>
-      <div className="space-y-0.5">{children}</div>
-    </div>
-  );
+      <div className={styles.r_e2eedc57}>{children}</div>
+    </div>);
+
 }
 
 function Row({
@@ -222,30 +226,30 @@ function Row({
   cover,
   title,
   price,
-  priceLabel,
-}: {
-  href: string;
-  cover: string;
-  title: string;
-  price: number;
-  priceLabel?: string;
-}) {
+  priceLabel
+
+
+
+
+
+
+}: {href: string;cover: string;title: string;price: number;priceLabel?: string;}) {
   const yuan = (price / 100).toFixed(price % 100 === 0 ? 0 : 2);
   return (
     <Link
       href={href}
-      className="flex items-center gap-2 rounded-none p-1.5 transition-colors hover:bg-leaf-50"
-    >
-      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-leaf-50">
-        <Image src={cover} alt={title} fill className="object-cover" unoptimized />
+      className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_0c5e9137, styles.r_cd009d7d, styles.r_ceb69a6b, styles.r_5756b7b4)}>
+
+      <div className={cx(styles.r_d89972fe, styles.r_426b8b75, styles.r_d854e569, styles.r_012fbd12, styles.r_2cd02d11, styles.r_421ac2be, styles.r_7ebecbb6)}>
+        <Image src={cover} alt={title} fill className={styles.r_7d85d0c2} unoptimized />
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="line-clamp-1 text-[12px] text-ink-800">{title}</div>
-        <div className="mt-0.5 flex items-baseline gap-1 text-[11px]">
-          {priceLabel && <span className="text-leaf-700/50">{priceLabel}</span>}
-          <span className="font-semibold text-rose-600">¥{yuan}</span>
+      <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
+        <div className={cx(styles.r_f50e2015, styles.r_69cdf25a, styles.r_399e11a5)}>{title}</div>
+        <div className={cx(styles.r_15e1b1f4, styles.r_60fbb771, styles.r_b7012bb2, styles.r_44ee8ba0, styles.r_d058ca6d)}>
+          {priceLabel && <span className={styles.r_3353f144}>{priceLabel}</span>}
+          <span className={cx(styles.r_e83a7042, styles.r_595fceba)}>¥{yuan}</span>
         </div>
       </div>
-    </Link>
-  );
+    </Link>);
+
 }

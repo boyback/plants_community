@@ -217,19 +217,19 @@ const JournalEntryInput = z.object({
       'other',
     ]),
   stageLabel: z.string().trim().max(50).optional(),
-  note: z.string().trim().min(1, '每条成长记录都需要填写心得').max(2000),
-  images: z.array(z.string()).min(1, '每条成长记录都需要上传配图').max(9).default([]),
+  note: z.string().trim().min(1, '每条记录都需要填写心得').max(2000),
+  images: z.array(z.string()).min(1, '每条记录都需要上传配图').max(9).default([]),
 });
 
 const CreateBody = z
   .object({
-    type: z.enum(['rich', 'short', 'vote', 'video', 'event', 'help', 'journal']),
+    type: z.enum(['rich', 'image', 'vote', 'video', 'event', 'help', 'journal']),
     // 板块定位(任一)
     categorySlug: z.string().optional(),
     genusSlug: z.string().optional(),
     speciesSlug: z.string().optional(),
     boardSlug: z.string().optional(), // 向后兼容
-    title: z.string().min(1).max(100),
+    title: z.string().min(1).max(500),
     content: z.unknown().optional(),
     contentJson: z.unknown().optional(),
     tags: z.array(z.string()).max(10).default([]),
@@ -264,14 +264,18 @@ const CreateBody = z
   .superRefine((data, ctx) => {
     if (!data.categorySlug && !data.genusSlug && !data.speciesSlug && !data.boardSlug)
       ctx.addIssue({ code: 'custom', message: '必须指定一个板块' });
+    if (data.type !== 'image' && data.type !== 'video' && data.title.length > 100)
+      ctx.addIssue({ code: 'custom', message: '帖子标题不能超过 100 字' });
     if (data.type === 'vote' && !data.vote)
       ctx.addIssue({ code: 'custom', message: '投票贴必须包含 vote 字段' });
     if (data.type === 'event' && !data.event)
       ctx.addIssue({ code: 'custom', message: 'EVENT 贴必须包含 event 字段' });
     if (data.type === 'video' && !data.videoUrl)
       ctx.addIssue({ code: 'custom', message: '视频贴必须包含 videoUrl' });
+    if (data.type === 'image' && (!data.images || data.images.length === 0))
+      ctx.addIssue({ code: 'custom', message: '图文贴必须上传图片' });
     if (data.type === 'journal' && !data.journal)
-      ctx.addIssue({ code: 'custom', message: '成长日记贴必须包含 journal 字段' });
+      ctx.addIssue({ code: 'custom', message: '记录贴必须包含 journal 字段' });
   });
 
 type ResolvedIds = {
@@ -340,7 +344,7 @@ export const POST = handler(async (req) => {
 
   const permMap: Record<typeof body.type, Permission> = {
     rich: 'post:rich',
-    short: 'post:short',
+    image: 'post:rich',
     help: 'post:short',
     video: 'post:video',
     vote: 'post:vote',
@@ -363,7 +367,7 @@ export const POST = handler(async (req) => {
   const { ids: resolvedIds } = resolved;
   const finalIds = resolvedIds;
   if (body.type === 'journal' && !finalIds.speciesId) {
-    return fail(400, '成长记录需要选择具体品种');
+    return fail(400, '记录贴需要选择具体品种');
   }
 
   if (body.albumSync?.mode === 'existing') {
@@ -375,7 +379,7 @@ export const POST = handler(async (req) => {
     if (!album) return fail(400, '只能同步到自己的相册');
   }
 
-  const cover = body.cover ?? null;
+  const cover = body.type === 'image' || body.type === 'video' ? null : body.cover ?? null;
 
   const isRich = body.type === 'rich' || body.type === 'event';
   const stored = processRichInput({

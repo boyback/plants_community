@@ -15,22 +15,26 @@ import { TermsTw } from './TermsTw';
 import { TermsEn } from './TermsEn';
 import { TermsJa } from './TermsJa';
 import { TermsKo } from './TermsKo';
+import styles from './page.module.scss';
+import { cx } from '@/lib/style-utils';
+
+
 
 export default function TermsPage() {
   const { locale } = useI18n();
   const Body =
-    locale === 'zh-CN' ? TermsZh
-    : locale === 'zh-TW' ? TermsTw
-    : locale === 'en'    ? TermsEn
-    : locale === 'ja'    ? TermsJa
-    : locale === 'ko'    ? TermsKo
-    : TermsZh;
+  locale === "zh-CN" ? TermsZh :
+  locale === "zh-TW" ? TermsTw :
+  locale === 'en' ? TermsEn :
+  locale === 'ja' ? TermsJa :
+  locale === 'ko' ? TermsKo :
+  TermsZh;
 
   return (
     <Shell>
-      <article className="card p-6 prose prose-sm sm:prose-base max-w-none text-leaf-800">
+      <article className={cx(styles.r_0478c89a, styles.r_1bf5f8e9, styles.r_86e3700d, styles.r_2191c145, styles.r_e7eab4cb)}>
         <Body />
       </article>
-    </Shell>
-  );
+    </Shell>);
+
 }

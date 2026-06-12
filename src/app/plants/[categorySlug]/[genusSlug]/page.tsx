@@ -1,13 +1,13 @@
 import { redirect, notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function PlantGenusEntry({
-  params,
-}: {
-  params: { categorySlug: string; genusSlug: string };
-}) {
+  params
+
+
+}: {params: {categorySlug: string;genusSlug: string;};}) {
   const firstSpecies = await prisma.species.findFirst({
     where: {
       genus: {
@@ -15,12 +15,12 @@ export default async function PlantGenusEntry({
         board: {
           slug: params.categorySlug,
           kind: 'family',
-          enabled: true,
-        },
-      },
+          enabled: true
+        }
+      }
     },
     orderBy: [{ orderIdx: 'asc' }, { name: 'asc' }],
-    include: { genus: { include: { board: true } } },
+    include: { genus: { include: { board: true } } }
   });
 
   if (!firstSpecies?.genus?.board) notFound();
