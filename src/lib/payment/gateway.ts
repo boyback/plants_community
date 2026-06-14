@@ -5,10 +5,8 @@
  * (支付宝 / 微信 / Stripe),只需要实现这个接口并在 `pickGateway` 里切换。
  *
  * 当前实现:
- *   - `MockGateway` — Demo 默认,生成 mock:// 协议的假二维码,
- *     业务串联仍走原逻辑。
- *   - `AlipayGateway` — 支付宝 sandbox 实现,依赖 `alipay-sdk`
- *     包(延迟 require,未安装时报错提示)。
+ *   - `AlipayGateway` — 支付宝 PC 网站支付,pagePayUrl 跳转。
+ *   - `WechatGateway` — 微信 Native 扫码支付,qrcode 渲染二维码。
  */
 
 export interface PaymentChannel {
@@ -27,7 +25,8 @@ export interface CreatePaymentInput {
 }
 
 export interface CreatePaymentResult {
-  qrcode: string; // 给前端渲染/跳转的 URL 或 mock:// 字符串
+  qrcode?: string; // 给前端渲染的二维码内容/URL
+  pagePayUrl?: string; // 支付宝 PC 网站支付跳转 URL
   rawResponse?: unknown;
 }
 
@@ -51,25 +50,7 @@ export interface PaymentGateway {
 }
 
 // -----------------------------------------------
-//  Mock 网关(本仓库默认使用)
-// -----------------------------------------------
-
-export const MockGateway: PaymentGateway = {
-  async createPayment(input) {
-    const qrcode = `mock://${input.channel}/pay/${input.payNo}/${input.amount}`;
-    return { qrcode };
-  },
-  async queryStatus() {
-    // Mock 模式不主动查,状态只能由 /api/payments/:payNo/confirm 触发
-    return null;
-  },
-  async verifyWebhook() {
-    throw new Error('MockGateway 不支持 webhook 校验');
-  },
-};
-
-// -----------------------------------------------
-//  支付宝网关(Alipay sandbox)
+//  支付宝网关
 // -----------------------------------------------
 
 /**
@@ -96,12 +77,121 @@ let _alipaySdk: AlipaySdkInstance | null = null;
  *   - 支持 \n 转义(形如 "-----BEGIN...\n...")
  *   - 支持已经带 BEGIN/END 头尾的真实 PEM
  */
-function normalizeKey(raw: string, type: 'RSA PRIVATE' | 'PUBLIC'): string {
+function normalizeKey(raw: string, type: 'PRIVATE' | 'RSA PRIVATE' | 'PUBLIC'): string {
   const unescaped = raw.replace(/\\n/g, '\n').trim();
   if (unescaped.includes('BEGIN')) return unescaped;
   // 纯 base64,自动切 64 列并加头尾
   const wrapped = unescaped.replace(/\s+/g, '').match(/.{1,64}/g)?.join('\n') ?? unescaped;
   return `-----BEGIN ${type} KEY-----\n${wrapped}\n-----END ${type} KEY-----`;
+}
+
+function normalizePrivateKey(raw: string): { key: string; keyType: 'PKCS1' | 'PKCS8' } {
+  const unescaped = raw.replace(/\\n/g, '\n').trim();
+  const { createPrivateKey } = require('crypto') as typeof import('crypto');
+  if (unescaped.includes('BEGIN RSA PRIVATE KEY')) {
+    createPrivateKey(unescaped);
+    return { key: unescaped, keyType: 'PKCS1' };
+  }
+  if (unescaped.includes('BEGIN PRIVATE KEY')) {
+    createPrivateKey(unescaped);
+    return { key: unescaped, keyType: 'PKCS8' };
+  }
+  const candidates: Array<{ key: string; keyType: 'PKCS1' | 'PKCS8' }> = [
+    { key: normalizeKey(unescaped, 'PRIVATE'), keyType: 'PKCS8' },
+    { key: normalizeKey(unescaped, 'RSA PRIVATE'), keyType: 'PKCS1' },
+  ];
+  for (const candidate of candidates) {
+    try {
+      createPrivateKey(candidate.key);
+      return candidate;
+    } catch {
+      // try next private key wrapper
+    }
+  }
+  throw new Error('ALIPAY_PRIVATE_KEY_PEM 不是有效的 RSA 应用私钥');
+}
+
+function certContent(raw?: string) {
+  return raw ? raw.replace(/\\n/g, '\n') : undefined;
+}
+
+function getAlipayCertOptions() {
+  const {
+    ALIPAY_APP_CERT_PATH,
+    ALIPAY_APP_CERT_CONTENT,
+    ALIPAY_ALIPAY_PUBLIC_CERT_PATH,
+    ALIPAY_ALIPAY_PUBLIC_CERT_CONTENT,
+    ALIPAY_ROOT_CERT_PATH,
+    ALIPAY_ROOT_CERT_CONTENT,
+  } = process.env;
+  const hasCert =
+    (ALIPAY_APP_CERT_PATH || ALIPAY_APP_CERT_CONTENT) &&
+    (ALIPAY_ALIPAY_PUBLIC_CERT_PATH || ALIPAY_ALIPAY_PUBLIC_CERT_CONTENT) &&
+    (ALIPAY_ROOT_CERT_PATH || ALIPAY_ROOT_CERT_CONTENT);
+  if (!hasCert) return null;
+  return {
+    appCertPath: ALIPAY_APP_CERT_PATH,
+    appCertContent: certContent(ALIPAY_APP_CERT_CONTENT),
+    alipayPublicCertPath: ALIPAY_ALIPAY_PUBLIC_CERT_PATH,
+    alipayPublicCertContent: certContent(ALIPAY_ALIPAY_PUBLIC_CERT_CONTENT),
+    alipayRootCertPath: ALIPAY_ROOT_CERT_PATH,
+    alipayRootCertContent: certContent(ALIPAY_ROOT_CERT_CONTENT),
+  };
+}
+
+function alipayTimestamp() {
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date());
+  const pick = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? '00';
+  return `${pick('year')}-${pick('month')}-${pick('day')} ${pick('hour')}:${pick('minute')}:${pick('second')}`;
+}
+
+function buildAlipayPagePayUrl(input: {
+  appId: string;
+  gateway: string;
+  privateKey: string;
+  notifyUrl?: string;
+  returnUrl?: string;
+  bizContent: Record<string, string>;
+}): string {
+  const { createSign } = require('crypto') as typeof import('crypto');
+  const params: Record<string, string> = {
+    app_id: input.appId,
+    method: 'alipay.trade.page.pay',
+    charset: 'utf-8',
+    sign_type: 'RSA2',
+    timestamp: alipayTimestamp(),
+    version: '1.0',
+    biz_content: JSON.stringify(input.bizContent),
+  };
+  if (input.notifyUrl) params.notify_url = input.notifyUrl;
+  if (input.returnUrl) params.return_url = input.returnUrl;
+
+  const url = new URL(input.gateway);
+  Object.entries(params).forEach(([key, value]) => {
+    url.searchParams.set(key, value);
+  });
+
+  const finalParams: Record<string, string> = {};
+  url.searchParams.forEach((value, key) => {
+    if (key !== 'sign') finalParams[key] = value;
+  });
+  const signString = Object.keys(finalParams)
+    .sort()
+    .map((key) => `${key}=${finalParams[key]}`)
+    .join('&');
+  const sign = createSign('RSA-SHA256').update(signString, 'utf8').sign(input.privateKey, 'base64');
+  url.searchParams.set('sign', sign);
+  return url.toString();
 }
 
 function getAlipay(): AlipaySdkInstance {
@@ -112,9 +202,10 @@ function getAlipay(): AlipaySdkInstance {
     ALIPAY_PUBLIC_KEY_PEM,
     ALIPAY_GATEWAY,
   } = process.env;
-  if (!ALIPAY_APP_ID || !ALIPAY_PRIVATE_KEY_PEM || !ALIPAY_PUBLIC_KEY_PEM) {
+  const certOptions = getAlipayCertOptions();
+  if (!ALIPAY_APP_ID || !ALIPAY_PRIVATE_KEY_PEM || (!ALIPAY_PUBLIC_KEY_PEM && !certOptions)) {
     throw new Error(
-      'AlipayGateway 需要环境变量:ALIPAY_APP_ID / ALIPAY_PRIVATE_KEY_PEM / ALIPAY_PUBLIC_KEY_PEM',
+      'AlipayGateway 需要环境变量:ALIPAY_APP_ID / ALIPAY_PRIVATE_KEY_PEM / ALIPAY_PUBLIC_KEY_PEM 或支付宝证书三件套',
     );
   }
   // 延迟 require,未安装依赖时给出清晰错误
@@ -130,10 +221,13 @@ function getAlipay(): AlipaySdkInstance {
       'AlipayGateway 需要 alipay-sdk 依赖:npm install alipay-sdk',
     );
   }
+  const privateKey = normalizePrivateKey(ALIPAY_PRIVATE_KEY_PEM);
   _alipaySdk = new AlipaySdk({
     appId: ALIPAY_APP_ID,
-    privateKey: normalizeKey(ALIPAY_PRIVATE_KEY_PEM, 'RSA PRIVATE'),
-    alipayPublicKey: normalizeKey(ALIPAY_PUBLIC_KEY_PEM, 'PUBLIC'),
+    privateKey: privateKey.key,
+    keyType: privateKey.keyType,
+    ...(ALIPAY_PUBLIC_KEY_PEM ? { alipayPublicKey: normalizeKey(ALIPAY_PUBLIC_KEY_PEM, 'PUBLIC') } : {}),
+    ...(certOptions ?? {}),
     gateway: ALIPAY_GATEWAY ?? 'https://openapi-sandbox.dl.alipaydev.com/gateway.do',
     signType: 'RSA2',
   });
@@ -142,25 +236,40 @@ function getAlipay(): AlipaySdkInstance {
 
 export const AlipayGateway: PaymentGateway = {
   async createPayment(input) {
-    const sdk = getAlipay();
+    const {
+      ALIPAY_APP_ID,
+      ALIPAY_PRIVATE_KEY_PEM,
+      ALIPAY_GATEWAY,
+      ALIPAY_NOTIFY_URL,
+      ALIPAY_RETURN_URL,
+    } = process.env;
+    if (!ALIPAY_APP_ID || !ALIPAY_PRIVATE_KEY_PEM) {
+      throw new Error('AlipayGateway 需要环境变量:ALIPAY_APP_ID / ALIPAY_PRIVATE_KEY_PEM');
+    }
     const bizContent = {
       out_trade_no: input.payNo,
       total_amount: (input.amount / 100).toFixed(2),
       subject: input.subject,
       timeout_express: `${input.expireMinutes}m`,
       passback_params: encodeURIComponent(JSON.stringify(input.meta)),
+      product_code: 'FAST_INSTANT_TRADE_PAY',
     };
-    // alipay.trade.precreate — 返回二维码 URL,前端用 QRCode 组件渲染
-    const resp = await sdk.exec('alipay.trade.precreate', {
-      notify_url: process.env.ALIPAY_NOTIFY_URL,
+    const privateKey = normalizePrivateKey(ALIPAY_PRIVATE_KEY_PEM);
+    const pagePayUrl = buildAlipayPagePayUrl({
+      appId: ALIPAY_APP_ID,
+      gateway: ALIPAY_GATEWAY ?? 'https://openapi.alipay.com/gateway.do',
+      privateKey: privateKey.key,
+      notifyUrl: ALIPAY_NOTIFY_URL,
+      returnUrl: ALIPAY_RETURN_URL,
       bizContent,
     });
-    // alipay-sdk v4 返回驼峰 qrCode,旧版是 qr_code;兜底都读一下
-    const qrcode = (resp.qrCode as string) ?? (resp.qr_code as string) ?? '';
-    if (!qrcode) {
-      throw new Error(`支付宝预下单失败: ${JSON.stringify(resp)}`);
+    if (!pagePayUrl) {
+      throw new Error('支付宝网页支付未返回跳转地址');
     }
-    return { qrcode, rawResponse: resp };
+    return {
+      pagePayUrl,
+      rawResponse: pagePayUrl,
+    };
   },
   async queryStatus(payNo) {
     const sdk = getAlipay();
@@ -356,33 +465,27 @@ export const WechatGateway: PaymentGateway = {
 // -----------------------------------------------
 
 /**
- * PAYMENT_GATEWAY(默认):
- *   'mock'   — MockGateway(所有渠道)
- *   'alipay' — AlipayGateway 当 channel=alipay,MockGateway 其他
- *   'real'   — 支付宝/微信分别用真实网关,其他 Mock
- *
- * 单独按渠道:
- *   pickGateway('alipay') / pickGateway('wechat')
+ * PAYMENT_GATEWAY:
+ *   'alipay' — 支付宝可用
+ *   'wechat' — 微信可用
+ *   'real'   — 支付宝/微信均可用
  */
 export function pickGateway(channel?: 'alipay' | 'wechat' | 'points'): PaymentGateway {
-  const chosen = (process.env.PAYMENT_GATEWAY ?? 'mock').toLowerCase();
+  const chosen = (process.env.PAYMENT_GATEWAY ?? 'real').toLowerCase();
 
   if (channel === 'alipay') {
     if (chosen === 'alipay' || chosen === 'real') return AlipayGateway;
-    return MockGateway;
+    throw new Error('支付宝支付未启用');
   }
   if (channel === 'wechat') {
     if (chosen === 'wechat' || chosen === 'real') return WechatGateway;
-    return MockGateway;
+    throw new Error('微信支付未启用');
   }
   if (channel === 'points') {
-    // 积分支付不走真实网关
-    return MockGateway;
+    throw new Error('积分支付不走支付网关');
   }
 
-  // 向后兼容:不传 channel 时按老行为
   if (chosen === 'alipay') return AlipayGateway;
   if (chosen === 'wechat') return WechatGateway;
-  return MockGateway;
+  throw new Error('支付渠道未指定');
 }
-

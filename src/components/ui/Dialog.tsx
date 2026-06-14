@@ -51,7 +51,6 @@ export function Dialog({ open, onClose, title, children, actions, maxWidth = 'md
         )}
         <RadixDialog.Content
           className={cn(cx(styles.dialogContent, styles.r_7bc55599, styles.r_e632769a, styles.r_d694ba66, styles.r_181b2866, styles.r_3ea0a2b7, styles.r_efaa0701, styles.r_36b381be, styles.r_5f22e64f, styles.r_5e10cdb8, styles.r_c07e54fd, styles.r_438b2237, styles.r_df37b1fd, styles.r_2089b774, styles.r_a9faa555, styles.r_0bc7c6cf, styles.r_33b203f5, styles.r_26698b65, styles.r_3424811d),
-
           maxWidthClass
           )}>
 

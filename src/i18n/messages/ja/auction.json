@@ -9,10 +9,10 @@
     "tabScheduled": "開催前",
     "tabFinished": "終了",
     "status": {
-      "draft": "下書き",
-      "scheduled": "開催前",
-      "live": "開催中",
-      "finished": "終了",
+      "live": "🔨 開催中",
+      "scheduled": "まもなく開始",
+      "noBidder": "入札なし",
+      "sold": "落札",
       "cancelled": "キャンセル"
     },
     "statusLabel": {
@@ -104,12 +104,9 @@
       "cancel": "キャンセル",
       "confirmPay": "支払いを確認",
       "scanQr": "{channel} でスキャンしてください",
-      "mockHint": "💡 デモ:下のボタンで支払い完了をシミュレート",
-      "mockPay": "🪄 支払い済みにする",
       "payLater": "後で払う",
       "toastEscrowed": "🎉 保証金を預りました、入札開始",
-      "opFail": "操作失敗",
-      "confirmFail": "確認失敗"
+      "opFail": "操作失敗"
     },
     "create": {
       "title": "オークションを開催",
@@ -158,13 +155,6 @@
       "finishedShort": "終了",
       "endedPrefix": "残り ",
       "startingPrefix": "開始まで "
-    },
-    "status": {
-      "live": "🔨 開催中",
-      "scheduled": "まもなく開始",
-      "noBidder": "入札なし",
-      "sold": "落札",
-      "cancelled": "キャンセル"
     },
     "countdown": {
       "ended": "終了",

@@ -17,7 +17,6 @@
     "db:studio": "prisma studio",
     "db:reseed": "prisma db push --force-reset --accept-data-loss && tsx prisma/seed.ts",
     "setup": "prisma db push && tsx prisma/seed.ts",
-    "alipay:probe": "node -r dotenv/config scripts/alipay-probe.mjs",
     "wechat:probe": "node -r dotenv/config scripts/wechat-probe.mjs",
     "feed:refresh": "node -r dotenv/config scripts/feed-refresh.mjs"
   },

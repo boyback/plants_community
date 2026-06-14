@@ -18,6 +18,8 @@ import { cn, formatDateTime, formatPrice, timeAgo } from '@/lib/utils';
 import { toast } from '@/components/ui/Toast';
 import { useBodyScrollLock } from '@/lib/hooks/useBodyScrollLock';
 import type { AuctionDetail, Payment } from '@/lib/types';
+import { PaymentQr } from '@/components/payment/PaymentQr';
+import { AlipayPagePayButton } from '@/components/payment/AlipayPagePayButton';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
 
@@ -558,16 +560,6 @@ function JoinDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payment?.payNo]);
 
-  const mockConfirm = async () => {
-    if (!payment) return;
-    try {
-      await api.post(`/api/payments/${payment.payNo}/confirm`);
-      onPaid();
-    } catch (e) {
-      setErr(e instanceof ApiError ? e.message : t('auction.depositModal.confirmFail'));
-    }
-  };
-
   return (
     <div
       className={cx(styles.r_7bc55599, styles.r_7b7df044, styles.r_181b2866, styles.r_f3c543ad, styles.r_67d66567, styles.r_094a9df0, styles.r_8e63407b)}
@@ -630,22 +622,18 @@ function JoinDialog({
 
         <div className={styles.r_ca6bf630}>
             <div className={cx(styles.r_359090c2, styles.r_69335b95)}>
-              {t('auction.depositModal.scanQr', {
+              {payment.pagePayUrl ? '点击按钮跳转到支付宝完成保证金支付' : t('auction.depositModal.scanQr', {
               channel: channel === 'wechat' ? t('auction.depositModal.channelWechat') : t('auction.depositModal.channelAlipay')
             })}
             </div>
-            <div className={cx(styles.r_f9ff4486, styles.r_f3c543ad, styles.r_aadad687, styles.r_84789e8a, styles.r_367d252e, styles.r_67d66567, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_5e10cdb8, styles.r_359090c2, styles.r_6c4cc49e)}>
-              {payment.qrcode?.slice(0, 24)}...
-            </div>
-            <div className={cx(styles.r_d058ca6d, styles.r_85d79ebf)}>
-              {t('auction.depositModal.mockHint')}
-            </div>
-            <button
-            onClick={mockConfirm}
-            className={cx(styles.r_50d0d216, styles.r_931bc423, styles.r_72a4c7cd, styles.r_7ee371ab, styles.r_dd702538)}>
-
-              {t('auction.depositModal.mockPay')}
-            </button>
+            {payment.pagePayUrl ?
+            <AlipayPagePayButton pagePayUrl={payment.pagePayUrl} /> :
+            <PaymentQr
+              text={payment.qrcode ?? payment.payNo}
+              channel={channel === 'wechat' ? 'wechat' : 'alipay'}
+              status={payment.status}
+              scanning={payment.scanning ?? false} />
+            }
             {err &&
           <div className={cx(styles.r_eccd13ef, styles.r_5f22e64f, styles.r_0759a0f1, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_b54428d1)}>
                 {err}

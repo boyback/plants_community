@@ -424,7 +424,7 @@ export interface Order {
 
 export type PaymentChannel = 'wechat' | 'alipay' | 'points';
 export type PaymentStatus = 'pending' | 'paid' | 'expired' | 'cancelled' | 'refunded';
-export type PaymentBizType = 'order' | 'vip';
+export type PaymentBizType = 'order' | 'vip' | 'deposit' | 'auction_balance';
 
 export interface Payment {
   id: string;
@@ -434,6 +434,7 @@ export interface Payment {
   channel: PaymentChannel;
   amount: number;
   qrcode?: string;
+  pagePayUrl?: string;
   status: PaymentStatus;
   expireAt: string;
   paidAt?: string;

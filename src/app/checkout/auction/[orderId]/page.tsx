@@ -19,6 +19,7 @@ import {
 '@/components/address/AddressPicker';
 import type { Order, Payment } from '@/lib/types';
 import { PaymentQr, type PayChannel } from '@/components/payment/PaymentQr';
+import { AlipayPagePayButton } from '@/components/payment/AlipayPagePayButton';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
 
@@ -41,7 +42,6 @@ export default function AuctionCheckoutPage() {
   const [now, setNow] = useState(Date.now());
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [confirming, setConfirming] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [abandoned, setAbandoned] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -164,21 +164,6 @@ export default function AuctionCheckoutPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payment?.payNo]);
-
-  const mockConfirm = async () => {
-    if (!payment) return;
-    setConfirming(true);
-    try {
-      await api.post(`/api/payments/${payment.payNo}/confirm`);
-      toast.success(t('checkout.paySuccess'));
-      await refresh();
-      setTimeout(() => router.push('/orders'), 3000);
-    } catch (e) {
-      setErr(e instanceof ApiError ? e.message : t('checkout.confirmFail'));
-    } finally {
-      setConfirming(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -367,6 +352,8 @@ export default function AuctionCheckoutPage() {
                     </button>
                   </div> :
 
+              payment.pagePayUrl ?
+              <AlipayPagePayButton pagePayUrl={payment.pagePayUrl} /> :
               <PaymentQr
                 text={payment.qrcode ?? payment.payNo}
                 channel={channel}
@@ -395,23 +382,6 @@ export default function AuctionCheckoutPage() {
                     {t('checkout.qrExpiresIn', { time: countdown(remain) })}
                   </div>)
 
-            }
-
-              {/* 仅在 mock 回落时显示 Demo 按钮 */}
-              {payment && payment.status === 'pending' && !expired && payment.qrcode?.startsWith("mock://") &&
-            <div className={cx(styles.r_0ab86672, styles.r_a217b4ea, styles.r_67d2289d, styles.r_eb6e8b88, styles.r_ca6bf630)}>
-                  <div className={cx(styles.r_d058ca6d, styles.r_85d79ebf)}>
-                    <b>{t('checkout.demoTip')}</b>:{t('checkout.demoTipAuction')}
-                  </div>
-                  <button
-                type="button"
-                disabled={confirming}
-                onClick={mockConfirm}
-                className={cx(styles.r_50d0d216, styles.r_931bc423, styles.r_72a4c7cd, styles.r_7ee371ab, styles.r_dd702538)}>
-
-                    {confirming ? t('checkout.processing') : t('checkout.mockConfirm')}
-                  </button>
-                </div>
             }
 
               {paid &&

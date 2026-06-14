@@ -3,11 +3,8 @@ import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
 import { advanceAuctionState } from '@/lib/auction';
-import {
-  PaymentBizType,
-  PaymentChannel,
-  PaymentStatus,
-} from '@prisma/client';
+import { PaymentChannel } from '@prisma/client';
+import { createDepositPayment, getPaymentPagePayUrl } from '@/lib/payment';
 import { serializePayment } from '@/lib/serializers';
 
 export const dynamic = 'force-dynamic';
@@ -16,15 +13,9 @@ const Body = z.object({
   channel: z.enum(['wechat', 'alipay', 'points']),
 });
 
-const PAY_EXPIRE_MINUTES = 15;
-
 function pickId(req: Request) {
   const parts = new URL(req.url).pathname.split('/').filter(Boolean);
   return parts[parts.length - 2]; // /api/auctions/[id]/join
-}
-
-function randomNo(prefix: string) {
-  return prefix + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 7).toUpperCase();
 }
 
 /**
@@ -106,27 +97,14 @@ export const POST = handler(async (req) => {
     },
   });
 
-  const payNo = randomNo('DEP');
   const channel = body.channel as PaymentChannel;
-  const qrcode = `mock://${channel}/pay/${payNo}/${depositAmount}`;
-  const payment = await prisma.payment.create({
-    data: {
-      payNo,
-      bizType: PaymentBizType.deposit,
-      bizId: participant.id,
-      userId: me.id,
-      channel,
-      amount: depositAmount,
-      qrcode,
-      status: PaymentStatus.pending,
-      expireAt: new Date(Date.now() + PAY_EXPIRE_MINUTES * 60_000),
+  const payment = await createDepositPayment({ participantId: participant.id, channel });
+
+  return {
+    joined: false,
+    payment: {
+      ...serializePayment(payment),
+      pagePayUrl: getPaymentPagePayUrl(payment.payNo),
     },
-  });
-
-  await prisma.auctionParticipant.update({
-    where: { id: participant.id },
-    data: { depositPaymentId: payment.id },
-  });
-
-  return { joined: false, payment: serializePayment(payment) };
+  };
 });

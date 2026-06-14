@@ -6,6 +6,7 @@ import {
   createVipPayment,
   createDepositPayment,
   createAuctionBalancePayment,
+  getPaymentPagePayUrl,
 } from '@/lib/payment';
 import { prisma } from '@/lib/db';
 import { serializePayment } from '@/lib/serializers';
@@ -19,6 +20,13 @@ const Body = z.object({
   channel: z.enum(['wechat', 'alipay']),
 });
 
+function serializeCreatedPayment(p: Awaited<ReturnType<typeof createOrderPayment>>) {
+  return {
+    ...serializePayment(p),
+    pagePayUrl: getPaymentPagePayUrl(p.payNo),
+  };
+}
+
 export const POST = handler(async (req) => {
   const me = await requireUser();
   const body = Body.parse(await req.json());
@@ -30,7 +38,7 @@ export const POST = handler(async (req) => {
     if (o.buyerId !== me.id) return fail(403, '无权支付该订单');
     if (o.source !== 'product') return fail(400, '该订单需走对应的支付通道');
     const p = await createOrderPayment({ orderId: body.bizId, channel });
-    return serializePayment(p);
+    return serializeCreatedPayment(p);
   }
 
   if (body.bizType === 'auction_balance') {
@@ -39,7 +47,7 @@ export const POST = handler(async (req) => {
     if (o.buyerId !== me.id) return fail(403, '无权支付该订单');
     if (o.source !== 'auction') return fail(400, '该订单不是拍卖订单');
     const p = await createAuctionBalancePayment({ orderId: body.bizId, channel });
-    return serializePayment(p);
+    return serializeCreatedPayment(p);
   }
 
   if (body.bizType === 'vip') {
@@ -47,7 +55,7 @@ export const POST = handler(async (req) => {
     if (!vo) return fail(404, '订单不存在');
     if (vo.userId !== me.id) return fail(403, '无权支付该订单');
     const p = await createVipPayment({ vipOrderId: body.bizId, channel });
-    return serializePayment(p);
+    return serializeCreatedPayment(p);
   }
 
   if (body.bizType === 'deposit') {
@@ -55,7 +63,7 @@ export const POST = handler(async (req) => {
     if (!part) return fail(404, '参与记录不存在');
     if (part.userId !== me.id) return fail(403, '无权操作');
     const p = await createDepositPayment({ participantId: body.bizId, channel });
-    return serializePayment(p);
+    return serializeCreatedPayment(p);
   }
 
   return fail(400, '未知业务类型');

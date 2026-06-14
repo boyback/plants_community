@@ -9,10 +9,10 @@
     "tabScheduled": "未开始",
     "tabFinished": "已结束",
     "status": {
-      "draft": "草稿",
+      "live": "🔨 拍卖中",
       "scheduled": "即将开始",
-      "live": "进行中",
-      "finished": "已结束",
+      "noBidder": "流拍",
+      "sold": "已成交",
       "cancelled": "已取消"
     },
     "statusLabel": {
@@ -104,12 +104,9 @@
       "cancel": "取消",
       "confirmPay": "确认支付",
       "scanQr": "请用{channel}扫码支付",
-      "mockHint": "💡 Demo:点击下方按钮模拟支付完成",
-      "mockPay": "🪄 我已支付完成",
       "payLater": "稍后再付",
       "toastEscrowed": "🎉 保证金已到账,可以出价啦",
-      "opFail": "操作失败",
-      "confirmFail": "确认失败"
+      "opFail": "操作失败"
     },
     "create": {
       "title": "发起拍卖",
@@ -158,13 +155,6 @@
       "finishedShort": "已结束",
       "endedPrefix": "剩 ",
       "startingPrefix": "开拍 "
-    },
-    "status": {
-      "live": "🔨 拍卖中",
-      "scheduled": "即将开始",
-      "noBidder": "流拍",
-      "sold": "已成交",
-      "cancelled": "已取消"
     },
     "countdown": {
       "ended": "已结束",

@@ -23,7 +23,6 @@ const WARMUP_MS = 3000;
  *   4. expired           → 遮罩 + ⌛"已过期"
  *
  *   - text 为 http(s) URL 时,使用 qrcode 真实渲染
- *   - text 为 mock://... 时,渲染"演示二维码"占位(点阵,不可扫)
  */
 export function PaymentQr({
   text,
@@ -38,17 +37,12 @@ export function PaymentQr({
 
 }: {text: string;channel: PayChannel;status?: PayQrStatus; /** 是否已被扫码(由后端 alipay.trade.query 推断) */scanning?: boolean;}) {
   const { t } = useI18n();
-  const isReal = /^https?:\/\//.test(text);
   const [dataUrl, setDataUrl] = useState<string>('');
   /** 二维码刚生成时有一段预热期(支付宝侧还在落单),期间蒙层"生成中" */
   const [warming, setWarming] = useState<boolean>(true);
   const warmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!isReal) {
-      setWarming(false);
-      return;
-    }
     let cancelled = false;
     setWarming(true);
     QRCodeLib.toDataURL(text, {
@@ -71,16 +65,12 @@ export function PaymentQr({
       cancelled = true;
       if (warmTimer.current) clearTimeout(warmTimer.current);
     };
-  }, [text, isReal]);
+  }, [text]);
 
   const channelColor = channel === 'wechat' ? styles.r_b17d6a13 : styles.r_4c3a8aac;
   const channelLabel = channel === 'wechat' ?
   t('checkout.channelWechat') :
   t('checkout.channelAlipay');
-
-  if (!isReal) {
-    return <MockQr text={text} channel={channel} status={status} scanning={scanning} />;
-  }
 
   // 仅「已扫码、等待支付」才显示扫描中蒙层
   const showScan = status === 'pending' && scanning && dataUrl !== '';
@@ -202,76 +192,3 @@ function ExpiredOverlay({ label }: {label: string;}) {
 
 }
 
-/** 本地假二维码点阵(不可扫,只是占位) */
-function MockQr({
-  text,
-  channel,
-  status,
-  scanning
-
-
-
-
-
-}: {text: string;channel: PayChannel;status: PayQrStatus;scanning: boolean;}) {
-  const { t } = useI18n();
-  const hash = (s: string) => {
-    let h = 0;
-    for (let i = 0; i < s.length; i++) h = h * 31 + s.charCodeAt(i) & 0xffffffff;
-    return h;
-  };
-  const seed = hash(text);
-  const dots = Array.from({ length: 21 * 21 }).map((_, i) =>
-  (seed + i * 13 & 0b11) === 0 ? 1 : 0
-  );
-  const showScan = status === 'pending' && scanning;
-  return (
-    <div className={cx(styles.r_a217b4ea, styles.r_5e10cdb8, styles.r_eb6e8b88, styles.r_ed9d3d83)}>
-      <div className={cx(styles.r_d89972fe, styles.r_3c8ea328, styles.r_74b2435a, styles.r_2cd02d11, styles.r_07389a77)}>
-        <div
-          className={cx(styles.r_f3c543ad, styles.r_668b21aa, styles.r_6da6a3c3, styles.r_ceb7ac66)}
-          style={{ gridTemplateColumns: 'repeat(21, 1fr)' }}>
-
-          {dots.map((d, i) => {
-            const row = Math.floor(i / 21);
-            const col = i % 21;
-            const inCorner =
-            row < 7 && col < 7 ||
-            row < 7 && col >= 14 ||
-            row >= 14 && col < 7;
-            const cornerEdge =
-            (row === 0 || row === 6 || col === 0 || col === 6) && row < 7 && col < 7 ?
-            true :
-            (row === 0 || row === 6 || col === 14 || col === 20) &&
-            row < 7 && col >= 14 ?
-            true :
-            (row === 14 || row === 20 || col === 0 || col === 6) &&
-            row >= 14 && col < 7 ?
-            true :
-            false;
-            const cornerCenter =
-            row >= 2 && row <= 4 && col >= 2 && col <= 4 ||
-            row >= 2 && row <= 4 && col >= 16 && col <= 18 ||
-            row >= 16 && row <= 18 && col >= 2 && col <= 4;
-            const filled = inCorner ? cornerEdge || cornerCenter : !!d;
-            return (
-              <span
-                key={i}
-                className={cn(styles.r_0214b4b3, filled ? styles.r_c8d2a7ca : styles.r_5e10cdb8)} />);
-
-
-          })}
-        </div>
-        {showScan && <ScanningOverlay channel={channel} label={t('checkout.scanning')} />}
-        {status === 'paid' && <PaidOverlay />}
-        {status === 'expired' && <ExpiredOverlay label={t('checkout.qrExpired')} />}
-      </div>
-      <div className={cx(styles.r_50d0d216, styles.r_60fbb771, styles.r_3960ffc2, styles.r_86843cf1, styles.r_58284b4e, styles.r_1dc571a3, styles.r_2689f395)}>
-        <span className={channel === 'wechat' ? styles.r_b17d6a13 : styles.r_4c3a8aac}>
-          {channel === 'wechat' ? t('checkout.channelWechat') : t('checkout.channelAlipay')}
-        </span>
-        <span className={styles.r_6c4cc49e}>· {t('checkout.demoQr')}</span>
-      </div>
-    </div>);
-
-}

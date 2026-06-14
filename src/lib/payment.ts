@@ -1,15 +1,8 @@
 /**
  * 支付业务层。
  *
- * 当前实现:接入 src/lib/payment/gateway.ts 的 PaymentGateway 抽象,
- * 按 PAYMENT_GATEWAY 环境变量自动选择 mock / alipay。
- *
- * 切换真实支付通道步骤:
- *   1. 安装 SDK:  npm install alipay-sdk
- *   2. 环境变量:  PAYMENT_GATEWAY=alipay 、ALIPAY_APP_ID / _PRIVATE_KEY_PEM /
- *                 _PUBLIC_KEY_PEM / _GATEWAY / _NOTIFY_URL / _RETURN_URL
- *   3. 前端 checkout 无需改动(qrcode 字段从 mock:// 变成真实 URL)
- *   4. webhook 入口: POST /api/payments/alipay/webhook (由 gateway 的 verifyWebhook 校验)
+ * 当前实现:接入 src/lib/payment/gateway.ts 的 PaymentGateway 抽象。
+ * 支付宝 PC 支付返回 pagePayUrl 直接跳转,微信支付返回 qrcode 渲染二维码。
  */
 
 import { prisma } from './db';
@@ -23,6 +16,7 @@ import { emitEvent } from './events';
 import { pickGateway } from './payment/gateway';
 
 const PAY_EXPIRE_MINUTES = 15;
+const _paymentPagePayUrls = new Map<string, { url: string; expireAt: number }>();
 
 function randomNo(prefix: string) {
   return (
@@ -32,7 +26,7 @@ function randomNo(prefix: string) {
   );
 }
 
-/** 所有 createXxxPayment 共用的逻辑:调 gateway 拿 qrcode + 写 Payment 行 */
+/** 所有 createXxxPayment 共用的逻辑:调 gateway 拿 qrcode/pagePayUrl + 写 Payment 行 */
 async function createWithGateway(params: {
   bizType: PaymentBizType;
   bizId: string;
@@ -59,25 +53,19 @@ async function createWithGateway(params: {
   // 按 channel 选网关
   const gateway = pickGateway(params.channel as 'alipay' | 'wechat' | 'points');
 
-  let qrcode = '';
-  try {
-    const res = await gateway.createPayment({
-      payNo,
-      userId: params.userId,
-      amount: params.amount,
-      channel: params.channel as 'alipay' | 'wechat' | 'points',
-      subject: params.subject,
-      expireMinutes: PAY_EXPIRE_MINUTES,
-      meta: params.meta,
-    });
-    qrcode = res.qrcode;
-  } catch (err) {
-    // gateway 失败 — 记录错误但保留 mock qrcode,让 Demo 不至于完全卡住
-    console.warn('[payment] gateway.createPayment failed, fallback to mock qrcode:', err);
-    qrcode = `mock://${params.channel}/pay/${payNo}/${params.amount}`;
-  }
+  const res = await gateway.createPayment({
+    payNo,
+    userId: params.userId,
+    amount: params.amount,
+    channel: params.channel as 'alipay' | 'wechat' | 'points',
+    subject: params.subject,
+    expireMinutes: PAY_EXPIRE_MINUTES,
+    meta: params.meta,
+  });
+  const qrcode = res.qrcode ?? '';
+  const pagePayUrl = res.pagePayUrl;
 
-  return prisma.payment.create({
+  const payment = await prisma.payment.create({
     data: {
       payNo,
       bizType: params.bizType,
@@ -90,6 +78,20 @@ async function createWithGateway(params: {
       expireAt,
     },
   });
+  if (pagePayUrl) {
+    _paymentPagePayUrls.set(payNo, { url: pagePayUrl, expireAt: expireAt.getTime() });
+  }
+  return payment;
+}
+
+export function getPaymentPagePayUrl(payNo: string): string | undefined {
+  const cached = _paymentPagePayUrls.get(payNo);
+  if (!cached) return undefined;
+  if (cached.expireAt < Date.now()) {
+    _paymentPagePayUrls.delete(payNo);
+    return undefined;
+  }
+  return cached.url;
 }
 
 /**
@@ -125,7 +127,7 @@ export async function createDepositPayment(params: {
   if (!part) throw new Error('参与者不存在');
   if (part.depositStatus !== 'pending') throw new Error('保证金状态不允许重新支付');
 
-  return createWithGateway({
+  const payment = await createWithGateway({
     bizType: PaymentBizType.deposit,
     bizId: part.id,
     userId: part.userId,
@@ -135,6 +137,11 @@ export async function createDepositPayment(params: {
     meta: { bizType: 'deposit', participantId: part.id },
     payNoPrefix: 'DEP',
   });
+  await prisma.auctionParticipant.update({
+    where: { id: part.id },
+    data: { depositPaymentId: payment.id },
+  });
+  return payment;
 }
 
 /** 创建拍卖订单尾款的支付单 */
@@ -270,8 +277,8 @@ export function isScanning(payNo: string): boolean {
 }
 
 /**
- * Demo 专用:模拟支付成功(实际是 webhook 触发)
- * 返回业务后续状态。
+ * 确认支付成功并推进业务状态。
+ * 由支付网关 webhook 或主动查单确认触发。
  */
 export async function confirmPayment(payNo: string) {
   const payment = await prisma.payment.findUnique({ where: { payNo } });

@@ -9,10 +9,10 @@
     "tabScheduled": "尚未開始",
     "tabFinished": "已結束",
     "status": {
-      "draft": "草稿",
+      "live": "🔨 拍賣中",
       "scheduled": "即將開始",
-      "live": "進行中",
-      "finished": "已結束",
+      "noBidder": "流標",
+      "sold": "已成交",
       "cancelled": "已取消"
     },
     "statusLabel": {
@@ -104,12 +104,9 @@
       "cancel": "取消",
       "confirmPay": "確認支付",
       "scanQr": "請用{channel}掃碼支付",
-      "mockHint": "💡 Demo:點擊下方按鈕模擬支付完成",
-      "mockPay": "🪄 我已支付完成",
       "payLater": "稍後再付",
       "toastEscrowed": "🎉 保證金已到帳,可以出價啦",
-      "opFail": "操作失敗",
-      "confirmFail": "確認失敗"
+      "opFail": "操作失敗"
     },
     "create": {
       "title": "發起拍賣",
@@ -158,13 +155,6 @@
       "finishedShort": "已結束",
       "endedPrefix": "剩 ",
       "startingPrefix": "開拍 "
-    },
-    "status": {
-      "live": "🔨 拍賣中",
-      "scheduled": "即將開始",
-      "noBidder": "流標",
-      "sold": "已成交",
-      "cancelled": "已取消"
     },
     "countdown": {
       "ended": "已結束",

@@ -9,11 +9,11 @@
     "tabScheduled": "시작 전",
     "tabFinished": "종료",
     "status": {
-      "draft": "초안",
-      "scheduled": "시작 전",
-      "live": "진행 중",
-      "finished": "종료",
-      "cancelled": "취소"
+      "live": "🔨 진행 중",
+      "scheduled": "곧 시작",
+      "noBidder": "유찰",
+      "sold": "낙찰",
+      "cancelled": "취소됨"
     },
     "statusLabel": {
       "live": "🔨 진행 중",
@@ -104,12 +104,9 @@
       "cancel": "취소",
       "confirmPay": "결제 확인",
       "scanQr": "{channel} 으로 스캔",
-      "mockHint": "💡 데모:아래 버튼으로 결제 완료 시뮬레이션",
-      "mockPay": "🪄 결제 완료로 표시",
       "payLater": "나중에 결제",
       "toastEscrowed": "🎉 보증금 보관 완료, 입찰 가능",
-      "opFail": "작업 실패",
-      "confirmFail": "확인 실패"
+      "opFail": "작업 실패"
     },
     "create": {
       "title": "경매 시작",
@@ -158,13 +155,6 @@
       "finishedShort": "종료",
       "endedPrefix": "남은 ",
       "startingPrefix": "시작 "
-    },
-    "status": {
-      "live": "🔨 진행 중",
-      "scheduled": "곧 시작",
-      "noBidder": "유찰",
-      "sold": "낙찰",
-      "cancelled": "취소됨"
     },
     "countdown": {
       "ended": "종료",

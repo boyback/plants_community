@@ -1075,7 +1075,7 @@ model Payment {
   userId    String
   channel   PaymentChannel
   amount    Int // 单位:分
-  qrcode    String?        @db.Text // Mock 二维码内容/链接
+  qrcode    String?        @db.Text // 微信 Native 二维码内容/链接
   status    PaymentStatus  @default(pending)
   expireAt  DateTime
   paidAt    DateTime?
