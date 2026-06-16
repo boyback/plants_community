@@ -9,6 +9,7 @@ import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { useBodyScrollLock } from '@/lib/hooks/useBodyScrollLock';
 import styles from './BannerClient.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -242,13 +243,13 @@ function EditDialog({
 
         <div className={cx(styles.r_6ed543e2, styles.r_359090c2)}>
           <Field label="标题">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} />
           </Field>
           <Field label="副标题">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={subtitle} onChange={(e) => setSubtitle(e.target.value)} maxLength={500} />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={subtitle} onChange={(e) => setSubtitle(e.target.value)} maxLength={500} />
           </Field>
           <Field label="图片 URL">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_0e65706b, styles.r_d058ca6d)} value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://..." />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_0e65706b, styles.r_d058ca6d)} value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://..." />
           </Field>
           {image &&
           <div className={cx(styles.r_d89972fe, styles.r_188a6e22, styles.r_2cd02d11, styles.r_5f22e64f, styles.r_ce27a834)}>
@@ -258,7 +259,7 @@ function EditDialog({
             </div>
           }
           <Field label="跳转链接">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={link} onChange={(e) => setLink(e.target.value)} placeholder="/board/jingtian" />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={link} onChange={(e) => setLink(e.target.value)} placeholder="/board/jingtian" />
           </Field>
           <Field label="遮罩色调 class">
             <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_58284b4e)}>
@@ -283,10 +284,10 @@ function EditDialog({
           </Field>
           <div className={cx(styles.r_f3c543ad, styles.r_be2e831b, styles.r_1004c0c3)}>
             <Field label="排序(越小越前)">
-              <input type="number" className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={orderIdx} onChange={(e) => setOrderIdx(Number(e.target.value))} />
+              <Input type="number" className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={orderIdx} onChange={(e) => setOrderIdx(Number(e.target.value))} />
             </Field>
             <Field label="停留(ms,0=默认 3000)">
-              <input type="number" className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={durationMs} onChange={(e) => setDurationMs(Number(e.target.value))} min={0} max={60000} step={500} />
+              <Input type="number" className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={durationMs} onChange={(e) => setDurationMs(Number(e.target.value))} min={0} max={60000} step={500} />
             </Field>
             <Field label="启用">
               <label className={cx(styles.r_52083e7d, styles.r_e7a768f9, styles.r_3960ffc2, styles.r_77a2a20e)}>

@@ -17,6 +17,8 @@ import type { Board, Post, User } from '@/lib/types';
 import previewStyles from '@/components/editor/FeedPreview.module.scss';
 import styles from './PostEditor.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -185,7 +187,7 @@ export function PostEditor({ post }: {post: InitialPost;}) {
 
             <Row label={<><span className={styles.r_fa512798}>*</span> 标题</>}>
               {post.type === 'image' || post.type === 'video' ?
-              <textarea
+              <Textarea
                 className={cx(styles.r_ee15a477, styles.r_5bd7b080, styles.r_4ee73492, styles.r_7eff2faf)}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -193,7 +195,7 @@ export function PostEditor({ post }: {post: InitialPost;}) {
                 rows={post.type === 'image' ? 5 : undefined} /> :
 
 
-              <input
+              <Input
                 className="input"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -237,7 +239,7 @@ export function PostEditor({ post }: {post: InitialPost;}) {
 
             {post.type === 'short' &&
             <Row label="内容">
-                <textarea
+                <Textarea
                 className={styles.r_ee15a477}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -292,7 +294,7 @@ export function PostEditor({ post }: {post: InitialPost;}) {
                     </button>
                   </span>
                 )}
-                <input
+                <Input
                   className={cx(styles.r_36e579c0, styles.r_7f19cdf4, styles.r_d8e0e382, styles.r_fc7473ca, styles.r_df37b1fd, styles.r_a9ef791a)}
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}

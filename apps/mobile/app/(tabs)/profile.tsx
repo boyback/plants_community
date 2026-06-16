@@ -159,7 +159,7 @@ export default function ProfileScreen() {
         </View>
       ) : (
         <View style={styles.loginCard}>
-          <Text style={styles.title}>登录肉友社</Text>
+          <Text style={styles.title}>登录植友圈</Text>
           <Text style={styles.description}>登录后可以签到、发布、评论、收藏和管理交易。</Text>
           <Pressable style={styles.button} onPress={() => router.push('/login')}>
             <Text style={styles.buttonText}>登录</Text>

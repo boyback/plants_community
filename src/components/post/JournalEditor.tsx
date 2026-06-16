@@ -9,6 +9,7 @@ import type { JournalStage } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import styles from './JournalEditor.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -78,7 +79,7 @@ export function JournalEditor({ value, onChange, validationErrors }: Props) {
               <span className={styles.r_fa512798}>*</span> 植物昵称
             </Form.Label>
             <Form.Control asChild>
-              <input
+              <Input
                 required
                 className={cn('input', validationErrors?.has('journalName') && cx(styles.r_3b7f9781, styles.r_fdae7b46))}
                 placeholder="例如:阳台 9 号 / 我的红宝石"
@@ -96,7 +97,7 @@ export function JournalEditor({ value, onChange, validationErrors }: Props) {
               <span className={styles.r_fa512798}>*</span> 起始日期
             </Form.Label>
             <Form.Control asChild>
-              <input
+              <Input
                 required
                 type="date"
                 className={cn('input', validationErrors?.has('journalDate') && cx(styles.r_3b7f9781, styles.r_fdae7b46))}
@@ -251,7 +252,7 @@ function EntryCard({
               <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
                 <Form.Label className={cx(styles.r_d058ca6d, styles.r_23531fd3)}>日期</Form.Label>
                 <Form.Control asChild>
-                  <input
+                  <Input
                     required
                     type="date"
                     className={cn(cx(styles.r_ed8a5df7, styles.r_3e9a4bf6, styles.r_dd702538), dateInvalid && cx(styles.r_3b7f9781, styles.r_fdae7b46))}
@@ -302,7 +303,7 @@ function EntryCard({
               <span className={styles.r_fa512798}>*</span> 其他阶段
             </Form.Label>
             <Form.Control asChild>
-              <input
+              <Input
               required
               className={cn(cx(styles.r_e7a768f9, styles.r_4f43b5cb), stageLabelInvalid && cx(styles.r_3b7f9781, styles.r_fdae7b46))}
               placeholder="例如：服盆、控养、修根"

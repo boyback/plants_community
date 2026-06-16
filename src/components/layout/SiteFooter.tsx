@@ -23,7 +23,7 @@ export function SiteFooter() {
         <div className={cx(styles.r_f3c543ad, styles.r_0d304f90, styles.r_e00ad816, styles.r_9a638cfe)}>
           {/* 1. 关于 */}
           <div>
-            <div className={cx(styles.r_a77ed4d9, styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>🌿 肉友社</div>
+            <div className={cx(styles.r_a77ed4d9, styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>🌿 植友圈</div>
             <p className={cx(styles.r_359090c2, styles.r_7054e276, styles.r_e3622902)}>
               一个让多肉爱好者交流养护、分享美图、记录成长的中文社区。
               欢迎新手入坑,也欢迎老玩家来切磋。
@@ -79,7 +79,7 @@ export function SiteFooter() {
 
         {/* 底部分隔线 + 版权 */}
         <div className={cx(styles.r_31f25533, styles.r_b950dda2, styles.r_38748e06, styles.r_173fa8f0, styles.r_ca6bf630, styles.r_d058ca6d, styles.r_cd55e659)}>
-          © {new Date().getFullYear()} 肉友社 · 仅供学习与交流 · 不构成任何专业养护或商业建议
+          © {new Date().getFullYear()} 植友圈 · 仅供学习与交流 · 不构成任何专业养护或商业建议
         </div>
       </div>
     </footer>);

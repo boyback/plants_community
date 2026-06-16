@@ -35,9 +35,9 @@ export async function generateMetadata({
 
 }: {params: {name: string;};}): Promise<Metadata> {
   const name = decodeURIComponent(params.name || '').trim();
-  if (!name) return { title: '话题 · 肉友社' };
+  if (!name) return { title: '话题 · 植友圈' };
   return {
-    title: `#${name} · 话题 · 肉友社`,
+    title: `#${name} · 话题 · 植友圈`,
     description: `查看「${name}」相关的多肉帖子、养护经验与精彩瞬间`
   };
 }

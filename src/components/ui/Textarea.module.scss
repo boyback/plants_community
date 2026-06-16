@@ -1,4 +1,33 @@
-/* Generated from src/components/ui/Textarea.tsx. Keep component-local styles here. */.r_5bd7b080{resize:vertical}.r_b402c0df{padding-bottom:28px}.r_3b7f9781{--tw-border-opacity:1;border-color:rgb(253 164 175/var(--tw-border-opacity))}.r_fdae7b46{background-color:#fff1f24d}.r_a4326536{pointer-events:none}.r_da4dbfbc{position:absolute}.r_f795cd13{bottom:10px}.r_c100b64c{right:12px}.r_07389a77{border-radius:4px}.r_6c21de57{background-color:#ffffffe6}.r_d8e0e382{padding-left:4px;padding-right:4px}.r_359090c2{font-size:12px;line-height:16px}.r_517d113c{line-height:16px}.r_bb18baef{color:rgb(var(--leaf-700)/.55)}.r_061457f2{background-color:#fff1f2cc}.r_fa512798{--tw-text-opacity:1;color:rgb(244 63 94/var(--tw-text-opacity))}
+/* Generated from src/components/ui/Textarea.tsx. Keep component-local styles here. */
+.textarea {
+  min-height: 96px;
+  width: 100%;
+  border: 1px solid rgb(var(--leaf-200));
+  border-radius: 8px;
+  background-color: rgb(var(--surface));
+  padding: 8px 12px;
+  color: rgb(var(--ink-800));
+  font-size: 14px;
+  line-height: 20px;
+  outline: none;
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.textarea::placeholder {
+  color: rgb(var(--leaf-700) / 0.45);
+}
+
+.textarea:focus {
+  border-color: rgb(var(--leaf-400));
+  box-shadow: 0 0 0 2px rgb(var(--leaf-100));
+}
+
+.textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.r_5bd7b080{resize:vertical}.r_b402c0df{padding-bottom:28px}.r_3b7f9781{--tw-border-opacity:1;border-color:rgb(253 164 175/var(--tw-border-opacity))}.r_fdae7b46{background-color:#fff1f24d}.r_a4326536{pointer-events:none}.r_da4dbfbc{position:absolute}.r_f795cd13{bottom:10px}.r_c100b64c{right:12px}.r_07389a77{border-radius:4px}.r_6c21de57{background-color:#ffffffe6}.r_d8e0e382{padding-left:4px;padding-right:4px}.r_359090c2{font-size:12px;line-height:16px}.r_517d113c{line-height:16px}.r_bb18baef{color:rgb(var(--leaf-700)/.55)}.r_061457f2{background-color:#fff1f2cc}.r_fa512798{--tw-text-opacity:1;color:rgb(244 63 94/var(--tw-text-opacity))}
 
 
 /* Recovered utility rules referenced by this CSS module. */

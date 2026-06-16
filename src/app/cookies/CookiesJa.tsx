@@ -4,11 +4,11 @@ import { cx } from '@/lib/style-utils';
 export function CookiesJa() {
   return (
     <>
-      <h1>RouYou Cookie ポリシー</h1>
+      <h1>ZhiYou Cookie ポリシー</h1>
       <p className={styles.r_eb16169c}>最終更新日:2026 年 5 月 7 日 · 発効日:公開日</p>
 
       <p>
-        本ポリシーは、RouYou(以下「本サービス」)が Cookie および類似技術(localStorage、sessionStorage、ピクセルタグ等)をどのように使用するかを説明します。
+        本ポリシーは、ZhiYou(以下「本サービス」)が Cookie および類似技術(localStorage、sessionStorage、ピクセルタグ等)をどのように使用するかを説明します。
         Cookie は 4 つのカテゴリに分類されており、初回訪問時の同意バナー、または設定ページから個別に有効化を選択できます。
         <strong>「必須」はログインやセキュリティといった基本機能を担うためオフにできません</strong>。
       </p>

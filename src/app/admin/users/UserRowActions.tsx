@@ -7,6 +7,8 @@ import { toast } from '@/components/ui/Toast';
 import { Dialog } from '@/components/ui/Dialog';
 import styles from './UserRowActions.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -245,7 +247,7 @@ function BanDialog({
         <p className={cx(styles.r_359090c2, styles.r_7b89cd85)}>将封禁 {userName}。封禁期间用户无法登录、发帖或评论。</p>
         <label className={styles.r_0214b4b3}>
           <span className={cx(styles.r_65281709, styles.r_0214b4b3, styles.r_359090c2, styles.r_2689f395, styles.r_eb6abb1f)}>封禁天数</span>
-          <input
+          <Input
             type="number"
             min={0}
             value={days}
@@ -256,7 +258,7 @@ function BanDialog({
         </label>
         <label className={styles.r_0214b4b3}>
           <span className={cx(styles.r_65281709, styles.r_0214b4b3, styles.r_359090c2, styles.r_2689f395, styles.r_eb6abb1f)}>封禁原因</span>
-          <textarea
+          <Textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={3}
@@ -413,7 +415,7 @@ function ModeratorScopePicker({
     <div className={cx(styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_358505cf, styles.r_2347842d, styles.r_eb6e8b88)}>
       <div className={cx(styles.r_a77ed4d9, styles.r_359090c2, styles.r_2689f395, styles.r_eb6abb1f)}>版主管辖范围</div>
       <div className={cx(styles.r_f3c543ad, styles.r_d7c83398, styles.r_77a2a20e, styles.r_829cfe19)}>
-        <input
+        <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className={styles.r_6da6a3c3}
@@ -571,7 +573,7 @@ function PointsDialog({
         <p className={cx(styles.r_359090c2, styles.r_7b89cd85)}>为 {userName} 增减积分，支持正数或负数。</p>
         <label className={styles.r_0214b4b3}>
           <span className={cx(styles.r_65281709, styles.r_0214b4b3, styles.r_359090c2, styles.r_2689f395, styles.r_eb6abb1f)}>调整值</span>
-          <input
+          <Input
             value={delta}
             onChange={(e) => setDelta(e.target.value)}
             inputMode="numeric"
@@ -581,7 +583,7 @@ function PointsDialog({
         </label>
         <label className={styles.r_0214b4b3}>
           <span className={cx(styles.r_65281709, styles.r_0214b4b3, styles.r_359090c2, styles.r_2689f395, styles.r_eb6abb1f)}>调整原因</span>
-          <textarea
+          <Textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={3}

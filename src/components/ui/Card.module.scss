@@ -1,0 +1,39 @@
+.card {
+  border: 1px solid rgb(var(--leaf-100) / 0.72);
+  border-radius: 12px;
+  background-color: rgb(var(--surface));
+  color: rgb(var(--ink-800));
+  box-shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 10px 28px rgb(16 24 40 / 0.06);
+}
+
+.default {
+  padding: 16px;
+}
+
+.compact {
+  padding: 12px;
+}
+
+.loose {
+  padding: 20px;
+}
+
+.none {
+  padding: 0;
+}
+
+.muted {
+  border-color: rgb(var(--leaf-100));
+  background-color: rgb(var(--leaf-50) / 0.56);
+  box-shadow: none;
+}
+
+.interactive {
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.interactive:hover {
+  border-color: rgb(var(--leaf-200));
+  background-color: rgb(var(--surface));
+  box-shadow: 0 4px 14px rgb(16 24 40 / 0.08);
+}

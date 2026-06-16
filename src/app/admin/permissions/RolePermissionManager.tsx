@@ -7,6 +7,7 @@ import { toast } from '@/components/ui/Toast';
 import { ALL_PERMISSIONS, LEVELS, PERMISSION_LABEL, type Permission } from '@/lib/levels';
 import styles from './RolePermissionManager.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -113,7 +114,7 @@ export function LevelPermissionManager({ rows }: {rows: LevelPermissionRow[];}) 
           </label>
         )}
       </div>
-      <textarea
+      <Textarea
         className={cx(styles.r_eccd13ef, styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_df37b1fd, styles.r_1bd19725)}
         rows={2}
         value={note}
@@ -210,7 +211,7 @@ function RolePermissionCard({
         })}
       </div>
 
-      <textarea
+      <Textarea
         className={cx(styles.r_eccd13ef, styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_df37b1fd, styles.r_1bd19725)}
         rows={2}
         value={note}

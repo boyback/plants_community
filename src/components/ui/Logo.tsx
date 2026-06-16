@@ -41,8 +41,8 @@ export function Logo({ className, compact = false }: {className?: string;compact
       </span>
       {!compact &&
       <span className={cx(styles.r_60fbb771, styles.r_8dddea07, styles.r_e9fadafb)}>
-          <span className={cx(styles.r_fc7473ca, styles.r_69450ef1, styles.r_e7eab4cb, styles.r_ceb69a6b, styles.r_c048d75f)}>肉友社</span>
-          <span className={cx(styles.r_e0988086, styles.r_09ace3a4, styles.r_aa27a041)}>RouYou Community</span>
+          <span className={cx(styles.r_fc7473ca, styles.r_69450ef1, styles.r_e7eab4cb, styles.r_ceb69a6b, styles.r_c048d75f)}>植友圈</span>
+          <span className={cx(styles.r_e0988086, styles.r_09ace3a4, styles.r_aa27a041)}>ZhiYou Community</span>
         </span>
       }
     </Link>);

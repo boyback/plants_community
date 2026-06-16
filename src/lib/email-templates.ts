@@ -9,7 +9,7 @@
  */
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://plantcommunity.cn';
-const BRAND = '肉友社';
+const BRAND = '植友圈';
 
 interface ShellOptions {
   /** 顶部主标题(emoji + 文字) */
@@ -68,7 +68,7 @@ export function otpEmail(code: string, ttlMinutes = 10) {
       <p style="color: #666; font-size: 13px; line-height: 1.6; margin: 16px 0 0;">验证码 ${ttlMinutes} 分钟内有效,请勿告诉他人。<br/>如非本人操作,请忽略此邮件。</p>
     `,
   });
-  const text = `你的肉友社验证码是:${code}\n${ttlMinutes} 分钟内有效,请勿告诉他人。`;
+  const text = `你的植友圈验证码是:${code}\n${ttlMinutes} 分钟内有效,请勿告诉他人。`;
   return { subject, html, text };
 }
 
@@ -147,7 +147,7 @@ interface FestivalParams {
 /** 春节 */
 export function springFestivalEmail(p: FestivalParams) {
   return broadcastEmail({
-    subject: '🎊 新春快乐 · 肉友社祝您新年大吉',
+    subject: '🎊 新春快乐 · 植友圈祝您新年大吉',
     title: '🎊 新春快乐',
     bodyHtml: `
       <p style="margin:0 0 12px;font-size:15px;line-height:1.7">亲爱的肉友:</p>
@@ -158,7 +158,7 @@ export function springFestivalEmail(p: FestivalParams) {
         <li>📸 你的镜头记录更多惊艳瞬间</li>
         <li>💬 你与肉友们的交流更加温暖</li>
       </ul>
-      <p style="margin:0;font-size:13px;color:#666">— 肉友社编辑部</p>
+      <p style="margin:0;font-size:13px;color:#666">— 植友圈编辑部</p>
     `,
     cta: { label: '去逛逛新年帖子 →', url: SITE_URL },
     unsubscribeUrl: p.unsubscribeUrl,
@@ -172,7 +172,7 @@ export function midAutumnEmail(p: FestivalParams) {
     title: '🌕 中秋月圆',
     bodyHtml: `
       <p style="margin:0 0 12px;font-size:15px;line-height:1.7">月饼配多肉,这是只有肉友才懂的浪漫 🪴</p>
-      <p style="margin:0 0 12px;font-size:14px;line-height:1.7">来肉友社发一张你的「月光下的多肉」吧:</p>
+      <p style="margin:0 0 12px;font-size:14px;line-height:1.7">来植友圈发一张你的「月光下的多肉」吧:</p>
       <ul style="font-size:14px;line-height:1.9;padding-left:20px;margin:0 0 16px">
         <li>🌙 拍下月光下的肉肉</li>
         <li>🏷️ 加上 #中秋晒肉 话题</li>

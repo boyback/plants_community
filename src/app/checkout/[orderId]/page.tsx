@@ -13,6 +13,7 @@ import { toast } from '@/components/ui/Toast';
 import type { Order, Payment } from '@/lib/types';
 import { PaymentQr, type PayChannel } from '@/components/payment/PaymentQr';
 import { AlipayPagePayButton } from '@/components/payment/AlipayPagePayButton';
+import { PaymentSuccessPanel } from '@/components/payment/PaymentSuccessPanel';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
 
@@ -85,14 +86,17 @@ export default function CheckoutPage() {
       pollTimerRef.current = setInterval(async () => {
         try {
           const p = await api.get<Payment>(`/api/payments/${payment.payNo}`);
-          setPayment(p);
+          setPayment((current) => ({
+            ...p,
+            pagePayUrl: p.pagePayUrl ?? current?.pagePayUrl
+          }));
           if (p.status === 'paid') {
             everScanned = false;
             notScanningStreak = 0;
             setAbandoned(false);
-            toast.success(t('checkout.paySuccessRedirect'));
+            if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+            toast.success(t('checkout.paySuccess'));
             await refresh();
-            setTimeout(() => router.push('/orders'), 3000);
           } else if (p.status === 'expired' || p.status === 'cancelled') {
             if (pollTimerRef.current) clearInterval(pollTimerRef.current);
           } else if (p.status === 'pending') {
@@ -125,7 +129,7 @@ export default function CheckoutPage() {
 
   if (loading) {
     return (
-      <Shell>
+      <Shell withSidebar={false}>
         <div className={cx(styles.r_1100bef6, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>{t('common.loading')}</div>
       </Shell>);
 
@@ -133,7 +137,7 @@ export default function CheckoutPage() {
 
   if (!order) {
     return (
-      <Shell>
+      <Shell withSidebar={false}>
         <div className={cx(styles.r_a4d0f420, styles.r_ca6bf630)}>
           <div className={styles.r_a95699d9}>😕</div>
           <div className={cx(styles.r_eccd13ef, styles.r_4ee73492, styles.r_e83a7042)}>{err ?? t('checkout.orderNotFound')}</div>
@@ -148,7 +152,7 @@ export default function CheckoutPage() {
   // 如果订单已完成或非待支付,引导
   if (order.status !== 'pending_payment') {
     return (
-      <Shell>
+      <Shell withSidebar={false}>
         <div className={cx(styles.r_0e12dc7d, styles.r_9794ab45, styles.r_a4d0f420, styles.r_ca6bf630)}>
           <div className={styles.r_a95699d9}>✅</div>
           <div className={cx(styles.r_eccd13ef, styles.r_4ee73492, styles.r_e83a7042)}>{t('checkout.noNeedPay')}</div>
@@ -170,7 +174,7 @@ export default function CheckoutPage() {
   const orderTitle = order.product?.title ?? order.listingItem?.title ?? order.listing?.title ?? order.auctionTitle ?? t('checkout.orderLabel');
 
   return (
-    <Shell>
+    <Shell withSidebar={false}>
       {/* 移动端:顶部一条简化摘要 + 黿底总额 */}
       <div className={cx(styles.r_1bb88326, styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_a327049c)}>
         {orderCover &&
@@ -256,12 +260,22 @@ export default function CheckoutPage() {
           </div>
 
           <div className={cx(styles.r_31f25533, styles.r_f3c543ad, styles.r_67d66567, styles.r_68f2db62, styles.r_9ac94195, styles.r_0478c89a)}>
-            {creating || !payment ?
+            {paid ?
+            <PaymentSuccessPanel
+              primaryHref="/orders"
+              primaryLabel={t('checkout.viewMyOrders')}
+              secondaryHref="/market"
+              secondaryLabel={t('checkout.backToMarket')} /> :
+            creating || !payment ?
+            channel === 'alipay' ?
+            <AlipayPagePayButton /> :
             <div className={cx(styles.r_f3c543ad, styles.r_4ead2714, styles.r_d16aae84, styles.r_67d66567, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_5e10cdb8, styles.r_359090c2, styles.r_6c4cc49e)}>
                 {t('checkout.generatingQr', {
                 channel: channel === 'wechat' ? t('checkout.channelWechat') : t('checkout.channelAlipay')
               })}
               </div> :
+            channel === 'alipay' ?
+            <AlipayPagePayButton pagePayUrl={payment.pagePayUrl} /> :
             expired ?
             <div className={cx(styles.r_f3c543ad, styles.r_4ead2714, styles.r_d16aae84, styles.r_67d66567, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_5e10cdb8)}>
                 <div className={styles.r_751fb0d1}>⌛</div>
@@ -274,21 +288,15 @@ export default function CheckoutPage() {
                   {t('checkout.qrRegenerate')}
                 </button>
               </div> :
-
             <>
-                {payment.pagePayUrl ?
-                <AlipayPagePayButton pagePayUrl={payment.pagePayUrl} /> :
                 <PaymentQr
                   text={payment.qrcode ?? payment.payNo}
                   channel={channel}
                   status={payment.status}
                   scanning={payment.scanning ?? false} />
-                }
 
                 <div className={cx(styles.r_eccd13ef, styles.r_ca6bf630, styles.r_359090c2, styles.r_5f6a59f1)}>
-                  {paid ?
-                <span className={cx(styles.r_5f6a59f1, styles.r_e83a7042)}>{t('checkout.paidRedirect')}</span> :
-                abandoned ?
+                  {abandoned ?
                 <div className={cx(styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_44ee8ba0)}>
                       <span className={cx(styles.r_d058ca6d, styles.r_85d79ebf)}>
                         {t('checkout.abandoned')}
@@ -366,7 +374,7 @@ export default function CheckoutPage() {
       </div>
 
       {/* 移动端粘底:总额 + 倒计时(支付未完成时显示) */}
-      {payment && payment.status === 'pending' && !expired &&
+      {payment && payment.status === 'pending' && !expired && channel !== 'alipay' &&
       <div
         className={cx(styles.r_7bc55599, styles.r_3f6397bf, styles.r_189f036c, styles.r_0f2fff0a, styles.r_b950dda2, styles.r_88b684d2, styles.r_f5ebd4d0, styles.r_0b2e8c28, styles.r_a327049c)}
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>

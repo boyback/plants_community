@@ -9,6 +9,8 @@ import { DangerConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { useBodyScrollLock } from '@/lib/hooks/useBodyScrollLock';
 import styles from './GenusClient.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -102,7 +104,7 @@ export function GenusClient({
                   {g.speciesCount} / {g.postCount}
                 </td>
                 <td className={cx(styles.r_d5eab218, styles.r_03b4dd7f, styles.r_ca6bf630)}>
-                  <input
+                  <Input
                   type="number"
                   defaultValue={g.orderIdx}
                   onBlur={(e) => updateOrder(g, Number(e.target.value))}
@@ -223,22 +225,22 @@ function GenusEditDialog({
 
         <div className={cx(styles.r_6ed543e2, styles.r_359090c2)}>
           <Field label="slug *">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_0e65706b)} value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="echeveria" />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_0e65706b)} value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="echeveria" />
           </Field>
           <Field label="中文名 *">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={name} onChange={(e) => setName(e.target.value)} placeholder="拟石莲花属" />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={name} onChange={(e) => setName(e.target.value)} placeholder="拟石莲花属" />
           </Field>
           <Field label="拉丁名">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_90665ca6)} value={latinName ?? ''} onChange={(e) => setLatinName(e.target.value)} placeholder="Echeveria" />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_90665ca6)} value={latinName ?? ''} onChange={(e) => setLatinName(e.target.value)} placeholder="Echeveria" />
           </Field>
           <Field label="描述">
-            <textarea className={cx(styles.r_6da6a3c3, styles.r_a4197e87, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={500} />
+            <Textarea className={cx(styles.r_6da6a3c3, styles.r_a4197e87, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={500} />
           </Field>
           <Field label="封面图 URL(选填)">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_0e65706b, styles.r_d058ca6d)} value={cover ?? ''} onChange={(e) => setCover(e.target.value)} placeholder="https://..." />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_0e65706b, styles.r_d058ca6d)} value={cover ?? ''} onChange={(e) => setCover(e.target.value)} placeholder="https://..." />
           </Field>
           <Field label="排序(越小越前)">
-            <input type="number" className={cx(styles.r_516b03df, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={orderIdx} onChange={(e) => setOrderIdx(Number(e.target.value))} />
+            <Input type="number" className={cx(styles.r_516b03df, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={orderIdx} onChange={(e) => setOrderIdx(Number(e.target.value))} />
           </Field>
         </div>
 

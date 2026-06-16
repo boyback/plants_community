@@ -15,7 +15,7 @@ import { cx } from '@/lib/style-utils';
 
 
 export const metadata: Metadata = {
-  title: '意见反馈 · 肉友社',
+  title: '意见反馈 · 植友圈',
   description: '把你遇到的问题、想要的功能、内容建议告诉我们,管理员收到后会在私信里回复'
 };
 

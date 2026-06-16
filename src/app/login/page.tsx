@@ -4,10 +4,13 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, useState, Suspense, useEffect } from 'react';
 import { Logo } from '@/components/ui/Logo';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -65,15 +68,15 @@ function LoginInner() {
           <Logo />
         </div>
 
-        <div className={styles.r_845f5336}>
+        <Card padding="none" className={styles.r_845f5336}>
           <h1 className={cx(styles.r_3febee09, styles.r_69450ef1, styles.r_399e11a5)}>
-            {t('auth.login.title') || '登录肉友社'} 🌵
+            {t('auth.login.title') || '登录植友圈'} 🌵
           </h1>
 
           <form onSubmit={onSubmit} className={cx(styles.r_31f25533, styles.r_3e7ce58d)}>
             <div>
               <label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_359090c2, styles.r_2689f395, styles.r_399e11a5)}>账号</label>
-              <input
+              <Input
                 className="input"
                 value={account}
                 onChange={(e) => setAccount(e.target.value)}
@@ -83,7 +86,7 @@ function LoginInner() {
             </div>
             <div>
               <label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_359090c2, styles.r_2689f395, styles.r_399e11a5)}>密码</label>
-              <input
+              <Input
                 type="password"
                 className="input"
                 value={password}
@@ -95,13 +98,13 @@ function LoginInner() {
             {err &&
             <div className={cx(styles.r_5f22e64f, styles.r_0759a0f1, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_b54428d1)}>{err}</div>
             }
-            <button
+            <Button
               type="submit"
-              className={cx(styles.r_6da6a3c3, styles.r_5f533b3a, styles.r_b29d8adb)}
+              fullWidth
               disabled={loading}>
 
               {loading ? t('common.loading') || '加载中…' : t('auth.login.submit') || '登录'}
-            </button>
+            </Button>
           </form>
 
           <div className={cx(styles.r_0ab86672, styles.r_ca6bf630, styles.r_359090c2, styles.r_69335b95)}>
@@ -109,7 +112,7 @@ function LoginInner() {
               还没账号?立即注册 →
             </Link>
           </div>
-        </div>
+        </Card>
 
         <Link href="/" className={cx(styles.r_0ab86672, styles.r_ca6bf630, styles.r_359090c2, styles.r_5f6a59f1, styles.r_f673f4a7)}>
           ← {t('common.back') || '返回'}

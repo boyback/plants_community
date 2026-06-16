@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import Cropper, { type Area } from "react-easy-crop";
 import { useBodyScrollLock } from '@/lib/hooks/useBodyScrollLock';
+import { Input } from '@/components/ui/Input';
 import styles from './CropImageDialog.module.scss';
 import { cx } from '@/lib/style-utils';
 
@@ -217,7 +218,7 @@ export function CropImageDialog({ src, onCancel, onConfirm, outputSize }: Props)
                 )}
               </div>
               <div className={cx(styles.r_50d0d216, styles.r_60fbb771, styles.r_3960ffc2, styles.r_58284b4e)}>
-                <input
+                <Input
                   type="number" min="1" max="100"
                   value={customW}
                   onChange={(e) => {setCustomW(e.target.value);setAspect(null);}}
@@ -225,7 +226,7 @@ export function CropImageDialog({ src, onCancel, onConfirm, outputSize }: Props)
                   className={cx(styles.r_baceed34, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_d5eab218, styles.r_660d2eff, styles.r_ca6bf630, styles.r_d058ca6d)} />
 
                 <span className={styles.r_3353f144}>:</span>
-                <input
+                <Input
                   type="number" min="1" max="100"
                   value={customH}
                   onChange={(e) => {setCustomH(e.target.value);setAspect(null);}}

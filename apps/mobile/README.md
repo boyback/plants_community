@@ -1,4 +1,4 @@
-# 肉友社 Mobile
+# 植友圈 Mobile
 
 Expo + React Native mobile app for iOS and Android.
 

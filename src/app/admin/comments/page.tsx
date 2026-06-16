@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/Toast';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -137,7 +138,7 @@ export default function CommentsAdminPage() {
 
       {/* 搜索 */}
       <form onSubmit={onSearch} className={cx(styles.r_da019856, styles.r_60fbb771, styles.r_77a2a20e)}>
-        <input
+        <Input
           className={cx(styles.r_36e579c0, styles.r_dd702538)}
           value={q}
           onChange={(e) => setQ(e.target.value)}

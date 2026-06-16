@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import styles from './TagSelector.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -292,7 +293,7 @@ export function TagSelector({ value, onChange, max = 6, className, controlClassN
         )}
 
         {/* 输入框 */}
-        <input
+        <Input
           ref={inputRef}
           className={cx(styles.r_1734f23d, styles.r_36e579c0, styles.r_7f19cdf4, styles.r_5a270a0c, styles.r_fc7473ca, styles.r_df37b1fd, styles.r_bacacabf)}
           value={searchInput}

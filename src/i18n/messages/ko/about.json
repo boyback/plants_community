@@ -1,11 +1,11 @@
 {
   "about": {
     "tagline": "About us",
-    "brandName": "RouYou 커뮤니티",
+    "brandName": "ZhiYou 커뮤니티",
     "intro": "다육식물 애호가를 위한 산뜻한 커뮤니티. 모든 잎을 소중히 여깁니다.",
     "vision": {
       "title": "우리의 비전",
-      "body": "베란다 초보부터 온실 고수까지, RouYou에서 일상을 공유하고 지식을 나누며 친구를 만나세요."
+      "body": "베란다 초보부터 온실 고수까지, ZhiYou에서 일상을 공유하고 지식을 나누며 친구를 만나세요."
     },
     "features": {
       "title": "핵심 기능",
@@ -38,7 +38,7 @@
       "github": "🐙 GitHub · ",
       "wechat": "💬 WeChat 단체방: 관리자에게 DM 요청"
     },
-    "copyright": "© {year} RouYou Community — Made with 🌿 and ❤️",
+    "copyright": "© {year} ZhiYou Community — Made with 🌿 and ❤️",
     "links": {
       "home": "홈",
       "boards": "게시판 보기",

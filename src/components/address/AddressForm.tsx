@@ -6,6 +6,8 @@ import { useI18n } from '@/i18n/I18nContext';
 import type { Address } from '@/lib/types';
 import styles from './AddressForm.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -85,7 +87,7 @@ export function AddressForm({
     <form onSubmit={submit} className={styles.r_6ed543e2}>
       <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3)}>
         <Field label={t('addresses.form.name')}>
-          <input
+          <Input
             className="input"
             value={v.name}
             onChange={(e) => update('name', e.target.value)}
@@ -93,7 +95,7 @@ export function AddressForm({
 
         </Field>
         <Field label={t('addresses.form.phone')}>
-          <input
+          <Input
             className="input"
             inputMode="tel"
             value={v.phone}
@@ -105,7 +107,7 @@ export function AddressForm({
 
       <div className={cx(styles.r_f3c543ad, styles.r_be2e831b, styles.r_1004c0c3)}>
         <Field label={t('addresses.form.province')}>
-          <input
+          <Input
             className="input"
             value={v.province ?? ''}
             onChange={(e) => update('province', e.target.value)}
@@ -113,7 +115,7 @@ export function AddressForm({
 
         </Field>
         <Field label={t('addresses.form.city')}>
-          <input
+          <Input
             className="input"
             value={v.city ?? ''}
             onChange={(e) => update('city', e.target.value)}
@@ -121,7 +123,7 @@ export function AddressForm({
 
         </Field>
         <Field label={t('addresses.form.district')}>
-          <input
+          <Input
             className="input"
             value={v.district ?? ''}
             onChange={(e) => update('district', e.target.value)}
@@ -131,7 +133,7 @@ export function AddressForm({
       </div>
 
       <Field label={t('addresses.form.detail')}>
-        <textarea
+        <Textarea
           className={styles.r_bfb7d9fc}
           value={v.detail}
           onChange={(e) => update('detail', e.target.value)}
@@ -141,7 +143,7 @@ export function AddressForm({
 
       <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3)}>
         <Field label={t('addresses.form.zip')}>
-          <input
+          <Input
             className="input"
             value={v.zip ?? ''}
             onChange={(e) => update('zip', e.target.value)}
@@ -170,7 +172,7 @@ export function AddressForm({
                 </button>);
 
             })}
-            <input
+            <Input
               className={cx(styles.r_36e579c0, styles.r_bb6c09da, styles.r_ebb407e8, styles.r_dd702538)}
               value={v.tag ?? ''}
               onChange={(e) => update('tag', e.target.value)}

@@ -6,6 +6,7 @@ import { REVIEW_FILTER_ENABLED } from "@/lib/feature-flags";
 import { parseJsonArray } from '@/lib/api';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -184,7 +185,7 @@ export default async function AdminPostsPage({
 
       {/* 过滤器 */}
       <form className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_358505cf, styles.r_5e10cdb8, styles.r_eb6e8b88, styles.r_359090c2)}>
-        <input
+        <Input
           name="q"
           defaultValue={q}
           placeholder="按标题或作者搜索"

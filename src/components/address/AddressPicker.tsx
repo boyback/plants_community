@@ -26,7 +26,8 @@ import { cx } from '@/lib/style-utils';
  *   | { mode: 'once', form: AddressFormValue }
  *
  * 父组件下单时根据 mode 决定 API 入参。
- */
+ */import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 export type AddressPickerValue =
 {mode: 'saved';addressId: string;} |
@@ -262,13 +263,13 @@ function InlineForm({
   return (
     <div className={styles.r_14dd497e}>
       <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_77a2a20e)}>
-        <input
+        <Input
           className="input"
           placeholder={t('addresses.picker.inlineName')}
           value={v.name}
           onChange={(e) => update('name', e.target.value)} />
 
-        <input
+        <Input
           className="input"
           inputMode="tel"
           placeholder={t('addresses.picker.inlinePhone')}
@@ -277,26 +278,26 @@ function InlineForm({
 
       </div>
       <div className={cx(styles.r_f3c543ad, styles.r_be2e831b, styles.r_77a2a20e)}>
-        <input
+        <Input
           className="input"
           placeholder={t('addresses.picker.inlineProvince')}
           value={v.province ?? ''}
           onChange={(e) => update('province', e.target.value)} />
 
-        <input
+        <Input
           className="input"
           placeholder={t('addresses.picker.inlineCity')}
           value={v.city ?? ''}
           onChange={(e) => update('city', e.target.value)} />
 
-        <input
+        <Input
           className="input"
           placeholder={t('addresses.picker.inlineDistrict')}
           value={v.district ?? ''}
           onChange={(e) => update('district', e.target.value)} />
 
       </div>
-      <textarea
+      <Textarea
         className={styles.r_a4197e87}
         placeholder={t('addresses.picker.inlineDetail')}
         value={v.detail}

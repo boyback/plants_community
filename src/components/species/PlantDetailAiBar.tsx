@@ -5,6 +5,7 @@ import { Icon } from '@/components/ui/Icon';
 import { api, ApiError } from "@/lib/client-api";
 import styles from './PlantDetailAiBar.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -63,7 +64,7 @@ export function PlantDetailAiBar({
             void ask();
           }}>
 
-          <input
+          <Input
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             className={cx(styles.r_7e0b7cdf, styles.r_36e579c0, styles.r_7f19cdf4, styles.r_fc7473ca, styles.r_eb6abb1f, styles.r_df37b1fd, styles.r_e4a886d4)}

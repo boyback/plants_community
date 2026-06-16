@@ -37,7 +37,7 @@ export default async function AdminLayout({ children }: {children: React.ReactNo
             <span className={cx(styles.r_f3c543ad, styles.r_ed8a5df7, styles.r_2bbcfc3b, styles.r_67d66567, styles.r_5f22e64f, styles.r_39b2e003, styles.r_f3c97abd, styles.r_da4d1df4, styles.r_72a4c7cd)}>
               ⚙
             </span>
-            <span>RouYou Admin</span>
+            <span>ZhiYou Admin</span>
           </Link>
           <div className={cx(styles.r_fb56d9cf, styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_359090c2, styles.r_02eb621e)}>
             <span>{me.name}</span>

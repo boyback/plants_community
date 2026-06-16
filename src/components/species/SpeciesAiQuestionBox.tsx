@@ -5,6 +5,7 @@ import { Icon } from '@/components/ui/Icon';
 import { api, ApiError } from "@/lib/client-api";
 import styles from './SpeciesAiQuestionBox.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -79,7 +80,7 @@ export function SpeciesAiQuestionBox({
         </button> :
 
       <div className={cx(styles.r_6f7e013d, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_7660b450)}>
-          <textarea
+          <Textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           placeholder={`问问 ${speciesName} 的养护问题`}

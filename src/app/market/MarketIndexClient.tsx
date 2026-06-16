@@ -11,6 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from "@/lib/client-api";
 import styles from './MarketIndexClient.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -246,11 +247,11 @@ export function MarketIndexClient() {
 
         <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_359090c2)}>
           <span className={cx(styles.r_e7e37107, styles.r_012fbd12, styles.r_6c4cc49e)}>价格</span>
-          <input type="number" min={0} placeholder="最低"
+          <Input type="number" min={0} placeholder="最低"
           className={cx(styles.r_ed8a5df7, styles.r_ed831a4d, styles.r_421ac2be, styles.r_ca6bcd4b, styles.r_691861bc, styles.r_5e10cdb8, styles.r_d5eab218, styles.r_359090c2, styles.r_df37b1fd, styles.r_74046e83)}
           value={priceMin} onChange={(e) => setPriceMin(e.target.value)} />
           <span className={styles.r_4d094717}>—</span>
-          <input type="number" min={0} placeholder="最高"
+          <Input type="number" min={0} placeholder="最高"
           className={cx(styles.r_ed8a5df7, styles.r_ed831a4d, styles.r_421ac2be, styles.r_ca6bcd4b, styles.r_691861bc, styles.r_5e10cdb8, styles.r_d5eab218, styles.r_359090c2, styles.r_df37b1fd, styles.r_74046e83)}
           value={priceMax} onChange={(e) => setPriceMax(e.target.value)} />
           <span className={styles.r_4d094717}>元</span>
@@ -272,7 +273,7 @@ export function MarketIndexClient() {
 
           <div className={cx(styles.r_d89972fe, styles.r_fb56d9cf)}>
             <Icon name="search" size={14} className={cx(styles.r_a4326536, styles.r_da4dbfbc, styles.r_ecfeb742, styles.r_d694ba66, styles.r_36b381be, styles.r_eb16169c)} />
-            <input
+            <Input
               className={cx(styles.r_ed8a5df7, styles.r_74b2435a, styles.r_421ac2be, styles.r_ca6bcd4b, styles.r_691861bc, styles.r_5e10cdb8, styles.r_20ebde75, styles.r_aa2c13a5, styles.r_359090c2, styles.r_df37b1fd, styles.r_74046e83, styles.r_66f2147e)}
               placeholder="搜索 标题 / 标签 / 发货地…"
               value={q} onChange={(e) => setQ(e.target.value)} />

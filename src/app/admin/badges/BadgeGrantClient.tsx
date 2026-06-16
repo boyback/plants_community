@@ -6,6 +6,7 @@ import { api, ApiError } from "@/lib/client-api";
 import { toast } from '@/components/ui/Toast';
 import styles from './BadgeGrantClient.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -113,7 +114,7 @@ export function BadgeGrantClient({
               <label className={cx(styles.r_65281709, styles.r_0214b4b3, styles.r_d058ca6d, styles.r_2689f395, styles.r_02eb621e)}>
                 用户 ID 列表(空格 / 逗号 / 换行分隔)
               </label>
-              <textarea
+              <Textarea
               className={cx(styles.r_6da6a3c3, styles.r_739eaa6a, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_0e65706b, styles.r_d058ca6d)}
               value={userIds}
               onChange={(e) => setUserIds(e.target.value)}

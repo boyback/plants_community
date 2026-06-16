@@ -33,7 +33,7 @@ export async function GET(req: Request) {
   if (!userId) {
     return htmlPage(
       '链接无效',
-      `<h1>🌿</h1><p>取消订阅链接无效或已过期。</p><p><a href="/">回到肉友社首页</a></p>`,
+      `<h1>🌿</h1><p>取消订阅链接无效或已过期。</p><p><a href="/">回到植友圈首页</a></p>`,
     );
   }
 
@@ -45,7 +45,7 @@ export async function GET(req: Request) {
   return htmlPage(
     '已取消订阅',
     `<h1>✓ 已取消订阅</h1>
-     <p>之后不会再收到肉友社的营销邮件。</p>
+     <p>之后不会再收到植友圈的营销邮件。</p>
      <p>(账户验证、密码找回等关键邮件仍会发送)</p>
      <p style="margin-top:20px"><a href="/settings/profile">回到设置</a> · <a href="/">回首页</a></p>`,
   );

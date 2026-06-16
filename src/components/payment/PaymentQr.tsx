@@ -10,6 +10,7 @@ import { cx } from '@/lib/style-utils';
 
 
 export type PayChannel = 'wechat' | 'alipay' | 'escrow';
+type QrPayChannel = Exclude<PayChannel, 'alipay'>;
 export type PayQrStatus = 'pending' | 'paid' | 'expired' | 'cancelled' | 'refunded';
 
 /** 二维码生成后的"预热窗口":此期间禁止扫码(支付宝侧还在落单) */
@@ -35,7 +36,7 @@ export function PaymentQr({
 
 
 
-}: {text: string;channel: PayChannel;status?: PayQrStatus; /** 是否已被扫码(由后端 alipay.trade.query 推断) */scanning?: boolean;}) {
+}: {text: string;channel: QrPayChannel;status?: PayQrStatus; /** 是否已被扫码 */scanning?: boolean;}) {
   const { t } = useI18n();
   const [dataUrl, setDataUrl] = useState<string>('');
   /** 二维码刚生成时有一段预热期(支付宝侧还在落单),期间蒙层"生成中" */
@@ -68,9 +69,7 @@ export function PaymentQr({
   }, [text]);
 
   const channelColor = channel === 'wechat' ? styles.r_b17d6a13 : styles.r_4c3a8aac;
-  const channelLabel = channel === 'wechat' ?
-  t('checkout.channelWechat') :
-  t('checkout.channelAlipay');
+  const channelLabel = channel === 'wechat' ? t('checkout.channelWechat') : '担保交易';
 
   // 仅「已扫码、等待支付」才显示扫描中蒙层
   const showScan = status === 'pending' && scanning && dataUrl !== '';
@@ -123,12 +122,12 @@ function WarmingOverlay({ label }: {label: string;}) {
 }
 
 /** 扫码中:全尺寸蒙层 + 扫描线 + 中央文案 */
-function ScanningOverlay({ channel, label }: {channel: PayChannel;label: string;}) {
+function ScanningOverlay({ channel, label }: {channel: QrPayChannel;label: string;}) {
   return (
     <div
       className={cn(cx("rouyou-qr-scan", styles.r_da4dbfbc, styles.r_7b7df044, styles.r_2cd02d11, styles.r_084ed6ec, styles.r_d88c782b),
 
-      channel === 'alipay' ? "rouyou-qr-scan--alipay" : "rouyou-qr-scan--wechat"
+      channel === 'wechat' ? "rouyou-qr-scan--wechat" : ''
       )}>
 
       <div className={cx(styles.r_da4dbfbc, styles.r_7b7df044, styles.r_f3c543ad, styles.r_67d66567)}>
@@ -191,4 +190,3 @@ function ExpiredOverlay({ label }: {label: string;}) {
     </div>);
 
 }
-

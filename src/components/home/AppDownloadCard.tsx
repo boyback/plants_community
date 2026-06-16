@@ -87,7 +87,7 @@ export function AppDownloadCard() {
             viewBox={`0 0 ${QR_SIZE} ${QR_SIZE}`}
             className={cx(styles.r_668b21aa, styles.r_6da6a3c3)}
             shapeRendering="crispEdges"
-            aria-label="肉友社 APP 下载二维码">
+            aria-label="植友圈 APP 下载二维码">
 
             {/* 白底 */}
             <rect width={QR_SIZE} height={QR_SIZE} fill="#ffffff" />
@@ -137,7 +137,7 @@ export function AppDownloadCard() {
 
         {/* 右:标题 + 描述 */}
         <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0, styles.r_da7c36cd)}>
-          <div className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>🌱 肉友社 APP</div>
+          <div className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>🌱 植友圈 APP</div>
           <div className={cx(styles.r_d058ca6d, styles.r_7054e276, styles.r_69335b95)}>
             扫码下载,随时记录你的多肉时光
             <br />

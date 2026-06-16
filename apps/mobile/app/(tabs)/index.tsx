@@ -138,7 +138,7 @@ export default function HomeScreen() {
                 <View style={styles.logoLeafTall} />
                 <View style={styles.logoLeafSmall} />
               </View>
-              <Text style={styles.brandText}>肉友社区</Text>
+              <Text style={styles.brandText}>植友圈社区</Text>
             </View>
             <View style={styles.headerActions}>
               <Pressable style={styles.headerButton} onPress={() => router.push('/search')}>

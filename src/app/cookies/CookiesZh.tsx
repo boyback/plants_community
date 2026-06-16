@@ -4,13 +4,13 @@ import { cx } from '@/lib/style-utils';
 export function CookiesZh() {
   return (
     <>
-      <h1>肉友社 Cookie 政策</h1>
+      <h1>植友圈 Cookie 政策</h1>
       <p className={styles.r_eb16169c}>
         最近更新日期:2026 年 05 月 07 日 · 生效日期:发布之日
       </p>
 
       <p>
-        本政策说明「肉友社」(以下简称「本服务」)如何使用 Cookie 以及同类技术(例如
+        本政策说明「植友圈」(以下简称「本服务」)如何使用 Cookie 以及同类技术(例如
         localStorage、sessionStorage、pixel tag)。我们把 Cookie 分为四类,你可以在首次访问时的
         同意框或设置页中自主选择启用哪些类别,
         <strong>「必要类」因承载登录、安全等基础功能无法关闭</strong>。

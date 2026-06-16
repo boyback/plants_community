@@ -20,6 +20,7 @@ import {
 import type { Order, Payment } from '@/lib/types';
 import { PaymentQr, type PayChannel } from '@/components/payment/PaymentQr';
 import { AlipayPagePayButton } from '@/components/payment/AlipayPagePayButton';
+import { PaymentSuccessPanel } from '@/components/payment/PaymentSuccessPanel';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
 
@@ -129,14 +130,17 @@ export default function AuctionCheckoutPage() {
       pollRef.current = setInterval(async () => {
         try {
           const p = await api.get<Payment>(`/api/payments/${payment.payNo}`);
-          setPayment(p);
+          setPayment((current) => ({
+            ...p,
+            pagePayUrl: p.pagePayUrl ?? current?.pagePayUrl
+          }));
           if (p.status === 'paid') {
             everScanned = false;
             notScanningStreak = 0;
             setAbandoned(false);
+            if (pollRef.current) clearInterval(pollRef.current);
             toast.success(t('checkout.paySuccessShipping'));
             await refresh();
-            setTimeout(() => router.push('/orders'), 3000);
           } else if (p.status === 'expired' || p.status === 'cancelled') {
             if (pollRef.current) clearInterval(pollRef.current);
           } else if (p.status === 'pending') {
@@ -167,7 +171,7 @@ export default function AuctionCheckoutPage() {
 
   if (loading) {
     return (
-      <Shell>
+      <Shell withSidebar={false}>
         <div className={cx(styles.r_1100bef6, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>{t('common.loading')}</div>
       </Shell>);
 
@@ -175,7 +179,7 @@ export default function AuctionCheckoutPage() {
 
   if (!order) {
     return (
-      <Shell>
+      <Shell withSidebar={false}>
         <div className={cx(styles.r_0e12dc7d, styles.r_9794ab45, styles.r_a4d0f420, styles.r_ca6bf630)}>
           <div className={styles.r_a95699d9}>😕</div>
           <div className={cx(styles.r_eccd13ef, styles.r_4ee73492, styles.r_e83a7042)}>{err ?? t('checkout.orderNotFound')}</div>
@@ -189,7 +193,7 @@ export default function AuctionCheckoutPage() {
 
   if (order.source !== 'auction') {
     return (
-      <Shell>
+      <Shell withSidebar={false}>
         <div className={cx(styles.r_0e12dc7d, styles.r_9794ab45, styles.r_a4d0f420, styles.r_ca6bf630)}>
           <div className={styles.r_a95699d9}>😕</div>
           <div className={cx(styles.r_eccd13ef, styles.r_4ee73492, styles.r_e83a7042)}>{t('checkout.notAuctionOrder')}</div>
@@ -203,7 +207,7 @@ export default function AuctionCheckoutPage() {
 
   if (order.status !== 'pending_payment') {
     return (
-      <Shell>
+      <Shell withSidebar={false}>
         <div className={cx(styles.r_0e12dc7d, styles.r_9794ab45, styles.r_a4d0f420, styles.r_ca6bf630)}>
           <div className={styles.r_a95699d9}>✅</div>
           <div className={cx(styles.r_eccd13ef, styles.r_4ee73492, styles.r_e83a7042)}>{t('checkout.noNeedPay')}</div>
@@ -224,7 +228,7 @@ export default function AuctionCheckoutPage() {
   const remain = payment ? new Date(payment.expireAt).getTime() - now : 0;
 
   return (
-    <Shell>
+    <Shell withSidebar={false}>
       <div className={cx(styles.r_0e12dc7d, styles.r_f3c543ad, styles.r_5f6f3031, styles.r_d7c83398, styles.r_0d304f90, styles.r_e7849c79)}>
         <div className={styles.r_0478c89a}>
           <div className={cx(styles.r_65281709, styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_ac204c10, styles.r_e0467cf5, styles.r_d5eab218, styles.r_465609a2, styles.r_1dc571a3, styles.r_b54428d1)}>
@@ -333,12 +337,24 @@ export default function AuctionCheckoutPage() {
               </div>
 
               <div className={cx(styles.r_31f25533, styles.r_f3c543ad, styles.r_67d66567, styles.r_68f2db62, styles.r_9ac94195, styles.r_0478c89a)}>
-                {creating || !payment ?
+                {paid ?
+              <PaymentSuccessPanel
+                title="尾款支付成功"
+                description="当前页面已确认付款,订单进入待发货。"
+                primaryHref="/orders"
+                primaryLabel={t('checkout.viewMyOrders')}
+                secondaryHref={order.auctionId ? `/auction/${order.auctionId}` : '/auction'}
+                secondaryLabel={t('checkout.backToAuction')} /> :
+              creating || !payment ?
+              channel === 'alipay' ?
+              <AlipayPagePayButton /> :
               <div className={cx(styles.r_f3c543ad, styles.r_4ead2714, styles.r_d16aae84, styles.r_67d66567, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_5e10cdb8, styles.r_359090c2, styles.r_6c4cc49e)}>
                     {t('checkout.generatingQr', {
                   channel: channel === 'wechat' ? t('checkout.channelWechat') : t('checkout.channelAlipay')
                 })}
                   </div> :
+              channel === 'alipay' ?
+              <AlipayPagePayButton pagePayUrl={payment.pagePayUrl} /> :
               expired ?
               <div className={cx(styles.r_f3c543ad, styles.r_4ead2714, styles.r_d16aae84, styles.r_67d66567, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_5e10cdb8)}>
                     <div className={styles.r_751fb0d1}>⌛</div>
@@ -351,9 +367,6 @@ export default function AuctionCheckoutPage() {
                       {t('checkout.qrRegenerate')}
                     </button>
                   </div> :
-
-              payment.pagePayUrl ?
-              <AlipayPagePayButton pagePayUrl={payment.pagePayUrl} /> :
               <PaymentQr
                 text={payment.qrcode ?? payment.payNo}
                 channel={channel}
@@ -363,7 +376,7 @@ export default function AuctionCheckoutPage() {
               }
               </div>
 
-              {payment && payment.status === 'pending' && !expired && (
+              {payment && payment.status === 'pending' && !expired && channel !== 'alipay' && (
             abandoned ?
             <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_ca6bf630)}>
                     <span className={cx(styles.r_d058ca6d, styles.r_85d79ebf)}>
@@ -382,12 +395,6 @@ export default function AuctionCheckoutPage() {
                     {t('checkout.qrExpiresIn', { time: countdown(remain) })}
                   </div>)
 
-            }
-
-              {paid &&
-            <div className={cx(styles.r_eccd13ef, styles.r_5f22e64f, styles.r_7ebecbb6, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_5f6a59f1)}>
-                  {t('checkout.paidRedirect')}
-                </div>
             }
             </>
           }

@@ -4,11 +4,11 @@ import { cx } from '@/lib/style-utils';
 export function PrivacyKo() {
   return (
     <>
-      <h1>RouYou 개인정보 처리방침</h1>
+      <h1>ZhiYou 개인정보 처리방침</h1>
       <p className={styles.r_eb16169c}>최근 개정일: 2026 년 5 월 7 일 · 시행일: 공지일</p>
 
       <p>
-        RouYou(이하 &quot;회사&quot;)는 이용자의 개인정보를 매우 중요하게 여깁니다. 본 방침은 회사가 이용자의 개인정보를 어떻게 수집, 이용, 보관, 공유, 보호하는지,
+        ZhiYou(이하 &quot;회사&quot;)는 이용자의 개인정보를 매우 중요하게 여깁니다. 본 방침은 회사가 이용자의 개인정보를 어떻게 수집, 이용, 보관, 공유, 보호하는지,
         그리고 정보 주체로서 이용자가 누릴 수 있는 권리에 대해 설명합니다. 서비스 이용 전 본 방침을 자세히 읽어주시기 바랍니다.
         본 방침은 한국 &quot;개인정보 보호법&quot;, 중국 &quot;개인정보 보호법(PIPL)&quot;, EU &quot;일반 데이터 보호 규정(GDPR)&quot;의 요구사항을 참고하였습니다.
       </p>

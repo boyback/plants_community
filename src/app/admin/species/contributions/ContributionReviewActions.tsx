@@ -6,6 +6,7 @@ import { api, ApiError } from "@/lib/client-api";
 import { useBodyScrollLock } from '@/lib/hooks/useBodyScrollLock';
 import styles from './ContributionReviewActions.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -117,7 +118,7 @@ export function ContributionReviewActions({
         </div> :
       null}
 
-      <textarea
+      <Textarea
         value={reviewNote}
         disabled={disabled || Boolean(busy)}
         onChange={(e) => setReviewNote(e.target.value)}

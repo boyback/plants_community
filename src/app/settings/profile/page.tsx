@@ -9,6 +9,8 @@ import { api, ApiError } from "@/lib/client-api";
 import { toast } from '@/components/ui/Toast';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -85,7 +87,7 @@ export default function ProfileSettingsPage() {
         <section>
           <label className={styles.r_0214b4b3}>
             <div className={cx(styles.r_65281709, styles.r_fc7473ca, styles.r_2689f395)}>昵称</div>
-            <input
+            <Input
             className={styles.r_9794ab45}
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -102,7 +104,7 @@ export default function ProfileSettingsPage() {
         <section>
           <label className={styles.r_0214b4b3}>
             <div className={cx(styles.r_65281709, styles.r_fc7473ca, styles.r_2689f395)}>简介</div>
-            <textarea
+            <Textarea
             className={cx(styles.r_dd9ce2a7, styles.r_9794ab45)}
             value={bio}
             onChange={(e) => setBio(e.target.value)}

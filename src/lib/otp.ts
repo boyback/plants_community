@@ -17,7 +17,7 @@
  *   SMTP_SECURE=true                           (port=465 时 true)
  *   SMTP_USER=noreply@plantcommunity.cn       (发件邮箱完整地址)
  *   SMTP_PASS=xxx                              (邮箱密码或 SMTP 授权码)
- *   SMTP_FROM_NAME=肉友社                      (显示给用户的发件人名称)
+ *   SMTP_FROM_NAME=植友圈                      (显示给用户的发件人名称)
  */
 
 import { sendMail } from './email-mailer';

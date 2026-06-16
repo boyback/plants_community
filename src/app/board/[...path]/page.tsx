@@ -37,9 +37,9 @@ export const dynamic = "force-dynamic";
 
 /**
  * SEO:三级板块的动态 metadata
- *  - 品种页:title「银冠玉(Lophophora williamsii) 养护、图片、繁殖 · 肉友社」
- *  - 属页:  title「乌羽玉属 Lophophora · 共 X 个品种 · 肉友社」
- *  - 科页:  title「仙人掌科 · 共 X 个品种 X 个属 · 肉友社」
+ *  - 品种页:title「银冠玉(Lophophora williamsii) 养护、图片、繁殖 · 植友圈」
+ *  - 属页:  title「乌羽玉属 Lophophora · 共 X 个品种 · 植友圈」
+ *  - 科页:  title「仙人掌科 · 共 X 个品种 X 个属 · 植友圈」
  */
 export async function generateMetadata({
   params

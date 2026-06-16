@@ -1,11 +1,11 @@
 {
   "about": {
     "tagline": "About us",
-    "brandName": "肉友社 · RouYou Community",
+    "brandName": "植友圈 · ZhiYou Community",
     "intro": "一個為多肉植物愛好者打造的清新社區。我們相信:每一片葉子都值得被認真對待。",
     "vision": {
       "title": "我們的願景",
-      "body": "讓每一位養肉人都能在這裡找到知音。無論你是陽台派新手,還是溫室老玩家,都能在肉友社分享日常、交流心得、結識同好。"
+      "body": "讓每一位養肉人都能在這裡找到知音。無論你是陽台派新手,還是溫室老玩家,都能在植友圈分享日常、交流心得、結識同好。"
     },
     "features": {
       "title": "核心功能",
@@ -38,7 +38,7 @@
       "github": "🐙 GitHub · ",
       "wechat": "💬 微信交流群:入群請私訊管理員"
     },
-    "copyright": "© {year} RouYou Community — Made with 🌿 and ❤️",
+    "copyright": "© {year} ZhiYou Community — Made with 🌿 and ❤️",
     "links": {
       "home": "回首頁",
       "boards": "瀏覽版塊",

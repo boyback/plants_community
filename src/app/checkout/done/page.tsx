@@ -4,7 +4,7 @@ import styles from './page.module.scss';
 
 export default function CheckoutDonePage() {
   return (
-    <Shell>
+    <Shell withSidebar={false}>
       <main className={styles.wrap}>
         <section className={styles.panel}>
           <div className={styles.icon}>✓</div>

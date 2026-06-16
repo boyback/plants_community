@@ -7,7 +7,7 @@ import { cx } from '@/lib/style-utils';
 
 
 export const metadata = {
-  title: "AI 养护 - 肉友社",
+  title: "AI 养护 - 植友圈",
   description: '多肉植物 AI 养护助手，支持病害诊断、拍照识别、浇水和配土建议。'
 };
 

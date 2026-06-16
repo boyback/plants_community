@@ -6,6 +6,7 @@ import { api, ApiError } from "@/lib/client-api";
 import { toast } from '@/components/ui/Toast';
 import styles from './TaskRow.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -142,7 +143,7 @@ function NumCell({
 }: {value: number;onChange: (v: number) => void;min?: number;}) {
   return (
     <td className={cx(styles.r_d5eab218, styles.r_660d2eff)}>
-      <input
+      <Input
         type="number"
         min={min}
         className={cx(styles.r_baceed34, styles.r_07389a77, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_d8e0e382, styles.r_465609a2, styles.r_308fc069, styles.r_d058ca6d, styles.r_3032cae0)}

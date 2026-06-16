@@ -4,23 +4,23 @@ import { cx } from '@/lib/style-utils';
 export function TermsEn() {
   return (
     <>
-      <h1>RouYou Terms of Service</h1>
+      <h1>ZhiYou Terms of Service</h1>
       <p className={styles.r_eb16169c}>
         Last updated: 7 May 2026 · Effective on the date of publication
       </p>
 
       <h2>1. Introduction</h2>
       <p>
-        Welcome to RouYou (the &quot;Service&quot;). These Terms of Service (the
+        Welcome to ZhiYou (the &quot;Service&quot;). These Terms of Service (the
         &quot;Terms&quot;) govern your access to and use of the Service operated by
-        RouYou (&quot;we&quot;, &quot;us&quot;). By registering an account, logging
+        ZhiYou (&quot;we&quot;, &quot;us&quot;). By registering an account, logging
         in, or otherwise using the Service, you acknowledge that you have read,
         understood and agree to be bound by these Terms.
       </p>
 
       <h2>2. The Service</h2>
       <p>
-        RouYou is an online community for lovers of succulent plants and
+        ZhiYou is an online community for lovers of succulent plants and
         horticulture. The Service offers post publishing, commenting,
         species references, peer-to-peer marketplace, live auctions,
         help-request bounties, event sign-ups and related features.
@@ -56,7 +56,7 @@ export function TermsEn() {
       <ol>
         <li>
           <strong>Ownership.</strong> You retain ownership of the content you
-          post. By posting, you grant RouYou a worldwide, non-exclusive,
+          post. By posting, you grant ZhiYou a worldwide, non-exclusive,
           royalty-free licence to use, reproduce, display, adapt and distribute
           that content solely for the purpose of operating, promoting and
           improving the Service (excluding training AI models without

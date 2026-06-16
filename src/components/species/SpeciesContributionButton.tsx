@@ -10,6 +10,8 @@ import { SPECIES_GALLERY_CATEGORIES } from "@/lib/species-gallery";
 import { useBodyScrollLock } from '@/lib/hooks/useBodyScrollLock';
 import styles from './SpeciesContributionButton.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -148,13 +150,13 @@ export function SpeciesContributionButton({
               {type === 'correction' &&
             <div className={styles.r_6ed543e2}>
                   <Field label="需要修正的字段">
-                    <input value={fieldName} onChange={(e) => setFieldName(e.target.value)} className={styles.r_6da6a3c3} placeholder="例如：原产地 / 花期 / 适宜温度" />
+                    <Input value={fieldName} onChange={(e) => setFieldName(e.target.value)} className={styles.r_6da6a3c3} placeholder="例如：原产地 / 花期 / 适宜温度" />
                   </Field>
                   <Field label="建议值">
-                    <input value={suggestedValue} onChange={(e) => setSuggestedValue(e.target.value)} className={styles.r_6da6a3c3} placeholder="填写建议改成什么" />
+                    <Input value={suggestedValue} onChange={(e) => setSuggestedValue(e.target.value)} className={styles.r_6da6a3c3} placeholder="填写建议改成什么" />
                   </Field>
                   <Field label="原因或来源">
-                    <textarea value={reason} onChange={(e) => setReason(e.target.value)} className={cx(styles.r_7d43faea, styles.r_6da6a3c3, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_df37b1fd, styles.r_df4824ca)} maxLength={1000} />
+                    <Textarea value={reason} onChange={(e) => setReason(e.target.value)} className={cx(styles.r_7d43faea, styles.r_6da6a3c3, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_df37b1fd, styles.r_df4824ca)} maxLength={1000} />
                   </Field>
                 </div>
             }
@@ -162,10 +164,10 @@ export function SpeciesContributionButton({
               {type === 'care_tip' &&
             <div className={styles.r_6ed543e2}>
                   <Field label="季节/场景">
-                    <input value={season} onChange={(e) => setSeason(e.target.value)} className={styles.r_6da6a3c3} placeholder="例如：夏季 / 冬季 / 服盆期" />
+                    <Input value={season} onChange={(e) => setSeason(e.target.value)} className={styles.r_6da6a3c3} placeholder="例如：夏季 / 冬季 / 服盆期" />
                   </Field>
                   <Field label="养护经验">
-                    <textarea value={careContent} onChange={(e) => setCareContent(e.target.value)} className={cx(styles.r_690747ec, styles.r_6da6a3c3, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_df37b1fd, styles.r_df4824ca)} maxLength={2000} />
+                    <Textarea value={careContent} onChange={(e) => setCareContent(e.target.value)} className={cx(styles.r_690747ec, styles.r_6da6a3c3, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_df37b1fd, styles.r_df4824ca)} maxLength={2000} />
                   </Field>
                 </div>
             }
@@ -173,7 +175,7 @@ export function SpeciesContributionButton({
               {type === 'gallery_image' &&
             <div className={styles.r_6ed543e2}>
                   <Field label="图集分类">
-                    <input
+                    <Input
                   list={galleryCategoryListId}
                   value={galleryCategory}
                   onChange={(e) => setGalleryCategory(e.target.value)}
@@ -198,7 +200,7 @@ export function SpeciesContributionButton({
 
                   </Field>
                   <Field label="图片说明">
-                    <textarea value={imageNote} onChange={(e) => setImageNote(e.target.value)} className={cx(styles.r_dd9ce2a7, styles.r_6da6a3c3, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_df37b1fd, styles.r_df4824ca)} maxLength={1000} placeholder="例如：实拍时间、形态状态、成长阶段、养护环境" />
+                    <Textarea value={imageNote} onChange={(e) => setImageNote(e.target.value)} className={cx(styles.r_dd9ce2a7, styles.r_6da6a3c3, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_df37b1fd, styles.r_df4824ca)} maxLength={1000} placeholder="例如：实拍时间、形态状态、成长阶段、养护环境" />
                   </Field>
                 </div>
             }

@@ -17,8 +17,8 @@ export const dynamic = "force-dynamic";
 const PAGE_SIZE = 50;
 
 export const metadata: Metadata = {
-  title: '话题排行榜 · 肉友社',
-  description: '查看肉友社所有热门话题排行榜，按帖子数量排序'
+  title: '话题排行榜 · 植友圈',
+  description: '查看植友圈所有热门话题排行榜，按帖子数量排序'
 };
 
 export default async function TopicsRankingPage({

@@ -14,6 +14,8 @@ import { RichTextEditor } from '@/components/richtext/RichTextEditor';
 import { formatPrice } from '@/lib/utils';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -166,7 +168,7 @@ export default function NewAuctionPage() {
             {/* 基础信息 */}
             <Section title="🪧">
               <Field label={t('auction.create.fieldTitle')}>
-                <input
+                <Input
                   className="input"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -187,7 +189,7 @@ export default function NewAuctionPage() {
                   </select>
                 </Field>
                 <Field label={t('auction.create.fieldCover')}>
-                  <input
+                  <Input
                     className="input"
                     value={cover}
                     onChange={(e) => setCover(e.target.value)}
@@ -196,7 +198,7 @@ export default function NewAuctionPage() {
                 </Field>
               </div>
               <Field label={t('auction.create.fieldImages')}>
-                <textarea
+                <Textarea
                   className={styles.r_a4197e87}
                   value={imagesText}
                   onChange={(e) => setImagesText(e.target.value)} />
@@ -228,7 +230,7 @@ export default function NewAuctionPage() {
                       </button>
                     </span>
                   )}
-                  <input
+                  <Input
                     className={cx(styles.r_36e579c0, styles.r_7f19cdf4, styles.r_d8e0e382, styles.r_fc7473ca, styles.r_df37b1fd, styles.r_a9ef791a)}
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
@@ -253,7 +255,7 @@ export default function NewAuctionPage() {
             <Section title="💰">
               <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3)}>
                 <Field label={t('auction.create.fieldStartPrice')}>
-                  <input
+                  <Input
                     className="input"
                     inputMode="decimal"
                     value={startPriceYuan}
@@ -261,7 +263,7 @@ export default function NewAuctionPage() {
 
                 </Field>
                 <Field label={t('auction.create.fieldMinIncrement')}>
-                  <input
+                  <Input
                     className="input"
                     inputMode="decimal"
                     value={minIncrementYuan}
@@ -269,7 +271,7 @@ export default function NewAuctionPage() {
 
                 </Field>
                 <Field label={t('auction.create.fieldBuyNow')}>
-                  <input
+                  <Input
                     className="input"
                     inputMode="decimal"
                     value={buyNowYuan}
@@ -278,7 +280,7 @@ export default function NewAuctionPage() {
 
                 </Field>
                 <Field label={t('auction.create.fieldReserve')}>
-                  <input
+                  <Input
                     className="input"
                     inputMode="decimal"
                     value={reserveYuan}
@@ -287,7 +289,7 @@ export default function NewAuctionPage() {
 
                 </Field>
                 <Field label={t('auction.create.fieldDeposit')}>
-                  <input
+                  <Input
                     className="input"
                     inputMode="decimal"
                     value={depositYuan}
@@ -301,7 +303,7 @@ export default function NewAuctionPage() {
             <Section title="⏰">
               <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3)}>
                 <Field label={t('auction.create.fieldStartAt')}>
-                  <input
+                  <Input
                     type="datetime-local"
                     className="input"
                     value={startAt}
@@ -309,7 +311,7 @@ export default function NewAuctionPage() {
 
                 </Field>
                 <Field label={t('auction.create.fieldEndAt')}>
-                  <input
+                  <Input
                     type="datetime-local"
                     className="input"
                     value={endAt}
@@ -317,7 +319,7 @@ export default function NewAuctionPage() {
 
                 </Field>
                 <Field label={t('auction.create.fieldAntiSnipe')}>
-                  <input
+                  <Input
                     type="number"
                     className="input"
                     min={0}

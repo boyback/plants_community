@@ -5,6 +5,7 @@ import { api, ApiError } from "@/lib/client-api";
 import { toast } from '@/components/ui/Toast';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -68,7 +69,7 @@ export default function Page() {
             <p className={cx(styles.r_a77ed4d9, styles.r_359090c2, styles.r_69335b95)}>
               低于该等级的用户无法上传(VIP 不受限,见下方开关)
             </p>
-            <input
+            <Input
               type="number"
               min={1}
               max={10}

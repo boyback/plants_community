@@ -15,6 +15,7 @@ import type { JournalStage } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import styles from './PlantArchiveClient.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -129,7 +130,7 @@ export function PlantArchiveClient({
         <div className={cx(styles.r_f3c543ad, styles.r_1004c0c3, styles.r_eb6e8b88, styles.r_6d84da9d)}>
           <label className={cx(styles.r_d89972fe, styles.r_0214b4b3)}>
             <Icon name="search" size={16} className={cx(styles.r_da4dbfbc, styles.r_22e59b72, styles.r_d694ba66, styles.r_36b381be, styles.r_66a36c90)} />
-            <input
+            <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               className={cx(styles.r_426b8b75, styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_691861bc, styles.r_5e10cdb8, styles.r_e6038fff, styles.r_fafb9e0b, styles.r_fc7473ca, styles.r_df37b1fd, styles.r_56bf8ae8, styles.r_74046e83, styles.r_608dd26c, styles.r_1491d072)}
@@ -312,7 +313,7 @@ function PlantFormDialog({
           <Form.Field name="nickname">
             <FormRow label="植株昵称" required>
               <Form.Control asChild>
-                <input
+                <Input
                   required
                   value={nickname}
                   onChange={(event) => setNickname(event.target.value)}
@@ -328,7 +329,7 @@ function PlantFormDialog({
           <Form.Field name="acquiredAt">
             <FormRow label="入手时间" required>
               <Form.Control asChild>
-                <input
+                <Input
                   required
                   type="date"
                   value={acquiredAt}

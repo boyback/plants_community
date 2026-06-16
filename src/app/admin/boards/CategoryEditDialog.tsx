@@ -23,6 +23,8 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import styles from './CategoryEditDialog.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -266,7 +268,7 @@ export function CategoryEditDialog({
             </div>
 
             <Field label="中文名 *">
-              <input className={cx(styles.r_6da6a3c3, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={name} onChange={(e) => setName(e.target.value)} placeholder="板块名称" />
+              <Input className={cx(styles.r_6da6a3c3, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={name} onChange={(e) => setName(e.target.value)} placeholder="板块名称" />
             </Field>
 
             <Field label="图标（可上传多个，拖拽排序，前台显示第一个）">
@@ -327,7 +329,7 @@ export function CategoryEditDialog({
             </Field>
 
             <Field label="跳转路径（可选）">
-              <input
+              <Input
               className={cx(styles.r_6da6a3c3, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_0e65706b)}
               value={linkPath}
               onChange={(e) => setLinkPath(e.target.value)}
@@ -354,17 +356,17 @@ export function CategoryEditDialog({
             {/* 第一行：中文名 + 英文 slug */}
             <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3)}>
               <Field label="中文名 *">
-                <input className={cx(styles.r_6da6a3c3, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={name} onChange={(e) => setName(e.target.value)} placeholder="景天科" />
+                <Input className={cx(styles.r_6da6a3c3, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={name} onChange={(e) => setName(e.target.value)} placeholder="景天科" />
               </Field>
               <Field label="英文 slug *">
-                <input className={cx(styles.r_6da6a3c3, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_0e65706b)} value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="jingtian" />
+                <Input className={cx(styles.r_6da6a3c3, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_0e65706b)} value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="jingtian" />
               </Field>
             </div>
 
             {/* 第二行：拉丁文 + 类型 + 排序 */}
             <div className={cx(styles.r_f3c543ad, styles.r_be2e831b, styles.r_1004c0c3)}>
               <Field label="拉丁名">
-                <input className={cx(styles.r_6da6a3c3, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_90665ca6)} value={latinName ?? ''} onChange={(e) => setLatinName(e.target.value)} placeholder="Crassulaceae" />
+                <Input className={cx(styles.r_6da6a3c3, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_90665ca6)} value={latinName ?? ''} onChange={(e) => setLatinName(e.target.value)} placeholder="Crassulaceae" />
               </Field>
               <Field label="类型">
                 <select className={cx(styles.r_6da6a3c3, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={kind} onChange={(e) => setKind(e.target.value)}>
@@ -374,7 +376,7 @@ export function CategoryEditDialog({
                 </select>
               </Field>
               <Field label="排序">
-                <input type="number" className={cx(styles.r_6da6a3c3, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={orderIdx} onChange={(e) => setOrderIdx(Number(e.target.value))} />
+                <Input type="number" className={cx(styles.r_6da6a3c3, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={orderIdx} onChange={(e) => setOrderIdx(Number(e.target.value))} />
               </Field>
             </div>
 
@@ -438,7 +440,7 @@ export function CategoryEditDialog({
 
             {/* 描述 */}
             <Field label="描述">
-              <textarea className={cx(styles.r_6da6a3c3, styles.r_a4197e87, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={500} />
+              <Textarea className={cx(styles.r_6da6a3c3, styles.r_a4197e87, styles.r_0c5e9137, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={500} />
             </Field>
 
             {/* 封面图 */}

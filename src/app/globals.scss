@@ -1048,20 +1048,33 @@ img, video, svg {
 .card {
   background-color: rgb(var(--surface));
   border: 1px solid rgb(var(--leaf-100) / 0.6);
+  border-radius: 12px;
+  color: rgb(var(--ink-800));
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 16px rgba(16, 24, 40, 0.06);
 }
 .btn {
   display: inline-flex;
+  min-height: 40px;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  border: 1px solid transparent;
   border-radius: 9999px;
   padding: 8px 16px;
   font-size: 14px;
   line-height: 20px;
   font-weight: 500;
+  white-space: nowrap;
+  outline: none;
+  touch-action: manipulation;
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-duration: 150ms;
+}
+.btn:focus-visible,
+.btn-primary:focus-visible,
+.btn-ghost:focus-visible,
+.btn-outline:focus-visible {
+  box-shadow: 0 0 0 3px rgb(var(--leaf-200) / 0.85);
 }
 .btn:disabled {
   cursor: not-allowed;
@@ -1069,21 +1082,26 @@ img, video, svg {
 }
 .btn-primary {
   display: inline-flex;
+  min-height: 40px;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  border: 1px solid transparent;
   border-radius: 9999px;
   padding: 8px 16px;
-  background-color: rgb(var(--leaf-500));
+  background-color: rgb(var(--leaf-600));
   color: #fff;
   font-size: 14px;
   line-height: 20px;
   font-weight: 500;
+  white-space: nowrap;
+  outline: none;
+  touch-action: manipulation;
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-duration: 150ms;
 }
 .btn-primary:hover {
-  background-color: rgb(var(--leaf-600));
+  background-color: rgb(var(--leaf-700));
 }
 .btn-primary:disabled {
   cursor: not-allowed;
@@ -1091,9 +1109,11 @@ img, video, svg {
 }
 .btn-ghost {
   display: inline-flex;
+  min-height: 40px;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  border: 1px solid transparent;
   border-radius: 9999px;
   padding: 8px 16px;
   background-color: rgb(var(--leaf-50));
@@ -1101,6 +1121,9 @@ img, video, svg {
   font-size: 14px;
   line-height: 20px;
   font-weight: 500;
+  white-space: nowrap;
+  outline: none;
+  touch-action: manipulation;
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-duration: 150ms;
 }
@@ -1113,6 +1136,7 @@ img, video, svg {
 }
 .btn-outline {
   display: inline-flex;
+  min-height: 40px;
   align-items: center;
   justify-content: center;
   gap: 6px;
@@ -1124,10 +1148,14 @@ img, video, svg {
   font-size: 14px;
   line-height: 20px;
   font-weight: 500;
+  white-space: nowrap;
+  outline: none;
+  touch-action: manipulation;
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-duration: 150ms;
 }
 .btn-outline:hover {
+  border-color: rgb(var(--leaf-300));
   background-color: rgb(var(--leaf-50));
 }
 .btn-outline:disabled {

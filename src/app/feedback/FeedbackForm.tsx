@@ -14,6 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import styles from './FeedbackForm.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -121,7 +122,7 @@ export function FeedbackForm() {
       {/* 内容 */}
       <div>
         <label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_359090c2, styles.r_2689f395, styles.r_eb6abb1f)}>内容</label>
-        <textarea
+        <Textarea
           className={cx(styles.r_bc711190, styles.r_4f43b5cb)}
           value={content}
           onChange={(e) => setContent(e.target.value.slice(0, 2000))}

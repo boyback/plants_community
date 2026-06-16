@@ -13,6 +13,8 @@ import {
 "@/lib/species-gallery";
 import styles from './SpeciesEditForm.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -175,7 +177,7 @@ export function SpeciesEditForm({
         </Field>
         <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3)}>
           <Field label="slug *">
-            <input
+            <Input
               className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_0e65706b)}
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
@@ -183,7 +185,7 @@ export function SpeciesEditForm({
 
           </Field>
           <Field label="中文名 *">
-            <input
+            <Input
               className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -192,7 +194,7 @@ export function SpeciesEditForm({
           </Field>
         </div>
         <Field label="拉丁学名 *">
-          <input
+          <Input
             className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_90665ca6)}
             value={latinName}
             onChange={(e) => setLatinName(e.target.value)}
@@ -200,7 +202,7 @@ export function SpeciesEditForm({
 
         </Field>
         <Field label="别名 JSON 数组">
-          <input
+          <Input
             className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_0e65706b, styles.r_d058ca6d)}
             value={alias}
             onChange={(e) => setAlias(e.target.value)}
@@ -208,7 +210,7 @@ export function SpeciesEditForm({
 
         </Field>
         <Field label="描述">
-          <textarea
+          <Textarea
             className={cx(styles.r_dd9ce2a7, styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -295,7 +297,7 @@ export function SpeciesEditForm({
       <Section title="养护数据">
         <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3)}>
           <Field label="难度 1-5">
-            <input
+            <Input
               type="number"
               min={1}
               max={5}
@@ -305,7 +307,7 @@ export function SpeciesEditForm({
 
           </Field>
           <Field label="光照">
-            <input
+            <Input
               className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
               value={light}
               onChange={(e) => setLight(e.target.value)}
@@ -313,7 +315,7 @@ export function SpeciesEditForm({
 
           </Field>
           <Field label="浇水">
-            <input
+            <Input
               className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
               value={watering}
               onChange={(e) => setWatering(e.target.value)}
@@ -321,7 +323,7 @@ export function SpeciesEditForm({
 
           </Field>
           <Field label="耐寒度">
-            <input
+            <Input
               className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
               value={hardiness}
               onChange={(e) => setHardiness(e.target.value)}
@@ -329,7 +331,7 @@ export function SpeciesEditForm({
 
           </Field>
           <Field label="生长速度">
-            <input
+            <Input
               className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
               value={growthSpeed}
               onChange={(e) => setGrowthSpeed(e.target.value)}
@@ -337,7 +339,7 @@ export function SpeciesEditForm({
 
           </Field>
           <Field label="夏眠">
-            <input
+            <Input
               className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
               value={summerDormancy}
               onChange={(e) => setSummerDormancy(e.target.value)}
@@ -346,7 +348,7 @@ export function SpeciesEditForm({
           </Field>
         </div>
         <Field label="养护要点 JSON 数组">
-          <textarea
+          <Textarea
             className={cx(styles.r_dd9ce2a7, styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_0e65706b, styles.r_d058ca6d)}
             value={tips}
             onChange={(e) => setTips(e.target.value)}
@@ -358,29 +360,29 @@ export function SpeciesEditForm({
       <Section title="环境需求">
         <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3)}>
           <Field label="光照需求">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={lightRequirement} onChange={(e) => setLightRequirement(e.target.value)} placeholder="充足阳光 / 散射光" />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={lightRequirement} onChange={(e) => setLightRequirement(e.target.value)} placeholder="充足阳光 / 散射光" />
           </Field>
           <Field label="适宜温度">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={idealTemperature} onChange={(e) => setIdealTemperature(e.target.value)} placeholder="15-28°C" />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={idealTemperature} onChange={(e) => setIdealTemperature(e.target.value)} placeholder="15-28°C" />
           </Field>
           <Field label="最低温度">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={minTemperature} onChange={(e) => setMinTemperature(e.target.value)} placeholder="5°C" />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={minTemperature} onChange={(e) => setMinTemperature(e.target.value)} placeholder="5°C" />
           </Field>
           <Field label="最高温度">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={maxTemperature} onChange={(e) => setMaxTemperature(e.target.value)} placeholder="35°C" />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={maxTemperature} onChange={(e) => setMaxTemperature(e.target.value)} placeholder="35°C" />
           </Field>
           <Field label="适宜湿度">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={humidity} onChange={(e) => setHumidity(e.target.value)} placeholder="20%-60%" />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={humidity} onChange={(e) => setHumidity(e.target.value)} placeholder="20%-60%" />
           </Field>
           <Field label="配土建议">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={soil} onChange={(e) => setSoil(e.target.value)} placeholder="颗粒土 70%+" />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={soil} onChange={(e) => setSoil(e.target.value)} placeholder="颗粒土 70%+" />
           </Field>
         </div>
       </Section>
 
       <Section title="风险提示">
         <Field label="风险提示 JSON 数组">
-          <textarea
+          <Textarea
             className={cx(styles.r_dd9ce2a7, styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_0e65706b, styles.r_d058ca6d)}
             value={riskTips}
             onChange={(e) => setRiskTips(e.target.value)}
@@ -392,13 +394,13 @@ export function SpeciesEditForm({
       <Section title="SEO 与补充信息">
         <div className={cx(styles.r_f3c543ad, styles.r_be2e831b, styles.r_1004c0c3)}>
           <Field label="花期">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={blooming} onChange={(e) => setBlooming(e.target.value)} placeholder="春季" />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={blooming} onChange={(e) => setBlooming(e.target.value)} placeholder="春季" />
           </Field>
           <Field label="原产地">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={originRegion} onChange={(e) => setOriginRegion(e.target.value)} placeholder="墨西哥" />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={originRegion} onChange={(e) => setOriginRegion(e.target.value)} placeholder="墨西哥" />
           </Field>
           <Field label="生长型">
-            <input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={growthType} onChange={(e) => setGrowthType(e.target.value)} placeholder="夏型" />
+            <Input className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)} value={growthType} onChange={(e) => setGrowthType(e.target.value)} placeholder="夏型" />
           </Field>
         </div>
       </Section>
@@ -481,14 +483,14 @@ function GalleryMetaEditor({
       <div key={item.url} className={cx(styles.r_f3c543ad, styles.r_77a2a20e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_358505cf, styles.r_74f84935, styles.r_7660b450, styles.r_3db7838e, styles.r_9f76a62f)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={item.url} alt="" className={cx(styles.r_73a13409, styles.r_baceed34, styles.r_07389a77, styles.r_5e10cdb8, styles.r_7d85d0c2)} />
-          <input
+          <Input
           list={categoryListId}
           value={item.category ?? ''}
           onChange={(e) => updateItem(item.url, { category: e.target.value || undefined })}
           className={cx(styles.r_ed8a5df7, styles.r_07389a77, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_5e10cdb8, styles.r_d5eab218, styles.r_d058ca6d)}
           placeholder={`自动分类 ${index + 1}`} />
 
-          <input
+          <Input
           value={item.note ?? ''}
           onChange={(e) => updateItem(item.url, { note: e.target.value })}
           className={cx(styles.r_ed8a5df7, styles.r_07389a77, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_5e10cdb8, styles.r_d5eab218, styles.r_d058ca6d)}

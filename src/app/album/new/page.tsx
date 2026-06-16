@@ -10,6 +10,8 @@ import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from "@/lib/client-api";
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -94,7 +96,7 @@ export default function NewAlbumPage() {
               <label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_fc7473ca, styles.r_2689f395, styles.r_eb6abb1f)}>
                 相册标题 *
               </label>
-              <input
+              <Input
                 className="input"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -111,7 +113,7 @@ export default function NewAlbumPage() {
               <label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_fc7473ca, styles.r_2689f395, styles.r_eb6abb1f)}>
                 相册描述
               </label>
-              <textarea
+              <Textarea
                 className={styles.r_dd9ce2a7}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}

@@ -56,7 +56,7 @@ export default function GuidePage() {
       <div className={cx(styles.r_fa3f7111, styles.r_0e12dc7d, styles.r_a1f611f0, styles.r_f0faeb26)}>
         <div className={cx(styles.r_a8b152c0, styles.r_ca6bf630)}>
           <h1 className={cx(styles.r_3febee09, styles.r_69450ef1, styles.r_399e11a5, styles.r_a77ed4d9)}>🌿 新手指南</h1>
-          <p className={cx(styles.r_fc7473ca, styles.r_69335b95)}>快速上手肉友社，玩转社区功能</p>
+          <p className={cx(styles.r_fc7473ca, styles.r_69335b95)}>快速上手植友圈，玩转社区功能</p>
         </div>
 
         <div className={cx(styles.r_f3c543ad, styles.r_0c3bc985, styles.r_e00ad816)}>

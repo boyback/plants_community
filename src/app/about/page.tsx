@@ -22,7 +22,7 @@ export default function AboutPage() {
                   <I18nText k="about.tagline" fallback="About us" />
                 </div>
                 <h1 className={cx(styles.r_3febee09, styles.r_69450ef1)}>
-                  <I18nText k="about.brandName" fallback="肉友社 · RouYou Community" />
+                  <I18nText k="about.brandName" fallback="植友圈 · ZhiYou Community" />
                 </h1>
               </div>
             </div>
@@ -38,7 +38,7 @@ export default function AboutPage() {
             <Section titleKey="about.vision.title" titleFallback="我们的愿景" emoji="🌱">
               <I18nText
                 k="about.vision.body"
-                fallback="让每一位养肉人都能在这里找到知音。无论你是阳台党新手,还是大棚老玩家,都能在肉友社分享日常、交流心得、结识同好。" />
+                fallback="让每一位养肉人都能在这里找到知音。无论你是阳台党新手,还是大棚老玩家,都能在植友圈分享日常、交流心得、结识同好。" />
 
             </Section>
 
@@ -90,7 +90,7 @@ export default function AboutPage() {
                 <I18nText
                   k="about.copyright"
                   vars={{ year: new Date().getFullYear() }}
-                  fallback={`© ${new Date().getFullYear()} RouYou Community — Made with 🌿 and ❤️`} />
+                  fallback={`© ${new Date().getFullYear()} ZhiYou Community — Made with 🌿 and ❤️`} />
 
               </div>
               <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_86843cf1, styles.r_0c3bc985, styles.r_359090c2)}>

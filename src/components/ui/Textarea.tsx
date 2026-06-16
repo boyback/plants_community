@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef } from 'react';
+import type { CSSProperties } from 'react';
 import TextareaAutosize from "react-textarea-autosize";
 import type { TextareaAutosizeProps } from "react-textarea-autosize";
 import { cn } from '@/lib/utils';
@@ -9,11 +10,12 @@ import { cx } from '@/lib/style-utils';
 
 
 
-export interface TextareaProps extends TextareaAutosizeProps {
+export interface TextareaProps extends Omit<TextareaAutosizeProps, 'style'> {
   error?: boolean;
   showCount?: boolean;
   countClassName?: string;
   autoResize?: boolean;
+  style?: CSSProperties;
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
@@ -26,6 +28,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     autoResize = false,
     value,
     maxLength,
+    style,
     ...props
   },
   ref) =>
@@ -43,7 +46,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           value={value}
           maxLength={maxLength}
-          className={cn('input', styles.r_5bd7b080,
+          style={style as TextareaAutosizeProps['style']}
+          className={cn(styles.textarea, styles.r_5bd7b080,
 
           hasCount && styles.r_b402c0df,
           error && cx(styles.r_3b7f9781, styles.r_fdae7b46),
@@ -56,7 +60,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           value={value}
           maxLength={maxLength}
-          className={cn('input', styles.r_5bd7b080,
+          style={style}
+          className={cn(styles.textarea, styles.r_5bd7b080,
 
           hasCount && styles.r_b402c0df,
           error && cx(styles.r_3b7f9781, styles.r_fdae7b46),

@@ -4,11 +4,11 @@ import { cx } from '@/lib/style-utils';
 export function CookiesEn() {
   return (
     <>
-      <h1>RouYou Cookie Policy</h1>
+      <h1>ZhiYou Cookie Policy</h1>
       <p className={styles.r_eb16169c}>Last updated: 7 May 2026 · Effective on the date of publication</p>
 
       <p>
-        This policy explains how RouYou (the &quot;Service&quot;) uses cookies and
+        This policy explains how ZhiYou (the &quot;Service&quot;) uses cookies and
         similar technologies (localStorage, sessionStorage, pixel tags). We group
         cookies into four boards. You choose which ones to enable in the
         first-visit banner or in Settings — except the

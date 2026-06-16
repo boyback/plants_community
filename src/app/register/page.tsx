@@ -4,11 +4,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Logo } from '@/components/ui/Logo';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/context/AuthContext';
 import { HANDLE_REGEX } from '@/lib/handle';
 import { cn } from '@/lib/utils';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -180,8 +183,8 @@ export default function RegisterPage() {
           <Logo />
         </div>
 
-        <div className={styles.r_c00bb288}>
-          <h1 className={cx(styles.r_3febee09, styles.r_69450ef1, styles.r_399e11a5)}>加入肉友社 🌱</h1>
+        <Card padding="none" className={styles.r_c00bb288}>
+          <h1 className={cx(styles.r_3febee09, styles.r_69450ef1, styles.r_399e11a5)}>加入植友圈 🌱</h1>
           <p className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_69335b95)}>
             {emailVerified ? '✓ 邮箱已验证 · 设置账号即可注册' : "第 1 步:验证你的邮箱"}
           </p>
@@ -201,7 +204,7 @@ export default function RegisterPage() {
                   <label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_359090c2, styles.r_399e11a5)}>
                     邮箱 <span className={styles.r_fa512798}>*</span>
                   </label>
-                  <input
+                  <Input
                   type="email"
                   className="input"
                   value={email}
@@ -216,7 +219,7 @@ export default function RegisterPage() {
                     验证码 <span className={styles.r_fa512798}>*</span>
                   </label>
                   <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
-                    <input
+                    <Input
                     className={styles.r_36e579c0}
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
@@ -224,14 +227,16 @@ export default function RegisterPage() {
                     maxLength={6}
                     inputMode="numeric" />
 
-                    <button
+                    <Button
                     type="button"
                     onClick={sendCode}
                     disabled={cooldown > 0 || sending || !EMAIL_RE.test(email)}
-                    className={cx(styles.r_012fbd12, styles.r_23b4e5ed, styles.r_dd702538, styles.r_5f533b3a, styles.r_b29d8adb)}>
+                    variant="outline"
+                    size="sm"
+                    className={styles.r_012fbd12}>
 
                       {cooldown > 0 ? `${cooldown}s` : sending ? '发送中…' : '获取'}
-                    </button>
+                    </Button>
                   </div>
                   {code.length === 6 &&
                 <p className={cx(styles.r_b6b02c0e, styles.r_d058ca6d, styles.r_85d79ebf)}>
@@ -244,14 +249,14 @@ export default function RegisterPage() {
               <div className={cx(styles.r_5f22e64f, styles.r_0759a0f1, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_b54428d1)}>{err}</div>
               }
 
-                <button
+                <Button
                 type="button"
                 onClick={verifyCode}
                 disabled={verifying || code.length !== 6}
-                className={cx(styles.r_6da6a3c3, styles.r_5f533b3a, styles.r_b29d8adb)}>
+                fullWidth>
 
                   {verifying ? '校验中…' : '验证邮箱 →'}
-                </button>
+                </Button>
 
                 <p className={cx(styles.r_ca6bf630, styles.r_d058ca6d, styles.r_6c4cc49e)}>
                   没收到验证码?查看垃圾邮件,或 60 秒后重新获取
@@ -273,7 +278,7 @@ export default function RegisterPage() {
                   <label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_359090c2, styles.r_399e11a5)}>
                     账号 <span className={styles.r_fa512798}>*</span>
                   </label>
-                  <input
+                  <Input
                   className="input"
                   value={handle}
                   onChange={(e) => setHandle(e.target.value)}
@@ -308,7 +313,7 @@ export default function RegisterPage() {
                   <label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_359090c2, styles.r_399e11a5)}>
                     密码 <span className={styles.r_fa512798}>*</span>
                   </label>
-                  <input
+                  <Input
                   type="password"
                   className="input"
                   value={password}
@@ -324,7 +329,7 @@ export default function RegisterPage() {
                   <label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_359090c2, styles.r_399e11a5)}>
                     昵称(可选,默认与账号同名)
                   </label>
-                  <input
+                  <Input
                   className="input"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
@@ -340,15 +345,15 @@ export default function RegisterPage() {
                   </div>
               }
 
-                <button
+                <Button
                 type="submit"
-                className={cx(styles.r_6da6a3c3, styles.r_5f533b3a, styles.r_b29d8adb)}
+                fullWidth
                 disabled={
                 submitting || handleStatus.state !== 'ok' || password.length < 6
                 }>
 
                   {submitting ? '注册中…' : '完成注册'}
-                </button>
+                </Button>
               </div>
             }
           </form>
@@ -358,7 +363,7 @@ export default function RegisterPage() {
               已有账号?去登录 →
             </Link>
           </div>
-        </div>
+        </Card>
 
         <Link href="/" className={cx(styles.r_0ab86672, styles.r_ca6bf630, styles.r_359090c2, styles.r_5f6a59f1, styles.r_f673f4a7)}>
           ← 返回

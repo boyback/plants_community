@@ -11,6 +11,8 @@ import Link from 'next/link';
 import { toast } from '@/components/ui/Toast';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -132,7 +134,7 @@ export default function EmailBroadcastPage() {
           <>
                 <div>
                   <label className={cx(styles.r_65281709, styles.r_0214b4b3, styles.r_359090c2)}>主题</label>
-                  <input
+                  <Input
                 className="input"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
@@ -141,7 +143,7 @@ export default function EmailBroadcastPage() {
                 </div>
                 <div>
                   <label className={cx(styles.r_65281709, styles.r_0214b4b3, styles.r_359090c2)}>HTML 内容</label>
-                  <textarea
+                  <Textarea
                 className={cx(styles.r_7ee36c26, styles.r_0e65706b, styles.r_359090c2)}
                 value={html}
                 onChange={(e) => setHtml(e.target.value)}
@@ -152,7 +154,7 @@ export default function EmailBroadcastPage() {
           }
             <div>
               <label className={cx(styles.r_65281709, styles.r_0214b4b3, styles.r_359090c2)}>节流间隔(毫秒,免费版 SMTP 建议 4000-7000)</label>
-              <input
+              <Input
               type="number"
               className="input"
               value={throttleMs}

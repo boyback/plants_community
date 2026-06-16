@@ -76,6 +76,9 @@
   z-index: 1001;
   max-height: calc(100vh - 64px);
   overflow-y: auto;
+  border: 1px solid rgb(var(--leaf-100) / 0.76);
+  background-color: rgb(var(--surface));
+  box-shadow: 0 24px 64px rgb(16 24 40 / 0.22);
   transform: translate(-50%, -50%) !important;
 }
 

@@ -179,7 +179,7 @@ function CookieConsentBanner() {
               </p>
               <p className={cx(styles.r_b17d6a13, styles.r_359090c2, styles.r_6b189c6e)}>
                 {t('cookie.desc') ||
-              '我们使用 Cookie 让肉友社正常运行并不断改进。必要类 Cookie 无法关闭;其他类别你可以自由选择。'}
+              '我们使用 Cookie 让植友圈正常运行并不断改进。必要类 Cookie 无法关闭;其他类别你可以自由选择。'}
                 {' '}
                 <a href="/cookies" className={cx(styles.r_c82b67c8, styles.r_81be6435)}>
                   {t('cookie.readPolicy') || '阅读完整 Cookie 政策'}

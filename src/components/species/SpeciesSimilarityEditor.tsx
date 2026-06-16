@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api, ApiError } from "@/lib/client-api";
 import styles from './SpeciesSimilarityEditor.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -133,7 +134,7 @@ export function SpeciesSimilarityEditor({ speciesId }: {speciesId?: string;}) {
       {loading && <div className={cx(styles.r_5f22e64f, styles.r_ce27a834, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_7b89cd85)}>加载中...</div>}
 
       <div className={styles.r_d89972fe}>
-        <input
+        <Input
           className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -165,7 +166,7 @@ export function SpeciesSimilarityEditor({ speciesId }: {speciesId?: string;}) {
               <div className={cx(styles.r_f283ea9b, styles.r_fc7473ca, styles.r_2689f395, styles.r_399e11a5)}>{item.name ?? item.similarSpeciesId}</div>
               {item.latinName && <div className={cx(styles.r_f283ea9b, styles.r_d058ca6d, styles.r_90665ca6, styles.r_7b89cd85)}>{item.latinName}</div>}
             </div>
-            <input
+            <Input
             type="number"
             min={1}
             max={100}
@@ -173,7 +174,7 @@ export function SpeciesSimilarityEditor({ speciesId }: {speciesId?: string;}) {
             value={item.score}
             onChange={(e) => setItems((prev) => prev.map((row, i) => i === index ? { ...row, score: Number(e.target.value) } : row))} />
 
-            <input
+            <Input
             className={cx(styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
             value={item.reason}
             onChange={(e) => setItems((prev) => prev.map((row, i) => i === index ? { ...row, reason: e.target.value } : row))}

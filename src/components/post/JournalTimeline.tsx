@@ -12,6 +12,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useBodyScrollLock } from '@/lib/hooks/useBodyScrollLock';
 import styles from './JournalTimeline.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -225,7 +227,7 @@ function AddEntryDialog({
           <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_77a2a20e)}>
             <label className={styles.r_0214b4b3}>
               <div className={cx(styles.r_65281709, styles.r_359090c2, styles.r_21d33c50)}>日期</div>
-              <input
+              <Input
                 type="date"
                 className="input"
                 value={entryDate}
@@ -256,7 +258,7 @@ function AddEntryDialog({
               <div className={cx(styles.r_65281709, styles.r_359090c2, styles.r_21d33c50)}>
                 <span className={styles.r_fa512798}>*</span> 其他阶段
               </div>
-              <input
+              <Input
               className="input"
               value={stageLabel}
               onChange={(e) => setStageLabel(e.target.value)}
@@ -267,7 +269,7 @@ function AddEntryDialog({
           }
           <label className={styles.r_0214b4b3}>
             <div className={cx(styles.r_65281709, styles.r_359090c2, styles.r_21d33c50)}>心得</div>
-            <textarea
+            <Textarea
               className={styles.r_dd9ce2a7}
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -280,7 +282,7 @@ function AddEntryDialog({
               <span className={styles.r_fa512798}>*</span> 图片
             </div>
             <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
-              <input
+              <Input
                 className={styles.r_36e579c0}
                 placeholder="粘贴图片 URL…"
                 value={imgInput}
@@ -410,7 +412,7 @@ function EditEntryDialog({
           <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_77a2a20e)}>
             <label className={styles.r_0214b4b3}>
               <div className={cx(styles.r_65281709, styles.r_359090c2, styles.r_21d33c50)}>日期</div>
-              <input
+              <Input
                 type="date"
                 className="input"
                 value={entryDate}
@@ -441,7 +443,7 @@ function EditEntryDialog({
               <div className={cx(styles.r_65281709, styles.r_359090c2, styles.r_21d33c50)}>
                 <span className={styles.r_fa512798}>*</span> 其他阶段
               </div>
-              <input
+              <Input
               className="input"
               value={stageLabel}
               onChange={(e) => setStageLabel(e.target.value)}
@@ -452,7 +454,7 @@ function EditEntryDialog({
           }
           <label className={styles.r_0214b4b3}>
             <div className={cx(styles.r_65281709, styles.r_359090c2, styles.r_21d33c50)}>心得</div>
-            <textarea
+            <Textarea
               className={styles.r_dd9ce2a7}
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -463,7 +465,7 @@ function EditEntryDialog({
           <div>
             <div className={cx(styles.r_65281709, styles.r_359090c2, styles.r_21d33c50)}>图片(选填)</div>
             <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
-              <input
+              <Input
                 className={styles.r_36e579c0}
                 placeholder="粘贴图片 URL…"
                 value={imgInput}

@@ -18,7 +18,7 @@
  */
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://plantcommunity.cn";
-const SITE_NAME = '肉友社';
+const SITE_NAME = '植友圈';
 const SITE_NAME_EN = 'PlantCommunity';
 const SITE_LOGO = `${SITE_URL}/default-avatar.svg`; // 临时;后续可换 brand-logo.png
 

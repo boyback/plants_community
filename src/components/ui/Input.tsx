@@ -42,7 +42,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           value={value}
           maxLength={maxLength}
           className={cn(
-            'input',
+            styles.input,
             hasCount && styles.r_d5d24030,
             error && cx(styles.r_3b7f9781, styles.r_fdae7b46),
             className

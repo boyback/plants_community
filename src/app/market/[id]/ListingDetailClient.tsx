@@ -1,30 +1,24 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
-import { type ReactNode, type SyntheticEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type SyntheticEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import PhotoSwipe from 'photoswipe';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
 import { UserName } from '@/components/ui/UserName';
-import { Tooltip } from '@/components/ui/Tooltip';
-import { registerPhotoSwipeGalleryUi } from "@/lib/photoswipe-ui";
+import { Button, ButtonLink } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Dialog } from '@/components/ui/Dialog';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { AddressPicker, type AddressPickerValue, pickerValueToOrderBody, validateAddressPicker } from '@/components/address/AddressPicker';
 import { useAuth } from '@/context/AuthContext';
-import { api, ApiError } from "@/lib/client-api";
+import { api, ApiError } from '@/lib/client-api';
 import { hasPermission, type Permission } from '@/lib/levels';
+import { registerPhotoSwipeGalleryUi } from '@/lib/photoswipe-ui';
 import { cn, formatPrice } from '@/lib/utils';
-import {
-  AddressPicker,
-  type AddressPickerValue,
-  pickerValueToOrderBody,
-  validateAddressPicker } from
-'@/components/address/AddressPicker';
-import { useBodyScrollLock } from '@/lib/hooks/useBodyScrollLock';
 import styles from './ListingDetailClient.module.scss';
-import { cx } from '@/lib/style-utils';
-
-
 
 export interface MarketListingDetail {
   id: string;
@@ -61,8 +55,8 @@ export interface MarketListingDetail {
     followersCount?: number;
     followingCount?: number;
   };
-  genus?: {slug: string;name: string;cover?: string | null;};
-  species?: {slug: string;name: string;};
+  genus?: { slug: string; name: string; cover?: string | null };
+  species?: { slug: string; name: string };
   taxons: {
     categorySlug: string;
     genusSlug?: string | null;
@@ -116,11 +110,12 @@ interface MarketListingComment {
   };
 }
 
-export function ListingDetailClient({ listing }: {listing: MarketListingDetail;}) {
+export function ListingDetailClient({ listing }: { listing: MarketListingDetail }) {
   const router = useRouter();
   const { user, vip } = useAuth();
   const [activeItem, setActiveItem] = useState<MarketListingItem | null>(null);
   const [qty, setQty] = useState(1);
+  const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
   const [addr, setAddr] = useState<AddressPickerValue>(null);
   const availableTradeModes = useMemo(
     () => normalizeTradeModes(listing.tradeModes, listing.tradeMode),
@@ -135,29 +130,38 @@ export function ListingDetailClient({ listing }: {listing: MarketListingDetail;}
   );
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [comments, setComments] = useState<MarketListingComment[]>(listing.comments);
-  const [commentCount, setCommentCount] = useState(listing.commentCount);
-  const [commentText, setCommentText] = useState('');
-  const [commentSubmitting, setCommentSubmitting] = useState(false);
-  const [commentError, setCommentError] = useState<string | null>(null);
-  useBodyScrollLock(Boolean(activeItem));
 
   const isMine = user?.id === listing.seller.id;
   const canBuy = hasPermission(
-    user ?
-    {
-      level: user.level,
-      isVip: vip.isVip,
-      grantedPermissions: user.grantedPermissions as Permission[] | undefined,
-      revokedPermissions: user.revokedPermissions as Permission[] | undefined
-    } :
-    null,
-    "market:buy"
+    user
+      ? {
+          level: user.level,
+          isVip: vip.isVip,
+          grantedPermissions: user.grantedPermissions as Permission[] | undefined,
+          revokedPermissions: user.revokedPermissions as Permission[] | undefined
+        }
+      : null,
+    'market:buy'
   );
 
-  const openBuy = (item: MarketListingItem) => {
+  const clampQuantity = useCallback((stock: number, value: number) => {
+    const max = Math.max(1, stock);
+    return Math.max(1, Math.min(max, Number.isFinite(value) ? value : 1));
+  }, []);
+
+  const updateItemQuantity = useCallback(
+    (item: MarketListingItem, value: number) => {
+      setItemQuantities((current) => ({
+        ...current,
+        [item.id]: clampQuantity(item.stock, value)
+      }));
+    },
+    [clampQuantity]
+  );
+
+  const openBuy = (item: MarketListingItem, quantity = 1) => {
     setErr(null);
-    setQty(1);
+    setQty(clampQuantity(item.stock, quantity));
     setAddr(null);
     setSelectedTradeMode(onlineTradeModes[0] ?? availableTradeModes[0]);
     setActiveItem(item);
@@ -178,7 +182,7 @@ export function ListingDetailClient({ listing }: {listing: MarketListingDetail;}
 
     setSubmitting(true);
     try {
-      const r = await api.post<{orderId: string;}>(
+      const r = await api.post<{ orderId: string }>(
         `/api/market/listings/${listing.id}/items/${activeItem.id}/buy`,
         {
           quantity: qty,
@@ -193,6 +197,227 @@ export function ListingDetailClient({ listing }: {listing: MarketListingDetail;}
       setSubmitting(false);
     }
   };
+
+  return (
+    <>
+      <div className={styles.productStack}>
+        {listing.items.map((item) => {
+          const soldOut = listing.status !== 'on_sale' || item.status !== 'on_sale' || item.stock <= 0;
+          const images = item.images.length ? item.images : [item.cover];
+          const canOrderOnline = onlineTradeModes.length > 0;
+          const hasExternal = availableTradeModes.includes('external');
+          const itemQuantity = clampQuantity(item.stock, itemQuantities[item.id] ?? 1);
+          const detailText = [item.description, listing.description].filter(Boolean).join('\n\n').trim();
+          const hasDetail = Boolean(detailText || listing.contactNote);
+          const labels = [
+            ...(item.taxons ?? []).map((taxon) => taxon.label || [taxon.categorySlug, taxon.genusSlug, taxon.speciesSlug].filter(Boolean).join(' / ')),
+            ...(item.tags ?? []).map((tag) => `#${tag}`)
+          ].filter(Boolean);
+
+          return (
+            <Card key={item.id} padding="none" className={styles.productCard}>
+              <header className={styles.productHeader}>
+                <div className={styles.titleBlock}>
+                  <p className={styles.eyebrow}>{listing.title !== item.title ? listing.title : listing.category}</p>
+                  <h1 className={styles.productTitle}>{item.title}</h1>
+                </div>
+                <nav className={styles.productTabs} aria-label="商品详情导航">
+                  <a className={styles.activeTab} href={`#product-info-${item.id}`}>商品信息</a>
+                  {hasDetail && <a href={`#product-detail-${item.id}`}>商品详情</a>}
+                  <a href="#comments">评论 {listing.commentCount}</a>
+                </nav>
+              </header>
+
+              <div id={`product-info-${item.id}`} className={styles.productLayout}>
+                <ProductImageGallery images={images} title={item.title} />
+
+                <aside className={styles.purchasePanel} aria-label="商品购买信息">
+                  <div className={styles.priceBlock}>
+                    <span>价格</span>
+                    <strong>{formatPrice(item.price)}</strong>
+                  </div>
+
+                  {labels.length > 0 && (
+                    <div className={styles.labelCloud}>
+                      {labels.map((label) => (
+                        <span key={label}>{label}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className={styles.infoRows}>
+                    <InfoRow label="库存" value={item.stock} />
+                    <InfoRow label="已售" value={item.soldCount} />
+                    {listing.shipFrom && <InfoRow label="发货地" value={listing.shipFrom} />}
+                    {item.mainHeadSize && <InfoRow label="主头" value={item.mainHeadSize} />}
+                    {item.overallSize && <InfoRow label="整体" value={item.overallSize} />}
+                    {item.potDiameter && <InfoRow label="盆径" value={item.potDiameter} />}
+                    <InfoRow label="交易方式" value={availableTradeModes.map(tradeModeLabel).join(' / ')} />
+                  </div>
+
+                  {!soldOut && canOrderOnline && !isMine && user && canBuy && (
+                    <div className={styles.quantityPanel}>
+                      <span className={styles.panelLabel}>数量</span>
+                      <QuantityControl
+                        value={itemQuantity}
+                        max={Math.max(1, item.stock)}
+                        onChange={(next) => updateItemQuantity(item, next)}
+                      />
+                    </div>
+                  )}
+
+                  <div className={styles.actionRow}>
+                    {!canOrderOnline ? (
+                      <>
+                        <ButtonLink href={`/messages?to=${listing.seller.id}`} variant="outline" fullWidth>
+                          私信卖家
+                        </ButtonLink>
+                        {listing.externalUrl && (
+                          <ButtonLink href={listing.externalUrl} target="_blank" rel="noreferrer" variant="outline" fullWidth>
+                            打开三方链接
+                          </ButtonLink>
+                        )}
+                      </>
+                    ) : hasExternal ? (
+                      <>
+                        <BuyAction
+                          soldOut={soldOut}
+                          isMine={isMine}
+                          userId={user?.id}
+                          canBuy={canBuy}
+                          listingId={listing.id}
+                          onBuy={() => openBuy(item, itemQuantity)}
+                        />
+                        <ButtonLink href={`/messages?to=${listing.seller.id}`} variant="outline" fullWidth>
+                          私信卖家
+                        </ButtonLink>
+                        {listing.externalUrl && (
+                          <ButtonLink href={listing.externalUrl} target="_blank" rel="noreferrer" variant="outline" fullWidth>
+                            打开三方链接
+                          </ButtonLink>
+                        )}
+                      </>
+                    ) : (
+                      <BuyAction
+                        soldOut={soldOut}
+                        isMine={isMine}
+                        userId={user?.id}
+                        canBuy={canBuy}
+                        listingId={listing.id}
+                        onBuy={() => openBuy(item, itemQuantity)}
+                      />
+                    )}
+                  </div>
+
+                  <div className={styles.serviceList}>
+                    {listing.shipFrom && <ServiceItem icon="package" label="发货地" value={listing.shipFrom} />}
+                    <ServiceItem icon="check-circle" label="交易保障" value={availableTradeModes.map(tradeModeHint).join(' / ')} />
+                    {listing.contactNote && <ServiceItem icon="message" label="联系备注" value={listing.contactNote} />}
+                  </div>
+
+                  <div className={styles.shareLine}>
+                    <Icon name="share" size={15} />
+                    <span>可通过浏览器地址栏分享当前商品链接</span>
+                  </div>
+                </aside>
+              </div>
+
+              {hasDetail && (
+                <section id={`product-detail-${item.id}`} className={styles.detailSection}>
+                  <h2>商品详情</h2>
+                  {detailText && <p>{detailText}</p>}
+                  {listing.contactNote && <p>{listing.contactNote}</p>}
+                </section>
+              )}
+            </Card>
+          );
+        })}
+      </div>
+
+      {activeItem && (
+        <Dialog
+          open={Boolean(activeItem)}
+          onClose={() => {
+            if (!submitting) setActiveItem(null);
+          }}
+          title="确认订单"
+          maxWidth="lg"
+        >
+          <p className={styles.orderIntro}>{activeItem.title}</p>
+
+          <div className={styles.orderForm}>
+            {onlineTradeModes.length > 1 && (
+              <div>
+                <label className={styles.fieldLabel}>交易方式</label>
+                <div className={styles.tradeChoiceGrid}>
+                  {onlineTradeModes.map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setSelectedTradeMode(mode)}
+                      className={cn(styles.tradeOption, selectedTradeMode === mode && styles.tradeOptionActive)}
+                    >
+                      <span>{tradeModeLabel(mode)}</span>
+                      <small>{tradeModeHint(mode)}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className={styles.fieldLabel}>数量</label>
+              <div className={styles.dialogQuantity}>
+                <QuantityControl
+                  value={qty}
+                  max={Math.max(1, activeItem.stock)}
+                  onChange={(next) => setQty(clampQuantity(activeItem.stock, next))}
+                />
+                <span>库存 {activeItem.stock}</span>
+              </div>
+            </div>
+
+            <div>
+              <label className={styles.fieldLabel}>收货地址</label>
+              <AddressPicker value={addr} onChange={setAddr} />
+            </div>
+          </div>
+
+          <Card muted padding="compact" className={styles.orderSummary}>
+            <div>
+              <span>商品金额</span>
+              <strong>{formatPrice(activeItem.price * qty)}</strong>
+            </div>
+            {selectedTradeMode === 'online_payment' && (
+              <div>
+                <span>平台手续费</span>
+                <span>卖家承担 1%</span>
+              </div>
+            )}
+          </Card>
+
+          <div className={styles.orderFooter}>
+            <div>合计 {formatPrice(activeItem.price * qty)}</div>
+            <Button onClick={submit} disabled={submitting}>
+              {submitting ? '提交中...' : '提交订单'}
+            </Button>
+          </div>
+
+          {err && <div className={styles.errorBox}>{err}</div>}
+        </Dialog>
+      )}
+    </>
+  );
+}
+
+export function MarketListingComments({ listing }: { listing: MarketListingDetail }) {
+  const router = useRouter();
+  const { user } = useAuth();
+  const [comments, setComments] = useState<MarketListingComment[]>(listing.comments);
+  const [commentCount, setCommentCount] = useState(listing.commentCount);
+  const [commentText, setCommentText] = useState('');
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [commentError, setCommentError] = useState<string | null>(null);
 
   const submitComment = async () => {
     const content = commentText.trim();
@@ -218,383 +443,143 @@ export function ListingDetailClient({ listing }: {listing: MarketListingDetail;}
   };
 
   return (
-    <>
-      <div className={styles.r_3e7ce58d}>
-        {listing.items.map((item) => {
-          const soldOut = listing.status !== 'on_sale' || item.status !== 'on_sale' || item.stock <= 0;
-          const images = item.images.length ? item.images : [item.cover];
-          const canOrderOnline = onlineTradeModes.length > 0;
-          const hasExternal = availableTradeModes.includes('external');
-
-          return (
-            <article key={item.id} className={cx(styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_c07e54fd, styles.r_97effa3f)}>
-              <ProductImageMasonry images={images} title={item.title}>
-                {(thumbnailStrip) =>
-                <div className={cx(styles.r_60fbb771, styles.r_668b21aa, styles.r_7e0b7cdf, styles.r_8dddea07)}>
-                  <div>
-                    <h3 className={cx(styles.r_054cb4e3, styles.r_42536e69, styles.r_e83a7042, styles.r_e25ca653, styles.r_399e11a5)}>{item.title}</h3>
-                    <div className={cx(styles.r_50d0d216, styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_5f22e64f, styles.r_62afc924, styles.r_0e17f2bd, styles.r_03b4dd7f)}>
-                      <div className={cx(styles.r_012fbd12, styles.r_d058ca6d, styles.r_8595a2fa)}>价格</div>
-                      <div className={cx(styles.r_7e0b7cdf, styles.r_d5c9b000, styles.r_69450ef1, styles.r_1d7f28b0, styles.r_595fceba)}>
-                        {formatPrice(item.price)}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={cx(styles.r_50d0d216, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_58284b4e, styles.r_359090c2)}>
-                    <ProductStat label="库存" value={item.stock} />
-                    <ProductStat label="已售" value={item.soldCount} />
-                    {item.mainHeadSize && <ProductStat label="主头" value={item.mainHeadSize} />}
-                    {item.overallSize && <ProductStat label="整体" value={item.overallSize} />}
-                    {item.potDiameter && <ProductStat label="盆径" value={item.potDiameter} />}
-                    <ProductStat label="在线方式" value={availableTradeModes.map(tradeModeLabel).join(' / ')} />
-                  </div>
-                  {((item.taxons?.length ?? 0) > 0 || (item.tags?.length ?? 0) > 0) &&
-                  <div className={cx(styles.r_50d0d216, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_58284b4e)}>
-                      {item.taxons?.map((taxon) =>
-                    <span
-                      key={`${taxon.categorySlug}:${taxon.genusSlug ?? ''}:${taxon.speciesSlug ?? ''}`}
-                      className={cx(styles.r_ac204c10, styles.r_7ebecbb6, styles.r_d5eab218, styles.r_465609a2, styles.r_d058ca6d, styles.r_5f6a59f1)}>
-
-                          {taxon.label || [taxon.categorySlug, taxon.genusSlug, taxon.speciesSlug].filter(Boolean).join(' / ')}
-                        </span>
-                    )}
-                      {item.tags?.map((tag) =>
-                    <span key={tag} className={cx(styles.r_ac204c10, styles.r_ce27a834, styles.r_d5eab218, styles.r_465609a2, styles.r_d058ca6d, styles.r_02eb621e)}>
-                          #{tag}
-                        </span>
-                    )}
-                    </div>
-                  }
-                  {thumbnailStrip}
-
-                  <div className={cx(styles.r_50d0d216, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_efb55408, styles.r_9fe52d5d, styles.r_9ee45fc9)}>
-                    <div className={cx(styles.r_65281709, styles.r_359090c2, styles.r_2689f395, styles.r_5f6a59f1)}>商品说明</div>
-                    <Tooltip content={item.description} className={styles.r_1ccb99be}>
-                      <div className={cx(styles.r_054cb4e3, styles.r_359090c2, styles.r_7054e276, styles.r_eb6abb1f)}>
-                        {item.description}
-                      </div>
-                    </Tooltip>
-                  </div>
-
-                  <div className={styles.r_f46b61a9}>
-                    <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_77a2a20e)}>
-                      {!canOrderOnline ?
-                      <>
-                        <Link
-                          href={`/messages?to=${listing.seller.id}`}
-                          className={cx(styles.r_af7490b1, styles.r_900c2a51, styles.r_4f43b5cb)}>
-
-                          私信卖家
-                        </Link>
-                        {listing.externalUrl &&
-                        <Link
-                          href={listing.externalUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={cx(styles.r_af7490b1, styles.r_900c2a51, styles.r_4f43b5cb)}>
-
-                            打开三方链接
-                          </Link>
-                        }
-                      </> :
-                      hasExternal ?
-                      <>
-                        {soldOut ?
-                        <button disabled className={cx(styles.r_f2b23104, styles.r_af7490b1, styles.r_900c2a51, styles.r_4f43b5cb, styles.r_b17d6a13)}>
-                            已售罄
-                          </button> :
-                        isMine ?
-                        <button disabled className={cx(styles.r_f2b23104, styles.r_af7490b1, styles.r_900c2a51, styles.r_4f43b5cb, styles.r_b17d6a13)}>
-                            自己的商品
-                          </button> :
-                        !user ?
-                        <Link
-                          href={`/login?redirect=${encodeURIComponent(`/market/${listing.id}`)}`}
-                          className={cx(styles.r_af7490b1, styles.r_900c2a51, styles.r_4f43b5cb)}>
-
-                            登录购买
-                          </Link> :
-                        !canBuy ?
-                        <Link href="/vip" className={cx(styles.r_af7490b1, styles.r_900c2a51, styles.r_4f43b5cb)}>
-                            Lv.5 或会员可购买
-                          </Link> :
-
-                        <button
-                          type="button"
-                          onClick={() => openBuy(item)}
-                          className={cx(styles.r_89de0f6b, styles.r_900c2a51, styles.r_4f43b5cb)}>
-
-                            立即购买
-                          </button>
-                        }
-                        <Link
-                          href={`/messages?to=${listing.seller.id}`}
-                          className={cx(styles.r_af7490b1, styles.r_900c2a51, styles.r_4f43b5cb)}>
-
-                          私信卖家
-                        </Link>
-                        {listing.externalUrl &&
-                        <Link
-                          href={listing.externalUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={cx(styles.r_af7490b1, styles.r_900c2a51, styles.r_4f43b5cb)}>
-
-                            打开三方链接
-                          </Link>
-                        }
-                      </> :
-                      soldOut ?
-                      <button disabled className={cx(styles.r_f2b23104, styles.r_af7490b1, styles.r_900c2a51, styles.r_4f43b5cb, styles.r_b17d6a13)}>
-                        已售罄
-                      </button> :
-                      isMine ?
-                      <button disabled className={cx(styles.r_f2b23104, styles.r_af7490b1, styles.r_900c2a51, styles.r_4f43b5cb, styles.r_b17d6a13)}>
-                        自己的商品
-                      </button> :
-                      !user ?
-                      <Link
-                        href={`/login?redirect=${encodeURIComponent(`/market/${listing.id}`)}`}
-                        className={cx(styles.r_af7490b1, styles.r_900c2a51, styles.r_4f43b5cb)}>
-
-                        登录购买
-                      </Link> :
-                      !canBuy ?
-                      <Link href="/vip" className={cx(styles.r_af7490b1, styles.r_900c2a51, styles.r_4f43b5cb)}>
-                        Lv.5 或会员可购买
-                      </Link> :
-
-                      <button
-                        type="button"
-                        onClick={() => openBuy(item)}
-                        className={cx(styles.r_89de0f6b, styles.r_900c2a51, styles.r_4f43b5cb)}>
-
-                        立即购买
-                      </button>
-                      }
-                    </div>
-                  </div>
-                </div>
-                }
-              </ProductImageMasonry>
-            </article>);
-
-        })}
+    <Card id="comments" className={styles.commentsCard}>
+      <div className={styles.commentsHeader}>
+        <h2>评论</h2>
+        <div>
+          <Icon name="message" size={14} />
+          {commentCount}
+        </div>
       </div>
 
-      <section id="comments" className={cx(styles.r_0ab86672, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_8e63407b)}>
-        <div className={cx(styles.r_1bb88326, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e)}>
-          <h2 className={cx(styles.r_4ee73492, styles.r_e83a7042, styles.r_399e11a5)}>评论</h2>
-          <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_359090c2, styles.r_69335b95)}>
-            <Icon name="message" size={14} />
-            {commentCount}
-          </div>
-        </div>
-
-        <div className={styles.r_6ed543e2}>
-          {comments.length === 0 ?
-          <div className={cx(styles.r_5f22e64f, styles.r_a8a62ca4, styles.r_0e17f2bd, styles.r_cb11fec3, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_69335b95)}>
-              还没有评论
-            </div> :
-
-          comments.map((comment) =>
-          <div key={comment.id} className={cx(styles.r_60fbb771, styles.r_1004c0c3, styles.r_65fdbade, styles.r_88b684d2, styles.r_7fcf9124, styles.r_c2db4490, styles.r_dcd339c6)}>
-                <Avatar src={comment.author.avatar} alt={comment.author.name} size={32} />
-                <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
-                  <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_77a2a20e)}>
-                    <UserName user={comment.author} size="xs" />
-                    <span className={cx(styles.r_d058ca6d, styles.r_6c4cc49e)}>{formatDateTime(comment.createdAt)}</span>
-                  </div>
-                  <div className={cx(styles.r_b6b02c0e, styles.r_a2edcb1a, styles.r_fc7473ca, styles.r_18550d59, styles.r_eb6abb1f)}>{comment.content}</div>
+      <div className={styles.commentList}>
+        {comments.length === 0 ? (
+          <div className={styles.emptyComments}>还没有评论</div>
+        ) : (
+          comments.map((comment) => (
+            <div key={comment.id} className={styles.commentItem}>
+              <Avatar src={comment.author.avatar} alt={comment.author.name} size={32} />
+              <div className={styles.commentBody}>
+                <div className={styles.commentMeta}>
+                  <UserName user={comment.author} size="xs" />
+                  <span>{formatDateTime(comment.createdAt)}</span>
                 </div>
-              </div>
-          )
-          }
-        </div>
-
-        <div className={cx(styles.r_0ab86672, styles.r_b950dda2, styles.r_88b684d2, styles.r_ce335a8e)}>
-          <textarea
-            value={commentText}
-            onChange={(event) => setCommentText(event.target.value)}
-            className={cx(styles.r_a07a3fd9, styles.r_6da6a3c3, styles.r_5bd7b080, styles.r_03b4dd7f)}
-            maxLength={1000}
-            placeholder={user ? '写下你的评论' : '登录后评论'} />
-
-          <div className={cx(styles.r_50d0d216, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_77a2a20e)}>
-            <span className={cx(styles.r_d058ca6d, styles.r_6c4cc49e)}>{commentText.length}/1000</span>
-            <button
-              type="button"
-              onClick={submitComment}
-              disabled={commentSubmitting || !commentText.trim()}
-              className={cn(cx(styles.r_af7490b1, styles.r_900c2a51, styles.r_dd702538), commentSubmitting && styles.r_f2868c22)}>
-
-              {commentSubmitting ? '提交中...' : '发布评论'}
-            </button>
-          </div>
-          {commentError && <div className={cx(styles.r_50d0d216, styles.r_5f22e64f, styles.r_0759a0f1, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_b54428d1)}>{commentError}</div>}
-        </div>
-      </section>
-
-      {activeItem &&
-      <div
-        className={cx(styles.r_7bc55599, styles.r_7b7df044, styles.r_181b2866, styles.r_f3c543ad, styles.r_67d66567, styles.r_094a9df0, styles.r_8e63407b)}
-        onClick={() => !submitting && setActiveItem(null)}>
-
-          <div
-          className={cx(styles.r_b4168890, styles.r_6da6a3c3, styles.r_6199866f, styles.r_92bf82f4, styles.r_0478c89a)}
-          onClick={(e) => e.stopPropagation()}>
-
-            <div className={cx(styles.r_da019856, styles.r_60fbb771, styles.r_60541e1e, styles.r_1004c0c3)}>
-              <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
-                <h3 className={cx(styles.r_4ee73492, styles.r_e83a7042)}>确认订单</h3>
-                <p className={cx(styles.r_f50e2015, styles.r_359090c2, styles.r_69335b95)}>{activeItem.title}</p>
-              </div>
-              <button
-              type="button"
-              onClick={() => setActiveItem(null)}
-              className={cx(styles.r_b17d6a13, styles.r_81be6435)}
-              aria-label="关闭">
-
-                <Icon name="close" size={18} />
-              </button>
-            </div>
-
-            <div className={styles.r_3e7ce58d}>
-              {onlineTradeModes.length > 1 &&
-            <div>
-                  <label className={cx(styles.r_65281709, styles.r_0214b4b3, styles.r_359090c2, styles.r_21d33c50)}>交易方式</label>
-                  <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_77a2a20e)}>
-                    {onlineTradeModes.map((mode) =>
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => setSelectedTradeMode(mode)}
-                  className={cn(cx(styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_2eba0d65, styles.r_359090c2, styles.r_ceb69a6b),
-
-                  selectedTradeMode === mode ? cx(styles.r_d3b27cd9, styles.r_7ebecbb6, styles.r_2689f395, styles.r_5f6a59f1, styles.r_16b1efa5, styles.r_52c47100) : cx(styles.r_88b684d2, styles.r_5e10cdb8, styles.r_eb6abb1f, styles.r_a5c39c39)
-
-
-                  )}>
-
-                        <span className={styles.r_0214b4b3}>{tradeModeLabel(mode)}</span>
-                        <span className={cx(styles.r_15e1b1f4, styles.r_0214b4b3, styles.r_d058ca6d, styles.r_8ecebc9f, styles.r_69335b95)}>
-                          {tradeModeHint(mode)}
-                        </span>
-                      </button>
-                )}
-                  </div>
-                </div>
-            }
-
-              <div>
-                <label className={cx(styles.r_65281709, styles.r_0214b4b3, styles.r_359090c2, styles.r_21d33c50)}>数量</label>
-                <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
-                  <button
-                  type="button"
-                  onClick={() => setQty((n) => Math.max(1, n - 1))}
-                  className={cx(styles.r_23b4e5ed, styles.r_ebb407e8)}
-                  disabled={qty <= 1}>
-
-                    -
-                  </button>
-                  <input
-                  className={cx(styles.r_baceed34, styles.r_ca6bf630)}
-                  type="number"
-                  value={qty}
-                  onChange={(e) =>
-                  setQty(Math.max(1, Math.min(activeItem.stock, Number(e.target.value) || 1)))
-                  } />
-
-                  <button
-                  type="button"
-                  onClick={() => setQty((n) => Math.min(activeItem.stock, n + 1))}
-                  className={cx(styles.r_23b4e5ed, styles.r_ebb407e8)}
-                  disabled={qty >= activeItem.stock}>
-
-                    +
-                  </button>
-                  <span className={cx(styles.r_c68af998, styles.r_359090c2, styles.r_69335b95)}>库存 {activeItem.stock}</span>
-                </div>
-              </div>
-
-              <div>
-                <label className={cx(styles.r_65281709, styles.r_0214b4b3, styles.r_359090c2, styles.r_21d33c50)}>收货地址</label>
-                <AddressPicker value={addr} onChange={setAddr} />
+                <div className={styles.commentText}>{comment.content}</div>
               </div>
             </div>
+          ))
+        )}
+      </div>
 
-            <div className={cx(styles.r_0ab86672, styles.r_5f22e64f, styles.r_7ebecbb6, styles.r_eb6e8b88, styles.r_359090c2, styles.r_7054e276, styles.r_5f6a59f1)}>
-              <div className={cx(styles.r_60fbb771, styles.r_8ef2268e)}>
-                <span>商品金额</span>
-                <span className={cx(styles.r_e83a7042, styles.r_399e11a5)}>{formatPrice(activeItem.price * qty)}</span>
-              </div>
-              {selectedTradeMode === 'online_payment' &&
-            <div className={cx(styles.r_60fbb771, styles.r_8ef2268e)}>
-                  <span>平台手续费</span>
-                  <span>卖家承担 1%</span>
-                </div>
-            }
-            </div>
+      <div className={styles.commentComposer}>
+        <Textarea
+          value={commentText}
+          onChange={(event) => setCommentText(event.target.value)}
+          className={styles.commentTextarea}
+          maxLength={1000}
+          placeholder={user ? '写下你的评论' : '登录后评论'}
+        />
 
-            <div className={cx(styles.r_0ab86672, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_77a2a20e, styles.r_b950dda2, styles.r_88b684d2, styles.r_ce335a8e)}>
-              <div className={cx(styles.r_fc7473ca, styles.r_69450ef1, styles.r_595fceba)}>
-                合计 {formatPrice(activeItem.price * qty)}
-              </div>
-              <button
-              type="button"
-              onClick={submit}
-              disabled={submitting}
-              className={cn(styles.r_af7490b1, submitting && styles.r_f2868c22)}>
-
-                {submitting ? '提交中...' : '提交订单'}
-              </button>
-            </div>
-
-            {err && <div className={cx(styles.r_eccd13ef, styles.r_5f22e64f, styles.r_0759a0f1, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_b54428d1)}>{err}</div>}
-          </div>
+        <div className={styles.commentActions}>
+          <span>{commentText.length}/1000</span>
+          <Button size="sm" onClick={submitComment} disabled={commentSubmitting || !commentText.trim()}>
+            {commentSubmitting ? '提交中...' : '发布评论'}
+          </Button>
         </div>
-      }
-    </>);
-
+        {commentError && <div className={styles.errorBox}>{commentError}</div>}
+      </div>
+    </Card>
+  );
 }
 
-function normalizeTradeModes(modes: TradeMode[] | undefined, fallback: TradeMode): TradeMode[] {
-  const allowed: TradeMode[] = ['platform_escrow', 'online_payment', 'external'];
-  const selected = modes?.length ? modes : [fallback];
-  const result = Array.from(new Set(selected.filter((mode) => allowed.includes(mode))));
-  return result.length ? result : [fallback];
+function BuyAction({
+  soldOut,
+  isMine,
+  userId,
+  canBuy,
+  listingId,
+  onBuy
+}: {
+  soldOut: boolean;
+  isMine: boolean;
+  userId?: string;
+  canBuy: boolean;
+  listingId: string;
+  onBuy: () => void;
+}) {
+  if (soldOut) {
+    return (
+      <Button disabled variant="muted" fullWidth>
+        已售罄
+      </Button>
+    );
+  }
+  if (isMine) {
+    return (
+      <Button disabled variant="muted" fullWidth>
+        自己的商品
+      </Button>
+    );
+  }
+  if (!userId) {
+    return (
+      <ButtonLink href={`/login?redirect=${encodeURIComponent(`/market/${listingId}`)}`} variant="primary" fullWidth>
+        登录购买
+      </ButtonLink>
+    );
+  }
+  if (!canBuy) {
+    return (
+      <ButtonLink href="/vip" variant="outline" fullWidth>
+        Lv.5 或会员可购买
+      </ButtonLink>
+    );
+  }
+  return (
+    <Button onClick={onBuy} fullWidth>
+      立即购买
+    </Button>
+  );
 }
 
-function tradeModeHint(mode: TradeMode) {
-  if (mode === 'platform_escrow') return '平台担保交易';
-  if (mode === 'online_payment') return '支付宝在线支付，手续费 1%';
-  return '自行联系，请确认交易风险';
+function QuantityControl({
+  value,
+  max,
+  onChange
+}: {
+  value: number;
+  max: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div className={styles.quantityControl}>
+      <Button variant="outline" size="sm" onClick={() => onChange(value - 1)} disabled={value <= 1} aria-label="减少数量">
+        -
+      </Button>
+      <Input
+        className={styles.quantityInput}
+        type="number"
+        min={1}
+        max={max}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value) || 1)}
+        aria-label="购买数量"
+      />
+      <Button variant="outline" size="sm" onClick={() => onChange(value + 1)} disabled={value >= max} aria-label="增加数量">
+        +
+      </Button>
+    </div>
+  );
 }
 
-function tradeModeLabel(mode: TradeMode) {
-  if (mode === 'platform_escrow') return '平台担保';
-  if (mode === 'online_payment') return '在线支付';
-  return '自行联系';
-}
-
-type ProductImageMasonryChildren = ReactNode | ((thumbnailStrip: ReactNode) => ReactNode);
-
-function ProductImageMasonry({
-  images,
-  title,
-  children
-
-
-
-
-}: {images: string[];title: string;children: ProductImageMasonryChildren;}) {
-  const safeImages = images.length ? images : [];
+function ProductImageGallery({ images, title }: { images: string[]; title: string }) {
+  const safeImages = images.filter(Boolean);
   const [active, setActive] = useState(0);
-  const [imageSizes, setImageSizes] = useState<Record<string, {width: number;height: number;}>>({});
+  const [imageSizes, setImageSizes] = useState<Record<string, { width: number; height: number }>>({});
   const pswpRef = useRef<PhotoSwipe | null>(null);
   const current = safeImages[active] || safeImages[0];
   const total = safeImages.length;
+
   const handleImageLoad = useCallback((src: string, event: SyntheticEvent<HTMLImageElement>) => {
     const img = event.currentTarget;
     if (img.naturalWidth && img.naturalHeight) {
@@ -604,18 +589,19 @@ function ProductImageMasonry({
       }));
     }
   }, []);
+
   const slides = useMemo(
     () =>
-    safeImages.map((src) => {
-      const size = imageSizes[src] || { width: 1600, height: 1066 };
-      return {
-        src,
-        msrc: src,
-        thumbnail: src,
-        width: size.width,
-        height: size.height
-      };
-    }),
+      safeImages.map((src) => {
+        const size = imageSizes[src] || { width: 1600, height: 1066 };
+        return {
+          src,
+          msrc: src,
+          thumbnail: src,
+          width: size.width,
+          height: size.height
+        };
+      }),
     [imageSizes, safeImages]
   );
 
@@ -637,10 +623,14 @@ function ProductImageMasonry({
     },
     [slides]
   );
-  const switchImage = useCallback((direction: 1 | -1) => {
-    if (total <= 1) return;
-    setActive((index) => (index + direction + total) % total);
-  }, [total]);
+
+  const switchImage = useCallback(
+    (direction: 1 | -1) => {
+      if (total <= 1) return;
+      setActive((index) => (index + direction + total) % total);
+    },
+    [total]
+  );
 
   useEffect(() => {
     return () => {
@@ -650,139 +640,92 @@ function ProductImageMasonry({
 
   if (!current) return null;
 
-  const thumbnailStrip =
-  safeImages.length > 1 ?
-  <div className={cx(styles.r_50d0d216, styles.r_f3c543ad, styles.r_931228bb, styles.r_58284b4e)}>
-        {safeImages.map((src, index) =>
-    <button
-      key={`${src}-${index}`}
-      type="button"
-      onClick={() => setActive(index)}
-      className={cn(cx(styles.r_d89972fe, styles.r_b59cd297, styles.r_6da6a3c3, styles.r_2cd02d11, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ebecbb6, styles.r_0fe7d7d8),
-
-      active === index ? cx(styles.r_3bd65fe8, styles.r_3972e98d, styles.r_16b1efa5, styles.r_cf825218) : cx(styles.r_88b684d2, styles.r_0c67ca47, styles.r_a5c39c39, styles.r_5da1d525)
-
-
-      )}
-      aria-label={`Preview image ${index + 1}`}>
-
-            <Image
-        src={src}
-        alt=""
-        fill
-        className={styles.r_7d85d0c2}
-        unoptimized
-        onLoad={(event) => handleImageLoad(src, event)} />
-
-          </button>
-    )}
-      </div> :
-  null;
-
   return (
-    <div className={cx(styles.r_f3c543ad, styles.r_0c3bc985, styles.r_ca10e412, styles.r_00200b8b, styles.r_a5bac8fb)}>
-      <div className={cx(styles.r_6da6a3c3, styles.r_a217b4ea, styles.r_5e10cdb8, styles.r_e76f230c, styles.r_050c847f)}>
-        <button
-          type="button"
-          onClick={() => openPreview(active)}
-          className={cx(styles.r_64292b1c, styles.r_d89972fe, styles.r_b59cd297, styles.r_6da6a3c3, styles.r_3bbc8c13, styles.r_2cd02d11, styles.r_5f22e64f, styles.r_7ebecbb6, styles.r_2eba0d65, styles.r_e76f230c, styles.r_050c847f)}
-          aria-label="Preview product image">
-
+    <div className={styles.gallery}>
+      <div className={styles.galleryMain}>
+        <button type="button" onClick={() => openPreview(active)} className={styles.mainImageButton} aria-label="预览商品图片">
           <Image
             key={current}
             src={current}
             alt={active === 0 ? title : `${title} ${active + 1}`}
             fill
-            className={styles.r_7d85d0c2}
+            className={styles.galleryImage}
             unoptimized
-            onLoad={(event) => handleImageLoad(current, event)} />
-
-          {total > 1 &&
-          <>
-              <span
-              role="button"
-              tabIndex={0}
-              onClick={(event) => {
-                event.stopPropagation();
-                switchImage(-1);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  switchImage(-1);
-                }
-              }}
-              className={cx(styles.r_da4dbfbc, styles.r_22e59b72, styles.r_d694ba66, styles.r_f3c543ad, styles.r_e7a768f9, styles.r_ae2181c7, styles.r_36b381be, styles.r_34516836, styles.r_67d66567, styles.r_ac204c10, styles.r_2ccc1c42, styles.r_72a4c7cd, styles.r_3972e98d, styles.r_438b2237, styles.r_0fe7d7d8, styles.r_c42f3f6f, styles.r_d30e4cd2, styles.r_07d233ab)}
-              aria-label="上一张">
-
-                <Icon name="arrow-right" size={18} className={styles.r_3350916b} />
-              </span>
-              <span
-              role="button"
-              tabIndex={0}
-              onClick={(event) => {
-                event.stopPropagation();
-                switchImage(1);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  switchImage(1);
-                }
-              }}
-              className={cx(styles.r_da4dbfbc, styles.r_c100b64c, styles.r_d694ba66, styles.r_f3c543ad, styles.r_e7a768f9, styles.r_ae2181c7, styles.r_36b381be, styles.r_34516836, styles.r_67d66567, styles.r_ac204c10, styles.r_2ccc1c42, styles.r_72a4c7cd, styles.r_3972e98d, styles.r_438b2237, styles.r_0fe7d7d8, styles.r_c42f3f6f, styles.r_d30e4cd2, styles.r_07d233ab)}
-              aria-label="下一张">
-
-                <Icon name="arrow-right" size={18} />
-              </span>
-            </>
-          }
-          {total > 1 &&
-          <div className={cx(styles.r_a4326536, styles.r_da4dbfbc, styles.r_49af11eb, styles.r_c100b64c, styles.r_ac204c10, styles.r_084ed6ec, styles.r_0b91436d, styles.r_660d2eff, styles.r_d058ca6d, styles.r_2689f395, styles.r_3032cae0, styles.r_72a4c7cd)}>
-              <span>{active + 1}</span>
-              <span className={styles.r_ebeab46b}>/</span>
-              <span>{total}</span>
-            </div>
-          }
+            onLoad={(event) => handleImageLoad(current, event)}
+          />
         </button>
-
+        {total > 1 && (
+          <>
+            <button type="button" className={cn(styles.galleryArrow, styles.galleryArrowLeft)} onClick={() => switchImage(-1)} aria-label="上一张">
+              <Icon name="arrow-right" size={18} />
+            </button>
+            <button type="button" className={cn(styles.galleryArrow, styles.galleryArrowRight)} onClick={() => switchImage(1)} aria-label="下一张">
+              <Icon name="arrow-right" size={18} />
+            </button>
+            <div className={styles.imageCounter}>
+              {active + 1}/{total}
+            </div>
+          </>
+        )}
       </div>
 
-      {typeof children === 'function' ? children(thumbnailStrip) : children}
-
-      {false &&
-      <div className={styles.r_99d72c7f} aria-hidden="true">
-          {safeImages.map((src, index) =>
-        <button
-          key={`${src}-${index}`}
-          type="button"
-          onClick={() => setActive(index)}
-          className={cn(cx(styles.r_d89972fe, styles.r_357868ab, styles.r_6da6a3c3, styles.r_2cd02d11, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_c6b7c8a6, styles.r_0fe7d7d8),
-
-          active === index ? cx(styles.r_2fe59630, styles.r_3972e98d, styles.r_438b2237, styles.r_16b1efa5, styles.r_2f107f50) : cx(styles.r_426b5a1c, styles.r_f854738e, styles.r_88a52491, styles.r_5da1d525)
-
-
-          )}
-          aria-label={`查看第 ${index + 1} 张商品图`}>
-
-              <Image src={src} alt="" fill className={styles.r_7d85d0c2} unoptimized />
-              <span className={cx(styles.r_a4326536, styles.r_da4dbfbc, styles.r_7b7df044, styles.r_79257b8c, styles.r_b7167002, styles.r_0fe2b3da)} />
+      {total > 1 && (
+        <div className={styles.thumbnailGrid}>
+          {safeImages.map((src, index) => (
+            <button
+              key={`${src}-${index}`}
+              type="button"
+              onClick={() => setActive(index)}
+              className={cn(styles.thumbnailButton, active === index && styles.thumbnailActive)}
+              aria-label={`查看第 ${index + 1} 张商品图`}
+            >
+              <Image src={src} alt="" fill className={styles.galleryImage} unoptimized onLoad={(event) => handleImageLoad(src, event)} />
             </button>
-        )}
+          ))}
         </div>
-      }
-    </div>);
-
+      )}
+    </div>
+  );
 }
-function ProductStat({ label, value }: {label: string;value: string | number;}) {
-  return (
-    <div className={cx(styles.r_60fbb771, styles.r_ba120f34, styles.r_3960ffc2, styles.r_58284b4e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_0b91436d, styles.r_ec0091ee)}>
-      <div className={cx(styles.r_012fbd12, styles.r_d058ca6d, styles.r_69335b95)}>{label}</div>
-      <div className={cx(styles.r_28fb5fa0, styles.r_f283ea9b, styles.r_359090c2, styles.r_e83a7042, styles.r_399e11a5)}>{value}</div>
-    </div>);
 
+function InfoRow({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className={styles.infoRow}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function ServiceItem({ icon, label, value }: { icon: 'package' | 'check-circle' | 'message'; label: string; value: string }) {
+  return (
+    <div className={styles.serviceItem}>
+      <Icon name={icon} size={16} />
+      <div>
+        <span>{label}</span>
+        <p>{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function normalizeTradeModes(modes: TradeMode[] | undefined, fallback: TradeMode): TradeMode[] {
+  const allowed: TradeMode[] = ['platform_escrow', 'online_payment', 'external'];
+  const selected = modes?.length ? modes : [fallback];
+  const result = Array.from(new Set(selected.filter((mode) => allowed.includes(mode))));
+  return result.length ? result : [fallback];
+}
+
+function tradeModeHint(mode: TradeMode) {
+  if (mode === 'platform_escrow') return '平台担保交易';
+  if (mode === 'online_payment') return '支付宝在线支付，手续费 1%';
+  return '自行联系，请确认交易风险';
+}
+
+function tradeModeLabel(mode: TradeMode) {
+  if (mode === 'platform_escrow') return '平台担保';
+  if (mode === 'online_payment') return '在线支付';
+  return '自行联系';
 }
 
 function formatDateTime(iso: string): string {

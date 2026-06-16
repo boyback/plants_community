@@ -8,6 +8,8 @@ import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { useBodyScrollLock } from '@/lib/hooks/useBodyScrollLock';
 import styles from './AnnouncementClient.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -215,7 +217,7 @@ function EditDialog({
 
         <div className={cx(styles.r_6ed543e2, styles.r_359090c2)}>
           <Field label="标题">
-            <input
+            <Input
               className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -223,7 +225,7 @@ function EditDialog({
 
           </Field>
           <Field label="内容">
-            <textarea
+            <Textarea
               className={cx(styles.r_6da6a3c3, styles.r_7ee36c26, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -255,7 +257,7 @@ function EditDialog({
           </div>
           <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3)}>
             <Field label="开始时间(可选)">
-              <input
+              <Input
                 type="datetime-local"
                 className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
                 value={startAt}
@@ -263,7 +265,7 @@ function EditDialog({
 
             </Field>
             <Field label="结束时间(可选)">
-              <input
+              <Input
                 type="datetime-local"
                 className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
                 value={endAt}

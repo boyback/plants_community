@@ -9,6 +9,7 @@ import { useI18n } from '@/i18n/I18nContext';
 import type { PlantSpecies } from '@/lib/types';
 import styles from './PlantsIndexClient.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -71,7 +72,7 @@ export function PlantsIndexClient({ plants }: {plants: PlantItem[];}) {
             size={14}
             className={cx(styles.r_da4dbfbc, styles.r_22e59b72, styles.r_d694ba66, styles.r_36b381be, styles.r_eb16169c)} />
 
-          <input
+          <Input
             className={styles.r_e4af8854}
             placeholder={t('plants.searchPlaceholder')}
             value={q}

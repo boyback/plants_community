@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/Icon";
+import { Input } from "@/components/ui/Input";
 import { MultiImageUploadGrid, type MultiImageUploadGridHandle } from "@/components/upload/MultiImageUploadGrid";
 import { useI18n } from "@/i18n/I18nContext";
 import { toast } from "@/components/ui/Toast";
@@ -727,7 +728,7 @@ function LinkDialog({
         <div className={cx(styles.r_359090c2, styles.r_21d33c50, styles.r_65281709)}>
           {t("editor.toolbar.linkDialog.urlLabel")}
         </div>
-        <input
+        <Input
           autoFocus
           value={url}
           onChange={(e) => setUrl(e.target.value)}

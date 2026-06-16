@@ -19,8 +19,8 @@ import { cx } from '@/lib/style-utils';
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: '更新日志 · 肉友社',
-  description: '肉友社最近上线了哪些新功能、修复了什么、有什么活动'
+  title: '更新日志 · 植友圈',
+  description: '植友圈最近上线了哪些新功能、修复了什么、有什么活动'
 };
 
 const LEVEL_STYLE: Record<string, {dot: string;tag: string;label: string;}> = {
@@ -85,7 +85,7 @@ const BUILTIN_ENTRIES: Entry[] = [
 {
   id: "v1-2026-01",
   title: '社区上线 🎉',
-  content: "肉友社正式开放注册,欢迎来分享你的多肉日常!",
+  content: "植友圈正式开放注册,欢迎来分享你的多肉日常!",
   level: 'important',
   date: new Date("2026-01-01")
 }];

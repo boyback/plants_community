@@ -28,6 +28,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import styles from './SystemMenusManager.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -548,7 +549,7 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
             <label className={cx(styles.r_0214b4b3, styles.r_fc7473ca, styles.r_2689f395, styles.r_eb6abb1f, styles.r_65281709)}>
               Slug <span className={styles.r_fa512798}>*</span>
             </label>
-            <input
+            <Input
               type="text"
               value={slug}
               onChange={(e) => {
@@ -575,7 +576,7 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
             <label className={cx(styles.r_0214b4b3, styles.r_fc7473ca, styles.r_2689f395, styles.r_eb6abb1f, styles.r_65281709)}>
               名称 <span className={styles.r_fa512798}>*</span>
             </label>
-            <input
+            <Input
               type="text"
               value={name}
               onChange={(e) => {
@@ -596,7 +597,7 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
           {/* 描述 */}
           <div>
             <label className={cx(styles.r_0214b4b3, styles.r_fc7473ca, styles.r_2689f395, styles.r_eb6abb1f, styles.r_65281709)}>描述</label>
-            <input
+            <Input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -675,7 +676,7 @@ function MenuEditDialog({ menu, onClose, onSave, saving }: MenuEditDialogProps) 
             <label className={cx(styles.r_0214b4b3, styles.r_fc7473ca, styles.r_2689f395, styles.r_eb6abb1f, styles.r_65281709)}>
               路径
             </label>
-            <input
+            <Input
               type="text"
               value={path}
               onChange={(e) => {

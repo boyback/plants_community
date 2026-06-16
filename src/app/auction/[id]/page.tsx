@@ -22,6 +22,7 @@ import { PaymentQr } from '@/components/payment/PaymentQr';
 import { AlipayPagePayButton } from '@/components/payment/AlipayPagePayButton';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -327,7 +328,7 @@ export default function AuctionDetailPage() {
                   {t('auction.bidAtLeastShort', { yuan: (minNext / 100).toFixed(2) })}
                 </div>
                 <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
-                  <input
+                  <Input
                   inputMode="decimal"
                   value={bidAmount}
                   onChange={(e) => setBidAmount(e.target.value)}
@@ -622,18 +623,18 @@ function JoinDialog({
 
         <div className={styles.r_ca6bf630}>
             <div className={cx(styles.r_359090c2, styles.r_69335b95)}>
-              {payment.pagePayUrl ? '点击按钮跳转到支付宝完成保证金支付' : t('auction.depositModal.scanQr', {
-              channel: channel === 'wechat' ? t('auction.depositModal.channelWechat') : t('auction.depositModal.channelAlipay')
+              {channel === 'alipay' ? '点击按钮跳转到支付宝完成保证金支付' : t('auction.depositModal.scanQr', {
+              channel: t('auction.depositModal.channelWechat')
             })}
             </div>
-            {payment.pagePayUrl ?
-            <AlipayPagePayButton pagePayUrl={payment.pagePayUrl} /> :
-            <PaymentQr
-              text={payment.qrcode ?? payment.payNo}
-              channel={channel === 'wechat' ? 'wechat' : 'alipay'}
-              status={payment.status}
-              scanning={payment.scanning ?? false} />
-            }
+            {channel === 'alipay' ?
+          <AlipayPagePayButton pagePayUrl={payment.pagePayUrl} /> :
+          <PaymentQr
+            text={payment.qrcode ?? payment.payNo}
+            channel="wechat"
+            status={payment.status}
+            scanning={payment.scanning ?? false} />
+          }
             {err &&
           <div className={cx(styles.r_eccd13ef, styles.r_5f22e64f, styles.r_0759a0f1, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_b54428d1)}>
                 {err}

@@ -7,6 +7,7 @@ import type { ConcurrentUploadingItem } from '@/components/upload/useConcurrentU
 import { cn } from '@/lib/utils';
 import styles from './PlainCommentComposer.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -135,7 +136,7 @@ export function PlainCommentComposer({
             event.target.value = '';
           }} />
 
-        <textarea
+        <Textarea
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}

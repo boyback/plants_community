@@ -84,7 +84,7 @@ export async function generateMetadata({
   const title = p.title;
   const description =
   (p.contentText?.slice(0, 120) ?? "") ||
-  `${p.author.name} 在「${board || "肉友社"}」分享的内容`;
+  `${p.author.name} 在「${board || "植友圈"}」分享的内容`;
   const keywords = [
   ...tags,
   p.species?.name,

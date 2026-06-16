@@ -6,6 +6,8 @@ import { api, ApiError } from "@/lib/client-api";
 import { toast } from '@/components/ui/Toast';
 import styles from './LevelExpManager.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -74,14 +76,14 @@ export function LevelExpManager({ rows }: {rows: LevelExpRow[];}) {
             <tr key={item.level} className={cx(styles.r_b950dda2, styles.r_358505cf)}>
                 <td className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_0e65706b, styles.r_02eb621e)}>Lv.{item.level}</td>
                 <td className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f)}>
-                  <input
+                  <Input
                   value={item.name}
                   onChange={(e) => updateItem(item.level, { name: e.target.value })}
                   className={cx(styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_d5eab218, styles.r_ec0091ee, styles.r_df37b1fd, styles.r_1bd19725)} />
 
                 </td>
                 <td className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f)}>
-                  <input
+                  <Input
                   type="number"
                   min={0}
                   value={item.expRequired}
@@ -100,7 +102,7 @@ export function LevelExpManager({ rows }: {rows: LevelExpRow[];}) {
         </table>
       </div>
 
-      <textarea
+      <Textarea
         className={cx(styles.r_eccd13ef, styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_df37b1fd, styles.r_1bd19725)}
         rows={2}
         value={note}

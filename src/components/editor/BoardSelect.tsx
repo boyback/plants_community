@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import type { Board, BoardLevel } from '@/lib/types';
 import styles from './BoardSelect.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -353,7 +354,7 @@ export function BoardSelect(props: SingleBoardSelectProps | MultiBoardSelectProp
               </button>
             </span>
         )}
-          <input
+          <Input
           ref={inputRef}
           type="text"
           value={query}
@@ -389,7 +390,7 @@ export function BoardSelect(props: SingleBoardSelectProps | MultiBoardSelectProp
 
         </div> :
 
-      <input
+      <Input
         ref={inputRef}
         type="text"
         value={displayValue}

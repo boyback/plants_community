@@ -61,7 +61,7 @@ export async function sendMail(params: SendMailParams): Promise<SendMailResult> 
   if (!tr) return { ok: false, error: 'SMTP 未配置' };
 
   const fromAddr = process.env.SMTP_USER!;
-  const fromName = process.env.SMTP_FROM_NAME || '肉友社';
+  const fromName = process.env.SMTP_FROM_NAME || '植友圈';
 
   try {
     await tr.sendMail({

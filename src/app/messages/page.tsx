@@ -16,6 +16,8 @@ import { api, ApiError } from "@/lib/client-api";
 import { toast } from '@/components/ui/Toast';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -181,7 +183,7 @@ function MessagesInner() {
                 size={14}
                 className={cx(styles.r_da4dbfbc, styles.r_22e59b72, styles.r_d694ba66, styles.r_36b381be, styles.r_eb16169c)} />
 
-              <input className={styles.r_e4af8854} placeholder={t('messages.search')} />
+              <Input className={styles.r_e4af8854} placeholder={t('messages.search')} />
             </div>
           </div>
           <div className={cx(styles.r_36e579c0, styles.r_92bf82f4)}>
@@ -267,7 +269,7 @@ function MessagesInner() {
 
             <footer className={cx(styles.r_b950dda2, styles.r_88b684d2, styles.r_eb6e8b88)}>
               <div className={cx(styles.r_60fbb771, styles.r_6f27f4f7, styles.r_77a2a20e)}>
-                <textarea
+                <Textarea
                 rows={1}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}

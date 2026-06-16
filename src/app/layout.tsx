@@ -36,7 +36,7 @@ import { expProgressConfigured } from '@/lib/permissions';
 const SITE_URL =
 process.env.NEXT_PUBLIC_SITE_URL ?? "https://plantcommunity.cn";
 
-const SITE_NAME = '肉友社';
+const SITE_NAME = '植友圈';
 const SITE_DESC =
 '中文多肉植物爱好者社区:景天、番杏、仙人掌、大戟、十二卷,品种图鉴 + 养护技巧 + 晒图分享 + 交易市场。银冠玉、乌羽玉、兜、玉露、生石花…多肉爱好者的聚集地。';
 

@@ -1159,7 +1159,7 @@ function AlbumSyncSettings({
               maxLength={50}
               showCount />
 
-              <textarea
+              <Textarea
               value={description}
               onChange={(event) => onDescriptionChange(event.target.value)}
               placeholder="相册描述，可选"

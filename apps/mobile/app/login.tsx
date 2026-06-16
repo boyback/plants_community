@@ -47,7 +47,7 @@ export default function LoginScreen() {
       style={styles.page}
     >
       <View style={styles.header}>
-        <Text style={styles.brand}>肉友社</Text>
+        <Text style={styles.brand}>植友圈</Text>
         <Text style={styles.subtitle}>登录后同步签到、收藏、交易和消息。</Text>
       </View>
 

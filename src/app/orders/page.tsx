@@ -5,6 +5,8 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Shell } from '@/components/layout/Shell';
 import { Empty } from '@/components/ui/Empty';
+import { Card } from '@/components/ui/Card';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from "@/lib/client-api";
@@ -17,6 +19,8 @@ import { RichTextView } from '@/components/richtext/RichTextView';
 import type { Order, OrderStatus } from '@/lib/types';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -79,9 +83,9 @@ function OrdersInner() {
 
 
 
+
       // ignore
-    } finally {setLoading(false);}};const { bind, status: pullStatus, progress: pullProgress } = usePullToRefresh(load);useEffect(() => {if (authLoading) return;if (!user) {
-        setLoading(false);
+    } finally {setLoading(false);}};const { bind, status: pullStatus, progress: pullProgress } = usePullToRefresh(load);useEffect(() => {if (authLoading) return;if (!user) {setLoading(false);
         return;
       }
       load();
@@ -90,7 +94,7 @@ function OrdersInner() {
 
   if (!authLoading && !user) {
     return (
-      <Shell>
+      <Shell withSidebar={false}>
         <div className={cx(styles.r_0e12dc7d, styles.r_9794ab45, styles.r_a4d0f420, styles.r_ca6bf630)}>
           <div className={styles.r_a95699d9}>📦</div>
           <div className={cx(styles.r_eccd13ef, styles.r_42536e69, styles.r_e83a7042)}>{t('error.unauthorized')}</div>
@@ -103,7 +107,7 @@ function OrdersInner() {
   }
 
   return (
-    <Shell>
+    <Shell withSidebar={false}>
       <div {...bind}>
         <PullIndicator status={pullStatus} progress={pullProgress} />
       <div className={cx(styles.r_da019856, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e)}>
@@ -116,7 +120,7 @@ function OrdersInner() {
       </div>
 
       {/* 我买的 / 我卖的 */}
-      <div className={cx(styles.r_da019856, styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_ac204c10, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_eb6a3cef, styles.r_359090c2)}>
+      <Card padding="none" className={cx(styles.r_da019856, styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_ac204c10, styles.r_eb6a3cef, styles.r_359090c2)}>
         {(['buyer', 'seller'] as const).map((r) =>
           <button
             key={r}
@@ -131,10 +135,10 @@ function OrdersInner() {
             {r === 'buyer' ? t("orders.tabBuyer") : t("orders.tabSeller")}
           </button>
           )}
-      </div>
+      </Card>
 
       {/* 状态筛选 */}
-      <div className={cx(styles.r_fb88ccaa, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_77a2a20e)}>
+      <Card padding="compact" className={cx(styles.r_fb88ccaa, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_77a2a20e)}>
         {(Object.keys(STATUS_I18N_KEY) as (OrderStatus | 'all')[]).map((s) =>
           <button
             key={s}
@@ -149,12 +153,14 @@ function OrdersInner() {
             {t(STATUS_I18N_KEY[s])}
           </button>
           )}
-      </div>
+      </Card>
 
       {loading ?
-        <div className={cx(styles.r_1100bef6, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>{t('common.loading')}</div> :
+        <Card className={cx(styles.r_1100bef6, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>{t('common.loading')}</Card> :
         orders.length === 0 ?
-        <Empty icon="📦" title={t("orders.title")} desc={t('market.title')} /> :
+        <Card>
+          <Empty icon="📦" title={t("orders.title")} desc={t('market.title')} />
+        </Card> :
 
         <div className={styles.r_6ed543e2}>
           {orders.map((o) =>
@@ -200,7 +206,7 @@ function OrderRow({
   };
 
   return (
-    <div className={styles.r_8e63407b}>
+    <Card padding="none" className={styles.r_8e63407b}>
       <div className={cx(styles.r_1bb88326, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_359090c2, styles.r_69335b95)}>
         <span>{t("orders.orderNo", { no: order.orderNo })}</span>
         <span>·</span>
@@ -270,63 +276,68 @@ function OrderRow({
       <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_77c08e01, styles.r_77a2a20e)}>
         {role === 'buyer' && order.status === 'pending_payment' &&
         <>
-            <button
+            <Button
             type="button"
+            variant="outline"
+            size="sm"
             disabled={busy}
-            onClick={() => call(`/api/orders/${order.id}/cancel`)}
-            className={styles.r_dd702538}>
+            onClick={() => call(`/api/orders/${order.id}/cancel`)}>
 
               {t("orders.actions.cancel")}
-            </button>
-            <Link
+            </Button>
+            <ButtonLink
             href={
             order.source === 'auction' ?
             `/checkout/auction/${order.id}` :
             `/checkout/${order.id}`
             }
-            className={styles.r_dd702538}>
+            size="sm">
 
               {order.source === 'auction' ? t('auction.payBalance') : t("orders.actions.pay")}
-            </Link>
+            </ButtonLink>
           </>
         }
         {role === 'seller' && order.status === 'pending_ship' &&
-        <button
+        <Button
           type="button"
+          size="sm"
           onClick={() => setShowShip(true)}
-          className={styles.r_dd702538}>
+        >
 
             {t("orders.actions.ship")}
-          </button>
+          </Button>
         }
         {role === 'buyer' && order.status === 'pending_receipt' &&
-        <button
+        <Button
           type="button"
+          size="sm"
           disabled={busy}
-          onClick={() => call(`/api/orders/${order.id}/receive`)}
-          className={styles.r_dd702538}>
+          onClick={() => call(`/api/orders/${order.id}/receive`)}>
 
             {t("orders.actions.confirm")}
-          </button>
+          </Button>
         }
         {role === 'buyer' && order.status === 'pending_review' &&
-        <button
+        <Button
           type="button"
+          size="sm"
           onClick={() => setShowReview(true)}
-          className={styles.r_dd702538}>
+        >
 
             {t("orders.actions.review")}
-          </button>
+          </Button>
         }
         {role === 'buyer' &&
         ['pending_ship', 'pending_receipt', 'pending_review'].includes(order.status) &&
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={() => setShowRefund(true)}
-          className={styles.r_dd702538}>
+        >
 
               {t("orders.actions.review")}
-            </button>
+            </Button>
         }
       </div>
 
@@ -354,27 +365,28 @@ function OrderRow({
       {/* 弹窗们 */}
       {showShip &&
       <Modal title={t("orders.actions.ship")} onClose={() => setShowShip(false)}>
-          <input
+          <Input
           className="input"
           value={trackingNo}
           onChange={(e) => setTrackingNo(e.target.value)}
           placeholder={t("orders.inputTracking")} />
 
           <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_77c08e01, styles.r_77a2a20e)}>
-            <button onClick={() => setShowShip(false)} className={styles.r_dd702538}>
+            <Button type="button" variant="outline" size="sm" onClick={() => setShowShip(false)}>
               {t('common.cancel')}
-            </button>
-            <button
+            </Button>
+            <Button
+            type="button"
+            size="sm"
             disabled={!trackingNo.trim() || busy}
             onClick={async () => {
               await call(`/api/orders/${order.id}/ship`, { trackingNo: trackingNo.trim() });
               setShowShip(false);
               setTrackingNo('');
-            }}
-            className={styles.r_dd702538}>
+            }}>
 
               {t("orders.actions.ship")}
-            </button>
+            </Button>
           </div>
         </Modal>
       }
@@ -383,14 +395,16 @@ function OrderRow({
       <Modal title={t("orders.actions.review")} onClose={() => setShowReview(false)}>
           <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_3febee09)}>
             {[1, 2, 3, 4, 5].map((n) =>
-          <button
+          <Button
             key={n}
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setRating(n)}
             className={n <= rating ? styles.r_1dd48761 : styles.r_47eb8768}>
 
                 ★
-              </button>
+              </Button>
           )}
             <span className={cx(styles.r_c68af998, styles.r_359090c2, styles.r_69335b95)}>{rating} ★</span>
           </div>
@@ -405,10 +419,12 @@ function OrderRow({
 
           </div>
           <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_77c08e01, styles.r_77a2a20e)}>
-            <button onClick={() => setShowReview(false)} className={styles.r_dd702538}>
+            <Button type="button" variant="outline" size="sm" onClick={() => setShowReview(false)}>
               {t('common.cancel')}
-            </button>
-            <button
+            </Button>
+            <Button
+            type="button"
+            size="sm"
             disabled={isReviewEmpty(reviewTextJson) || busy}
             onClick={async () => {
               await call(`/api/orders/${order.id}/review`, {
@@ -418,18 +434,17 @@ function OrderRow({
               setShowReview(false);
               setReviewTextJson(null);
               setReviewKey((k) => k + 1);
-            }}
-            className={styles.r_dd702538}>
+            }}>
 
               {t("orders.submitReview")}
-            </button>
+            </Button>
           </div>
         </Modal>
       }
 
       {showRefund &&
       <Modal title={t("orders.actions.review")} onClose={() => setShowRefund(false)}>
-          <textarea
+          <Textarea
           rows={3}
           className={styles.r_dd9ce2a7}
           value={refundReason}
@@ -437,24 +452,25 @@ function OrderRow({
           placeholder={t("orders.reviewPlaceholder")} />
 
           <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_77c08e01, styles.r_77a2a20e)}>
-            <button onClick={() => setShowRefund(false)} className={styles.r_dd702538}>
+            <Button type="button" variant="outline" size="sm" onClick={() => setShowRefund(false)}>
               {t('common.cancel')}
-            </button>
-            <button
+            </Button>
+            <Button
+            type="button"
+            size="sm"
             disabled={!refundReason.trim() || busy}
             onClick={async () => {
               await call(`/api/orders/${order.id}/refund`, { reason: refundReason.trim() });
               setShowRefund(false);
               setRefundReason('');
-            }}
-            className={styles.r_dd702538}>
+            }}>
 
               提交申请
-            </button>
+            </Button>
           </div>
         </Modal>
       }
-    </div>);
+    </Card>);
 
 }
 

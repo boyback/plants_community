@@ -4,11 +4,11 @@ import { cx } from '@/lib/style-utils';
 export function CookiesKo() {
   return (
     <>
-      <h1>RouYou 쿠키 정책</h1>
+      <h1>ZhiYou 쿠키 정책</h1>
       <p className={styles.r_eb16169c}>최근 개정일: 2026 년 5 월 7 일 · 시행일: 공지일</p>
 
       <p>
-        본 정책은 RouYou(이하 &quot;서비스&quot;)가 쿠키와 유사 기술(localStorage, sessionStorage, 픽셀 태그 등)을 어떻게 사용하는지 설명합니다.
+        본 정책은 ZhiYou(이하 &quot;서비스&quot;)가 쿠키와 유사 기술(localStorage, sessionStorage, 픽셀 태그 등)을 어떻게 사용하는지 설명합니다.
         쿠키는 4 가지 카테고리로 분류되며 처음 방문 시 동의 배너 또는 설정 페이지에서 개별적으로 활성화 여부를 선택할 수 있습니다.
         <strong>&quot;필수&quot;는 로그인, 보안 등 기본 기능을 담당하기 때문에 끌 수 없습니다</strong>.
       </p>

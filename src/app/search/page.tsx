@@ -40,8 +40,8 @@ export async function generateMetadata({
 }: {searchParams: {q?: string;};}): Promise<Metadata> {
   const q = (searchParams.q || '').trim();
   return {
-    title: q ? `${q} · 站内搜索 · 肉友社` : '搜索 · 肉友社',
-    description: q ? `搜索「${q}」相关的多肉帖子、品种、板块、肉友` : '在肉友社搜索内容',
+    title: q ? `${q} · 站内搜索 · 植友圈` : '搜索 · 植友圈',
+    description: q ? `搜索「${q}」相关的多肉帖子、品种、板块、肉友` : '在植友圈搜索内容',
     robots: 'noindex, follow'
   };
 }

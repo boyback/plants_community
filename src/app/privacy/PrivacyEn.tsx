@@ -4,11 +4,11 @@ import { cx } from '@/lib/style-utils';
 export function PrivacyEn() {
   return (
     <>
-      <h1>RouYou Privacy Policy</h1>
+      <h1>ZhiYou Privacy Policy</h1>
       <p className={styles.r_eb16169c}>Last updated: 7 May 2026 · Effective on the date of publication</p>
 
       <p>
-        RouYou (&quot;we&quot;, &quot;us&quot;) values your privacy. This Policy explains what
+        ZhiYou (&quot;we&quot;, &quot;us&quot;) values your privacy. This Policy explains what
         personal data we collect, how we use and protect it, and the rights you have as a
         data subject. It reflects the requirements of the EU General Data Protection
         Regulation (GDPR), the UK GDPR, and the PRC Personal Information Protection Law

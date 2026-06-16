@@ -19,6 +19,7 @@ import type { Conversation, Notification, SkinItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import styles from './AppShell.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Input } from '@/components/ui/Input';
 
 
 
@@ -148,7 +149,7 @@ function AppMobileNav({ open, onClose }: {open: boolean;onClose: () => void;}) {
               <Icon name="plants" size={20} />
             </span>
             <span>
-              <span className={cx(styles.r_0214b4b3, styles.r_42536e69, styles.r_69450ef1, styles.r_4ddaa618)}>PlantNet</span>
+              <span className={cx(styles.r_0214b4b3, styles.r_42536e69, styles.r_69450ef1, styles.r_4ddaa618)}>植友圈</span>
               <span className={cx(styles.r_0214b4b3, styles.r_d058ca6d, styles.r_69335b95)}>多肉植物百科社区</span>
             </span>
           </Link>
@@ -330,20 +331,20 @@ function TopBar({
 
 
 
+
         // ignore count refresh failures
-      }};void fetchCounts();const timer = setInterval(fetchCounts, 60_000);return () => {cancelled = true;clearInterval(timer);};}, [user]);useEffect(() => {
-    if (!user) return;
-    const un1 = subscribe('notification', () => setUnreadNotifs((n) => n + 1));
-    const un2 = subscribe('message', () => setUnreadMsgs((n) => n + 1));
-    const un3 = subscribe('notification.read', () => setUnreadNotifs(0));
-    const un4 = subscribe('message.read', () => setUnreadMsgs((n) => Math.max(0, n - 1)));
-    return () => {
-      un1();
-      un2();
-      un3();
-      un4();
-    };
-  }, [subscribe, user]);
+      }};void fetchCounts();const timer = setInterval(fetchCounts, 60_000);return () => {cancelled = true;clearInterval(timer);};}, [user]);useEffect(() => {if (!user) return;
+      const un1 = subscribe('notification', () => setUnreadNotifs((n) => n + 1));
+      const un2 = subscribe('message', () => setUnreadMsgs((n) => n + 1));
+      const un3 = subscribe('notification.read', () => setUnreadNotifs(0));
+      const un4 = subscribe('message.read', () => setUnreadMsgs((n) => Math.max(0, n - 1)));
+      return () => {
+        un1();
+        un2();
+        un3();
+        un4();
+      };
+    }, [subscribe, user]);
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -374,7 +375,7 @@ function TopBar({
             <Icon name="plants" size={22} />
           </span>
           <span className={cx(styles.r_99d72c7f, styles.r_7e0b7cdf, styles.r_676c91de)}>
-            <span className={cx(styles.r_0214b4b3, styles.r_d5c9b000, styles.r_69450ef1, styles.r_e9fadafb, styles.r_4ddaa618)}>PlantNet</span>
+            <span className={cx(styles.r_0214b4b3, styles.r_d5c9b000, styles.r_69450ef1, styles.r_e9fadafb, styles.r_4ddaa618)}>植友圈</span>
             <span className={cx(styles.r_0214b4b3, styles.r_f283ea9b, styles.r_359090c2, styles.r_69335b95)}>多肉植物百科社区</span>
           </span>
         </Link>
@@ -382,7 +383,7 @@ function TopBar({
         <div className={cx(styles.r_99d72c7f, styles.r_36e579c0, styles.r_3960ffc2, styles.r_86843cf1, styles.r_ec0c1358, styles.r_d0f1400f)}>
           <form onSubmit={submit} className={cx(styles.r_d89972fe, styles.r_06950372, styles.r_012fbd12)}>
             <Icon name="search" size={16} className={cx(styles.r_da4dbfbc, styles.r_b2e7cc55, styles.r_d694ba66, styles.r_36b381be, styles.r_66a36c90)} />
-            <input
+            <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               className={cx(styles.r_426b8b75, styles.r_6da6a3c3, styles.r_ac204c10, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_838fc455, styles.r_ab82c25c, styles.r_fc7473ca, styles.r_df37b1fd, styles.r_56bf8ae8, styles.r_df4824ca, styles.r_5c6a615b, styles.r_3bc80e52)}

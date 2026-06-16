@@ -567,7 +567,7 @@ export function MarketListingForm({ mode, initialValue }: Props) {
                     </button>
                   </span>
             )}
-                <input
+                <Input
               className={cx(styles.r_a9ef791a, styles.r_36e579c0, styles.r_7f19cdf4, styles.r_d8e0e382, styles.r_fc7473ca, styles.r_df37b1fd)}
               value={product.tagInput}
               onChange={(e) => updateProduct(product.clientId, { tagInput: e.target.value })}

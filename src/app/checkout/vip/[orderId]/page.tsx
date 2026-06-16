@@ -12,6 +12,7 @@ import { toast } from '@/components/ui/Toast';
 import type { Payment } from '@/lib/types';
 import { PaymentQr, type PayChannel } from '@/components/payment/PaymentQr';
 import { AlipayPagePayButton } from '@/components/payment/AlipayPagePayButton';
+import { PaymentSuccessPanel } from '@/components/payment/PaymentSuccessPanel';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
 
@@ -75,14 +76,17 @@ export default function VipCheckoutPage() {
       pollRef.current = setInterval(async () => {
         try {
           const p = await api.get<Payment>(`/api/payments/${payment.payNo}`);
-          setPayment(p);
+          setPayment((current) => ({
+            ...p,
+            pagePayUrl: p.pagePayUrl ?? current?.pagePayUrl
+          }));
           if (p.status === 'paid') {
             everScanned = false;
             notScanningStreak = 0;
             setAbandoned(false);
+            if (pollRef.current) clearInterval(pollRef.current);
             toast.success(t('checkout.paySuccess'));
             await refresh();
-            setTimeout(() => router.push('/vip'), 3000);
           } else if (p.status === 'expired' || p.status === 'cancelled') {
             if (pollRef.current) clearInterval(pollRef.current);
           } else if (p.status === 'pending') {
@@ -113,9 +117,10 @@ export default function VipCheckoutPage() {
 
   const remain = payment ? new Date(payment.expireAt).getTime() - now : 0;
   const expired = payment?.status === 'expired';
+  const paid = payment?.status === 'paid';
 
   return (
-    <Shell>
+    <Shell withSidebar={false}>
       <div className={cx(styles.r_0e12dc7d, styles.r_2cc8041e, styles.r_2cd02d11)}>
         <div className={cx(styles.r_39b2e003, styles.r_96b881c8, styles.r_f61dcff4, styles.r_db539fdb, styles.r_0478c89a, styles.r_67e74965)}>
           <h1 className={cx(styles.r_d5c9b000, styles.r_69450ef1)}>{t('checkout.vip.pageTitle')}</h1>
@@ -151,12 +156,24 @@ export default function VipCheckoutPage() {
           </div>
 
           <div className={cx(styles.r_f3c543ad, styles.r_67d66567, styles.r_68f2db62, styles.r_9ac94195, styles.r_0478c89a)}>
-            {creating || !payment ?
+            {paid ?
+            <PaymentSuccessPanel
+              title="会员支付成功"
+              description="当前页面已确认付款,会员权益已更新。"
+              primaryHref="/vip"
+              primaryLabel={t('nav.vipCenter')}
+              secondaryHref="/orders"
+              secondaryLabel={t('checkout.viewMyOrders')} /> :
+            creating || !payment ?
+            channel === 'alipay' ?
+            <AlipayPagePayButton /> :
             <div className={cx(styles.r_f3c543ad, styles.r_4ead2714, styles.r_d16aae84, styles.r_67d66567, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_5e10cdb8, styles.r_359090c2, styles.r_6c4cc49e)}>
                 {t('checkout.generatingQr', {
                 channel: channel === 'wechat' ? t('checkout.channelWechat') : t('checkout.channelAlipay')
               })}
               </div> :
+            channel === 'alipay' ?
+            <AlipayPagePayButton pagePayUrl={payment.pagePayUrl} /> :
             expired ?
             <div className={cx(styles.r_f3c543ad, styles.r_4ead2714, styles.r_d16aae84, styles.r_67d66567, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_5e10cdb8)}>
                 <div className={styles.r_751fb0d1}>⌛</div>
@@ -169,9 +186,6 @@ export default function VipCheckoutPage() {
                   {t('checkout.qrRegenerate')}
                 </button>
               </div> :
-
-            payment.pagePayUrl ?
-            <AlipayPagePayButton pagePayUrl={payment.pagePayUrl} /> :
             <PaymentQr
               text={payment.qrcode ?? payment.payNo}
               channel={channel}
@@ -181,7 +195,7 @@ export default function VipCheckoutPage() {
             }
           </div>
 
-          {payment && payment.status === 'pending' && !expired && (
+          {payment && payment.status === 'pending' && !expired && channel !== 'alipay' && (
           abandoned ?
           <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_ca6bf630)}>
                 <span className={cx(styles.r_d058ca6d, styles.r_85d79ebf)}>
