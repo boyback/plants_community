@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { cn, formatFollowers, timeAgo, boardUrl } from '@/lib/utils';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserIdentity } from '@/components/ui/UserIdentity';
 import { Icon } from '@/components/ui/Icon';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
 import { PostCard } from '@/components/post/PostCard';
@@ -738,7 +738,7 @@ function EntryItem({ entry, meta }: {entry: any;meta: any;}) {
           <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_d058ca6d)}>
             <span className={cx(styles.r_2689f395, styles.r_399e11a5)}>{yyyy}/{mm}/{dd}</span>
             <span className={cn(cx(styles.r_07389a77, styles.r_45d82811, styles.r_465609a2, styles.r_1dc571a3, styles.r_ca6bcd4b), meta.color)}>
-              {meta.emoji} {stageText}
+              {stageText}
             </span>
           </div>
           {entry.note &&
@@ -834,26 +834,15 @@ function FeedListCard({
     <div ref={ref} className={cx(styles.r_8e63407b, styles.r_ceb69a6b, styles.r_98dc6304)}>
       {/* 第一行：用户头像 + 昵称 + 关注按钮 + 管理员按钮 */}
       <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_7e9a2a25, styles.r_1bb88326)}>
-        <Link
-          href={`/user/${post.author.id}`}
-          className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_eaeb7419, styles.r_67d6184a)}>
-
-          <UserAvatar
-            src={post.author.avatar}
-            alt={post.author.name}
-            size={36}
-            pendant={post.author.equip?.pendant ?? null}
-            ring={false}
-            showFestival={false} />
-
-          <span className={cx(styles.r_7e0b7cdf, styles.r_e9fadafb)}>
-            <span className={cx(styles.r_0214b4b3, styles.r_f283ea9b, styles.r_2689f395, styles.r_a14daebf, styles.r_399e11a5)}>{post.author.name}</span>
-            <span className={cx(styles.r_0214b4b3, styles.r_1dc571a3, styles.r_8ecebc9f, styles.r_6c4cc49e)}>
-              {formatFollowers(post.author.followers)} 粉丝
-            </span>
-          </span>
+        <span className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_eaeb7419, styles.r_67d6184a)}>
+          <UserIdentity
+            user={post.author}
+            size="sm"
+            variant="list"
+            subtitle={`${formatFollowers(post.author.followers)} 粉丝`}
+          />
           <AuthorBadgeIcons post={post} />
-        </Link>
+        </span>
         <PostTypeBadge type={post.type} />
         {user && user.id !== post.author.id &&
         <button

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Comment, Post, SkinItem } from '@/lib/types';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserIdentity } from '@/components/ui/UserIdentity';
 import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
@@ -28,7 +28,7 @@ export function CommentSection({
 
 
 }: {post: Post;authorPendants?: Record<string, SkinItem>;}) {
-  const { user, equip, vip } = useAuth();
+  const { user, equip } = useAuth();
   const { t } = useI18n();
   const [commentText, setCommentText] = useState('');
   const [commentImages, setCommentImages] = useState<string[]>([]);
@@ -111,13 +111,6 @@ export function CommentSection({
       <div className={cx(styles.r_65fdbade, styles.r_88b684d2, styles.r_54720a96, styles.r_c07e54fd)}>
         {user ?
         <div className={cx(styles.r_60fbb771, styles.r_1004c0c3)}>
-            <UserAvatar
-            src={user.avatar}
-            alt={user.name}
-            size={42}
-            pendant={equip.pendant ?? null}
-            isVip={vip.isVip} />
-
             <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0, styles.r_6ed543e2)}>
               {journalTarget &&
             <JournalEntryCommentTargetBanner
@@ -286,7 +279,7 @@ function CommentItem({
   const hiddenRepliesCount = Math.max(0, replies.length - visibleReplies.length);
 
   return (
-    <div className={styles.r_c07e54fd}>
+    <div id={`comment-${comment.id}`} className={styles.r_c07e54fd}>
       <div className={cx(styles.r_f3c543ad, styles.r_0c3bc985, styles.r_b6142548)}>
         <CommentAuthorCard
           author={comment.author}
@@ -477,23 +470,17 @@ function ReplyItem({
   const childReplies = reply.replies ?? [];
 
   return (
-    <article className={cx(styles.r_60fbb771, styles.r_6da6a3c3, styles.r_77a2a20e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2)}>
-      <Link href={`/user/${reply.author.id}`}>
-        <UserAvatar
-          src={reply.author.avatar}
-          alt={reply.author.name}
-          size={30}
-          pendant={pendant ?? null}
-          showFestival={false} />
-
-      </Link>
+    <article id={`comment-${reply.id}`} className={cx(styles.r_60fbb771, styles.r_6da6a3c3, styles.r_77a2a20e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2)}>
+      <UserIdentity
+        user={{ ...reply.author, equip: { pendant } }}
+        size="sm"
+        showName={false}
+        avatarRing={false}
+      />
       <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
         <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_60541e1e, styles.r_8ef2268e, styles.r_77a2a20e)}>
           <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_58284b4e)}>
-            <Link href={`/user/${reply.author.id}`} className={cx(styles.r_2689f395, styles.r_5f6a59f1)}>
-              {reply.author.name}
-            </Link>
-            <span className={styles.r_6c4cc49e}>Lv.{reply.author.level}</span>
+            <UserIdentity user={{ ...reply.author, equip: { pendant } }} size="xs" showAvatar={false} showLevel />
             <span className={styles.r_6c4cc49e}>{formatNumber(reply.author.posts)} 帖</span>
             <CommentBadges badges={reply.author.badges} compact />
           </div>
@@ -614,21 +601,12 @@ function CommentAuthorCard({
 }: {author: Comment['author'];pendant?: SkinItem | null;}) {
   return (
     <aside className={cx(styles.r_a217b4ea, styles.r_52f53b18, styles.r_0e17f2bd, styles.r_1b2d54a3, styles.r_ca6bf630)}>
-      <Link href={`/user/${author.id}`} className={styles.r_52083e7d}>
-        <UserAvatar
-          src={author.avatar}
-          alt={author.name}
-          size={54}
-          pendant={pendant ?? null} />
-
-      </Link>
-      <Link
-        href={`/user/${author.id}`}
-        className={cx(styles.r_50d0d216, styles.r_0214b4b3, styles.r_f283ea9b, styles.r_fc7473ca, styles.r_e83a7042, styles.r_4ddaa618, styles.r_81be6435)}
-        title={author.name}>
-
-        {author.name}
-      </Link>
+      <UserIdentity
+        user={{ ...author, equip: { pendant } }}
+        size="lg"
+        variant="profile"
+        nameClassName={cx(styles.r_50d0d216, styles.r_0214b4b3, styles.r_f283ea9b, styles.r_fc7473ca, styles.r_e83a7042, styles.r_4ddaa618, styles.r_81be6435)}
+      />
       <div className={cx(styles.r_b6b02c0e, styles.r_60fbb771, styles.r_3960ffc2, styles.r_86843cf1, styles.r_58284b4e, styles.r_d058ca6d, styles.r_7b89cd85)}>
         <span>Lv.{author.level}</span>
         <span>·</span>

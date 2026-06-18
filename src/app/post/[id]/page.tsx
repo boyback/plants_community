@@ -6,9 +6,7 @@ import { PostActions } from "@/components/post/PostActions";
 import { MobileActionBar } from "@/components/post/MobileActionBar";
 import {
   JournalChronoTimeline,
-  JournalImageThumbStrip,
-  type JournalChronoEntry,
-  type JournalTimelineImage } from
+  type JournalChronoEntry } from
 "@/components/post/JournalChronoTimeline";
 import { PostAdminMenu } from "@/components/post/PostAdminMenu";
 import { Avatar } from "@/components/ui/Avatar";
@@ -193,19 +191,6 @@ export default async function PostDetailPage({
     });
   }
 
-  if (me && postRaw.journal?.entries?.length) {
-    const likedEntryRows = await prisma.journalEntryLike.findMany({
-      where: {
-        userId: me.id,
-        journalEntryId: { in: postRaw.journal.entries.map((entry) => entry.id) }
-      },
-      select: { journalEntryId: true }
-    });
-    const likedEntryIds = new Set(likedEntryRows.map((row) => row.journalEntryId));
-    (postRaw.journal.entries as Array<(typeof postRaw.journal.entries)[number] & {liked?: boolean;}>).forEach((entry) => {
-      entry.liked = likedEntryIds.has(entry.id);
-    });
-  }
   const post = serializePost(postRaw, undefined, undefined, me);
   const collectCount = await prisma.postCollect.count({
     where: { postId: post.id }
@@ -390,7 +375,9 @@ export default async function PostDetailPage({
 
       <div className={cx(styles.r_0e12dc7d, styles.r_f3c543ad, styles.r_6da6a3c3, styles.r_726bb2cc, styles.r_b39e60c3, styles.r_8fe321a7)}>
         <div className={cx(styles.r_7e0b7cdf, styles.r_b43b4c08)}>
-          <article className={cx(styles.r_2cd02d11, styles.r_68f2db62, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_438b2237)}>
+          <article
+            data-post-detail-card
+            className={cx(styles.r_2cd02d11, styles.r_68f2db62, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_438b2237)}>
             <div className={cx(styles.r_65fdbade, styles.r_23d3773a, styles.r_d139dd09, styles.r_cb11fec3, styles.r_e341df82)}>
               <div className={cx(styles.r_da019856, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_58284b4e, styles.r_359090c2, styles.r_69335b95)}>
                 <Link href="/" className={styles.r_81be6435}>
@@ -557,9 +544,7 @@ function makeJournalChronoEntries(post: Post): JournalChronoEntry[] {
       stageClassName: meta.color,
       note: entry.note,
       images: entry.images,
-      likes: entry.likes,
-      comments: entry.comments,
-      liked: entry.liked
+      comments: entry.comments
     };
   });
 }
@@ -582,27 +567,11 @@ function JournalPlantDetailContent({
   const entriesDesc = [...entriesAsc].reverse();
   const firstEntry = entriesAsc[0] ?? null;
   const latestEntry = entriesDesc[0] ?? null;
-  const timelineImages: JournalTimelineImage[] = entriesAsc.flatMap((entry) =>
-  entry.images.map((image) => ({
-    image,
-    entryId: entry.id,
-    dateLabel: entry.dateLabel,
-    stageLabel: entry.stageLabel
-  }))
-  );
   const cover = firstEntry?.images[0] ?? plant?.cover ?? post.cover ?? post.images?.[0] ?? post.species?.cover ?? speciesDetail?.cover ?? "";
   const nickname = plant?.nickname ?? post.journal?.subjectName ?? post.title;
   const acquiredAt = plant?.acquiredAt ?? journalStartDate;
   const speciesLabel = speciesDetail?.name ?? post.journal?.speciesName ?? post.species?.name ?? post.board.name;
   const speciesHrefValue = speciesDetail ? speciesHref(speciesDetail) : post.board.level === "species" ? `/board/${post.board.path.map((item) => item.slug).join("/")}` : "/plants";
-  const stageAnchors = entriesAsc.map((entry) => ({
-    key: entry.id,
-    label: entry.stageLabel,
-    icon: entry.stageIcon,
-    entryId: entry.id,
-    dateLabel: entry.dateLabel
-  }));
-
   return (
     <div className={styles.r_b43b4c08}>
       <section className={cx(styles.r_f3c543ad, styles.r_b39e60c3, styles.r_c1253da6)}>
@@ -652,7 +621,6 @@ function JournalPlantDetailContent({
                     <TimelineSummaryItem label="结束时间" value={latestEntry ? latestEntry.dateLabel : "暂无"} />
                     <TimelineSummaryItem label="总条数" value={`${entries.length}条`} />
                   </div>
-                  <JournalImageThumbStrip images={timelineImages} />
                 </>
               }
             </div>
@@ -665,22 +633,6 @@ function JournalPlantDetailContent({
         <div>
           <h3 className={cx(styles.r_4ee73492, styles.r_69450ef1, styles.r_6d623258)}>成长时间轴</h3>
         </div>
-        {stageAnchors.length > 0 &&
-        <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_77a2a20e)}>
-            {stageAnchors.map((item) =>
-          <a
-            key={item.key}
-            href={`#journal-entry-${item.entryId}`}
-            title={`${item.dateLabel} ${item.label}`}
-            className={cx(styles.r_52083e7d, styles.r_ed8a5df7, styles.r_3960ffc2, styles.r_58284b4e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_0e17f2bd, styles.r_359090c2, styles.r_e83a7042, styles.r_e7eab4cb, styles.r_438b2237, styles.r_56bf8ae8, styles.r_5aae3db6, styles.r_5756b7b4, styles.r_5eca0425)}>
-
-                <span>{item.icon}</span>
-                <span>{item.label}</span>
-              </a>
-          )}
-          </div>
-        }
-
         <JournalChronoTimeline entries={entries} />
       </section>
     </div>);

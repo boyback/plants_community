@@ -68,7 +68,7 @@ function JournalEntryPreview({ entry }: {entry: JournalEntry;}) {
           <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_d058ca6d)}>
             <span className={cx(styles.r_2689f395, styles.r_399e11a5)}>{yyyy}/{mm}/{dd}</span>
             <span className={cn(cx(styles.r_07389a77, styles.r_ca6bcd4b, styles.r_45d82811, styles.r_465609a2, styles.r_1dc571a3), meta.color)}>
-              {meta.emoji} {stageText}
+              {stageText}
             </span>
           </div>
 

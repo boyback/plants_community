@@ -1,0 +1,77 @@
+.identity {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.identity:hover {
+  text-decoration: none;
+}
+
+.inline {
+  gap: 8px;
+}
+
+.list {
+  gap: 10px;
+}
+
+.card {
+  gap: 12px;
+}
+
+.profile {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.compact {
+  gap: 6px;
+}
+
+.text {
+  display: inline-flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile .text {
+  align-items: flex-start;
+}
+
+.level {
+  color: rgb(var(--leaf-700) / 0.72);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.subtitle {
+  color: rgb(var(--ink-500));
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.xs {
+  gap: 5px;
+}
+
+.sm {
+  gap: 7px;
+}
+
+.md {
+  gap: 8px;
+}
+
+.lg {
+  gap: 10px;
+}
+
+.xl {
+  gap: 12px;
+}

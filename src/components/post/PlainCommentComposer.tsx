@@ -136,13 +136,34 @@ export function PlainCommentComposer({
             event.target.value = '';
           }} />
 
-        <Textarea
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder={placeholder}
-          maxLength={maxLength}
-          className={cx(styles.r_0214b4b3, styles.r_6da6a3c3, styles.r_6aef3201, styles.r_119b2aa0, styles.r_7f19cdf4, styles.r_fc7473ca, styles.r_18550d59, styles.r_399e11a5, styles.r_df37b1fd, styles.r_e4a886d4, styles.r_e9c2b353)}
-          style={{ minHeight }} />
+        <div className={styles.composerInputShell}>
+          <Textarea
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder={placeholder}
+            maxLength={maxLength}
+            className={cx(styles.r_0214b4b3, styles.r_6da6a3c3, styles.r_6aef3201, styles.r_119b2aa0, styles.r_7f19cdf4, styles.r_fc7473ca, styles.r_18550d59, styles.r_399e11a5, styles.r_df37b1fd, styles.r_e4a886d4, styles.r_e9c2b353, styles.composerTextarea)}
+            style={{ minHeight }} />
+          <div className={styles.composerActions}>
+            <button
+              type="button"
+              aria-label="图片"
+              onClick={() => pickerRef.current?.click()}
+              disabled={!canUploadImages || isUploading || images.length + uploadingItems.length >= maxImages}
+              className={cx(styles.r_f3c543ad, styles.r_ed8a5df7, styles.r_2bbcfc3b, styles.r_67d66567, styles.r_421ac2be, styles.r_66a36c90, styles.r_ceb69a6b, styles.r_9cab05a6, styles.r_3364420b, styles.r_5f533b3a, styles.r_bda7a224)}>
+
+              <Icon name="image" size={19} />
+            </button>
+            <button
+              type="button"
+              onClick={onSubmit}
+              disabled={isEmpty || submitting || isUploading}
+              className={cx(styles.r_426b8b75, styles.r_012fbd12, styles.r_e82ae8be, styles.r_421ac2be, styles.r_9c6a87c1, styles.r_d139dd09, styles.r_fc7473ca, styles.r_e83a7042, styles.r_72a4c7cd, styles.r_56bf8ae8, styles.r_0bdeb0f4, styles.r_5f533b3a, styles.r_bda7a224)}>
+
+              {submitting ? '发送中...' : isUploading ? '上传中...' : submitLabel}
+            </button>
+          </div>
+        </div>
 
         {uploadEntries.length > 0 &&
         <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_77a2a20e)}>

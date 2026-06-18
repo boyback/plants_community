@@ -91,6 +91,27 @@
 .r_d5eab218{padding-left:8px;padding-right:8px}
 .r_c82b67c8{text-decoration-line:underline}
 
+.composerInputShell {
+  position: relative;
+}
+
+.composerTextarea {
+  padding-bottom: 56px;
+}
+
+.composerActions {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.r_50d0d216.r_60fbb771.r_6f27f4f7.r_8ef2268e.r_1004c0c3 {
+  display: none;
+}
+
 
 /* Recovered utility rules referenced by this CSS module. */
 .r_6d623258{--tw-text-opacity:1;color:rgb(3 7 18/var(--tw-text-opacity))}

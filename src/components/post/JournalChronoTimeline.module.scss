@@ -1,5 +1,76 @@
+.timelineNote {
+  margin: 8px 0 0;
+  color: rgb(var(--ink-700));
+  font-size: 14px;
+  line-height: 24px;
+  white-space: pre-wrap;
+}
+
+.timelineImages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.timelineImageButton {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 8px;
+  background: rgb(var(--leaf-50));
+  cursor: zoom-in;
+  padding: 0;
+}
+
+.timelineStageButton {
+  display: inline-flex;
+  min-width: 58px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(var(--leaf-100));
+  border-radius: 8px;
+  background: rgb(var(--surface));
+  box-shadow: 0 1px 2px rgb(16 24 40 / 0.05);
+  color: rgb(var(--leaf-700));
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  padding: 0 16px;
+}
+
+.timelineCommentButton {
+  display: inline-flex;
+  height: 32px;
+  min-width: 58px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid rgb(var(--leaf-100));
+  border-radius: 8px;
+  background: rgb(var(--surface));
+  color: rgb(var(--ink-500));
+  font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  cursor: pointer;
+  padding: 0 12px;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.timelineCommentButton:hover {
+  border-color: rgb(var(--leaf-200));
+  background: rgb(var(--leaf-50));
+  color: rgb(var(--leaf-700));
+}
+
 /* Generated from src/components/post/JournalChronoTimeline.tsx. Keep component-local styles here. */.r_5f22e64f{border-radius:8px}.r_ca6bcd4b{border-width:1px}.r_a29b7a64{border-style:dashed}.r_691861bc{--tw-border-opacity:1;border-color:rgb(var(--leaf-200)/var(--tw-border-opacity))}.r_efb55408{background-color:rgb(var(--leaf-50)/.4)}.r_a4d0f420{padding:40px}.r_ca6bf630{text-align:center}.r_fc7473ca{font-size:14px;line-height:20px}.r_eccd13ef{margin-top:12px}.r_60fbb771{display:flex}.r_c0980a65{max-width:100%}.r_77a2a20e{gap:8px}.r_1384f66f{overflow-x:auto}.r_569eb162{padding-bottom:4px}.r_d89972fe{position:relative}.r_acaee621{height:64px}.r_baceed34{width:64px}.r_012fbd12{flex-shrink:0}.r_3bbc8c13{cursor:zoom-in}.r_2cd02d11{overflow:hidden}.r_88b684d2{--tw-border-opacity:1;border-color:rgb(var(--leaf-100)/var(--tw-border-opacity))}.r_7ebecbb6{--tw-bg-opacity:1;background-color:rgb(var(--leaf-50)/var(--tw-bg-opacity))}.r_56bf8ae8{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.r_a5c39c39:hover{--tw-border-opacity:1;border-color:rgb(var(--leaf-300)/var(--tw-border-opacity))}.r_7d85d0c2{-o-object-fit:cover;object-fit:cover}.r_7e0b7cdf{min-width:0}.r_db454136{scroll-margin-top:112px}.r_d139dd09{padding-left:20px;padding-right:20px}.r_cb11fec3{padding-top:16px;padding-bottom:16px}.r_50d0d216{margin-top:8px}.r_a2edcb1a{white-space:pre-wrap}.r_18550d59{line-height:24px}.r_eb6abb1f{--tw-text-opacity:1;color:rgb(var(--ink-700)/var(--tw-text-opacity))}.r_1eb5c6df{flex-wrap:wrap}.r_afd5c303{height:120px}.r_c1ca66f1{width:120px}.r_77c08e01{justify-content:flex-end}.r_359090c2{font-size:12px;line-height:16px}.r_52083e7d{display:inline-flex}.r_ed8a5df7{height:32px}.r_63614f87{min-width:58px}.r_3960ffc2{align-items:center}.r_86843cf1{justify-content:center}.r_58284b4e{gap:6px}.r_3d496065{--tw-border-opacity:1;border-color:rgb(255 228 230/var(--tw-border-opacity))}.r_0759a0f1{--tw-bg-opacity:1;background-color:rgb(255 241 242/var(--tw-bg-opacity))}.r_0e17f2bd{padding-left:12px;padding-right:12px}.r_fa512798{--tw-text-opacity:1;color:rgb(244 63 94/var(--tw-text-opacity))}.r_fb10458c:hover{--tw-border-opacity:1;border-color:rgb(254 205 211/var(--tw-border-opacity))}.r_c29b4826:hover{--tw-bg-opacity:1;background-color:rgb(255 228 230/var(--tw-bg-opacity))}.r_5e10cdb8{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity))}.r_5aae3db6:hover{--tw-border-opacity:1;border-color:rgb(var(--leaf-200)/var(--tw-border-opacity))}.r_5756b7b4:hover{--tw-bg-opacity:1;background-color:rgb(var(--leaf-50)/var(--tw-bg-opacity))}.r_9825203a:hover{--tw-text-opacity:1;color:rgb(var(--leaf-700)/var(--tw-text-opacity))}
 
 
 /* Recovered utility rules referenced by this CSS module. */
+.r_afd5c303{height:90px}
+.r_c1ca66f1{width:90px}
 .r_7b89cd85{--tw-text-opacity:1;color:rgb(107 114 128/var(--tw-text-opacity))}
