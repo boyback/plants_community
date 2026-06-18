@@ -45,7 +45,7 @@
     "badges": {
       "featured": "🏆 주요 배지",
       "viewAll": "모든 배지 보기 →",
-      "activityData": "📊 활동",
+      "activityData": "📊 데이터",
       "obtainedCount": "획득 · {n}",
       "completionRate": "완료 {percent}%",
       "lockedCount": "미획득 · {n}"

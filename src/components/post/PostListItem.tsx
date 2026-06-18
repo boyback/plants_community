@@ -3,9 +3,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { PostAdminMenu } from '@/components/post/PostAdminMenu';
-import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Icon } from '@/components/ui/Icon';
 import { TopicTag } from '@/components/ui/TopicTag';
+import { UserIdentity } from '@/components/ui/UserIdentity';
 import { PostVotePreview, type PostVoteUpdateHandler } from '@/components/post/PostVotePreview';
 import { PostJournalPreview } from '@/components/post/PostJournalPreview';
 import { useAuth } from '@/context/AuthContext';
@@ -19,12 +19,16 @@ import { cx } from '@/lib/style-utils';
 export function PostListItem({
   post,
   showDivider = true,
-  onVoteUpdate
+  onVoteUpdate,
+  liked = false,
+  likeCount,
+  onLikeClick,
+  likeBusy = false
 
 
 
 
-}: {post: Post;showDivider?: boolean;onVoteUpdate?: PostVoteUpdateHandler;}) {
+}: {post: Post;showDivider?: boolean;onVoteUpdate?: PostVoteUpdateHandler;liked?: boolean;likeCount?: number;onLikeClick?: () => void;likeBusy?: boolean;}) {
   const { user } = useAuth();
   const cover = post.cover ?? post.images?.[0] ?? null;
   const contentImages = (post.images ?? []).filter((image) => image && image !== cover);
@@ -35,22 +39,12 @@ export function PostListItem({
   return (
     <article className={cn(cx(styles.r_d139dd09, styles.r_c9b99cd9, styles.r_8a383123), showDivider && cx(styles.r_65fdbade, styles.r_88b684d2))}>
       <div className={cx(styles.r_60fbb771, styles.r_60541e1e, styles.r_8ef2268e, styles.r_0c3bc985)}>
-        <Link href={`/user/${post.author.id}`} className={cx(styles.r_60fbb771, styles.r_7e0b7cdf, styles.r_3960ffc2, styles.r_7e9a2a25)}>
-          <UserAvatar
-            src={post.author.avatar}
-            alt={post.author.name}
-            size={36}
-            pendant={post.author.equip?.pendant ?? null}
-            ring={false}
-            showFestival={false} />
-
-          <span className={styles.r_7e0b7cdf}>
-            <span className={cx(styles.r_0214b4b3, styles.r_f283ea9b, styles.r_a14daebf, styles.r_e83a7042, styles.r_517d113c, styles.r_4ddaa618)}>{post.author.name}</span>
-            <span className={cx(styles.r_0214b4b3, styles.r_d058ca6d, styles.r_517d113c, styles.r_6c4cc49e)}>
-              {formatFollowers(post.author.followers)} 粉丝
-            </span>
-          </span>
-        </Link>
+        <UserIdentity
+          user={post.author}
+          size="sm"
+          variant="list"
+          subtitle={`${formatFollowers(post.author.followers)} 粉丝`}
+        />
         <PostAdminMenu post={post} user={user} align="center" />
       </div>
 
@@ -150,10 +144,25 @@ export function PostListItem({
             <Icon name="comment" size={14} />
             {formatNumber(post.comments)}
           </span>
+          {onLikeClick ?
+          <button
+            type="button"
+            disabled={likeBusy}
+            onClick={onLikeClick}
+            className={cn(
+              cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0),
+              styles.postStatButton,
+              liked && styles.postStatButtonActive
+            )}
+            aria-pressed={liked}>
+            <Icon name="thumbs-up" size={14} />
+            {formatNumber(likeCount ?? post.likes)}
+          </button> :
           <span className={cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0)}>
             <Icon name="thumbs-up" size={14} />
-            {formatNumber(post.likes)}
+            {formatNumber(likeCount ?? post.likes)}
           </span>
+          }
         </div>
       </div>
     </article>);

@@ -45,7 +45,7 @@
     "badges": {
       "featured": "🏆 Featured badges",
       "viewAll": "View all badges →",
-      "activityData": "📊 Activity",
+      "activityData": "?? Stats",
       "obtainedCount": "Earned · {n}",
       "completionRate": "Completion {percent}%",
       "lockedCount": "Locked · {n}"

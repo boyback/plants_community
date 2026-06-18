@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { VipBadge } from './VipBadge';
-import type { User } from '@/lib/types';
+import type { EquipState, User } from '@/lib/types';
 import styles from './UserName.module.scss';
 import { cx } from '@/lib/style-utils';
 
@@ -33,9 +33,13 @@ export function UserName({
 
 
 
-}: {user: Pick<User, 'id' | 'name'> & {vip?: {isVip?: boolean;lifetime?: boolean;} | null;equip?: {pendant?: {meta?: Record<string, unknown> | null;} | null;} | null;};asLink?: boolean;size?: 'xs' | 'sm' | 'md' | 'lg';className?: string;showVip?: boolean;}) {
+}: {user: Pick<User, 'id' | 'name'> & {vip?: {isVip?: boolean;lifetime?: boolean;} | null;equip?: EquipState;};asLink?: boolean;size?: 'xs' | 'sm' | 'md' | 'lg';className?: string;showVip?: boolean;}) {
   const isVip = !!user.vip?.isVip;
   const lifetime = !!user.vip?.lifetime;
+  const pendant = user.equip?.pendant;
+  const pendantMeta = pendant?.meta as Record<string, unknown> | null | undefined;
+  const nameBadge = typeof pendantMeta?.nameBadge === 'string' ? pendantMeta.nameBadge : pendant?.preview;
+  const showNameBadge = Boolean(nameBadge && pendant?.slug !== 'pendant-default');
 
   const sizeCls = {
     xs: styles.r_359090c2,
@@ -66,6 +70,11 @@ export function UserName({
       </span>
       {showVip && isVip &&
     <VipBadge size={size === 'xs' ? 'xs' : 'sm'} lifetime={lifetime} />
+    }
+      {showNameBadge &&
+    <span className={styles.namePendant} title={pendant?.name} aria-hidden>
+        {nameBadge}
+      </span>
     }
     </>;
 

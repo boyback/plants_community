@@ -5,8 +5,7 @@ import { type SyntheticEvent, useCallback, useEffect, useMemo, useRef, useState 
 import { useRouter } from 'next/navigation';
 import PhotoSwipe from 'photoswipe';
 import { Icon } from '@/components/ui/Icon';
-import { Avatar } from '@/components/ui/Avatar';
-import { UserName } from '@/components/ui/UserName';
+import { UserIdentity } from '@/components/ui/UserIdentity';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
@@ -207,8 +206,8 @@ export function ListingDetailClient({ listing }: { listing: MarketListingDetail 
           const canOrderOnline = onlineTradeModes.length > 0;
           const hasExternal = availableTradeModes.includes('external');
           const itemQuantity = clampQuantity(item.stock, itemQuantities[item.id] ?? 1);
-          const detailText = [item.description, listing.description].filter(Boolean).join('\n\n').trim();
-          const hasDetail = Boolean(detailText || listing.contactNote);
+          const detailText = uniqueTextBlocks([item.description, listing.description]).join('\n\n').trim();
+          const hasDetail = Boolean(detailText);
           const labels = [
             ...(item.taxons ?? []).map((taxon) => taxon.label || [taxon.categorySlug, taxon.genusSlug, taxon.speciesSlug].filter(Boolean).join(' / ')),
             ...(item.tags ?? []).map((tag) => `#${tag}`)
@@ -253,6 +252,7 @@ export function ListingDetailClient({ listing }: { listing: MarketListingDetail 
                     {item.overallSize && <InfoRow label="整体" value={item.overallSize} />}
                     {item.potDiameter && <InfoRow label="盆径" value={item.potDiameter} />}
                     <InfoRow label="交易方式" value={availableTradeModes.map(tradeModeLabel).join(' / ')} />
+                    {listing.contactNote && <InfoRow label="联系备注" value={listing.contactNote} />}
                   </div>
 
                   {!soldOut && canOrderOnline && !isMine && user && canBuy && (
@@ -309,12 +309,6 @@ export function ListingDetailClient({ listing }: { listing: MarketListingDetail 
                     )}
                   </div>
 
-                  <div className={styles.serviceList}>
-                    {listing.shipFrom && <ServiceItem icon="package" label="发货地" value={listing.shipFrom} />}
-                    <ServiceItem icon="check-circle" label="交易保障" value={availableTradeModes.map(tradeModeHint).join(' / ')} />
-                    {listing.contactNote && <ServiceItem icon="message" label="联系备注" value={listing.contactNote} />}
-                  </div>
-
                   <div className={styles.shareLine}>
                     <Icon name="share" size={15} />
                     <span>可通过浏览器地址栏分享当前商品链接</span>
@@ -326,7 +320,6 @@ export function ListingDetailClient({ listing }: { listing: MarketListingDetail 
                 <section id={`product-detail-${item.id}`} className={styles.detailSection}>
                   <h2>商品详情</h2>
                   {detailText && <p>{detailText}</p>}
-                  {listing.contactNote && <p>{listing.contactNote}</p>}
                 </section>
               )}
             </Card>
@@ -458,10 +451,10 @@ export function MarketListingComments({ listing }: { listing: MarketListingDetai
         ) : (
           comments.map((comment) => (
             <div key={comment.id} className={styles.commentItem}>
-              <Avatar src={comment.author.avatar} alt={comment.author.name} size={32} />
+              <UserIdentity user={comment.author} size="sm" asLink={false} showName={false} />
               <div className={styles.commentBody}>
                 <div className={styles.commentMeta}>
-                  <UserName user={comment.author} size="xs" />
+                  <UserIdentity user={comment.author} size="xs" showAvatar={false} />
                   <span>{formatDateTime(comment.createdAt)}</span>
                 </div>
                 <div className={styles.commentText}>{comment.content}</div>
@@ -697,23 +690,22 @@ function InfoRow({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function ServiceItem({ icon, label, value }: { icon: 'package' | 'check-circle' | 'message'; label: string; value: string }) {
-  return (
-    <div className={styles.serviceItem}>
-      <Icon name={icon} size={16} />
-      <div>
-        <span>{label}</span>
-        <p>{value}</p>
-      </div>
-    </div>
-  );
-}
-
 function normalizeTradeModes(modes: TradeMode[] | undefined, fallback: TradeMode): TradeMode[] {
   const allowed: TradeMode[] = ['platform_escrow', 'online_payment', 'external'];
   const selected = modes?.length ? modes : [fallback];
   const result = Array.from(new Set(selected.filter((mode) => allowed.includes(mode))));
   return result.length ? result : [fallback];
+}
+
+function uniqueTextBlocks(blocks: Array<string | null | undefined>) {
+  const seen = new Set<string>();
+  return blocks
+    .map((block) => block?.trim())
+    .filter((block): block is string => {
+      if (!block || seen.has(block)) return false;
+      seen.add(block);
+      return true;
+    });
 }
 
 function tradeModeHint(mode: TradeMode) {

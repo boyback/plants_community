@@ -14,7 +14,6 @@ const Body = z.object({
   enabled: z.boolean().optional(),
   rewardPoints: z.number().int().min(0).max(100000).optional(),
   rewardExp: z.number().int().min(0).max(100000).optional(),
-  rewardActivity: z.number().int().min(0).max(100000).optional(),
   target: z.number().int().min(1).max(10000).optional(),
 });
 

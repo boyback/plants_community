@@ -6,3 +6,16 @@
 .r_fc7473ca{font-size:14px;line-height:20px}
 .r_4ee73492{font-size:16px;line-height:24px}
 .r_42536e69{font-size:18px;line-height:28px}
+
+.namePendant {
+  display: inline-grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 1px solid rgb(var(--leaf-100));
+  border-radius: 999px;
+  background: rgb(var(--surface));
+  box-shadow: 0 1px 2px rgb(20 83 45 / 0.08);
+  font-size: 12px;
+  line-height: 1;
+}

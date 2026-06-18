@@ -7,8 +7,7 @@ import { absoluteAssetUrl, apiGet, type RankingKind, type RankingResponse } from
 import { colors, spacing } from '../lib/theme';
 
 const tabs: { key: RankingKind; label: string }[] = [
-  { key: 'activity', label: '活跃度' },
-  { key: 'points', label: '积分' },
+  { key: 'points', label: '钻石' },
   { key: 'posts', label: '发帖' },
   { key: 'comments', label: '评论' },
   { key: 'level', label: '等级' },
@@ -17,7 +16,7 @@ const tabs: { key: RankingKind; label: string }[] = [
 
 export default function RankingScreen() {
   const router = useRouter();
-  const [kind, setKind] = useState<RankingKind>('activity');
+  const [kind, setKind] = useState<RankingKind>('points');
   const [data, setData] = useState<RankingResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -68,7 +67,7 @@ export default function RankingScreen() {
     >
       <View style={styles.header}>
         <Text style={styles.title}>排行榜</Text>
-        <Text style={styles.subtitle}>活跃度、积分、发帖、评论、等级和粉丝榜单</Text>
+        <Text style={styles.subtitle}>钻石、发帖、评论、等级和粉丝榜单</Text>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>

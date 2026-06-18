@@ -1,7 +1,7 @@
 /**
  * 话题排行榜聚合逻辑。
  *
- * 从 Post.tags(JSON 数组) 中统计每个 tag 的帖子数、热度分、近期活跃度，
+ * 从 Post.tags(JSON 数组) 中统计每个 tag 的帖子数、热度分、近期讨论热度，
  * 全量写入 TopicRanking 表。由 POST /api/admin/topics/refresh 触发。
  */
 import { prisma } from './db';

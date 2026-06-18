@@ -20,17 +20,17 @@ export default async function AdminPointsPage() {
   return (
     <div className={styles.r_3e7ce58d}>
       <div>
-        <h1 className={cx(styles.r_3febee09, styles.r_69450ef1, styles.r_399e11a5)}>积分调整</h1>
+        <h1 className={cx(styles.r_3febee09, styles.r_69450ef1, styles.r_399e11a5)}>钻石调整</h1>
         <p className={cx(styles.r_b6b02c0e, styles.r_fc7473ca, styles.r_02eb621e)}>
-          管理经验等级阈值，并说明积分余额与经验值的用途边界。
+          管理经验等级阈值，并说明钻石余额与经验值的用途边界。
         </p>
       </div>
 
       <div className={cx(styles.r_f3c543ad, styles.r_1004c0c3, styles.r_9a638cfe)}>
         <div className={cx(styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_358505cf, styles.r_5e10cdb8, styles.r_8e63407b)}>
-          <div className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>积分余额</div>
+          <div className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>钻石余额</div>
           <p className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_7b89cd85)}>
-            用户可消费的余额，用于兑换皮肤、会员或交易相关抵扣。单个用户加减积分在“用户权限”列表的“积分”按钮里操作。
+            用户可消费的余额，用于兑换皮肤、会员或交易相关抵扣。单个用户加减钻石在“用户权限”列表的“钻石”按钮里操作。
           </p>
         </div>
         <div className={cx(styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_358505cf, styles.r_5e10cdb8, styles.r_8e63407b)}>

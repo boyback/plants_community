@@ -47,7 +47,7 @@ export function UserAvatar({
   if (!ringColor && !gradient && !ring) {
     return (
       <span
-        className={cn(cx(styles.r_bb0c4bfc, styles.r_2cd02d11, styles.r_ac204c10, styles.r_7ebecbb6), className)}
+        className={cn(cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_86843cf1, styles.r_2cd02d11, styles.r_ac204c10, styles.r_7ebecbb6), className)}
         style={{ width: size, height: size }}>
 
         <Image
@@ -55,7 +55,7 @@ export function UserAvatar({
           alt={alt}
           width={size}
           height={size}
-          className={cx(styles.r_668b21aa, styles.r_6da6a3c3, styles.r_7d85d0c2)}
+          className={cx(styles.r_0214b4b3, styles.r_668b21aa, styles.r_6da6a3c3, styles.r_7d85d0c2)}
           unoptimized />
 
       </span>);
@@ -86,7 +86,7 @@ export function UserAvatar({
           alt={alt}
           width={innerSize}
           height={innerSize}
-          className={cx(styles.r_668b21aa, styles.r_6da6a3c3, styles.r_7d85d0c2)}
+          className={cx(styles.r_0214b4b3, styles.r_668b21aa, styles.r_6da6a3c3, styles.r_7d85d0c2)}
           unoptimized />
 
       </span>

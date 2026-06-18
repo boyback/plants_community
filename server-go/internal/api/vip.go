@@ -38,7 +38,7 @@ var vipPlans = []vipPlan{
 	{"quarterly", "季卡", "90 天 · 比月卡省 9.9", 4990, 0, 90, true},
 	{"yearly", "年卡", "365 天 · 全年最划算", 16800, 0, 365, false},
 	{"lifetime", "终身", "一次买断 · 永久会员", 49900, 0, 99999, false},
-	{"monthly_points", "积分兑月卡", "5000 积分 = 30 天", 0, 5000, 30, false},
+	{"monthly_points", "钻石兑月卡", "5000 钻石 = 30 天", 0, 5000, 30, false},
 }
 
 // GET /api/vip/plans
@@ -81,17 +81,17 @@ func (h *VipHandler) createOrder(c *gin.Context) {
 	httpx.OK(c, gin.H{"orderId": o.ID, "orderNo": o.OrderNo, "amount": o.Amount})
 }
 
-// POST /api/vip/exchange  积分兑月卡
+// POST /api/vip/exchange  钻石兑月卡
 func (h *VipHandler) exchange(c *gin.Context) {
 	me := middleware.MustUser(c)
 	plan := vipPlans[4] // monthly_points
 	if me.PointsBalance < plan.PointsCost {
-		httpx.BadRequest(c, "积分不足")
+		httpx.BadRequest(c, "钻石不足")
 		return
 	}
-	// 扣积分 + 延长 VIP
+	// 扣钻石 + 延长 VIP
 	addPoints(h.DB, me.ID, -plan.PointsCost, "exchange_vip", "vip", "monthly_points",
-		"积分兑换大会员月卡")
+		"钻石兑换大会员月卡")
 	applyVipMembership(h.DB, me.ID, plan.Key, plan.DurationDays)
 
 	// 记一张 VipOrder(便于账单追溯)

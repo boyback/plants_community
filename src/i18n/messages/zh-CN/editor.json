@@ -25,8 +25,8 @@
     "eventEndAt": "结束时间",
     "help": "求助信息",
     "helpUrgency": "紧急程度",
-    "helpBounty": "悬赏积分",
-    "helpBountyHint": "发帖时从你积分账户扣除,采纳后自动发给被采纳者",
+    "helpBounty": "悬赏钻石",
+    "helpBountyHint": "发帖时从你钻石账户扣除,采纳后自动发给被采纳者",
     "submit": "发布",
     "submitting": "发布中…",
     "saveDraft": "存草稿",
@@ -42,8 +42,8 @@
       "voteOptionsMax": "投票最多 8 个选项",
       "videoUrlRequired": "视频帖必须填 URL",
       "eventTimeInvalid": "结束时间必须晚于开始时间",
-      "bountyExceedBalance": "悬赏积分超过你的可用积分",
-      "bountyRange": "悬赏积分需在 0 - 10000 之间"
+      "bountyExceedBalance": "悬赏钻石超过你的可用钻石",
+      "bountyRange": "悬赏钻石需在 0 - 10000 之间"
     },
     "preview": "预览",
     "tips": {

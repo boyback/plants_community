@@ -10,7 +10,7 @@ import { cx } from '@/lib/style-utils';
 
 
 /**
- * 用户账号卡片 — 显示等级/经验/积分/帖子/粉丝
+ * 用户账号卡片 — 显示等级/经验/钻石/帖子/粉丝
  * 用于发帖页、发商品页的右侧边栏
  */
 export function UserAccountCard() {

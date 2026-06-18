@@ -1,7 +1,7 @@
 /**
  * PATCH /api/admin/orders/:id
  *   - { action: 'ship', trackingNo?: string }    标发货
- *   - { action: 'refund', reason?: string }      退款(退金额到用户积分或标记 refunded)
+ *   - { action: 'refund', reason?: string }      退款(退金额到用户钻石或标记 refunded)
  *   - { action: 'complete' }                      强制完成
  *   - { action: 'cancel', reason?: string }       强制取消
  */

@@ -1,5 +1,5 @@
 /**
- * 二次 Seed:交易/积分/任务/活跃度/皮肤
+ * 二次 Seed:交易/钻石/任务/皮肤
  *
  * 与 seed.ts 解耦,允许单独跑:`npx tsx prisma/seed-market.ts`
  * 也允许通过 `npm run db:seed` 自动联跑(seed.ts 末尾会调用)。
@@ -203,37 +203,26 @@ const skins = [
 
 const tasks = [
   // 每日
-  { slug: 'daily-signin',     kind: 'daily', title: '每日签到',         description: '完成今日签到',        icon: '📅', target: 1, triggerEvent: 'signin',         rewardPoints: 5,  rewardActivity: 1, rewardExp: 5 },
-  { slug: 'daily-comment-3',  kind: 'daily', title: '今日 3 条评论',    description: '今天累计发表 3 条评论', icon: '💬', target: 3, triggerEvent: 'comment_create',  rewardPoints: 15, rewardActivity: 5, rewardExp: 8 },
-  { slug: 'daily-post-1',     kind: 'daily', title: '今日发 1 帖',      description: '今天发布一篇帖子',      icon: '📝', target: 1, triggerEvent: 'post_create',     rewardPoints: 20, rewardActivity: 5, rewardExp: 10 },
-  { slug: 'daily-vote-1',     kind: 'daily', title: '今日投票 1 次',    description: '参与一次投票',          icon: '🗳️', target: 1, triggerEvent: 'vote_cast',       rewardPoints: 5,  rewardActivity: 2, rewardExp: 3 },
+  { slug: 'daily-signin',     kind: 'daily', title: '每日签到',         description: '完成今日签到',        icon: '📅', target: 1, triggerEvent: 'signin',         rewardPoints: 5, rewardExp: 5 },
+  { slug: 'daily-comment-3',  kind: 'daily', title: '今日 3 条评论',    description: '今天累计发表 3 条评论', icon: '💬', target: 3, triggerEvent: 'comment_create',  rewardPoints: 15, rewardExp: 8 },
+  { slug: 'daily-post-1',     kind: 'daily', title: '今日发 1 帖',      description: '今天发布一篇帖子',      icon: '📝', target: 1, triggerEvent: 'post_create',     rewardPoints: 20, rewardExp: 10 },
+  { slug: 'daily-vote-1',     kind: 'daily', title: '今日投票 1 次',    description: '参与一次投票',          icon: '🗳️', target: 1, triggerEvent: 'vote_cast',       rewardPoints: 5, rewardExp: 3 },
 
   // 月度
-  { slug: 'monthly-post-10',     kind: 'monthly', title: '月度发帖达人',   description: '当月发布 10 篇帖子',     icon: '🏆', target: 10, triggerEvent: 'post_create',    rewardPoints: 200, rewardActivity: 30, rewardExp: 50 },
-  { slug: 'monthly-comment-50',  kind: 'monthly', title: '月度评论达人',   description: '当月发布 50 条评论',     icon: '💭', target: 50, triggerEvent: 'comment_create', rewardPoints: 200, rewardActivity: 30, rewardExp: 30 },
-  { slug: 'monthly-signin-15',   kind: 'monthly', title: '月度坚持',       description: '累计签到 15 天',         icon: '🔥', target: 15, triggerEvent: 'signin',         rewardPoints: 150, rewardActivity: 20, rewardExp: 20 },
-  { slug: 'monthly-purchase-3',  kind: 'monthly', title: '月度剁手党',     description: '当月完成 3 笔订单',       icon: '🛍️', target: 3,  triggerEvent: 'purchase_paid',  rewardPoints: 300, rewardActivity: 30, rewardExp: 30 },
+  { slug: 'monthly-post-10',     kind: 'monthly', title: '月度发帖达人',   description: '当月发布 10 篇帖子',     icon: '🏆', target: 10, triggerEvent: 'post_create',    rewardPoints: 200, rewardExp: 50 },
+  { slug: 'monthly-comment-50',  kind: 'monthly', title: '月度评论达人',   description: '当月发布 50 条评论',     icon: '💭', target: 50, triggerEvent: 'comment_create', rewardPoints: 200, rewardExp: 30 },
+  { slug: 'monthly-signin-15',   kind: 'monthly', title: '月度坚持',       description: '累计签到 15 天',         icon: '🔥', target: 15, triggerEvent: 'signin',         rewardPoints: 150, rewardExp: 20 },
+  { slug: 'monthly-purchase-3',  kind: 'monthly', title: '月度剁手党',     description: '当月完成 3 笔订单',       icon: '🛍️', target: 3,  triggerEvent: 'purchase_paid',  rewardPoints: 300, rewardExp: 30 },
 
   // 一次性成就
-  { slug: 'ach-first-post',    kind: 'achievement', title: '初出茅庐',  description: '发布第一篇帖子',     icon: '🎬', target: 1, triggerEvent: 'post_create',    rewardPoints: 30, rewardActivity: 10, rewardExp: 30 },
-  { slug: 'ach-first-comment', kind: 'achievement', title: '一吐为快',  description: '发表第一条评论',     icon: '🎤', target: 1, triggerEvent: 'comment_create', rewardPoints: 10, rewardActivity: 5,  rewardExp: 10 },
-  { slug: 'ach-first-vote',    kind: 'achievement', title: '为爱发声',  description: '第一次参与投票',     icon: '🎯', target: 1, triggerEvent: 'vote_cast',      rewardPoints: 10, rewardActivity: 5,  rewardExp: 10 },
-  { slug: 'ach-first-purchase',kind: 'achievement', title: '剁手第一单', description: '完成首次购物',       icon: '🛒', target: 1, triggerEvent: 'purchase_paid',  rewardPoints: 50, rewardActivity: 10, rewardExp: 30 },
-];
-
-/* ============== 月度活跃度阶梯奖励 ============== */
-
-const activityRewards = [
-  { threshold: 50,   title: '青铜活跃',     description: '本月活跃度达到 50',  rewardPoints: 50,   skinSlug: null,                        orderIdx: 1 },
-  { threshold: 200,  title: '白银活跃',     description: '本月活跃度达到 200', rewardPoints: 150,  skinSlug: 'sticker-cute',              orderIdx: 2 },
-  { threshold: 500,  title: '黄金活跃',     description: '本月活跃度达到 500', rewardPoints: 400,  skinSlug: 'bubble-mint',               orderIdx: 3 },
-  { threshold: 1000, title: '铂金活跃',     description: '本月活跃度达到 1000', rewardPoints: 800,  skinSlug: 'reaction-fire',            orderIdx: 4 },
-  { threshold: 2000, title: '钻石活跃',     description: '本月活跃度达到 2000', rewardPoints: 1500, skinSlug: 'pendant-flower',           orderIdx: 5 },
-  { threshold: 5000, title: '王者活跃',     description: '本月活跃度达到 5000', rewardPoints: 3000, skinSlug: 'bubble-aurora',            orderIdx: 6 },
+  { slug: 'ach-first-post',    kind: 'achievement', title: '初出茅庐',  description: '发布第一篇帖子',     icon: '🎬', target: 1, triggerEvent: 'post_create',    rewardPoints: 30, rewardExp: 30 },
+  { slug: 'ach-first-comment', kind: 'achievement', title: '一吐为快',  description: '发表第一条评论',     icon: '🎤', target: 1, triggerEvent: 'comment_create', rewardPoints: 10,  rewardExp: 10 },
+  { slug: 'ach-first-vote',    kind: 'achievement', title: '为爱发声',  description: '第一次参与投票',     icon: '🎯', target: 1, triggerEvent: 'vote_cast',      rewardPoints: 10,  rewardExp: 10 },
+  { slug: 'ach-first-purchase',kind: 'achievement', title: '剁手第一单', description: '完成首次购物',       icon: '🛒', target: 1, triggerEvent: 'purchase_paid',  rewardPoints: 50, rewardExp: 30 },
 ];
 
 async function main() {
-  console.log('🛒 开始播种交易/积分/任务/皮肤数据...');
+  console.log('🛒 开始播种交易/钻石/任务/皮肤数据...');
 
   /* ----- Skin ----- */
   console.log('• 皮肤');
@@ -283,7 +272,6 @@ async function main() {
         target: t.target,
         triggerEvent: t.triggerEvent,
         rewardPoints: t.rewardPoints,
-        rewardActivity: t.rewardActivity,
         rewardExp: t.rewardExp,
         orderIdx: i,
       },
@@ -296,25 +284,8 @@ async function main() {
         target: t.target,
         triggerEvent: t.triggerEvent,
         rewardPoints: t.rewardPoints,
-        rewardActivity: t.rewardActivity,
         rewardExp: t.rewardExp,
         orderIdx: i,
-      },
-    });
-  }
-
-  /* ----- Activity Rewards ----- */
-  console.log('• 月度活跃度奖励');
-  await prisma.activityReward.deleteMany({});
-  for (const r of activityRewards) {
-    await prisma.activityReward.create({
-      data: {
-        threshold: r.threshold,
-        title: r.title,
-        description: r.description,
-        rewardPoints: r.rewardPoints,
-        rewardSkinId: r.skinSlug ? skinIdBySlug.get(r.skinSlug) ?? null : null,
-        orderIdx: r.orderIdx,
       },
     });
   }
@@ -368,8 +339,8 @@ async function main() {
     });
   }
 
-  /* ----- 给老用户初始化经验值/积分(按等级反推到该级别下限 + 一些起步积分) ----- */
-  console.log('• 用户经验值/积分回填');
+  /* ----- 给老用户初始化经验值/钻石(按等级反推到该级别下限 + 一些起步钻石) ----- */
+  console.log('• 用户经验值/钻石回填');
   const LEVEL_EXP_MAP: Record<number, number> = {
     1: 10, 2: 60, 3: 180, 4: 380, 5: 720, 6: 1240, 7: 2050, 8: 3550, 9: 6100, 10: 10200,
   };
@@ -381,7 +352,7 @@ async function main() {
         where: { id: u.id },
         data: {
           exp: targetExp,
-          pointsBalance: 500 + u.level * 200, // 给所有 demo 用户起步积分,方便逛皮肤商城
+          pointsBalance: 500 + u.level * 200, // 给所有 demo 用户起步钻石,方便逛皮肤商城
         },
       });
     }
@@ -569,9 +540,9 @@ async function main() {
 
   console.log(`   地址 ${userAddresses.reduce((s, u) => s + u.addrs.length, 0)} 条 · 拍卖 ${auctions.length} 场`);
 
-  console.log('✅ 交易/积分/任务/皮肤 Seed 完成');
+  console.log('✅ 交易/钻石/任务/皮肤 Seed 完成');
   console.log(`   官方商品: ${officialProducts.length}, C2C: ${c2cProducts.length}`);
-  console.log(`   皮肤: ${skins.length}, 任务: ${tasks.length}, 活跃度奖励: ${activityRewards.length}`);
+  console.log(`   皮肤: ${skins.length}, 任务: ${tasks.length}`);
 }
 
 main()

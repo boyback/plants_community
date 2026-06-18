@@ -264,7 +264,7 @@ func (h *PaymentsHandler) onOrderPaid(orderID string) {
 		h.DB.Model(&models.Auction{}).Where("id = ?", *o.AuctionID).Update("result", "paid")
 	}
 
-	// 返利积分
+	// 返利钻石
 	if o.PointsBackTotal > 0 {
 		addPoints(h.DB, o.BuyerID, o.PointsBackTotal, "purchase_back", "order", o.ID,
 			"购物返利")
@@ -330,7 +330,7 @@ func (h *PaymentsHandler) serializePayment(p *models.Payment) gin.H {
 	}
 }
 
-// ============ 通用:加积分、VIP 激活 ============
+// ============ 通用:加钻石、VIP 激活 ============
 
 // addPoints:写入 PointsLedger + 更新 User.pointsBalance
 func addPoints(db *gorm.DB, userID string, delta int, eventType, refType, refID, remark string) {

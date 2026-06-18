@@ -613,7 +613,7 @@ async function main() {
   console.log('   已创建用户:', users.length, ' 默认密码:123456');
   console.log('   板块:', boards.length, ' 帖子:', allPosts.length, ' 图鉴:', plants.length);
 
-  // 联跑交易/积分/皮肤/任务 seed
+  // 联跑交易/钻石/皮肤/任务 seed
   console.log('');
   await import('./seed-market');
 

@@ -1,5 +1,5 @@
 /**
- * 事件总线:用户行为发生时触发副作用(加积分/EXP/活跃度、推任务进度、自动升级、发通知)。
+ * 事件总线:用户行为发生时触发副作用(加钻石/EXP、推任务进度、自动升级、发通知)。
  *
  * 用法:在业务 API 里调 `emitEvent(...)`,这里负责把所有副作用一次性写入数据库。
  *
@@ -28,17 +28,17 @@ export type AppEvent =
 // 各事件的「奖励配方」
 const REWARD_CONFIG: Record<
   AppEvent['kind'],
-  { points: number; exp: number; activity: number }
+  { points: number; exp: number }
 > = {
-  signin:         { points: 10, exp: 5,  activity: 1 },
-  post_create:    { points: 20, exp: 20, activity: 5 },
-  post_liked:     { points: 1,  exp: 1,  activity: 1 },
-  post_collected: { points: 2,  exp: 2,  activity: 3 },
-  comment_create: { points: 3,  exp: 3,  activity: 2 },
-  followed:       { points: 5,  exp: 5,  activity: 0 },
-  vote_cast:      { points: 0,  exp: 0,  activity: 1 },
-  purchase_paid:  { points: 0,  exp: 10, activity: 5 }, // points 由 pointsBack 决定
-  vip_open:       { points: 0,  exp: 50, activity: 0 },
+  signin:         { points: 10, exp: 5 },
+  post_create:    { points: 20, exp: 20 },
+  post_liked:     { points: 1,  exp: 1 },
+  post_collected: { points: 2,  exp: 2 },
+  comment_create: { points: 3,  exp: 3 },
+  followed:       { points: 5,  exp: 5 },
+  vote_cast:      { points: 0,  exp: 0 },
+  purchase_paid:  { points: 0,  exp: 10 }, // points 由 pointsBack 决定
+  vip_open:       { points: 0,  exp: 50 },
 };
 
 const monthKey = (d = new Date()) =>
@@ -56,7 +56,7 @@ async function getMultiplier(userId: string): Promise<number> {
   });
   if (!u) return 1;
   const isVip = u.vipLifetime || (u.vipExpireAt && u.vipExpireAt.getTime() > Date.now());
-  return isVip ? 10 : 1; // VIP 10x 活跃度加成(对全部奖励生效)
+  return isVip ? 10 : 1;
 }
 
 /**
@@ -67,7 +67,6 @@ async function getMultiplier(userId: string): Promise<number> {
 export async function emitEvent(ev: AppEvent): Promise<{
   pointsAdded: number;
   expAdded: number;
-  activityAdded: number;
   newLevel?: number;
   unlockedPerms?: string[];
 }> {
@@ -76,7 +75,6 @@ export async function emitEvent(ev: AppEvent): Promise<{
 
   let pts = baseCfg.points * multiplier;
   let exp = baseCfg.exp * multiplier;
-  let act = baseCfg.activity * multiplier;
   const computedLevelForExp = exp !== 0 ? await levelByConfiguredExp : null;
 
   // 特殊情况:purchase 的 points 来自商品的 pointsBack
@@ -87,17 +85,16 @@ export async function emitEvent(ev: AppEvent): Promise<{
     (ev.kind === 'post_liked' || ev.kind === 'post_collected') &&
     ev.fromId === ev.userId
   ) {
-    return { pointsAdded: 0, expAdded: 0, activityAdded: 0 };
+    return { pointsAdded: 0, expAdded: 0 };
   }
 
   return await prisma.$transaction(async (tx) => {
     let pointsAdded = 0;
     let expAdded = 0;
-    let activityAdded = 0;
     let newLevel: number | undefined;
     let unlockedPerms: string[] | undefined;
 
-    // 1) 积分
+    // 1) 钻石
     if (pts !== 0) {
       const u = await tx.user.update({
         where: { id: ev.userId },
@@ -161,32 +158,10 @@ export async function emitEvent(ev: AppEvent): Promise<{
       }
     }
 
-    // 3) 活跃度
-    if (act !== 0) {
-      const ym = monthKey();
-      await tx.activityLedger.create({
-        data: {
-          userId: ev.userId,
-          type: activityTypeFor(ev.kind),
-          delta: act,
-          yearMonth: ym,
-          refType: refTypeFor(ev),
-          refId: refIdFor(ev),
-        },
-      });
-      // 同步月度快照
-      await tx.monthlyActivity.upsert({
-        where: { userId_yearMonth: { userId: ev.userId, yearMonth: ym } },
-        update: { score: { increment: act } },
-        create: { userId: ev.userId, yearMonth: ym, score: act },
-      });
-      activityAdded = act;
-    }
-
-    // 4) 任务进度
+    // 3) 任务进度
     await advanceTasks(tx, ev);
 
-    return { pointsAdded, expAdded, activityAdded, newLevel, unlockedPerms };
+    return { pointsAdded, expAdded, newLevel, unlockedPerms };
   });
 }
 
@@ -244,7 +219,7 @@ async function advanceTasks(
         data: {
           recipientId: ev.userId,
           type: 'system',
-          text: `${t.icon} 任务「${t.title}」已完成,前往「活跃度中心」领取奖励`,
+          text: `${t.icon} 任务「${t.title}」已完成,前往「任务中心」领取奖励`,
           link: '/tasks',
         },
       });
@@ -262,7 +237,6 @@ function pointsTypeFor(kind: AppEvent['kind']):
   | 'comment_liked'
   | 'followed'
   | 'task_complete'
-  | 'activity_reward'
   | 'purchase_back'
   | 'recharge'
   | 'exchange_skin'
@@ -300,27 +274,6 @@ function expTypeFor(kind: AppEvent['kind']):
     case 'purchase_paid':  return 'purchase';
     case 'vip_open':       return 'vip_open';
     default:               return 'admin';
-  }
-}
-
-function activityTypeFor(kind: AppEvent['kind']):
-  | 'signin'
-  | 'post_create'
-  | 'post_liked'
-  | 'post_collected'
-  | 'comment_create'
-  | 'vote_cast'
-  | 'purchase'
-  | 'task_complete' {
-  switch (kind) {
-    case 'signin':         return 'signin';
-    case 'post_create':    return 'post_create';
-    case 'post_liked':     return 'post_liked';
-    case 'post_collected': return 'post_collected';
-    case 'comment_create': return 'comment_create';
-    case 'vote_cast':      return 'vote_cast';
-    case 'purchase_paid':  return 'purchase';
-    default:               return 'task_complete';
   }
 }
 

@@ -1770,21 +1770,21 @@ img, video, svg {
 
 /* 默认 - 列表模式 (compact layout) */
 .journal-entry-image {
-  width: 32px;
-  height: 32px;
+  width: 90px;
+  height: 90px;
 }
 
 /* 瀑布流模式 - 两列 (columns-2) */
 .columns-2 .journal-entry-image {
-  width: 28px;
-  height: 28px;
+  width: 90px;
+  height: 90px;
 }
 
 /* 瀑布流模式 - 三列及以上 (md:columns-3, md:columns-4) */
 @media (min-width: 768px) {
   .columns-3 .journal-entry-image,
   .columns-4 .journal-entry-image {
-    width: 24px;
-    height: 24px;
+    width: 90px;
+    height: 90px;
   }
 }

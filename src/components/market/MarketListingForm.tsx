@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Form } from "radix-ui";
 import { UserAccountCard } from '@/components/layout/UserAccountCard';
@@ -165,6 +165,7 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Set<ValidationKey>>(new Set());
+  const [autoShipFromChecked, setAutoShipFromChecked] = useState(false);
 
   const prices = useMemo(
     () =>
@@ -178,6 +179,19 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   formatPrice(prices[0]) :
   `${formatPrice(Math.min(...prices))} - ${formatPrice(Math.max(...prices))}` :
   '未填写';
+
+  useEffect(() => {
+    if (isEdit || autoShipFromChecked || shipFrom.trim()) return;
+    setAutoShipFromChecked(true);
+    api
+      .get<{ city: string | null }>('/api/geo/city')
+      .then((data) => {
+        const city = data.city;
+        if (!city) return;
+        setShipFrom((current) => current.trim() ? current : city);
+      })
+      .catch(() => null);
+  }, [autoShipFromChecked, isEdit, shipFrom]);
 
   const clearValidationError = (key: ValidationKey) => {
     setValidationErrors((prev) => {

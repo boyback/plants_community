@@ -1,14 +1,14 @@
 {
   "points": {
-    "title": "Points",
-    "loginRequired": "Sign in to view your points",
-    "balance": "My points balance",
-    "balanceDesc": "Redeem points for skins/decorations, or a 30-day VIP",
+    "title": "Diamonds",
+    "loginRequired": "Sign in to view your diamonds",
+    "balance": "My diamond balance",
+    "balanceDesc": "Redeem diamonds for skins/decorations, or a 30-day VIP",
     "sources": {
       "tasks": "📝 Quests",
       "tasksDesc": "Daily / monthly quests",
       "purchase": "🛍️ Purchase rebate",
-      "purchaseDesc": "Shopping earns points",
+      "purchaseDesc": "Shopping earns diamonds",
       "exchangeVip": "👑 Redeem VIP"
     },
     "tabs": {
@@ -17,7 +17,7 @@
       "sticker": "🌱 Stickers",
       "pendant": "👑 Avatar pendant",
       "wardrobe": "👗 My outfits",
-      "ledger": "📜 Points ledger"
+      "ledger": "📜 Diamond ledger"
     },
     "ledger": {
       "types": {
@@ -28,7 +28,6 @@
         "comment_liked": "Comment liked",
         "followed": "Followed",
         "task_complete": "Quest reward",
-        "activity_reward": "Activity reward",
         "purchase_back": "Purchase rebate",
         "recharge": "Top-up",
         "exchange_skin": "Redeem skin",
@@ -36,7 +35,7 @@
         "refund": "Refund clawback",
         "admin": "System adjustment"
       },
-      "empty": "No points transactions yet",
+      "empty": "No diamond transactions yet",
       "loadMore": "Load more"
     },
     "skin": {
@@ -48,7 +47,7 @@
       "owned": "Owned",
       "redeem": "Redeem {n}",
       "free": "Free",
-      "notEnough": "Not enough points",
+      "notEnough": "Not enough diamonds",
       "vipOnly": "VIP only",
       "vipLimit": "👑 VIP exclusive",
       "rarity": {
@@ -60,7 +59,7 @@
       "preview": {
         "bubbleText": "This is a {name} bubble"
       },
-      "exchangeConfirm": "Redeem «{name}»? {points} points will be deducted",
+      "exchangeConfirm": "Redeem «{name}»? {points} diamonds will be deducted",
       "exchangeSuccess": "🎉 Redeemed!",
       "exchangeFail": "Redemption failed"
     }

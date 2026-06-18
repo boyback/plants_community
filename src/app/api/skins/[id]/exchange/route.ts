@@ -25,7 +25,7 @@ export const POST = handler(async (req) => {
   if (owned) return fail(400, '你已经拥有该皮肤');
 
   if (skin.pricePoints > me.pointsBalance) {
-    return fail(400, '积分不足');
+    return fail(400, '钻石不足');
   }
 
   await prisma.$transaction(async (tx) => {

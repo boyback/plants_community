@@ -1,14 +1,14 @@
 {
   "points": {
-    "title": "ポイント",
-    "loginRequired": "ログインしてポイント残高を確認",
-    "balance": "所持ポイント",
-    "balanceDesc": "ポイントはスキン・装飾品の交換、または 30 日間会員権に使えます",
+    "title": "ダイヤ",
+    "loginRequired": "ログインしてダイヤ残高を確認",
+    "balance": "所持ダイヤ",
+    "balanceDesc": "ダイヤはスキン・装飾品の交換、または 30 日間会員権に使えます",
     "sources": {
       "tasks": "📝 クエスト",
       "tasksDesc": "毎日・月間クエスト",
       "purchase": "🛍️ 購入還元",
-      "purchaseDesc": "買い物でポイント還元",
+      "purchaseDesc": "買い物でダイヤ還元",
       "exchangeVip": "👑 会員交換"
     },
     "tabs": {
@@ -17,7 +17,7 @@
       "sticker": "🌱 スタンプ",
       "pendant": "👑 アバター装飾",
       "wardrobe": "👗 マイ装飾",
-      "ledger": "📜 ポイント履歴"
+      "ledger": "📜 ダイヤ履歴"
     },
     "ledger": {
       "types": {
@@ -28,7 +28,6 @@
         "comment_liked": "コメントにいいね",
         "followed": "フォロー獲得",
         "task_complete": "クエスト報酬",
-        "activity_reward": "アクティビティ報酬",
         "purchase_back": "購入還元",
         "recharge": "チャージ",
         "exchange_skin": "スキン交換",
@@ -36,7 +35,7 @@
         "refund": "返金戻し",
         "admin": "システム調整"
       },
-      "empty": "ポイント履歴なし",
+      "empty": "ダイヤ履歴なし",
       "loadMore": "もっと読み込む"
     },
     "skin": {
@@ -48,7 +47,7 @@
       "owned": "所有済み",
       "redeem": "{n} で交換",
       "free": "無料",
-      "notEnough": "ポイント不足",
+      "notEnough": "ダイヤ不足",
       "vipOnly": "会員限定",
       "vipLimit": "👑 VIP 限定",
       "rarity": {
@@ -60,7 +59,7 @@
       "preview": {
         "bubbleText": "これは {name} の吹き出しです"
       },
-      "exchangeConfirm": "「{name}」を交換しますか?{points} ポイント消費",
+      "exchangeConfirm": "「{name}」を交換しますか?{points} ダイヤ消費",
       "exchangeSuccess": "🎉 交換完了!",
       "exchangeFail": "交換失敗"
     }

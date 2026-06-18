@@ -28,7 +28,7 @@ type acceptBody struct {
 }
 
 // 采纳评论:只有帖子作者可采纳,帖子需为 help 类型且未解决;
-// 将悬赏积分转给被采纳评论的作者,标记 solved。
+// 将悬赏钻石转给被采纳评论的作者,标记 solved。
 func (h *HelpHandler) accept(c *gin.Context) {
 	me := middleware.MustUser(c)
 	var body acceptBody
@@ -82,11 +82,11 @@ func (h *HelpHandler) accept(c *gin.Context) {
 		if hr.BountyPoints > 0 {
 			addPoints(tx, comment.AuthorID, hr.BountyPoints, "admin",
 				"help_bounty_reward", post.ID,
-				fmt.Sprintf("被采纳为「%s」的答案,获得悬赏 %d 积分", post.Title, hr.BountyPoints))
+				fmt.Sprintf("被采纳为「%s」的答案,获得悬赏 %d 钻石", post.Title, hr.BountyPoints))
 			tx.Create(&models.Notification{
 				ID: genCuid(), RecipientID: comment.AuthorID,
 				FromID: &me.ID, Type: "system",
-				Text:      fmt.Sprintf("🏆 你的回答被采纳了!获得悬赏 %d 积分", hr.BountyPoints),
+				Text:      fmt.Sprintf("🏆 你的回答被采纳了!获得悬赏 %d 钻石", hr.BountyPoints),
 				Link:      strPtr("/post/" + post.ID),
 				CreatedAt: now,
 			})

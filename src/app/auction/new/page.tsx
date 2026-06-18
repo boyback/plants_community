@@ -356,7 +356,7 @@ export default function NewAuctionPage() {
         <div className={cx(styles.r_31f25533, styles.r_a217b4ea, styles.r_a8a62ca4, styles.r_8e63407b, styles.r_d058ca6d, styles.r_69335b95)}>
           <div className={cx(styles.r_65281709, styles.r_2689f395, styles.r_5f6a59f1)}>📜 发布须知</div>
           <ul className={cx(styles.r_f242aff2, styles.r_1f33b438, styles.r_e2eedc57)}>
-            <li>拍卖结束后,胜出者保证金自动抵扣到尾款,其余人退还等值积分</li>
+            <li>拍卖结束后,胜出者保证金自动抵扣到尾款,其余人退还等值钻石</li>
             <li>已有出价的拍卖无法取消</li>
             <li>胜出者 24 小时内未付款,保证金没收</li>
             <li>请遵守平台规则,商品需符合社区交易公约</li>

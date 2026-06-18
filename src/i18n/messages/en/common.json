@@ -21,7 +21,7 @@
     "hours": "hours",
     "minutes": "minutes",
     "days": "days",
-    "points": "points"
+    "points": "diamonds"
   },
   "error": {
     "generic": "Something went wrong. Please try again later.",

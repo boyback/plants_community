@@ -45,7 +45,7 @@
     "badges": {
       "featured": "🏆 注目バッジ",
       "viewAll": "すべてのバッジを見る →",
-      "activityData": "📊 アクティビティ",
+      "activityData": "📊 データ",
       "obtainedCount": "獲得 · {n}",
       "completionRate": "達成率 {percent}%",
       "lockedCount": "未獲得 · {n}"

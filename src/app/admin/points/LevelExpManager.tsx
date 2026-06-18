@@ -58,7 +58,7 @@ export function LevelExpManager({ rows }: {rows: LevelExpRow[];}) {
       <div className={styles.r_da019856}>
         <h2 className={cx(styles.r_4ee73492, styles.r_e83a7042, styles.r_399e11a5)}>等级经验配置</h2>
         <p className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_7b89cd85)}>
-          配置累计经验 EXP 达到多少时升到对应等级。这里不是积分余额，积分余额用于消费和兑换。
+          配置累计经验 EXP 达到多少时升到对应等级。这里不是钻石余额，钻石余额用于消费和兑换。
         </p>
       </div>
 

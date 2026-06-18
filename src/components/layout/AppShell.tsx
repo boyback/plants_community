@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Icon, type IconName } from '@/components/ui/Icon';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserIdentity } from '@/components/ui/UserIdentity';
 import { ColorThemeSwitcher } from '@/components/ui/ColorThemeSwitcher';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/HoverCard';
 import { MobileTabBar } from '@/components/layout/MobileTabBar';
@@ -125,7 +125,7 @@ export function AppShell({
 
 function AppMobileNav({ open, onClose }: {open: boolean;onClose: () => void;}) {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, vip, equip } = useAuth();
   useBodyScrollLock(open);
 
   return (
@@ -164,13 +164,13 @@ function AppMobileNav({ open, onClose }: {open: boolean;onClose: () => void;}) {
         </div>
 
         {user &&
-        <Link href={`/user/${user.id}`} onClick={onClose} className={cx(styles.r_da019856, styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_68f2db62, styles.r_7ebecbb6, styles.r_eb6e8b88)}>
-              <UserAvatar src={user.avatar} alt={user.name} size={42} />
-            <span className={styles.r_7e0b7cdf}>
-              <span className={cx(styles.r_0214b4b3, styles.r_f283ea9b, styles.r_fc7473ca, styles.r_e83a7042, styles.r_4ddaa618)}>{user.name}</span>
-              <span className={cx(styles.r_0214b4b3, styles.r_359090c2, styles.r_69335b95)}>Lv.{user.level} 重生玩家</span>
-            </span>
-          </Link>
+        <UserIdentity
+          user={{ ...user, equip, vip }}
+          size="md"
+          variant="list"
+          className={cx(styles.r_da019856, styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_68f2db62, styles.r_7ebecbb6, styles.r_eb6e8b88)}
+          subtitle={`Lv.${user.level} 重生玩家`}
+        />
         }
 
         <nav className={cx(styles.r_da7c36cd, styles.r_92bf82f4)}>
@@ -583,7 +583,7 @@ function NotificationBell({
               onClick={() => setOpen(false)}
               className={cx(styles.r_60fbb771, styles.r_60541e1e, styles.r_7e9a2a25, styles.r_65fdbade, styles.r_5ff6a729, styles.r_0e17f2bd, styles.r_e7ee55ac, styles.r_ceb69a6b, styles.r_80751c7f)}>
 
-                    <UserAvatar src={conversation.user.avatar} alt={conversation.user.name} size={32} />
+                    <UserIdentity user={conversation.user} size="sm" asLink={false} showName={false} avatarRing={false} />
                     <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0, styles.r_2cd02d11)}>
                       <div className={cx(styles.r_166af870, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e)}>
                         <span className={cx(styles.r_f283ea9b, styles.r_359090c2, styles.r_2689f395, styles.r_399e11a5)}>私信 · {conversation.user.name}</span>
@@ -671,11 +671,13 @@ function AccountMenu({
             className={cx(styles.r_60fbb771, styles.r_f82f0c25, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_ac204c10, styles.r_45d82811, styles.r_fafb9e0b, styles.r_2eba0d65, styles.r_56bf8ae8, styles.r_5756b7b4, styles.r_55d048eb, styles.r_5c6a615b, styles.r_37eb6d91)}
             aria-label="打开用户菜单">
 
-            <UserAvatar src={user.avatar} alt={user.name} size={40} pendant={pendant} isVip={isVip} />
-            <span className={cx(styles.r_99d72c7f, styles.r_7e0b7cdf, styles.r_c830740d)}>
-              <span className={cx(styles.r_0214b4b3, styles.r_d3f6ecda, styles.r_f283ea9b, styles.r_fc7473ca, styles.r_e83a7042, styles.r_4ddaa618)}>{user.name}</span>
-              <span className={cx(styles.r_0214b4b3, styles.r_359090c2, styles.r_69335b95)}>Lv.{user.level} 重生玩家</span>
-            </span>
+            <UserIdentity
+              user={{ ...user, equip: { pendant }, vip: { isVip } }}
+              size="md"
+              variant="list"
+              asLink={false}
+              subtitle={`Lv.${user.level} 重生玩家`}
+            />
           </button>
         </HoverCardTrigger>
 
@@ -688,17 +690,19 @@ function AccountMenu({
             className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_65fdbade, styles.r_38748e06, styles.r_f0faeb26, styles.r_1b2d54a3, styles.r_56bf8ae8, styles.r_c514d9e0)}
             role="menuitem">
 
-            <UserAvatar src={user.avatar} alt={user.name} size={38} pendant={pendant} isVip={isVip} />
-            <span className={styles.r_7e0b7cdf}>
-              <span className={cx(styles.r_0214b4b3, styles.r_f283ea9b, styles.r_fc7473ca, styles.r_e83a7042, styles.r_4ddaa618)}>{user.name}</span>
-              <span className={cx(styles.r_0214b4b3, styles.r_359090c2, styles.r_69335b95)}>查看个人主页</span>
-            </span>
+            <UserIdentity
+              user={{ ...user, equip: { pendant }, vip: { isVip } }}
+              size="md"
+              variant="list"
+              asLink={false}
+              subtitle="查看个人主页"
+            />
           </Link>
 
           <div className={styles.r_ec0091ee}>
             <AccountMenuLink href="/settings/profile" icon="settings" label="账号设置" />
             <AccountMenuLink href="/orders" icon="package" label="我的订单" />
-            <AccountMenuLink href="/points" icon="diamond" label="积分与会员" />
+            <AccountMenuLink href="/points" icon="diamond" label="钻石与会员" />
           </div>
 
           <div className={cx(styles.r_b950dda2, styles.r_38748e06, styles.r_cd009d7d)}>

@@ -102,6 +102,7 @@ export function PostActions({
 
   return (
     <FloatingActionRail
+      anchorSelector="[data-post-detail-card]"
       items={[
       { icon: 'share', label: '分享', onClick: () => share('link') },
       {

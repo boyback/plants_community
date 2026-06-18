@@ -1,0 +1,137 @@
+.panel {
+  border: 1px solid rgb(var(--leaf-100));
+  border-radius: 20px;
+  background: rgb(255 255 255 / 0.98);
+  box-shadow: 0 12px 44px rgb(15 23 42 / 0.06);
+  overflow: hidden;
+}
+
+.hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 124px;
+  border-bottom: 1px solid rgb(var(--leaf-100));
+  padding: 14px 18px 28px;
+  background: rgb(255 255 255);
+}
+
+.heroText {
+  min-width: 0;
+}
+
+.heroTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: rgb(37 99 235);
+  padding-top: 6px;
+}
+
+.heroTitleRow h1 {
+  margin: 0;
+  color: rgb(var(--ink-900));
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 800;
+}
+
+.heroText p {
+  margin: 10px 0 0 42px;
+  color: rgb(var(--ink-600));
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.heroAction {
+  flex: 0 0 auto;
+  align-self: center;
+}
+
+.body {
+  padding: 24px;
+}
+
+.rows {
+  display: grid;
+}
+
+.row {
+  min-height: 106px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 1px solid rgb(var(--leaf-100));
+  padding: 20px 28px 20px 18px;
+  background: rgb(255 255 255);
+}
+
+.row:first-child {
+  border-top: 0;
+}
+
+.rowMain {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-width: 0;
+}
+
+.iconBox {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 18px;
+}
+
+.blue {
+  color: rgb(37 99 235);
+  background: rgb(227 239 255);
+}
+
+.green {
+  color: rgb(48 164 72);
+  background: rgb(224 245 224);
+}
+
+.rose {
+  color: rgb(215 73 96);
+  background: rgb(255 235 240);
+}
+
+.purple {
+  color: rgb(126 66 214);
+  background: rgb(243 232 255);
+}
+
+.orange {
+  color: rgb(234 125 28);
+  background: rgb(255 241 226);
+}
+
+.teal {
+  color: rgb(20 166 164);
+  background: rgb(224 247 244);
+}
+
+.rowTitle {
+  color: rgb(var(--ink-900));
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 800;
+}
+
+.rowDesc {
+  margin-top: 5px;
+  color: rgb(var(--ink-600));
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.rowAction {
+  flex: 0 0 auto;
+}

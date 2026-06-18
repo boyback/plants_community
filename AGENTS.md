@@ -141,7 +141,7 @@ scripts/
 - VIP 会员定价页
 - 找回密码
 - 设置页改密邮箱
-- 积分调整 admin
+- 钻石调整 admin
 - AnnouncementCard / 反馈卡挂载(目前只有 footer 链接)
 
 ## 设计规范

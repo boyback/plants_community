@@ -5,9 +5,8 @@ import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Shell } from '@/components/layout/Shell';
-import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
-import { UserName } from '@/components/ui/UserName';
+import { UserIdentity } from '@/components/ui/UserIdentity';
 import { Empty } from '@/components/ui/Empty';
 import { RichTextView } from '@/components/richtext/RichTextView';
 import { Countdown } from '@/components/auction/AuctionCard';
@@ -238,8 +237,7 @@ export default function AuctionDetailPage() {
 
                       {i === 0 ? '👑' : i + 1}
                     </span>
-                    <Avatar src={b.bidder.avatar} alt={b.bidder.name} size={28} />
-                    <UserName user={b.bidder} size="sm" />
+                    <UserIdentity user={b.bidder} size="xs" variant="list" />
                     <span className={cx(styles.r_fb56d9cf, styles.r_fc7473ca, styles.r_e83a7042, styles.r_595fceba)}>
                       {formatPrice(b.amount)}
                     </span>
@@ -399,9 +397,8 @@ export default function AuctionDetailPage() {
           <div className={styles.r_8e63407b}>
             <div className={cx(styles.r_1bb88326, styles.r_fc7473ca, styles.r_e83a7042)}>{t('auction.detail.sellerTitle')}</div>
             <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3)}>
-              <Avatar src={data.seller.avatar} alt={data.seller.name} size={40} />
+              <UserIdentity user={data.seller} size="md" variant="list" />
               <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
-                <UserName user={data.seller} size="sm" />
                 <div className={cx(styles.r_15e1b1f4, styles.r_f50e2015, styles.r_d058ca6d, styles.r_69335b95)}>
                   {data.seller.bio}
                 </div>

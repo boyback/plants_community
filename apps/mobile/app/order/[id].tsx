@@ -174,7 +174,7 @@ export default function OrderDetailScreen() {
           <InfoRow label="商品金额" value={formatPrice(order.unitPrice * order.quantity)} />
           {order.platformFee ? <InfoRow label="手续费" value={formatPrice(order.platformFee)} /> : null}
           {order.depositPaid ? <InfoRow label="保证金抵扣" value={`-${formatPrice(order.depositPaid)}`} /> : null}
-          {order.pointsBackTotal ? <InfoRow label="返积分" value={`${order.pointsBackTotal}`} /> : null}
+          {order.pointsBackTotal ? <InfoRow label="返钻石" value={`${order.pointsBackTotal}`} /> : null}
           <InfoRow label="应付合计" value={formatPrice(order.totalPrice)} strong />
         </InfoCard>
 

@@ -13,21 +13,21 @@
       "quarterly": "Quarterly",
       "yearly": "Yearly",
       "lifetime": "Lifetime",
-      "monthly_points": "Monthly (points)"
+      "monthly_points": "Monthly (diamonds)"
     },
     "planSubtitle": {
       "monthly": "30 days of VIP",
       "quarterly": "90 days · save ¥9.9 over monthly",
       "yearly": "365 days · best value",
       "lifetime": "Pay once, members forever",
-      "monthly_points": "5000 points = 30 days"
+      "monthly_points": "5000 diamonds = 30 days"
     },
     "priceCash": "¥{yuan}",
-    "pricePoints": "{points} points",
+    "pricePoints": "{points} diamonds",
     "durationDays": "{days} days",
     "recommended": "Recommended",
     "buy": "Subscribe now",
-    "exchange": "Redeem with points",
+    "exchange": "Redeem with diamonds",
     "benefits": {
       "title": "Member perks",
       "noPostLimit": "Post any type without level gate",
@@ -39,6 +39,6 @@
     },
     "recentOrders": "Latest 20 membership orders",
     "emptyOrders": "No membership orders yet",
-    "notEnoughPoints": "Not enough points: you have {current}, need {need}"
+    "notEnoughPoints": "Not enough diamonds: you have {current}, need {need}"
   }
 }

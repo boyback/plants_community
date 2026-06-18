@@ -10,12 +10,22 @@ import { cx } from '@/lib/style-utils';
 interface AvatarProps {
   src: string;
   alt: string;
-  size?: number;
+  size?: number | null;
   className?: string;
   ring?: boolean;
 }
 
 export function Avatar({ src, alt, size = 40, className, ring }: AvatarProps) {
+  const sizeStyle =
+    typeof size === 'number'
+      ? {
+          width: size,
+          height: size,
+          minWidth: size,
+          minHeight: size,
+        }
+      : undefined;
+
   return (
     <RadixAvatar.Root
       className={cn(
@@ -24,12 +34,7 @@ export function Avatar({ src, alt, size = 40, className, ring }: AvatarProps) {
       ring && cx(styles.r_16b1efa5, styles.r_0af61200, styles.r_438b2237),
       className
       )}
-      style={{
-        width: size,
-        height: size,
-        minWidth: size,
-        minHeight: size
-      }}>
+      style={sizeStyle}>
 
       <RadixAvatar.Image
         src={src}

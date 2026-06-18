@@ -375,11 +375,10 @@ func AdminPatchBoard(gdb *gorm.DB) gin.HandlerFunc {
 }
 
 type taskPatchBody struct {
-	Enabled        *bool `json:"enabled,omitempty"`
-	RewardPoints   *int  `json:"rewardPoints,omitempty"`
-	RewardExp      *int  `json:"rewardExp,omitempty"`
-	RewardActivity *int  `json:"rewardActivity,omitempty"`
-	Target         *int  `json:"target,omitempty"`
+	Enabled      *bool `json:"enabled,omitempty"`
+	RewardPoints *int  `json:"rewardPoints,omitempty"`
+	RewardExp    *int  `json:"rewardExp,omitempty"`
+	Target       *int  `json:"target,omitempty"`
 }
 
 func AdminPatchTask(gdb *gorm.DB) gin.HandlerFunc {
@@ -400,9 +399,6 @@ func AdminPatchTask(gdb *gorm.DB) gin.HandlerFunc {
 		}
 		if body.RewardExp != nil {
 			updates["rewardExp"] = *body.RewardExp
-		}
-		if body.RewardActivity != nil {
-			updates["rewardActivity"] = *body.RewardActivity
 		}
 		if body.Target != nil {
 			updates["target"] = *body.Target

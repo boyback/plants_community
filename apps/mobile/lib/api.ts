@@ -572,7 +572,6 @@ export interface TaskItem {
   icon: string;
   rewardPoints: number;
   rewardExp: number;
-  rewardActivity: number;
   target: number;
   progress: number;
   completed: boolean;
@@ -583,31 +582,6 @@ export interface TasksResponse {
   daily: TaskItem[];
   monthly: TaskItem[];
   achievement: TaskItem[];
-}
-
-export interface ActivitySummary {
-  yearMonth: string;
-  score: number;
-  rank: number | null;
-  totalParticipants: number;
-}
-
-export interface ActivityRewardsResponse {
-  myScore: number;
-  items: {
-    id: string;
-    threshold: number;
-    title: string;
-    description: string;
-    rewardPoints: number;
-    claimedThisMonth: boolean;
-    reached: boolean;
-    rewardSkin?: {
-      id: string;
-      name: string;
-      preview: string;
-    } | null;
-  }[];
 }
 
 export interface LevelConfig {
@@ -666,7 +640,7 @@ export interface SearchResponse {
   }[];
 }
 
-export type RankingKind = 'activity' | 'points' | 'posts' | 'comments' | 'level' | 'followers';
+export type RankingKind = 'points' | 'posts' | 'comments' | 'level' | 'followers';
 
 export interface RankingResponse {
   kind: RankingKind;

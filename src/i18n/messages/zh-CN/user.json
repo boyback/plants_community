@@ -45,7 +45,7 @@
     "badges": {
       "featured": "🏆 徽章精选",
       "viewAll": "查看全部徽章 →",
-      "activityData": "📊 活跃数据",
+      "activityData": "📊 成长数据",
       "obtainedCount": "已获得 · {n}",
       "completionRate": "完成度 {percent}%",
       "lockedCount": "未解锁 · {n}"

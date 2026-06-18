@@ -6,13 +6,13 @@ import { VIP_PLANS } from '@/lib/vip-plans';
 
 export const dynamic = 'force-dynamic';
 
-/** 积分兑换月卡 */
+/** 钻石兑换月卡 */
 export const POST = handler(async () => {
   const me = await requireUser();
   const plan = VIP_PLANS.find((p) => p.key === 'monthly_points');
   if (!plan) return fail(500, '套餐配置缺失');
   if (me.pointsBalance < plan.pointsCost) {
-    return fail(400, `积分不足,需要 ${plan.pointsCost},当前 ${me.pointsBalance}`);
+    return fail(400, `钻石不足,需要 ${plan.pointsCost},当前 ${me.pointsBalance}`);
   }
 
   await prisma.$transaction(async (tx) => {
@@ -29,7 +29,7 @@ export const POST = handler(async () => {
         balance: u.pointsBalance,
         refType: 'vip',
         refId: 'monthly_points',
-        remark: '积分兑换大会员月卡',
+        remark: '钻石兑换大会员月卡',
       },
     });
     // 记录一笔 vipOrder(已完成),便于日后审计

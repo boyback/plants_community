@@ -348,7 +348,7 @@ type createPostBody struct {
 	// 求助贴字段
 	Help *struct {
 		Urgency      string `json:"urgency"`      // low/normal/high
-		BountyPoints int    `json:"bountyPoints"` // 悬赏积分(0 即无悬赏)
+		BountyPoints int    `json:"bountyPoints"` // 悬赏钻石(0 即无悬赏)
 	} `json:"help"`
 }
 
@@ -448,11 +448,11 @@ func (h *PostsHandler) create(c *gin.Context) {
 			return
 		}
 		if body.Help.BountyPoints < 0 || body.Help.BountyPoints > 10000 {
-			httpx.BadRequest(c, "悬赏积分需在 0 - 10000 之间")
+			httpx.BadRequest(c, "悬赏钻石需在 0 - 10000 之间")
 			return
 		}
 		if body.Help.BountyPoints > 0 && me.PointsBalance < body.Help.BountyPoints {
-			httpx.BadRequest(c, fmt.Sprintf("积分不足,当前 %d,需 %d", me.PointsBalance, body.Help.BountyPoints))
+			httpx.BadRequest(c, fmt.Sprintf("钻石不足,当前 %d,需 %d", me.PointsBalance, body.Help.BountyPoints))
 			return
 		}
 	}
@@ -542,7 +542,7 @@ func (h *PostsHandler) create(c *gin.Context) {
 		if body.Help.BountyPoints > 0 {
 			addPoints(h.DB, me.ID, -body.Help.BountyPoints, "admin",
 				"help_bounty", post.ID,
-				fmt.Sprintf("悬赏求助帖「%s」扣除 %d 积分", post.Title, body.Help.BountyPoints))
+				fmt.Sprintf("悬赏求助帖「%s」扣除 %d 钻石", post.Title, body.Help.BountyPoints))
 		}
 	}
 

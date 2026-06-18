@@ -4,10 +4,9 @@ import { serializeUser } from '@/lib/serializers';
 
 export const dynamic = 'force-dynamic';
 
-type RankingKind = 'activity' | 'points' | 'posts' | 'comments' | 'level' | 'followers';
+type RankingKind = 'points' | 'posts' | 'comments' | 'level' | 'followers';
 
 const KINDS = new Set<RankingKind>([
-  'activity',
   'points',
   'posts',
   'comments',
@@ -16,17 +15,12 @@ const KINDS = new Set<RankingKind>([
 ]);
 
 const META: Record<RankingKind, { title: string; desc: string; unit: string }> = {
-  activity: { title: '活跃度排行', desc: '本月活跃度', unit: '活跃度' },
-  points: { title: '积分排行', desc: '按可消费积分余额', unit: '积分' },
+  points: { title: '钻石排行', desc: '按可消费钻石余额', unit: '钻石' },
   posts: { title: '发帖排行', desc: '按累计发帖数', unit: '帖' },
   comments: { title: '评论数排行', desc: '按累计评论数', unit: '评' },
   level: { title: '等级排行', desc: '按等级和经验排序', unit: '级' },
   followers: { title: '粉丝排行', desc: '按粉丝数排序', unit: '粉丝' },
 };
-
-function monthKey(d = new Date()) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
 
 function normalizeUser(raw: any) {
   const user = serializeUser(raw);
@@ -49,38 +43,19 @@ function withRanks(rows: { user: ReturnType<typeof normalizeUser>; score: number
 export const GET = handler(async (req) => {
   const url = new URL(req.url);
   const requested = url.searchParams.get('kind') as RankingKind | null;
-  const kind = requested && KINDS.has(requested) ? requested : 'activity';
+  const kind = requested && KINDS.has(requested) ? requested : 'points';
   const limit = Math.min(Number(url.searchParams.get('limit') ?? '50'), 100);
-  const ym = url.searchParams.get('ym') ?? monthKey();
 
-  const rows = await loadRankingRows(kind, ym, limit);
+  const rows = await loadRankingRows(kind, limit);
 
   return {
     kind,
-    yearMonth: ym,
     ...META[kind],
     items: rows,
   };
 });
 
-async function loadRankingRows(kind: RankingKind, ym: string, limit: number) {
-  if (kind === 'activity') {
-    const rows = await prisma.monthlyActivity.findMany({
-      where: { yearMonth: ym },
-      orderBy: [{ score: 'desc' }, { updatedAt: 'asc' }],
-      take: limit,
-      include: {
-        user: {
-          include: {
-            _count: { select: { posts: true, comments: true, followers: true, following: true } },
-            badges: { include: { badge: true } },
-          },
-        },
-      },
-    });
-    return withRanks(rows.map((row) => ({ user: normalizeUser(row.user), score: row.score })));
-  }
-
+async function loadRankingRows(kind: RankingKind, limit: number) {
   const orderBy =
     kind === 'points'
       ? [{ pointsBalance: 'desc' as const }, { updatedAt: 'desc' as const }]

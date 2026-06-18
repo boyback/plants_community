@@ -208,10 +208,10 @@ func refundOthers(tx *gorm.DB, auctionID, winnerID string) {
 	}
 }
 
-// refundOne 退保证金:标记 refunded,等值积分回到账户,发通知
+// refundOne 退保证金:标记 refunded,等值钻石回到账户,发通知
 func refundOne(tx *gorm.DB, p *models.AuctionParticipant) {
 	tx.Model(p).Update("depositStatus", "refunded")
-	// 1元 = 100 积分(与 TS 版一致)
+	// 1元 = 100 钻石(与 TS 版一致)
 	pts := p.DepositAmount / 100 * 100
 	if pts < 1 {
 		pts = 1
@@ -229,7 +229,7 @@ func refundOne(tx *gorm.DB, p *models.AuctionParticipant) {
 	})
 	tx.Create(&models.Notification{
 		ID: genCuidAuction(), RecipientID: p.UserID, Type: "system",
-		Text: fmt.Sprintf("💰 你的拍卖保证金 ¥%.2f 已退回(等值 %d 积分)",
+		Text: fmt.Sprintf("💰 你的拍卖保证金 ¥%.2f 已退回(等值 %d 钻石)",
 			float64(p.DepositAmount)/100, pts),
 		CreatedAt: time.Now(),
 	})

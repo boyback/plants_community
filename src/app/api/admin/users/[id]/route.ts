@@ -4,7 +4,7 @@
  *     - { role: 'user' | 'moderator' | 'admin' }           改角色
  *     - { ban: { days: number; reason?: string } }          封禁(days 天,0 = 永久)
  *     - { unban: true }                                    解封
- *     - { pointsDelta: number; reason?: string }            加/减积分(直接改余额 + 记流水)
+ *     - { pointsDelta: number; reason?: string }            加/减钻石(直接改余额 + 记流水)
  *
  * 都落 AdminLog。
  */

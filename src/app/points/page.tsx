@@ -312,7 +312,7 @@ function Wardrobe({ onChange }: {onChange: () => void | Promise<void>;}) {
 
 }
 
-/* ---------------- 积分流水 ---------------- */
+/* ---------------- 钻石流水 ---------------- */
 
 function Ledger() {
   const { t } = useI18n();

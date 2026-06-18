@@ -270,9 +270,9 @@ async function refundOneParticipant(
     where: { id: participantId },
     data: { depositStatus: DepositStatus.refunded },
   });
-  // 保证金以积分形式退回(简化)。真实生产应通过原支付渠道退款。
-  // 这里根据保证金支付时的渠道决定:Demo 中无论现金渠道,都按比例转积分
-  // (1 元 = 100 积分),并发通知。
+  // 保证金以钻石形式退回(简化)。真实生产应通过原支付渠道退款。
+  // 这里根据保证金支付时的渠道决定:Demo 中无论现金渠道,都按比例转钻石
+  // (1 元 = 100 钻石),并发通知。
   const pts = Math.max(1, Math.floor(amount / 100) * 100);
   const u = await tx.user.update({
     where: { id: userId },
@@ -294,7 +294,7 @@ async function refundOneParticipant(
     data: {
       recipientId: userId,
       type: 'system',
-      text: `💰 你的拍卖保证金 ¥${(amount / 100).toFixed(2)} 已退回(等值 ${pts} 积分)`,
+      text: `💰 你的拍卖保证金 ¥${(amount / 100).toFixed(2)} 已退回(等值 ${pts} 钻石)`,
     },
   });
 }

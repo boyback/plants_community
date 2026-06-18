@@ -2,14 +2,16 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { PostListItem } from '@/components/post/PostListItem';
-import { Avatar } from '@/components/ui/Avatar';
-import { UserName } from '@/components/ui/UserName';
+import { UserIdentity } from '@/components/ui/UserIdentity';
 import { Icon } from '@/components/ui/Icon';
 import { Empty } from '@/components/ui/Empty';
-import { VipBadge } from '@/components/ui/VipBadge';
 import { Dialog } from '@/components/ui/Dialog';
+import { Button, ButtonLink } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/components/ui/Toast';
 import { cn, formatDate, formatNumber, boardUrl, formatPrice } from '@/lib/utils';
 import { api, ApiError } from "@/lib/client-api";
@@ -30,7 +32,6 @@ type TabKey =
 'following' |
 'followers' |
 "followed-boards" |
-'badges' |
 'about';
 
 type UserMarketProduct = {
@@ -63,12 +64,118 @@ type UserCommentItem = {
   contentText: string | null;
   likes: number;
   createdAt: string;
+  parentId: string | null;
+  parent: {
+    id: string;
+    content: string;
+    contentText: string | null;
+    deleted: boolean;
+    author: {
+      id: string;
+      name: string;
+      avatar: string;
+      level: number;
+    };
+    parent: {
+      id: string;
+      author: {
+        id: string;
+        name: string;
+        avatar: string;
+        level: number;
+      };
+    } | null;
+  } | null;
   post: {
     id: string;
     title: string;
     contentText: string | null;
   };
 };
+
+type UserLikedItem =
+  | {
+      type: 'post';
+      likedAt: string;
+      post: Post;
+    }
+  | {
+      type: 'journal';
+      likedAt: string;
+      journal: {
+        id: string;
+        stage: string;
+        stageLabel: string | null;
+        note: string;
+        images: string;
+        likes: number;
+        postId: string;
+        postTitle: string;
+      };
+    }
+  | {
+      type: 'album';
+      likedAt: string;
+      album: {
+        id: string;
+        title: string;
+        cover: string | null;
+        likeCount: number;
+        imageCount: number;
+        createdAt: string;
+        user: { id: string; name: string; avatar: string };
+      };
+    };
+
+type UserCollectedItem =
+  | {
+      type: 'post';
+      collectedAt: string;
+      post: Post;
+    }
+  | {
+      type: 'marketItem';
+      collectedAt: string;
+      marketItem: {
+        id: string;
+        listingId: string;
+        title: string;
+        description: string;
+        cover: string;
+        price: number;
+        stock: number;
+        soldCount: number;
+        collectCount: number;
+        status: 'on_sale' | 'sold_out' | 'off_shelf';
+        listing: {
+          id: string;
+          title: string;
+          shipFrom: string;
+          status: 'on_sale' | 'sold_out' | 'off_shelf' | 'pending_review';
+        };
+      };
+    }
+  | {
+      type: 'species';
+      collectedAt: string;
+      species: {
+        id: string;
+        slug: string;
+        name: string;
+        latinName: string;
+        cover: string;
+        difficulty: number;
+        genusSlug: string;
+        genusName: string;
+        boardSlug: string | null;
+        boardName: string | null;
+        collectCount: number;
+        postCount: number;
+      };
+    };
+
+type UserCollectedMarketItem = Extract<UserCollectedItem, { type: 'marketItem' }>['marketItem'];
+type UserCollectedSpecies = Extract<UserCollectedItem, { type: 'species' }>['species'];
 
 type ProductFilter = 'all' | 'on_sale' | 'sold';
 
@@ -81,7 +188,6 @@ const tabs: {key: TabKey;labelKey?: string;label?: string;}[] = [
 { key: 'following', labelKey: 'user.tabs.following' },
 { key: 'followers', labelKey: 'user.tabs.followers' },
 { key: "followed-boards", labelKey: 'user.tabs.followedBoards' },
-{ key: 'badges', labelKey: 'user.tabs.badges' },
 { key: 'about', labelKey: 'user.tabs.about' }];
 
 
@@ -91,8 +197,8 @@ export function UserPageClient({
   initialFollowed,
   posts,
   comments,
-  likedPosts,
-  collectedPosts,
+  likedItems,
+  collectedItems,
   products,
   exp = 0,
   vip,
@@ -109,21 +215,22 @@ export function UserPageClient({
 
 
 
-}: {user: User;isMe: boolean;initialFollowed: boolean;posts: Post[];comments: UserCommentItem[];likedPosts: Post[];collectedPosts: Post[];products: UserMarketProduct[];exp?: number;vip?: {isVip: boolean;lifetime: boolean;expireAt: string | null;};daysLeft?: number | null;}) {
+}: {user: User;isMe: boolean;initialFollowed: boolean;posts: Post[];comments: UserCommentItem[];likedItems: UserLikedItem[];collectedItems: UserCollectedItem[];products: UserMarketProduct[];exp?: number;vip?: {isVip: boolean;lifetime: boolean;expireAt: string | null;};daysLeft?: number | null;}) {
   const { t } = useI18n();
   const [tab, setTab] = useState<TabKey>(() => {
     if (typeof window === 'undefined') return 'posts';
     const p = new URLSearchParams(window.location.search).get('tab');
     const allowed: TabKey[] = [
     'posts', 'comments', 'products', 'likes', 'collects', 'following', 'followers',
-    "followed-boards", 'badges', 'about'];
+    "followed-boards", 'about'];
 
-    // 支持旧 tab 名 following-boards
+    // 支持�?tab �?following-boards
     const normalized = p === "following-boards" ? "followed-boards" : p;
     return allowed.includes(normalized as TabKey) ? normalized as TabKey : 'posts';
   });
   const [followed, setFollowed] = useState(initialFollowed);
   const [productFilter, setProductFilter] = useState<ProductFilter>('all');
+  const [badgeCenterOpen, setBadgeCenterOpen] = useState(false);
   const [profilePrivacy, setProfilePrivacy] = useState<PrivacyState>(
     user.privacy ?? { showFollowing: true, showFollowers: true }
   );
@@ -151,7 +258,7 @@ export function UserPageClient({
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
   };
 
-  // 计算下一级 EXP
+  // 计算下一�?EXP
   const currentDef = LEVELS.find((l) => l.level === user.level);
   const nextDef = LEVELS.find((l) => l.level === user.level + 1);
   const expBase = currentDef?.expRequired ?? 0;
@@ -190,114 +297,111 @@ export function UserPageClient({
           <div className={cx(styles.r_da4dbfbc, styles.r_7b7df044, styles.r_79257b8c, styles.r_0bb032b9, styles.r_3e4c86d8, styles.r_391264db)} />
         </div>
         <div className={cx(styles.r_d89972fe, styles.r_236812d6, styles.r_60fbb771, styles.r_1ee35081, styles.r_8dddea07, styles.r_77c08e01, styles.r_0c3bc985, styles.r_c07e54fd, styles.r_4102dddf, styles.r_bf60a82f)}>
-          <div className={styles.r_012fbd12}>
-            <Avatar src={user.avatar} alt={user.name} size={100} ring />
-          </div>
-          <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
-            <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_77a2a20e)}>
-              <h1
-                className={cn(cx(styles.r_d5c9b000, styles.r_69450ef1),
-
-                vip?.isVip ? cx(styles.r_6ae7db2c, styles.r_cd3e6ea7, styles.r_0e9465c6, styles.r_db539fdb, styles.r_6c3c24f0, styles.r_f8c8e86d) : styles.r_72a4c7cd
-                )}>
-
-                {user.name}
-              </h1>
-              <span className={cx(styles.r_ac204c10, styles.r_990f052a, styles.r_d5eab218, styles.r_465609a2, styles.r_d058ca6d, styles.r_2689f395, styles.r_72a4c7cd, styles.r_3daca9af, styles.r_0cea1524)}>
-                Lv.{user.level} · {currentDef ? t(`levels.name.${currentDef.level}`) : ''}
-              </span>
-              {vip?.isVip && <VipBadge size="sm" lifetime={vip.lifetime} />}
-            </div>
-            <p className={cx(styles.r_b6b02c0e, styles.r_fc7473ca, styles.r_201d4d37)}>{user.bio || t('user.noBio')}</p>
-
-            {/* EXP 进度条 */}
-            {nextDef &&
-            <div className={cx(styles.r_eccd13ef, styles.r_9794ab45)}>
-                <div className={cx(styles.r_60fbb771, styles.r_b7012bb2, styles.r_8ef2268e, styles.r_d058ca6d, styles.r_ed24b98e)}>
-                  <span>EXP {exp} / {expCap}</span>
-                  <span>{t('user.expToNext', { level: nextDef.level, need: expCap - exp })}</span>
-                </div>
-                <div className={cx(styles.r_b6b02c0e, styles.r_095acb27, styles.r_2cd02d11, styles.r_ac204c10, styles.r_2cf6fd42)}>
-                  <div
-                  className={cx(styles.r_668b21aa, styles.r_ac204c10, styles.r_6ae7db2c, styles.r_50f960a5, styles.r_529f8e24)}
-                  style={{ width: `${expPercent}%` }} />
-
-                </div>
-              </div>
-            }
-
-            <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_0c3bc985, styles.r_359090c2, styles.r_ed24b98e)}>
-              <span>{t('user.joinedAt', { date: formatDate(user.joinedAt) })}</span>
-              <span>·</span>
-              <button
-                type="button"
-                onClick={() => selectTab('posts')}
-                className={styles.r_b5a12a16}>
-
-                <span className={cx(styles.r_e83a7042, styles.r_72a4c7cd)}>{user.posts}</span> {t('user.stats.posts')}
-              </button>
-              <span>·</span>
-              <button
-                type="button"
-                onClick={() => selectTab('followers')}
-                className={styles.r_b5a12a16}>
-
-                <span className={cx(styles.r_e83a7042, styles.r_72a4c7cd)}>{formatNumber(user.followers)}</span> {t('user.stats.followers')}
-              </button>
-              <span>·</span>
-              <button
-                type="button"
-                onClick={() => selectTab('following')}
-                className={styles.r_b5a12a16}>
-
-                <span className={cx(styles.r_e83a7042, styles.r_72a4c7cd)}>{formatNumber(user.following)}</span> {t('user.stats.following')}
-              </button>
-              {vip?.isVip &&
-              <span className={styles.r_ae5ebb30}>
-                  · 👑{' '}
-                  {vip.lifetime ?
-                t('user.vip.lifetime') :
-                daysLeft !== null && daysLeft !== undefined ?
-                t('user.vip.remainDays', { days: daysLeft }) :
-                t('user.vip.member')}
+          <div className={styles.profileHeroIdentity}>
+            <UserIdentity
+              user={{ ...user, vip }}
+              size="xl"
+              variant="profile"
+              asLink={false}
+              avatarRing={false}
+              className={styles.profileIdentity}
+              nameClassName={styles.profileIdentityName}
+              textClassName={styles.profileIdentityText}
+              subtitle={
+                <span className={styles.profileIdentityMeta}>
+                  <span className={styles.profileIdentityLevel}>Lv.{user.level} · {currentDef ? t(`levels.name.${currentDef.level}`) : ''}</span>
+                  <span className={styles.profileIdentityBio}>{user.bio || t('user.noBio')}</span>
+                  {nextDef &&
+                  <span className={styles.profileIdentityExp}>
+                    <span className={styles.profileIdentityExpTop}>
+                      <span>EXP {exp} / {expCap}</span>
+                      <span>{t('user.expToNext', { level: nextDef.level, need: expCap - exp })}</span>
+                    </span>
+                    <span className={styles.profileIdentityExpTrack}>
+                      <span
+                        className={styles.profileIdentityExpFill}
+                        style={{ width: `${expPercent}%` }} />
+                    </span>
+                  </span>
+                  }
+                  <span className={styles.profileIdentityStats}>
+                    <span>{t('user.joinedAt', { date: formatDate(user.joinedAt) })}</span>
+                    <span>·</span>
+                    <button
+                      type="button"
+                      onClick={() => selectTab('posts')}
+                      className={styles.r_b5a12a16}>
+                      <span className={cx(styles.r_e83a7042, styles.r_72a4c7cd)}>{user.posts}</span> {t('user.stats.posts')}
+                    </button>
+                    <span>·</span>
+                    <button
+                      type="button"
+                      onClick={() => selectTab('followers')}
+                      className={styles.r_b5a12a16}>
+                      <span className={cx(styles.r_e83a7042, styles.r_72a4c7cd)}>{formatNumber(user.followers)}</span> {t('user.stats.followers')}
+                    </button>
+                    <span>·</span>
+                    <button
+                      type="button"
+                      onClick={() => selectTab('following')}
+                      className={styles.r_b5a12a16}>
+                      <span className={cx(styles.r_e83a7042, styles.r_72a4c7cd)}>{formatNumber(user.following)}</span> {t('user.stats.following')}
+                    </button>
+                    {vip?.isVip &&
+                    <span className={styles.r_ae5ebb30}>
+                      · 👑{' '}
+                      {vip.lifetime ?
+                      t('user.vip.lifetime') :
+                      daysLeft !== null && daysLeft !== undefined ?
+                      t('user.vip.remainDays', { days: daysLeft }) :
+                      t('user.vip.member')}
+                    </span>
+                    }
+                  </span>
                 </span>
               }
-            </div>
+            />
           </div>
-          <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_77a2a20e)}>
+          <div className={styles.profileActions}>
             {isMe ?
             <>
-                <button
+                <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setPrivacyOpen(true)}
-                className={cx(styles.r_2ed430b2, styles.r_86021721, styles.r_dd702538, styles.r_41a0398f, styles.r_1b08d87e)}>
+                className={styles.profileActionButton}>
 
                   {t('user.actions.privacy')}
-                </button>
-                <button
+                </Button>
+                <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 className={cx(styles.r_2ed430b2, styles.r_86021721, styles.r_dd702538, styles.r_41a0398f, styles.r_1b08d87e)}
                 disabled
                 title={t('user.actions.editProfileUnavailable')}>
 
                   <Icon name="edit" size={12} />
                   {t('user.actions.editProfile')}
-                </button>
+                </Button>
               </> :
 
             <>
-                <Link href={`/messages?to=${user.id}`} className={cx(styles.r_2ed430b2, styles.r_86021721, styles.r_41a0398f, styles.r_1b08d87e)}>
+                <ButtonLink href={`/messages?to=${user.id}`} variant="ghost" size="sm" className={styles.profileActionButton}>
                   <Icon name="message" size={14} />
                   {t('user.actions.message')}
-                </Link>
-                <button
+                </ButtonLink>
+                <Button
                 type="button"
                 onClick={toggleFollow}
                 disabled={busy}
-                className={cn('btn', followed ? cx(styles.r_990f052a, styles.r_72a4c7cd, styles.r_3daca9af, styles.r_0cea1524, styles.r_74ef519b) : 'btn-primary')}>
+                variant={followed ? 'ghost' : 'primary'}
+                size="sm"
+                className={followed ? styles.profileActionButton : undefined}>
 
                   {followed ? t('user.actions.unfollow') : t('user.actions.follow')}
-                </button>
+                </Button>
               </>
             }
           </div>
@@ -347,15 +451,15 @@ export function UserPageClient({
           }
 
           {tab === 'likes' && (
-          likedPosts.length > 0 ?
-          <UserPostList posts={likedPosts} /> :
+          likedItems.length > 0 ?
+          <UserLikedList items={likedItems} /> :
 
           <Empty icon="❤️" title={t('user.empty.likes')} />)
           }
 
           {tab === 'collects' && (
-          collectedPosts.length > 0 ?
-          <UserPostList posts={collectedPosts} /> :
+          collectedItems.length > 0 ?
+          <UserCollectedList items={collectedItems} /> :
 
           <Empty icon="⭐" title={t('user.empty.collects')} />)
           }
@@ -368,45 +472,35 @@ export function UserPageClient({
           }
           {tab === "followed-boards" && <FollowedBoardsTab isMe={isMe} />}
 
-          {tab === 'badges' && <BadgeWall badges={user.badges} />}
-
           {tab === 'about' && <AboutTab user={user} />}
         </div>
 
         <div className={styles.r_b43b4c08}>
-          <div className={styles.r_8e63407b}>
-            <div className={cx(styles.r_1bb88326, styles.r_fc7473ca, styles.r_e83a7042)}>{t('user.badges.featured')}</div>
-            <div className={cx(styles.r_f3c543ad, styles.r_32aac21b, styles.r_77a2a20e)}>
-              {user.badges.
-              filter((b) => b.obtained).
-              slice(0, 8).
-              map((b) =>
-              <div
-                key={b.id}
-                title={b.name}
-                className={cx(styles.r_f3c543ad, styles.r_508ebf85, styles.r_67d66567, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_7ebecbb6, styles.r_3febee09)}>
-
-                    {b.icon}
-                  </div>
-              )}
+          <div className={styles.sidebarBadgeCard}>
+            <div className={styles.sidebarBadgeHeader}>
+              <div className={styles.sidebarBadgeTitle}>徽章墙</div>
+              <button
+                type="button"
+                className={styles.sidebarBadgeArrow}
+                onClick={() => setBadgeCenterOpen(true)}
+                aria-label="查看徽章大全">
+                &gt;
+              </button>
             </div>
-            <button
-              onClick={() => selectTab('badges')}
-              className={cx(styles.r_eccd13ef, styles.r_6da6a3c3, styles.r_ca6bf630, styles.r_d058ca6d, styles.r_5f6a59f1, styles.r_f673f4a7)}>
-
-              {t('user.badges.viewAll')}
-            </button>
-          </div>
-
-          <div className={styles.r_8e63407b}>
-            <div className={cx(styles.r_1bb88326, styles.r_fc7473ca, styles.r_e83a7042)}>{t('user.badges.activityData')}</div>
-            <div className={cx(styles.r_6f7e013d, styles.r_359090c2)}>
-              <StatRow label={t('user.stats.totalPosts')} value={String(user.posts)} />
-              <StatRow label={t('user.stats.followers')} value={formatNumber(user.followers)} />
-              <StatRow label={t('user.stats.following')} value={formatNumber(user.following)} />
-              <StatRow label={t('user.stats.badgesEarned')} value={String(user.badges.filter((b) => b.obtained).length)} />
+            <div className={styles.sidebarBadgeBody}>
+              {user.badges.filter((b) => b.obtained).length > 0 ?
+              <div className={styles.sidebarBadgeWall}>
+                  {user.badges.
+                  filter((b) => b.obtained).
+                  map((b) =>
+                  <BadgeIconTile key={b.id} badge={b} compact />
+                  )}
+                </div> :
+              <Empty icon="🏅" title="暂未获得徽章" />
+              }
             </div>
           </div>
+
         </div>
       </div>
       {isMe &&
@@ -417,6 +511,10 @@ export function UserPageClient({
         onPrivacyChange={setProfilePrivacy} />
 
       }
+      <BadgeCenterDialog
+        open={badgeCenterOpen}
+        onClose={() => setBadgeCenterOpen(false)}
+        badges={user.badges} />
     </>);
 
 }
@@ -562,10 +660,15 @@ function UserCommentList({ comments }: {comments: UserCommentItem[];}) {
       {comments.map((comment, index) => {
         const content = comment.contentText || stripRichText(comment.content) || "[图片]";
         const postTitle = comment.post.title || comment.post.contentText || '无标题帖子';
+        const parentAuthor = comment.parent?.author?.name;
+        const grandParentAuthor = comment.parent?.parent?.author?.name;
+        const parentPreview = comment.parent && !comment.parent.deleted ?
+        comment.parent.contentText || stripRichText(comment.parent.content) :
+        '';
         return (
           <Link
             key={comment.id}
-            href={`/post/${comment.post.id}#comments`}
+            href={`/post/${comment.post.id}#comment-${comment.id}`}
             className={cn(cx(styles.r_0214b4b3, styles.r_8e63407b, styles.r_ceb69a6b, styles.r_80751c7f),
 
             index < comments.length - 1 && cx(styles.r_65fdbade, styles.r_88b684d2)
@@ -574,11 +677,19 @@ function UserCommentList({ comments }: {comments: UserCommentItem[];}) {
             <div className={cx(styles.r_a77ed4d9, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_1004c0c3, styles.r_d058ca6d, styles.r_bb87c54c)}>
               <span>{formatDate(comment.createdAt)}</span>
               <span className={cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0)}>
+                {comment.parentId && <span className={styles.commentReplyBadge}>回复</span>}
                 <Icon name="heart" size={12} />
                 {formatNumber(comment.likes)}
               </span>
             </div>
             <p className={cx(styles.r_054cb4e3, styles.r_fc7473ca, styles.r_18550d59, styles.r_399e11a5)}>{content}</p>
+            {parentAuthor &&
+            <div className={styles.commentReplyContext}>
+              回复 {parentAuthor}
+              {grandParentAuthor ? ' 的回复' : ''}
+              <span>{parentPreview || '原评论已删除'}</span>
+            </div>
+            }
             <div className={cx(styles.r_50d0d216, styles.r_60fbb771, styles.r_7e0b7cdf, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_c10ff8c0, styles.r_7ebecbb6, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_e7eab4cb)}>
               <Icon name="comment" size={13} className={cx(styles.r_012fbd12, styles.r_b17d6a13)} />
               <span className={cx(styles.r_012fbd12, styles.r_6c4cc49e)}>评论于</span>
@@ -729,6 +840,16 @@ function stripRichText(html: string): string {
   return html.replace(/<[^>]*>/g, '').trim();
 }
 
+function parseJsonArray(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const value = JSON.parse(raw);
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
 function StatRow({ label, value }: {label: string;value: string;}) {
   return (
     <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e)}>
@@ -772,18 +893,497 @@ function BadgeWall({ badges }: {badges: Badge[];}) {
 
 }
 
-function BadgeCard({ badge, locked }: {badge: Badge;locked?: boolean;}) {
+function BadgeIconTile({ badge, locked = false, compact = false }: {badge: Badge;locked?: boolean;compact?: boolean;}) {
+  return (
+    <div className={cn(compact ? styles.sidebarBadgeIconTile : styles.badgeTile, locked && styles.r_0b8c506a)} title={badge.description || badge.name}>
+      <div className={compact ? styles.sidebarBadgeIcon : styles.badgeTileIcon}>{badge.icon}</div>
+      {!compact && <div className={styles.badgeTileLabel}>{badge.name}</div>}
+      {!compact && <div className={badge.obtained ? styles.badgeStateOn : styles.badgeStateOff}>{badge.obtained ? '已激活' : '未激活'}</div>}
+    </div>);
+
+}
+
+function UserLikedList({ items }: {items: UserLikedItem[];}) {
+  return (
+    <div className={styles.likedList}>
+      {items.map((item) => {
+        if (item.type === 'post') {
+          return <LikedPostCard key={`post-${item.post.id}`} post={item.post} likedAt={item.likedAt} />;
+        }
+
+        if (item.type === 'journal') {
+          const images = parseJsonArray(item.journal.images);
+          const title = item.journal.stageLabel || item.journal.stage || '成长记录';
+          return (
+            <LikedJournalCard
+              key={`journal-${item.journal.id}`}
+              postId={item.journal.postId}
+              entryId={item.journal.id}
+              likedAt={item.likedAt}
+              title={title}
+              desc={item.journal.note}
+              cover={images[0]}
+              meta={`来自 ${item.journal.postTitle}`}
+              likes={item.journal.likes}
+            />
+          );
+        }
+
+        return (
+          <LikedAlbumCard
+            key={`album-${item.album.id}`}
+            albumId={item.album.id}
+            likedAt={item.likedAt}
+            title={item.album.title}
+            desc={`共 ${formatNumber(item.album.imageCount)} 张图片`}
+            cover={item.album.cover ?? undefined}
+            meta={`来自 ${item.album.user.name}`}
+            likes={item.album.likeCount}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function LikedPostCard({ post, likedAt }: {post: Post;likedAt: string;}) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [liked, setLiked] = useState(true);
+  const [likes, setLikes] = useState(post.likes);
+  const [busy, setBusy] = useState(false);
+
+  const toggleLike = async () => {
+    if (!user) {
+      router.push('/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search));
+      return;
+    }
+    setBusy(true);
+    const previousLiked = liked;
+    const previousLikes = likes;
+    setLiked(!previousLiked);
+    setLikes(Math.max(0, previousLikes + (previousLiked ? -1 : 1)));
+    try {
+      const res = await api.post<{liked: boolean; total: number;}>(`/api/posts/${post.id}/like`);
+      setLiked(res.liked);
+      setLikes(res.total);
+    } catch (e) {
+      setLiked(previousLiked);
+      setLikes(previousLikes);
+      toast.error(e instanceof ApiError ? e.message : '操作失败');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card padding="none" className={styles.likedPostCard}>
+      <div className={styles.likedItemHeader}>
+        <span className={styles.likedType}>帖子</span>
+        <span>{formatDate(likedAt)}</span>
+      </div>
+      <PostListItem
+        post={post}
+        showDivider={false}
+        liked={liked}
+        likeCount={likes}
+        likeBusy={busy}
+        onLikeClick={toggleLike}
+      />
+    </Card>
+  );
+}
+
+function LikedJournalCard({
+  postId,
+  entryId,
+  likedAt,
+  title,
+  desc,
+  cover,
+  meta,
+  likes
+}: {
+  postId: string;
+  entryId: string;
+  likedAt: string;
+  title: string;
+  desc?: string | null;
+  cover?: string;
+  meta: string;
+  likes: number;
+}) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [liked, setLiked] = useState(true);
+  const [total, setTotal] = useState(likes);
+  const [busy, setBusy] = useState(false);
+
+  const toggleLike = async () => {
+    if (!user) {
+      router.push('/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search));
+      return;
+    }
+    setBusy(true);
+    const previousLiked = liked;
+    const previousTotal = total;
+    setLiked(!previousLiked);
+    setTotal(Math.max(0, previousTotal + (previousLiked ? -1 : 1)));
+    try {
+      const res = await api.post<{liked: boolean; total: number;}>(`/api/posts/${postId}/journal/${entryId}/like`);
+      setLiked(res.liked);
+      setTotal(res.total);
+    } catch (e) {
+      setLiked(previousLiked);
+      setTotal(previousTotal);
+      toast.error(e instanceof ApiError ? e.message : '操作失败');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card padding="compact" className={styles.likedMediaCard}>
+      <Link href={`/post/${postId}#journal-entry-${entryId}`} className={styles.likedSimpleLink}>
+        <span className={styles.likedCover}>
+          {cover ? (
+            <Image src={cover} alt={title} fill sizes="82px" className={styles.likedCoverImage} unoptimized />
+          ) : (
+            <Icon name="heart" size={24} />
+          )}
+        </span>
+        <span className={styles.likedSimpleMain}>
+          <span className={styles.likedItemHeader}>
+            <span className={styles.likedType}>成长记录</span>
+            <span>{formatDate(likedAt)}</span>
+          </span>
+          <span className={styles.likedTitle}>{title}</span>
+          {desc ? <span className={styles.likedDesc}>{desc}</span> : null}
+          <span className={styles.likedMeta}>{meta}</span>
+        </span>
+      </Link>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={toggleLike}
+        className={cn(styles.likedInlineAction, liked && styles.likedInlineActionActive)}
+        aria-pressed={liked}
+      >
+        <Icon name="thumbs-up" size={14} fill={liked ? 'currentColor' : 'none'} />
+        {formatNumber(total)}
+      </button>
+    </Card>
+  );
+}
+
+function LikedAlbumCard({
+  albumId,
+  likedAt,
+  title,
+  desc,
+  cover,
+  meta,
+  likes
+}: {
+  albumId: string;
+  likedAt: string;
+  title: string;
+  desc?: string | null;
+  cover?: string;
+  meta: string;
+  likes: number;
+}) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [liked, setLiked] = useState(true);
+  const [total, setTotal] = useState(likes);
+  const [busy, setBusy] = useState(false);
+
+  const toggleLike = async () => {
+    if (!user) {
+      router.push('/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search));
+      return;
+    }
+    setBusy(true);
+    const previousLiked = liked;
+    const previousTotal = total;
+    setLiked(!previousLiked);
+    setTotal(Math.max(0, previousTotal + (previousLiked ? -1 : 1)));
+    try {
+      const res = await api.post<{liked: boolean;}>(`/api/albums/${albumId}/like`);
+      const nextTotal = res.liked ? previousTotal + 1 : Math.max(0, previousTotal - 1);
+      setLiked(res.liked);
+      setTotal(nextTotal);
+    } catch (e) {
+      setLiked(previousLiked);
+      setTotal(previousTotal);
+      toast.error(e instanceof ApiError ? e.message : '操作失败');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card padding="compact" className={styles.likedMediaCard}>
+      <Link href={`/album/${albumId}`} className={styles.likedSimpleLink}>
+        <span className={styles.likedCover}>
+          {cover ? (
+            <Image src={cover} alt={title} fill sizes="82px" className={styles.likedCoverImage} unoptimized />
+          ) : (
+            <Icon name="heart" size={24} />
+          )}
+        </span>
+        <span className={styles.likedSimpleMain}>
+          <span className={styles.likedItemHeader}>
+            <span className={styles.likedType}>相册</span>
+            <span>{formatDate(likedAt)}</span>
+          </span>
+          <span className={styles.likedTitle}>{title}</span>
+          {desc ? <span className={styles.likedDesc}>{desc}</span> : null}
+          <span className={styles.likedMeta}>{meta}</span>
+        </span>
+      </Link>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={toggleLike}
+        className={cn(styles.likedInlineAction, liked && styles.likedInlineActionActive)}
+        aria-pressed={liked}
+      >
+        <Icon name="thumbs-up" size={14} fill={liked ? 'currentColor' : 'none'} />
+        {formatNumber(total)}
+      </button>
+    </Card>
+  );
+}
+
+function UserCollectedList({ items }: {items: UserCollectedItem[];}) {
+  return (
+    <div className={styles.likedList}>
+      {items.map((item) => {
+        if (item.type === 'post') {
+          return <CollectedPostCard key={`collect-post-${item.post.id}`} post={item.post} collectedAt={item.collectedAt} />;
+        }
+
+        if (item.type === 'marketItem') {
+          return (
+            <CollectedMarketItemCard
+              key={`collect-market-${item.marketItem.id}`}
+              item={item.marketItem}
+              collectedAt={item.collectedAt}
+            />
+          );
+        }
+
+        return (
+          <CollectedSpeciesCard
+            key={`collect-species-${item.species.id}`}
+            species={item.species}
+            collectedAt={item.collectedAt}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function CollectedPostCard({ post, collectedAt }: {post: Post;collectedAt: string;}) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [collected, setCollected] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  const toggleCollect = async () => {
+    if (!user) {
+      router.push('/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search));
+      return;
+    }
+    setBusy(true);
+    const previous = collected;
+    setCollected(!previous);
+    try {
+      const res = await api.post<{collected: boolean; total: number}>(`/api/posts/${post.id}/collect`);
+      setCollected(res.collected);
+    } catch (e) {
+      setCollected(previous);
+      toast.error(e instanceof ApiError ? e.message : '操作失败');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card padding="none" className={styles.likedPostCard}>
+      <div className={styles.likedItemHeader}>
+        <span className={styles.likedType}>帖子收藏</span>
+        <span>{formatDate(collectedAt)}</span>
+      </div>
+      <PostListItem post={post} showDivider={false} />
+      <div className={styles.likedFooter}>
+        <Button type="button" size="sm" variant={collected ? 'primary' : 'outline'} disabled={busy} onClick={toggleCollect}>
+          <Icon name="bookmark" size={14} fill={collected ? 'currentColor' : 'none'} />
+          {collected ? '已收藏' : '收藏'}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function CollectedMarketItemCard({
+  item,
+  collectedAt
+}: {
+  item: UserCollectedMarketItem;
+  collectedAt: string;
+}) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [collected, setCollected] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  const toggleCollect = async () => {
+    if (!user) {
+      router.push('/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search));
+      return;
+    }
+    setBusy(true);
+    const previous = collected;
+    setCollected(!previous);
+    try {
+      const res = await api.post<{collected: boolean}>(`/api/market/listings/${item.listingId}/items/${item.id}/collect`);
+      setCollected(res.collected);
+    } catch (e) {
+      setCollected(previous);
+      toast.error(e instanceof ApiError ? e.message : '操作失败');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card padding="compact" className={styles.likedMediaCard}>
+      <Link href={`/market/${item.listingId}?item=${item.id}`} className={styles.likedSimpleLink}>
+        <span className={styles.likedCover}>
+          <Image src={item.cover} alt={item.title} fill sizes="82px" className={styles.likedCoverImage} unoptimized />
+        </span>
+        <span className={styles.likedSimpleMain}>
+          <span className={styles.likedItemHeader}>
+            <span className={styles.likedType}>商品收藏</span>
+            <span>{formatDate(collectedAt)}</span>
+          </span>
+          <span className={styles.likedTitle}>{item.title}</span>
+          <span className={styles.likedDesc}>{item.description}</span>
+          <span className={styles.likedMeta}>{item.listing.title} · {item.listing.shipFrom || '未填写发货地'}</span>
+        </span>
+      </Link>
+      <div className={styles.likedFooter}>
+        <Button type="button" size="sm" variant={collected ? 'primary' : 'outline'} disabled={busy} onClick={toggleCollect}>
+          <Icon name="bookmark" size={14} fill={collected ? 'currentColor' : 'none'} />
+          {collected ? '已收藏' : '收藏'}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function CollectedSpeciesCard({
+  species,
+  collectedAt
+}: {
+  species: UserCollectedSpecies;
+  collectedAt: string;
+}) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [collected, setCollected] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  const toggleCollect = async () => {
+    if (!user) {
+      router.push('/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search));
+      return;
+    }
+    setBusy(true);
+    const previous = collected;
+    setCollected(!previous);
+    try {
+      const res = await api.post<{collected: boolean; total: number}>(`/api/species/${species.id}/collect`);
+      setCollected(res.collected);
+    } catch (e) {
+      setCollected(previous);
+      toast.error(e instanceof ApiError ? e.message : '操作失败');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card padding="compact" className={styles.likedMediaCard}>
+      <Link
+        href={species.boardSlug ? `/plants/${species.boardSlug}/${species.genusSlug}/${species.slug}` : '/plants'}
+        className={styles.likedSimpleLink}
+      >
+        <span className={styles.likedCover}>
+          {species.cover ? (
+            <Image src={species.cover} alt={species.name} fill sizes="82px" className={styles.likedCoverImage} unoptimized />
+          ) : (
+            <Icon name="plants" size={24} />
+          )}
+        </span>
+        <span className={styles.likedSimpleMain}>
+          <span className={styles.likedItemHeader}>
+            <span className={styles.likedType}>品种收藏</span>
+            <span>{formatDate(collectedAt)}</span>
+          </span>
+          <span className={styles.likedTitle}>{species.name}</span>
+          <span className={styles.likedDesc}>{species.latinName}</span>
+          <span className={styles.likedMeta}>
+            {species.boardName ?? '未分板块'} · {species.genusName}
+          </span>
+        </span>
+      </Link>
+      <div className={styles.likedFooter}>
+        <Button type="button" size="sm" variant={collected ? 'primary' : 'outline'} disabled={busy} onClick={toggleCollect}>
+          <Icon name="bookmark" size={14} fill={collected ? 'currentColor' : 'none'} />
+          {collected ? '已收藏' : '收藏'}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function BadgeCenterDialog({ open, onClose, badges }: {open: boolean;onClose: () => void;badges: Badge[];}) {
+  return (
+    <Dialog open={open} onClose={onClose} title="徽章大全" maxWidth="xl">
+      <div className={styles.badgeCenterSection}>
+        <div className={styles.badgeCenterTitle}>全部徽章</div>
+        {badges.length > 0 ?
+        <div className={styles.badgeCenterGrid}>
+            {badges.map((badge) =>
+          <BadgeIconTile key={badge.id} badge={badge} />
+          )}
+          </div> :
+        <Empty icon="🏅" title="暂无徽章" />
+        }
+      </div>
+    </Dialog>);
+
+}
+
+function BadgeCard({ badge, locked, compact }: {badge: Badge;locked?: boolean;compact?: boolean;}) {
   return (
     <div
       className={cn(cx(styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_eb6e8b88, styles.r_ca6bf630, styles.r_eadef238, styles.r_0ca49668),
 
-      locked && styles.r_0b8c506a
+      locked && styles.r_0b8c506a,
+      compact && styles.compactBadgeCard
       )}>
 
       <div
         className={cn(cx(styles.r_a77ed4d9, styles.r_f3c543ad, styles.r_73a13409, styles.r_7e74e5fe, styles.r_67d66567, styles.r_a217b4ea, styles.r_751fb0d1),
 
-        locked ? styles.r_7ebecbb6 : cx(styles.r_39b2e003, styles.r_49a47a82, styles.r_6c2a384d)
+        locked ? styles.r_7ebecbb6 : cx(styles.r_39b2e003, styles.r_49a47a82, styles.r_6c2a384d),
+        compact && styles.compactBadgeIcon
         )}>
 
         {badge.icon}
@@ -797,21 +1397,21 @@ function BadgeCard({ badge, locked }: {badge: Badge;locked?: boolean;}) {
 function AboutTab({ user }: {user: User;}) {
   const { t } = useI18n();
   return (
-    <div className={cx(styles.r_c07e54fd, styles.r_6ed543e2, styles.r_fc7473ca)}>
+    <Card padding="loose" className={styles.aboutCard}>
       <InfoRow label={t('user.info.username')} value={user.name} />
       <InfoRow label={t('user.info.userId')} value={user.id} />
       <InfoRow label={t('user.info.level')} value={`Lv.${user.level}`} />
       <InfoRow label={t('user.info.joinDate')} value={formatDate(user.joinedAt)} />
       <InfoRow label={t('user.info.bio')} value={user.bio ?? t('user.info.empty')} />
-    </div>);
+    </Card>);
 
 }
 
 function InfoRow({ label, value }: {label: string;value: string;}) {
   return (
-    <div className={cx(styles.r_60fbb771, styles.r_60541e1e, styles.r_0c3bc985, styles.r_ec0091ee)}>
-      <div className={cx(styles.r_69da7e4f, styles.r_012fbd12, styles.r_359090c2, styles.r_69335b95)}>{label}</div>
-      <div className={cx(styles.r_36e579c0, styles.r_399e11a5)}>{value}</div>
+    <div className={styles.aboutRow}>
+      <div className={styles.aboutLabel}>{label}</div>
+      <div className={styles.aboutValue}>{value}</div>
     </div>);
 
 }
@@ -890,22 +1490,26 @@ function FollowListTab({
   return (
     <>
       <div className={cx(styles.r_1bb88326, styles.r_359090c2, styles.r_69335b95)}>{t('user.totalCount', { n: total })}</div>
-      <ul className={styles.r_6f7e013d}>
+      <ul className={styles.followList}>
         {list.map((u) =>
-        <li key={u.id} className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_eb6e8b88)}>
-            <Link href={`/user/${u.id}`}>
-              <Avatar src={u.avatar} alt={u.name} size={44} />
-            </Link>
-            <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
-              <UserName user={u} size="sm" />
-              {u.bio &&
-            <div className={cx(styles.r_15e1b1f4, styles.r_f50e2015, styles.r_d058ca6d, styles.r_69335b95)}>{u.bio}</div>
-            }
-              <div className={cx(styles.r_b6b02c0e, styles.r_1dc571a3, styles.r_6c4cc49e)}>
-                Lv.{u.level} · {formatNumber(u.followers)} · {u.posts}
-              </div>
-            </div>
-            <Link href={`/user/${u.id}`} className={styles.r_dd702538}>{t('nav.myProfile')}</Link>
+        <li key={u.id}>
+            <Card padding="compact" interactive className={styles.followCard}>
+              <UserIdentity
+                user={u}
+                size="lg"
+                variant="list"
+                showLevel
+                className={styles.followIdentity}
+                subtitle={
+                  <span className={styles.followMeta}>
+                    {u.bio && <span className={styles.followBio}>{u.bio}</span>}
+                    <span>Lv.{u.level} · {formatNumber(u.followers)} 粉丝 · {u.posts} 帖</span>
+                  </span>
+                } />
+              <ButtonLink href={`/user/${u.id}`} variant="outline" size="sm">
+                {t('nav.myProfile')}
+              </ButtonLink>
+            </Card>
           </li>
         )}
       </ul>
@@ -913,7 +1517,7 @@ function FollowListTab({
 
 }
 
-/* ---------------- 关注的板块 Tab(仅自己可见) ---------------- */
+/* ---------------- 关注的板�?Tab(仅自己可�? ---------------- */
 
 function FollowedBoardsTab({ isMe }: {isMe: boolean;}) {
   const { t } = useI18n();
@@ -952,26 +1556,52 @@ function FollowedBoardsTab({ isMe }: {isMe: boolean;}) {
   }
 
   return (
-    <ul className={cx(styles.r_f3c543ad, styles.r_d7c83398, styles.r_77a2a20e, styles.r_e4d6f343)}>
-      {list.map((b) =>
-      <li key={b.id}>
-          <Link
-          href={boardUrl(b)}
-          className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_eb6e8b88, styles.r_b8627687, styles.r_9e85ac05)}>
-
-            <span className={cx(styles.r_3febee09, styles.r_012fbd12)}>{b.icon}</span>
-            <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
-              <div className={cx(styles.r_fc7473ca, styles.r_2689f395, styles.r_399e11a5)}>{b.name}</div>
-              <div className={cx(styles.r_1dc571a3, styles.r_6c4cc49e)}>
-                {b.path.map((p) => p.name).join(' · ')}
-              </div>
-            </div>
-            <span className={cx(styles.r_012fbd12, styles.r_d058ca6d, styles.r_69335b95)}>
-              📝 {b.posts}
-            </span>
-          </Link>
-        </li>
-      )}
+    <ul className={styles.followedBoardList}>
+      {list.map((b) => {
+        const visual = getBoardVisualImage(b);
+        return (
+          <li key={b.id}>
+            <Card padding="compact" interactive className={styles.followedBoardCard}>
+              <Link href={boardUrl(b)} className={styles.followedBoardLink}>
+                <span className={styles.followedBoardCover}>
+                  {visual ? (
+                    <Image
+                      src={visual}
+                      alt={b.name}
+                      fill
+                      sizes="88px"
+                      className={styles.followedBoardCoverImage}
+                      unoptimized />
+                  ) : (
+                    <span className={styles.followedBoardIcon}>{b.icon || '🌿'}</span>
+                  )}
+                </span>
+                <span className={styles.followedBoardMain}>
+                  <span className={styles.followedBoardName}>{b.name}</span>
+                  <span className={styles.followedBoardPath}>
+                    {b.path.map((p) => p.name).join(' · ')}
+                  </span>
+                  {b.description ? <span className={styles.followedBoardDesc}>{b.description}</span> : null}
+                </span>
+                <span className={styles.followedBoardMeta}>
+                  <span>{formatNumber(b.posts)} 帖</span>
+                  {b.childrenCount !== undefined ? <span>{formatNumber(b.childrenCount)} 个子板块</span> : null}
+                </span>
+              </Link>
+            </Card>
+          </li>
+        );
+      })}
     </ul>);
 
+}
+
+function getBoardVisualImage(board: Board): string | null {
+  if (isImageUrl(board.cover)) return board.cover;
+  if (isImageUrl(board.icon)) return board.icon;
+  return null;
+}
+
+function isImageUrl(value: string | null | undefined): value is string {
+  return typeof value === 'string' && /^https?:\/\//.test(value);
 }

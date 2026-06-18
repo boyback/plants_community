@@ -89,7 +89,7 @@ export function welcomeEmail(opts: { userName: string; userId: string }) {
         <li>📸 <b>晒图分享</b>:记录你养的每一颗肉肉</li>
         <li>📖 <b>品种百科</b>:40+ 主流品种养护图鉴</li>
         <li>💬 <b>提问求助</b>:浇水、配土、度夏,老玩家在线答疑</li>
-        <li>🏆 <b>签到 / 徽章</b>:每日积分,等级越高权益越多</li>
+        <li>🏆 <b>签到 / 徽章</b>:每日钻石,等级越高权益越多</li>
       </ul>
       <p style="color: #666; font-size: 13px; line-height: 1.7; margin: 0;">
         <b>3 步上手</b>:

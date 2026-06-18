@@ -43,7 +43,7 @@ export const POST = handler(async (req) => {
         data: { stock: { increment: order.quantity } },
       });
     }
-    // 回收返利积分(若已发放)
+    // 回收返利钻石(若已发放)
     if (order.pointsBackTotal > 0) {
       const u = await tx.user.update({
         where: { id: order.buyerId },

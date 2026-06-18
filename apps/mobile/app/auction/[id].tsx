@@ -251,7 +251,7 @@ function auctionStatusLabel(status: AuctionDetail['status']) {
 function channelLabel(channel: JoinChannel) {
   if (channel === 'alipay') return '支付宝';
   if (channel === 'wechat') return '微信';
-  return '积分';
+  return '钻石';
 }
 
 function formatRemain(endAt: string, status: AuctionDetail['status']) {

@@ -17,7 +17,7 @@
       "vote": "投票を開催(PC のみ)",
       "video": "動画で記録(PC & アプリ可)",
       "event": "オフラインイベント(PC のみ)",
-      "help": "問題解決を依頼、賞金ポイントを設定可",
+      "help": "問題解決を依頼、賞金ダイヤを設定可",
       "journal": "植物の成長段階を時系列で記録"
     },
     "typeBadge": {
@@ -52,12 +52,12 @@
       "urgencyLow": "ゆっくり",
       "urgencyNormal": "通常",
       "urgencyHigh": "急ぎ",
-      "bountyPoints": "賞金ポイント",
-      "bountyHint": "投稿時にポイントが引かれ、採用した回答者に贈られます。",
+      "bountyPoints": "賞金ダイヤ",
+      "bountyHint": "投稿時にダイヤが引かれ、採用した回答者に贈られます。",
       "accept": "この回答を採用",
       "solved": "解決済み",
       "solvedAt": "{time} に採用",
-      "rewardReceived": "🏆 あなたの回答が採用されました — {points} ポイント獲得"
+      "rewardReceived": "🏆 あなたの回答が採用されました — {points} ダイヤ獲得"
     },
     "empty": {
       "list": "まだ投稿がありません、最初の投稿を!",

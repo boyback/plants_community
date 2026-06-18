@@ -79,7 +79,7 @@ export function ProductCard({ product }: {product: Product;}) {
               <I18nText
               k="market.hero.pointsBack"
               vars={{ n: product.pointsBack }}
-              fallback={`返 ${product.pointsBack} 积分`} />
+              fallback={`返 ${product.pointsBack} 钻石`} />
 
             </span>
           }

@@ -1,14 +1,14 @@
 {
   "points": {
-    "title": "積分中心",
-    "loginRequired": "登入後查看積分中心",
-    "balance": "我的積分餘額",
-    "balanceDesc": "積分可在皮膚商城兌換專屬裝扮,或解鎖 30 天大會員",
+    "title": "鑽石中心",
+    "loginRequired": "登入後查看鑽石中心",
+    "balance": "我的鑽石餘額",
+    "balanceDesc": "鑽石可在皮膚商城兌換專屬裝扮,或解鎖 30 天大會員",
     "sources": {
       "tasks": "📝 做任務",
       "tasksDesc": "每日 / 月度任務",
       "purchase": "🛍️ 購物回饋",
-      "purchaseDesc": "購物可回饋積分",
+      "purchaseDesc": "購物可回饋鑽石",
       "exchangeVip": "👑 兌換大會員"
     },
     "tabs": {
@@ -17,7 +17,7 @@
       "sticker": "🌱 表情包",
       "pendant": "👑 頭像掛件",
       "wardrobe": "👗 我的裝扮",
-      "ledger": "📜 積分流水"
+      "ledger": "📜 鑽石流水"
     },
     "ledger": {
       "types": {
@@ -28,7 +28,6 @@
         "comment_liked": "留言被讚",
         "followed": "被關注",
         "task_complete": "任務獎勵",
-        "activity_reward": "活躍度獎勵",
         "purchase_back": "購物回饋",
         "recharge": "充值",
         "exchange_skin": "兌換皮膚",
@@ -36,7 +35,7 @@
         "refund": "退款回收",
         "admin": "系統調整"
       },
-      "empty": "還沒有積分流水",
+      "empty": "還沒有鑽石流水",
       "loadMore": "載入更多"
     },
     "skin": {
@@ -48,7 +47,7 @@
       "owned": "已擁有",
       "redeem": "兌換 {n}",
       "free": "免費",
-      "notEnough": "積分不足",
+      "notEnough": "鑽石不足",
       "vipOnly": "大會員專屬",
       "vipLimit": "👑 VIP 限定",
       "rarity": {
@@ -60,7 +59,7 @@
       "preview": {
         "bubbleText": "這是 {name} 氣泡"
       },
-      "exchangeConfirm": "確認兌換「{name}」?將扣除 {points} 積分",
+      "exchangeConfirm": "確認兌換「{name}」?將扣除 {points} 鑽石",
       "exchangeSuccess": "🎉 兌換成功!",
       "exchangeFail": "兌換失敗"
     }

@@ -1,49 +1,18 @@
-/* Generated from src/app/settings/appearance/page.tsx. Keep component-local styles here. */.r_60fbb771{display:flex}.r_3960ffc2{align-items:center}.r_8ef2268e{justify-content:space-between}.r_5f22e64f{border-radius:8px}.r_ca6bcd4b{border-width:1px}.r_0e17f2bd{padding-left:12px;padding-right:12px}.r_03b4dd7f{padding-top:8px;padding-bottom:8px}.r_34516836{cursor:pointer}.r_56bf8ae8{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.r_fc7473ca{font-size:14px;line-height:20px}
+.themeTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 
-
-/* Recovered utility rules referenced by this CSS module. */
-.r_b3542e05>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(24px*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(24px*var(--tw-space-y-reverse))}
-.r_0478c89a{padding:24px}
-.r_d5c9b000{font-size:20px;line-height:28px}
-.r_e83a7042{font-weight:600}
-.r_da019856{margin-bottom:16px}
-.r_3e7ce58d>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(16px*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(16px*var(--tw-space-y-reverse))}
-.r_2689f395{font-weight:500}
-.r_a77ed4d9{margin-bottom:8px}
-.r_359090c2{font-size:12px;line-height:16px}
-.r_b17d6a13{--tw-text-opacity:1;color:rgb(var(--leaf-600)/var(--tw-text-opacity))}
-.r_1bb88326{margin-bottom:12px}
-.r_88b684d2{--tw-border-opacity:1;border-color:rgb(var(--leaf-100)/var(--tw-border-opacity))}
-.r_8e63407b{padding:16px}
-.r_eb16169c{--tw-text-opacity:1;color:rgb(var(--leaf-500)/var(--tw-text-opacity))}
-.r_cd0d9c51{height:20px}
-.r_ae2181c7{width:36px}
-.r_eeea4367{-webkit-appearance:none;-moz-appearance:none;appearance:none}
-.r_ac204c10{border-radius:9999px}
-.r_ae525718{--tw-bg-opacity:1;background-color:rgb(var(--leaf-200)/var(--tw-bg-opacity))}
-.r_af0bb5cc:checked{--tw-bg-opacity:1;background-color:rgb(var(--leaf-500)/var(--tw-bg-opacity))}
-.r_d89972fe{position:relative}
-.r_884dada4:before{content:var(--tw-content);position:absolute}
-.r_4fb45010:before{content:var(--tw-content);top:2px}
-.r_806c31d4:before{content:var(--tw-content);left:2px}
-.r_c793a0eb:before{content:var(--tw-content);height:16px}
-.r_f2ef5b09:before{content:var(--tw-content);width:16px}
-.r_5ccc21df:before{content:var(--tw-content);border-radius:9999px}
-.r_8c9e59d4:before{content:var(--tw-content);--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity))}
-.r_e00af0a7:before{content:var(--tw-content);transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}
-.r_59ea0850:checked:before{content:var(--tw-content);--tw-translate-x:16px;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}
-.r_f3c543ad{display:grid}
-.r_77a2a20e{gap:8px}
-@media (min-width:640px){.r_e00ad816{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.r_9ac94195{background-color:rgb(var(--leaf-50)/.5)}
-.r_5756b7b4:hover{--tw-bg-opacity:1;background-color:rgb(var(--leaf-50)/var(--tw-bg-opacity))}
-.r_3daca9af{box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}
-.r_9b87abcd{--tw-ring-opacity:1;--tw-ring-color:rgb(var(--leaf-300)/var(--tw-ring-opacity))}
-.r_42536e69{font-size:18px;line-height:28px}
-.r_f2b23104{--tw-bg-opacity:1;background-color:rgb(var(--leaf-100)/var(--tw-bg-opacity))}
-.r_5f6a59f1{--tw-text-opacity:1;color:rgb(var(--leaf-700)/var(--tw-text-opacity))}
-.r_1dc571a3{font-size:10px}
-.r_45d82811{padding-left:6px;padding-right:6px}
-.r_465609a2{padding-top:2px;padding-bottom:2px}
-.r_11e59c6d{height:16px}
-.r_dc7972eb{width:16px}
+.activeTag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 2px 8px;
+  background: rgb(var(--leaf-100));
+  color: rgb(var(--leaf-700));
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+}

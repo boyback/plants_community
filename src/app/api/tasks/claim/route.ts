@@ -73,25 +73,6 @@ export const POST = handler(async (req) => {
       });
     }
 
-    if (task.rewardActivity > 0) {
-      const ym = monthKey();
-      await tx.activityLedger.create({
-        data: {
-          userId: me.id,
-          type: 'task_complete',
-          delta: task.rewardActivity,
-          yearMonth: ym,
-          refType: 'task',
-          refId: task.id,
-        },
-      });
-      await tx.monthlyActivity.upsert({
-        where: { userId_yearMonth: { userId: me.id, yearMonth: ym } },
-        update: { score: { increment: task.rewardActivity } },
-        create: { userId: me.id, yearMonth: ym, score: task.rewardActivity },
-      });
-    }
-
     if (task.rewardExp > 0) {
       const u = await tx.user.update({
         where: { id: me.id },
@@ -118,5 +99,5 @@ export const POST = handler(async (req) => {
     }
   });
 
-  return { ok: true, rewardPoints: task.rewardPoints, rewardActivity: task.rewardActivity, rewardExp: task.rewardExp };
+  return { ok: true, rewardPoints: task.rewardPoints, rewardExp: task.rewardExp };
 });

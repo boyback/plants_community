@@ -9,7 +9,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { AppShell } from '@/components/layout/AppShell';
 import { PostListItem } from '@/components/post/PostListItem';
 import type { PostVoteUpdateHandler } from '@/components/post/PostVotePreview';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserIdentity } from '@/components/ui/UserIdentity';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { useAuth } from '@/context/AuthContext';
 import { api } from "@/lib/client-api";
@@ -58,14 +58,6 @@ type HomeStats = {
   marketCount: number;
   journalCount: number;
   postCount: number;
-};
-
-type ActiveUser = {
-  id: string;
-  name: string;
-  avatar?: string | null;
-  posts: number;
-  score: number;
 };
 
 interface FeedResponse {
@@ -259,8 +251,6 @@ function Recommended({ posts }: {posts: Post[];}) {
 
   const featuredPosts = items.slice(0, 3);
   const feedPosts = items.slice(3);
-  const activeUsers = getActiveUsers(items);
-
   return (
     <section className={styles.r_348b2c1e}>
       <div className={cx(styles.r_f3c543ad, styles.r_b39e60c3, styles.r_9a638cfe)}>
@@ -288,7 +278,6 @@ function Recommended({ posts }: {posts: Post[];}) {
 
           <aside className={cx(styles.r_b43b4c08, styles.r_88bc1fd8, styles.r_7df46613, styles.r_8b877f1c)}>
             <CheckInCard />
-            <ActiveUsersCard users={activeUsers} />
           </aside>
         </div>
       }
@@ -451,22 +440,12 @@ function RecommendedCard({ post }: {post: Post;}) {
           {post.title}
         </h3>
         <div className={cx(styles.r_0ab86672, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_1004c0c3)}>
-          <span className={cx(styles.r_60fbb771, styles.r_7e0b7cdf, styles.r_3960ffc2, styles.r_7e9a2a25)}>
-            <UserAvatar
-              src={post.author.avatar}
-              alt={post.author.name}
-              size={36}
-              pendant={post.author.equip?.pendant ?? null}
-              ring={false}
-              showFestival={false} />
-
-            <span className={cx(styles.r_7e0b7cdf, styles.r_e9fadafb)}>
-              <span className={cx(styles.r_0214b4b3, styles.r_f283ea9b, styles.r_a14daebf, styles.r_e83a7042, styles.r_399e11a5)}>{post.author.name}</span>
-              <span className={cx(styles.r_0214b4b3, styles.r_1dc571a3, styles.r_8ecebc9f, styles.r_6c4cc49e)}>
-                {formatFollowers(post.author.followers)} 粉丝
-              </span>
-            </span>
-          </span>
+          <UserIdentity
+            user={post.author}
+            size="sm"
+            variant="list"
+            subtitle={`${formatFollowers(post.author.followers)} 粉丝`}
+          />
           <span className={cx(styles.r_012fbd12, styles.r_359090c2, styles.r_66a36c90)}>{formatDateTime(post.createdAt)}</span>
         </div>
       </div>
@@ -574,47 +553,6 @@ function CheckInCard() {
           </div>
         </div>
       }
-    </section>);
-
-}
-
-function ActiveUsersCard({ users }: {users: ActiveUser[];}) {
-  if (users.length === 0) return null;
-
-  return (
-    <section className={cx(styles.r_68f2db62, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_0478c89a, styles.r_438b2237)}>
-      <div className={cx(styles.r_fb88ccaa, styles.r_60fbb771, styles.r_60541e1e, styles.r_8ef2268e, styles.r_1004c0c3)}>
-        <h3 className={cx(styles.r_d5c9b000, styles.r_69450ef1, styles.r_7eff2faf, styles.r_6d623258)}>本周活跃肉友</h3>
-        <Link href="/ranking" className={cx(styles.r_012fbd12, styles.r_fc7473ca, styles.r_e83a7042, styles.r_5f6a59f1, styles.r_81be6435)}>
-          查看
-        </Link>
-      </div>
-      <div className={styles.r_3e7ce58d}>
-        {users.slice(0, 5).map((user, index) =>
-        <div key={user.id} className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3)}>
-            <span className={cn(cx(styles.r_f3c543ad, styles.r_cd0d9c51, styles.r_72470489, styles.r_012fbd12, styles.r_67d66567, styles.r_421ac2be, styles.r_359090c2, styles.r_69450ef1, styles.r_72a4c7cd), rankTone(index))}>
-              {index + 1}
-            </span>
-            <Link href={`/user/${user.id}`} className={cx(styles.r_60fbb771, styles.r_7e0b7cdf, styles.r_36e579c0, styles.r_3960ffc2, styles.r_77a2a20e)}>
-              <UserAvatar src={user.avatar || "/default-avatar.svg"} alt={user.name} size={38} showFestival={false} />
-              <span className={styles.r_7e0b7cdf}>
-                <span className={cx(styles.r_0214b4b3, styles.r_f283ea9b, styles.r_fc7473ca, styles.r_e83a7042, styles.r_4ddaa618)}>{user.name}</span>
-                <span className={cx(styles.r_0214b4b3, styles.r_f283ea9b, styles.r_359090c2, styles.r_5f6a59f1)}>活跃值 {formatNumber(user.score)}</span>
-              </span>
-            </Link>
-            <Link
-            href={`/user/${user.id}`}
-            className={cx(styles.r_012fbd12, styles.r_ac204c10, styles.r_6bceb016, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_359090c2, styles.r_e83a7042, styles.r_72a4c7cd, styles.r_e269e58c)}>
-
-              关注
-            </Link>
-          </div>
-        )}
-      </div>
-      <Link href="/ranking" className={cx(styles.r_fb77735e, styles.r_60fbb771, styles.r_3960ffc2, styles.r_86843cf1, styles.r_44ee8ba0, styles.r_fc7473ca, styles.r_e83a7042, styles.r_5f6a59f1, styles.r_81be6435)}>
-        更多
-        <Icon name="arrow-right" size={14} />
-      </Link>
     </section>);
 
 }
@@ -833,30 +771,4 @@ function buildSignInCells(streak: number, todayDone: boolean): (SignInCell | nul
   while (cells.length % 7 !== 0) cells.push(null);
 
   return cells;
-}
-
-function rankTone(index: number) {
-  if (index === 0) return styles.r_45a732a4;
-  if (index === 1) return styles.r_82730b92;
-  if (index === 2) return styles.r_a5a0d879;
-  return cx(styles.r_febec8f2, styles.r_eb6abb1f);
-}
-
-function getActiveUsers(posts: Post[]): ActiveUser[] {
-  const users = new Map<string, ActiveUser>();
-
-  posts.forEach((post) => {
-    const current = users.get(post.author.id) ?? {
-      id: post.author.id,
-      name: post.author.name,
-      avatar: post.author.avatar,
-      posts: 0,
-      score: 0
-    };
-    current.posts += 1;
-    current.score += post.likes * 3 + post.comments * 4 + post.views + 20;
-    users.set(post.author.id, current);
-  });
-
-  return [...users.values()].sort((a, b) => b.score - a.score || b.posts - a.posts);
 }

@@ -267,7 +267,7 @@ function OrderRow({
             </div>
           }
           {order.pointsBackTotal > 0 &&
-          <div className={cx(styles.r_1dc571a3, styles.r_69335b95)}>返 {order.pointsBackTotal} 积分</div>
+          <div className={cx(styles.r_1dc571a3, styles.r_69335b95)}>返 {order.pointsBackTotal} 钻石</div>
           }
         </div>
       </Link>

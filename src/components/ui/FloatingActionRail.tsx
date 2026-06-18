@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { cn, formatNumber } from '@/lib/utils';
 import styles from './FloatingActionRail.module.scss';
@@ -18,10 +18,41 @@ export type FloatingActionItem = {
   onClick?: () => void;
 };
 
-export function FloatingActionRail({ items, contentMaxWidth = 1280 }: {items: FloatingActionItem[];contentMaxWidth?: number;}) {
+export function FloatingActionRail({
+  items,
+  contentMaxWidth = 1280,
+  anchorSelector,
+  anchorOffset = 92
+}: {items: FloatingActionItem[];contentMaxWidth?: number;anchorSelector?: string;anchorOffset?: number;}) {
   const [open, setOpen] = useState(true);
-  const railLeft = `max(16px,calc(50vw - ${contentMaxWidth / 2}px - 76px))`;
-  const toggleLeft = `max(16px,calc(50vw - ${contentMaxWidth / 2}px - 72px))`;
+  const [anchorLeft, setAnchorLeft] = useState<number | null>(null);
+  const fallbackRailLeft = `max(16px,calc(50vw - ${contentMaxWidth / 2}px - 76px))`;
+  const fallbackToggleLeft = `max(16px,calc(50vw - ${contentMaxWidth / 2}px - 72px))`;
+  const anchoredRailLeft = anchorLeft === null ? null : Math.max(16, anchorLeft - anchorOffset);
+  const anchoredToggleLeft = anchorLeft === null ? null : Math.max(16, anchorLeft - anchorOffset + 4);
+  const railLeft = anchoredRailLeft ?? fallbackRailLeft;
+  const toggleLeft = anchoredToggleLeft ?? fallbackToggleLeft;
+
+  useEffect(() => {
+    if (!anchorSelector) return;
+
+    const updateAnchorLeft = () => {
+      const anchor = document.querySelector(anchorSelector);
+      if (!anchor) {
+        setAnchorLeft(null);
+        return;
+      }
+      setAnchorLeft(anchor.getBoundingClientRect().left);
+    };
+
+    updateAnchorLeft();
+    window.addEventListener('resize', updateAnchorLeft);
+    window.addEventListener('scroll', updateAnchorLeft, { passive: true });
+    return () => {
+      window.removeEventListener('resize', updateAnchorLeft);
+      window.removeEventListener('scroll', updateAnchorLeft);
+    };
+  }, [anchorSelector]);
 
   return (
     <div className={cx(styles.r_99d72c7f, styles.r_9d60be3a)}>

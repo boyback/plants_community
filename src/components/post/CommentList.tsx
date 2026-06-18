@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import type { Comment, SkinItem } from '@/lib/types';
-import { Avatar } from '@/components/ui/Avatar';
+import { UserIdentity } from '@/components/ui/UserIdentity';
 import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
@@ -99,17 +99,10 @@ function CommentItem({
     }};const replies = comment.replies ?? [];const visibleReplies = repliesExpanded ? replies : replies.slice(0, 3);const hiddenRepliesCount = Math.max(0, replies.length - visibleReplies.length);const replyParentId = replyTarget?.id ?? comment.id;return <div className={cx(styles.r_65fdbade, styles.r_88b684d2, styles.r_b4cf72cd)}>
       <div className={styles.r_eb6e8b88}>
         <div className={cx(styles.r_60fbb771, styles.r_77a2a20e)}>
-          <Link href={`/user/${comment.author.id}`}>
-            <Avatar src={comment.author.avatar} alt={comment.author.name} size={32} />
-          </Link>
+          <UserIdentity user={comment.author} size="sm" showName={false} />
           <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
             <div className={cx(styles.r_60fbb771, styles.r_b7012bb2, styles.r_58284b4e)}>
-              <Link href={`/user/${comment.author.id}`}
-            className={cx(styles.r_359090c2, styles.r_2689f395, styles.r_399e11a5, styles.r_9825203a)}>
-
-                {comment.author.name}
-              </Link>
-              <span className={cx(styles.r_1dc571a3, styles.r_6c4cc49e)}>Lv.{comment.author.level}</span>
+              <UserIdentity user={comment.author} size="xs" showAvatar={false} showLevel />
               <span className={cx(styles.r_1dc571a3, styles.r_6c4cc49e)}>· {timeAgo(comment.createdAt)}</span>
             </div>
             <div
@@ -338,7 +331,7 @@ export function CommentInput({ postId, onSubmit }: CommentInputProps) {
 
   return (
     <div className={cx(styles.r_60fbb771, styles.r_1004c0c3)}>
-      <Avatar src={user.avatar} alt={user.name} size={36} />
+      <UserIdentity user={user} size="sm" asLink={false} showName={false} />
       <PlainCommentComposer
         title="评论"
         value={commentText}

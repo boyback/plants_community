@@ -3,8 +3,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Shell } from '@/components/layout/Shell';
 import { Icon } from '@/components/ui/Icon';
-import { Avatar } from '@/components/ui/Avatar';
-import { UserName } from '@/components/ui/UserName';
+import { UserIdentity } from '@/components/ui/UserIdentity';
 import { ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { prisma } from '@/lib/db';
@@ -177,27 +176,22 @@ export default async function MarketListingPage({
       </div>
 
       <div className={styles.detailPage}>
-        <div className={styles.primaryArea}>
+        <div className={styles.productStage}>
+          <div className={styles.primaryArea}>
           {isMine &&
             <ButtonLink href={`/market/${listing.id}/edit`} variant="outline" size="sm">
               <Icon name="edit" size={13} />
               编辑
             </ButtonLink>
           }
-          <ListingDetailClient listing={listing} />
-        </div>
-
-        <div className={styles.supportGrid}>
-          <div className={styles.commentsColumn}>
-          <MarketListingComments listing={listing} />
-        </div>
+            <ListingDetailClient listing={listing} />
+          </div>
           <aside className={styles.sidebarCards}>
           <Card>
             <div className={styles.cardTitle}>卖家信息</div>
             <div className={styles.sellerRow}>
-              <Avatar src={listing.seller.avatar} alt={listing.seller.name} size={40} />
+              <UserIdentity user={listing.seller} size="md" variant="list" />
               <div className={styles.sellerText}>
-                <UserName user={listing.seller} size="sm" />
                 {listing.seller.bio &&
                 <div className={styles.sellerBio}>
                     {listing.seller.bio}
@@ -206,7 +200,7 @@ export default async function MarketListingPage({
               </div>
             </div>
             <div className={styles.sellerActions}>
-              <ButtonLink href={`/user/${listing.seller.id}`} variant="outline" size="sm" fullWidth>
+              <ButtonLink href={`/user/${listing.seller.id}?tab=products`} variant="outline" size="sm" fullWidth>
                 主页
               </ButtonLink>
               <ButtonLink href={`/messages?to=${listing.seller.id}`} variant="outline" size="sm" fullWidth>
@@ -246,7 +240,11 @@ export default async function MarketListingPage({
               <li>自行联系/三方平台交易不在站内付款，请自行确认风险。</li>
             </ul>
           </Card>
-        </aside>
+          </aside>
+        </div>
+
+        <div className={styles.commentsArea}>
+          <MarketListingComments listing={listing} />
         </div>
       </div>
     </Shell>);

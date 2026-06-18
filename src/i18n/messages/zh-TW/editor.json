@@ -25,8 +25,8 @@
     "eventEndAt": "結束時間",
     "help": "求助資訊",
     "helpUrgency": "緊急程度",
-    "helpBounty": "懸賞積分",
-    "helpBountyHint": "發文時從你的積分扣除,採納後自動發給被採納者",
+    "helpBounty": "懸賞鑽石",
+    "helpBountyHint": "發文時從你的鑽石扣除,採納後自動發給被採納者",
     "submit": "發佈",
     "submitting": "發佈中…",
     "saveDraft": "存草稿",
@@ -42,8 +42,8 @@
       "voteOptionsMax": "投票最多 8 個選項",
       "videoUrlRequired": "影片貼必須填 URL",
       "eventTimeInvalid": "結束時間必須晚於開始時間",
-      "bountyExceedBalance": "懸賞積分超過你的可用積分",
-      "bountyRange": "懸賞積分需在 0 - 10000 之間"
+      "bountyExceedBalance": "懸賞鑽石超過你的可用鑽石",
+      "bountyRange": "懸賞鑽石需在 0 - 10000 之間"
     },
     "preview": "預覽",
     "tips": {

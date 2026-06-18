@@ -19,7 +19,6 @@ interface Task {
   icon: string;
   rewardPoints: number;
   rewardExp: number;
-  rewardActivity: number;
   target: number;
   triggerEvent: string;
   enabled: boolean;
@@ -32,7 +31,6 @@ export function TaskRow({ task }: {task: Task;}) {
   const [draft, setDraft] = useState({
     rewardPoints: task.rewardPoints,
     rewardExp: task.rewardExp,
-    rewardActivity: task.rewardActivity,
     target: task.target
   });
 
@@ -84,7 +82,6 @@ export function TaskRow({ task }: {task: Task;}) {
           <NumCell value={draft.target} onChange={(v) => setDraft({ ...draft, target: v })} min={1} />
           <NumCell value={draft.rewardPoints} onChange={(v) => setDraft({ ...draft, rewardPoints: v })} />
           <NumCell value={draft.rewardExp} onChange={(v) => setDraft({ ...draft, rewardExp: v })} />
-          <NumCell value={draft.rewardActivity} onChange={(v) => setDraft({ ...draft, rewardActivity: v })} />
           <td className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_308fc069)}>
             <button
             type="button"
@@ -101,7 +98,6 @@ export function TaskRow({ task }: {task: Task;}) {
               setDraft({
                 rewardPoints: task.rewardPoints,
                 rewardExp: task.rewardExp,
-                rewardActivity: task.rewardActivity,
                 target: task.target
               });
             }}
@@ -116,7 +112,6 @@ export function TaskRow({ task }: {task: Task;}) {
           <td className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_308fc069, styles.r_3032cae0)}>{task.target}</td>
           <td className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_308fc069, styles.r_3032cae0, styles.r_595fceba)}>{task.rewardPoints}</td>
           <td className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_308fc069, styles.r_3032cae0, styles.r_b17d6a13)}>{task.rewardExp}</td>
-          <td className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_308fc069, styles.r_3032cae0, styles.r_3d643bf5)}>{task.rewardActivity}</td>
           <td className={cx(styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_308fc069)}>
             <button
             type="button"

@@ -482,7 +482,7 @@ export function pickGateway(channel?: 'alipay' | 'wechat' | 'points'): PaymentGa
     throw new Error('微信支付未启用');
   }
   if (channel === 'points') {
-    throw new Error('积分支付不走支付网关');
+    throw new Error('钻石支付不走支付网关');
   }
 
   if (chosen === 'alipay') return AlipayGateway;

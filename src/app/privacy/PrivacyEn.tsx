@@ -26,7 +26,7 @@ export function PrivacyEn() {
           messages, help-request bounties.
         </li>
         <li>
-          <strong>Transaction data</strong> — orders, shipping addresses, points ledger,
+          <strong>Transaction data</strong> — orders, shipping addresses, diamond ledger,
           auction bids and deposits, VIP subscriptions. Shipping addresses are considered
           sensitive and are shared only with the relevant seller for fulfillment.
         </li>

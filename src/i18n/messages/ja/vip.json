@@ -13,21 +13,21 @@
       "quarterly": "四半期プラン",
       "yearly": "年プラン",
       "lifetime": "永久",
-      "monthly_points": "ポイント月プラン"
+      "monthly_points": "ダイヤ月プラン"
     },
     "planSubtitle": {
       "monthly": "30 日大会員",
       "quarterly": "90 日 · 月プランより 9.9 円お得",
       "yearly": "365 日 · 最もお得",
       "lifetime": "一度購入で永久会員",
-      "monthly_points": "5000 ポイント = 30 日"
+      "monthly_points": "5000 ダイヤ = 30 日"
     },
     "priceCash": "¥{yuan}",
-    "pricePoints": "{points} ポイント",
+    "pricePoints": "{points} ダイヤ",
     "durationDays": "{days} 日",
     "recommended": "おすすめ",
     "buy": "今すぐ加入",
-    "exchange": "ポイント交換",
+    "exchange": "ダイヤ交換",
     "benefits": {
       "title": "会員特典",
       "noPostLimit": "投稿のレベル制限なし",
@@ -39,6 +39,6 @@
     },
     "recentOrders": "最近の会員注文 20 件",
     "emptyOrders": "まだ会員注文はありません",
-    "notEnoughPoints": "ポイントが足りません:所持 {current}、必要 {need}"
+    "notEnoughPoints": "ダイヤが足りません:所持 {current}、必要 {need}"
   }
 }

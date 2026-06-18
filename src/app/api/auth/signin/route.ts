@@ -40,7 +40,7 @@ export const POST = handler(async () => {
         signInStreak: streak,
       },
     });
-    // 触发事件:加积分/EXP/活跃度 + 任务进度
+    // 触发事件:加钻石/EXP + 任务进度
     await emitEvent({ kind: 'signin', userId: me.id });
   }
 

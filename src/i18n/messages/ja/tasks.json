@@ -1,15 +1,15 @@
 {
   "tasks": {
-    "title": "クエストとアクティビティ",
-    "loginRequired": "ログインしてクエストとアクティビティを確認",
+    "title": "クエスト",
+    "loginRequired": "ログイン後にクエストを表示",
     "monthly": {
-      "title": "今月のアクティビティ",
-      "ranking": "今月の順位",
+      "title": "今月のクエスト",
+      "ranking": "今月の進捗",
       "vipBoost": "👑 大会員 10× ブースト中",
-      "desc": "投稿・コメント・サインイン・投票・買い物・クエスト達成でアクティビティが増加"
+      "desc": "クエスト完了でダイヤとEXPを獲得"
     },
     "howto": {
-      "title": "どうやって増やす?",
+      "title": "報酬の獲得方法",
       "items": {
         "signin": "📅 サインイン +1",
         "post": "📝 投稿 +5",
@@ -21,7 +21,7 @@
     },
     "tabs": {
       "tasks": "🎯 クエスト一覧",
-      "rewards": "🎁 アクティビティ報酬",
+      "rewards": "🎁 クエスト報酬",
       "ranking": "🏆 月間ランキング"
     },
     "sections": {
@@ -34,25 +34,25 @@
     },
     "progress": "達成 {done} / {total}",
     "rewardLabel": "報酬",
-    "activityUnit": "活",
+    "activityUnit": "",
     "claim": "受け取る",
     "claimed": "受取済み",
-    "claimedToast": "✨ {points} ポイント / {activity} アクティビティ獲得",
+    "claimedToast": "✨ {points} ダイヤ獲得",
     "inProgress": "進行中",
     "completed": "✓ 完了",
     "claimFail": "受取失敗",
-    "rewardNeedLevel": "必要アクティビティ {n}",
+    "rewardNeedLevel": "進捗 {n} が必要",
     "rewardSkin": "スキン「{name}」",
     "claimedThisMonth": "今月受取済み",
     "notReached": "未達成",
-    "rewardEmpty": "アクティビティ報酬はまだありません",
+    "rewardEmpty": "クエスト報酬はまだありません",
     "thisMonthProgress": "今月の進捗",
-    "rewardClaimed": "🎁 受取:{points} ポイント{skin}",
+    "rewardClaimed": "🎁 受取:{points} ダイヤ{skin}",
     "rewardClaimedSkin": " + スキン 1 つ",
     "ranking": {
       "empty": "今月のデータはまだありません",
       "emptyDesc": "投稿・コメント・サインインでランクイン",
-      "score": "アクティビティ {n}"
+      "score": "{n} ダイヤ"
     }
   }
 }

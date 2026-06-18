@@ -46,7 +46,7 @@ model User {
   lastSignInAt DateTime?
   signInStreak Int       @default(0)
 
-  // 积分余额(冗余字段,流水累加结果)
+  // 钻石余额(冗余字段,流水累加结果)
   pointsBalance Int @default(0)
 
   // 大会员
@@ -111,10 +111,7 @@ model User {
   // 新增关系
   pointsLedger              PointsLedger[]
   expLedger                 ExpLedger[]
-  activityLedger            ActivityLedger[]
-  monthlyStats              MonthlyActivity[]
   taskProgress              TaskProgress[]
-  rewardClaims              ActivityRewardClaim[]
   productsListed            Product[]                  @relation("ProductSeller")
   marketListingsListed      MarketListing[]            @relation("MarketListingSeller")
   marketListingComments     MarketListingComment[]
@@ -528,7 +525,7 @@ model HelpRequest {
   urgency           HelpUrgency @default(normal)
   solved            Boolean     @default(false) // 是否已解决
   acceptedCommentId String? // 采纳的评论 id(指向 Comment.id)
-  bountyPoints      Int         @default(0) // 悬赏积分(发帖时从作者账户扣,采纳时发给被采纳者)
+  bountyPoints      Int         @default(0) // 悬赏钻石(发帖时从作者账户扣,采纳时发给被采纳者)
   bountyPaidOut     Boolean     @default(false) // 悬赏是否已发放(避免重复发放)
   solvedAt          DateTime?
   createdAt         DateTime    @default(now())
@@ -844,7 +841,7 @@ model Product {
   price           Int // 单位:分(避免浮点误差)
   originalPrice   Int? // 划线价
   stock           Int           @default(0) // C2C 默认 1
-  pointsBack      Int           @default(0) // 购买可返多少积分
+  pointsBack      Int           @default(0) // 购买可返多少钻石
   status          ProductStatus @default(on_sale)
   sellerId        String? // C2C 必填,官方为空
   shipFrom        String? // 发货地
@@ -1049,7 +1046,7 @@ model Order {
 enum PaymentChannel {
   wechat
   alipay
-  points // 积分支付(VIP 月卡可用)
+  points // 钻石支付(VIP 月卡可用)
 }
 
 enum PaymentStatus {
@@ -1089,7 +1086,7 @@ model Payment {
 }
 
 // ============================================================
-// 积分系统
+// 钻石系统
 // ============================================================
 
 enum PointsEventType {
@@ -1100,9 +1097,8 @@ enum PointsEventType {
   comment_liked // 评论被赞
   followed // 被关注
   task_complete // 完成每日/月度任务
-  activity_reward // 月度活跃度阶梯奖励
   purchase_back // 购物返利
-  recharge // 充值买积分
+  recharge // 充值买钻石
   exchange_skin // 兑换皮肤
   exchange_vip // 兑换 VIP
   refund // 订单退款回收
@@ -1160,57 +1156,6 @@ model ExpLedger {
 }
 
 // ============================================================
-// 活跃度系统(月度排行 + 阶梯奖励)
-// ============================================================
-
-enum ActivityEventType {
-  signin
-  post_create
-  post_liked
-  post_collected
-  comment_create
-  vote_cast
-  purchase
-  task_complete
-}
-
-model ActivityLedger {
-  id        String            @id @default(cuid())
-  userId    String
-  type      ActivityEventType
-  delta     Int // 加权后的活跃度分
-  yearMonth String // 形如 "2026-04",方便聚合
-  refType   String?
-  refId     String?
-  createdAt DateTime          @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, yearMonth])
-  @@index([yearMonth])
-  @@map("activity_ledger")
-}
-
-/**
- * 月度快照(用于历史月排行榜的快速查询;当月通过 ledger 聚合)
- */
-model MonthlyActivity {
-  id        String   @id @default(cuid())
-  userId    String
-  yearMonth String // "2026-04"
-  score     Int      @default(0)
-  rank      Int? // 月末计算
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, yearMonth])
-  @@index([yearMonth, score])
-  @@map("monthly_activity")
-}
-
-// ============================================================
 // 任务系统
 // ============================================================
 
@@ -1229,7 +1174,6 @@ model Task {
   icon           String   @default("🎯")
   rewardPoints   Int      @default(0)
   rewardExp      Int      @default(0)
-  rewardActivity Int      @default(0)
   target         Int      @default(1) // 进度目标(发 3 帖、签 7 天等)
   triggerEvent   String // 由哪个事件推动:signin/post_create/comment/...
   enabled        Boolean  @default(true)
@@ -1260,38 +1204,6 @@ model TaskProgress {
   @@map("task_progress")
 }
 
-/**
- * 月度活跃度阶梯奖励:活跃度达到 X 即可领
- */
-model ActivityReward {
-  id           String  @id @default(cuid())
-  threshold    Int // 月活跃度门槛
-  title        String
-  rewardPoints Int     @default(0)
-  rewardSkinId String? // 可奖励一个皮肤
-  description  String  @db.Text
-  orderIdx     Int     @default(0)
-
-  claims ActivityRewardClaim[]
-
-  @@map("activity_rewards")
-}
-
-model ActivityRewardClaim {
-  id        String   @id @default(cuid())
-  userId    String
-  rewardId  String
-  yearMonth String // 一个用户一个月最多领一次
-  createdAt DateTime @default(now())
-
-  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reward ActivityReward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, rewardId, yearMonth])
-  @@index([yearMonth])
-  @@map("activity_reward_claims")
-}
-
 // ============================================================
 // 皮肤 / 装扮
 // ============================================================
@@ -1310,7 +1222,7 @@ model SkinItem {
   name        String
   preview     String // 预览图 URL 或 emoji
   description String   @db.Text
-  pricePoints Int      @default(0) // 兑换积分
+  pricePoints Int      @default(0) // 兑换钻石
   vipOnly     Boolean  @default(false) // 仅大会员可用
   rarity      String   @default("normal") // normal/rare/epic/legendary
   meta        String?  @db.Text // JSON,前端渲染用(颜色/图集等)
@@ -1346,7 +1258,7 @@ enum VipPlan {
   quarterly // 季卡
   yearly // 年卡
   lifetime // 终身
-  monthly_points // 积分兑换月卡
+  monthly_points // 钻石兑换月卡
 }
 
 model VipOrder {
@@ -1354,8 +1266,8 @@ model VipOrder {
   orderNo      String      @unique
   userId       String
   plan         VipPlan
-  amount       Int // 单位:分;积分卡为 0
-  pointsCost   Int         @default(0) // 积分消费数;现金卡为 0
+  amount       Int // 单位:分;钻石卡为 0
+  pointsCost   Int         @default(0) // 钻石消费数;现金卡为 0
   durationDays Int // 增加多少天
   status       OrderStatus @default(pending_payment) // 复用订单状态枚举
   paidAt       DateTime?

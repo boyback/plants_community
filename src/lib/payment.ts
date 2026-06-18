@@ -404,7 +404,7 @@ async function onOrderPaid(orderId: string) {
     });
   }
 
-  // 触发购买事件:加 EXP/积分(返利)
+  // 触发购买事件:加 EXP/钻石(返利)
   await emitEvent({
     kind: 'purchase_paid',
     userId: order.buyerId,
@@ -449,7 +449,7 @@ async function onVipOrderPaid(vipOrderId: string) {
 
 /**
  * 应用会员权益(延长到期时间或终身)。
- * 也供积分兑换月卡复用。
+ * 也供钻石兑换月卡复用。
  */
 export async function applyVipMembership(
   userId: string,

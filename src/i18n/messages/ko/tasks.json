@@ -1,15 +1,15 @@
 {
   "tasks": {
-    "title": "퀘스트 & 활동",
-    "loginRequired": "로그인하고 퀘스트·활동을 확인하세요",
+    "title": "퀘스트",
+    "loginRequired": "로그인 후 퀘스트를 확인하세요",
     "monthly": {
-      "title": "이달의 활동",
-      "ranking": "이달 순위",
+      "title": "이달의 퀘스트",
+      "ranking": "이달의 진행도",
       "vipBoost": "👑 대회원 10× 부스트 중",
-      "desc": "게시·댓글·출석·투표·구매·퀘스트 달성 모두 활동도 상승"
+      "desc": "퀘스트를 완료하면 다이아와 EXP를 얻습니다"
     },
     "howto": {
-      "title": "활동도 올리는 법?",
+      "title": "보상을 얻는 방법",
       "items": {
         "signin": "📅 출석 +1",
         "post": "📝 게시 +5",
@@ -21,7 +21,7 @@
     },
     "tabs": {
       "tasks": "🎯 퀘스트 목록",
-      "rewards": "🎁 활동 단계 보상",
+      "rewards": "🎁 퀘스트 보상",
       "ranking": "🏆 월간 랭킹"
     },
     "sections": {
@@ -34,25 +34,25 @@
     },
     "progress": "달성 {done} / {total}",
     "rewardLabel": "보상",
-    "activityUnit": "활",
+    "activityUnit": "",
     "claim": "받기",
     "claimed": "수령",
-    "claimedToast": "✨ {points} 포인트 / {activity} 활동 획득",
+    "claimedToast": "✨ {points} 다이아 획득",
     "inProgress": "진행 중",
     "completed": "✓ 완료",
     "claimFail": "수령 실패",
-    "rewardNeedLevel": "활동 {n} 필요",
+    "rewardNeedLevel": "진행도 {n} 필요",
     "rewardSkin": "스킨 「{name}」",
     "claimedThisMonth": "이달 수령",
     "notReached": "미달성",
-    "rewardEmpty": "활동 보상이 없습니다",
+    "rewardEmpty": "아직 퀘스트 보상이 없습니다",
     "thisMonthProgress": "이달 진행",
-    "rewardClaimed": "🎁 수령:{points} 포인트{skin}",
+    "rewardClaimed": "🎁 수령:{points} 다이아{skin}",
     "rewardClaimedSkin": " + 스킨 1 개",
     "ranking": {
       "empty": "이달 데이터가 없어요",
       "emptyDesc": "게시·댓글·출석 모두 랭킹에 반영",
-      "score": "활동 {n}"
+      "score": "{n} 다이아"
     }
   }
 }

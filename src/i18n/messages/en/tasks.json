@@ -1,15 +1,15 @@
 {
   "tasks": {
-    "title": "Quests & Activity",
-    "loginRequired": "Sign in to see your quests and activity",
+    "title": "Quests",
+    "loginRequired": "Sign in to see your quests",
     "monthly": {
-      "title": "Monthly activity",
-      "ranking": "Monthly rank",
+      "title": "Monthly quests",
+      "ranking": "Monthly progress",
       "vipBoost": "👑 VIP 10× multiplier active",
-      "desc": "Post, comment, sign in, vote, shop or finish quests — all boost your activity"
+      "desc": "Complete quests to earn diamonds and EXP"
     },
     "howto": {
-      "title": "How to raise activity?",
+      "title": "How to earn rewards?",
       "items": {
         "signin": "📅 Sign-in +1 each",
         "post": "📝 Post +5 each",
@@ -21,7 +21,7 @@
     },
     "tabs": {
       "tasks": "🎯 Quests",
-      "rewards": "🎁 Activity rewards",
+      "rewards": "?? Quest rewards",
       "ranking": "🏆 Monthly leaderboard"
     },
     "sections": {
@@ -34,25 +34,25 @@
     },
     "progress": "Done {done} / {total}",
     "rewardLabel": "Reward",
-    "activityUnit": "act",
+    "activityUnit": "",
     "claim": "Claim",
     "claimed": "Claimed",
-    "claimedToast": "✨ Claimed {points} pts / {activity} activity",
+    "claimedToast": "✨ Claimed {points} diamonds",
     "inProgress": "In progress",
     "completed": "✓ Done",
     "claimFail": "Claim failed",
-    "rewardNeedLevel": "Needs activity {n}",
+    "rewardNeedLevel": "Needs progress {n}",
     "rewardSkin": "Skin «{name}»",
     "claimedThisMonth": "Claimed this month",
     "notReached": "Not reached",
-    "rewardEmpty": "No activity rewards yet",
+    "rewardEmpty": "No quest rewards yet",
     "thisMonthProgress": "This month's progress",
-    "rewardClaimed": "🎁 Claimed: {points} pts{skin}",
+    "rewardClaimed": "🎁 Claimed: {points} diamonds{skin}",
     "rewardClaimedSkin": " + 1 skin",
     "ranking": {
       "empty": "No data this month yet",
       "emptyDesc": "Posting, commenting and signing in all count",
-      "score": "{n} activity"
+      "score": "{n} diamonds"
     }
   }
 }

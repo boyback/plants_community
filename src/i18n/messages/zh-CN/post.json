@@ -17,7 +17,7 @@
       "vote": "发起投票,集思广益",
       "video": "上传视频记录",
       "event": "组织线下活动",
-      "help": "遇到问题求助,可设置悬赏积分",
+      "help": "遇到问题求助,可设置悬赏钻石",
       "journal": "按时间线记录植物状态"
     },
     "typeBadge": {
@@ -52,12 +52,12 @@
       "urgencyLow": "不急",
       "urgencyNormal": "一般",
       "urgencyHigh": "紧急",
-      "bountyPoints": "悬赏积分",
-      "bountyHint": "发帖后从你的积分扣除,采纳答案时发给被采纳者",
+      "bountyPoints": "悬赏钻石",
+      "bountyHint": "发帖后从你的钻石扣除,采纳答案时发给被采纳者",
       "accept": "采纳此回答",
       "solved": "已解决",
       "solvedAt": "{time} 被采纳",
-      "rewardReceived": "🏆 你的回答被采纳,获得 {points} 悬赏积分"
+      "rewardReceived": "🏆 你的回答被采纳,获得 {points} 悬赏钻石"
     },
     "empty": {
       "list": "还没有帖子,等你来发第一条!",

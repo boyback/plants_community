@@ -5,8 +5,6 @@ import { ErrorView, LoadingView } from '../components/StateView';
 import {
   apiGet,
   apiPost,
-  type ActivityRewardsResponse,
-  type ActivitySummary,
   type LevelsResponse,
   type PointsLedgerItem,
   type PointsSummary,
@@ -25,9 +23,7 @@ const tabs: { key: Tab; label: string }[] = [
 export default function GrowthScreen() {
   const [tab, setTab] = useState<Tab>('tasks');
   const [points, setPoints] = useState<PointsSummary | null>(null);
-  const [activity, setActivity] = useState<ActivitySummary | null>(null);
   const [tasks, setTasks] = useState<TasksResponse | null>(null);
-  const [rewards, setRewards] = useState<ActivityRewardsResponse | null>(null);
   const [levels, setLevels] = useState<LevelsResponse | null>(null);
   const [ledger, setLedger] = useState<PointsLedgerItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,23 +37,19 @@ export default function GrowthScreen() {
     else setLoading(true);
     setError(null);
     try {
-      const [pointsData, activityData, tasksData, rewardsData, levelsData, ledgerData] =
+      const [pointsData, tasksData, levelsData, ledgerData] =
         await Promise.all([
           apiGet<PointsSummary>('/api/points/me'),
-          apiGet<ActivitySummary>('/api/activity/me'),
           apiGet<TasksResponse>('/api/tasks'),
-          apiGet<ActivityRewardsResponse>('/api/activity/rewards'),
           apiGet<LevelsResponse>('/api/levels'),
           apiGet<{ items: PointsLedgerItem[] }>('/api/points/ledger?limit=30'),
         ]);
       setPoints(pointsData);
-      setActivity(activityData);
       setTasks(tasksData);
-      setRewards(rewardsData);
       setLevels(levelsData);
       setLedger(ledgerData.items);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '等级积分加载失败');
+      setError(err instanceof Error ? err.message : '等级钻石加载失败');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -98,11 +90,11 @@ export default function GrowthScreen() {
     setActingId(task.id);
     setMessage(null);
     try {
-      const result = await apiPost<{ rewardPoints: number; rewardActivity: number; rewardExp: number }>(
+      const result = await apiPost<{ rewardPoints: number; rewardExp: number }>(
         '/api/tasks/claim',
         { taskId: task.id },
       );
-      setMessage(`已领取：积分 +${result.rewardPoints}，经验 +${result.rewardExp}，活跃度 +${result.rewardActivity}`);
+      setMessage(`已领取：钻石 +${result.rewardPoints}，经验 +${result.rewardExp}`);
       void load(true);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : '领取失败');
@@ -111,23 +103,7 @@ export default function GrowthScreen() {
     }
   };
 
-  const claimReward = async (rewardId: string) => {
-    setActingId(rewardId);
-    setMessage(null);
-    try {
-      const result = await apiPost<{ rewardPoints: number; rewardSkinId?: string | null }>(
-        `/api/activity/rewards/${rewardId}/claim`,
-      );
-      setMessage(`活跃度奖励已领取：积分 +${result.rewardPoints}`);
-      void load(true);
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : '领取失败');
-    } finally {
-      setActingId(null);
-    }
-  };
-
-  if (loading) return <LoadingView label="正在加载等级积分..." />;
+  if (loading) return <LoadingView label="正在加载等级钻石..." />;
   if (error && !points) return <ErrorView message={error} onRetry={() => load()} />;
 
   return (
@@ -150,7 +126,7 @@ export default function GrowthScreen() {
           </View>
           <View style={styles.scoreBox}>
             <Text style={styles.scoreValue}>{points?.balance ?? 0}</Text>
-            <Text style={styles.scoreLabel}>积分</Text>
+            <Text style={styles.scoreLabel}>钻石</Text>
           </View>
         </View>
         <View style={styles.progressTrack}>
@@ -164,8 +140,8 @@ export default function GrowthScreen() {
       <View style={styles.statsRow}>
         <Stat title="累计获得" value={points?.earned ?? 0} />
         <Stat title="累计消费" value={points?.spent ?? 0} />
-        <Stat title="本月活跃" value={activity?.score ?? 0} />
-        <Stat title="活跃排名" value={activity?.rank ?? '-'} />
+        <Stat title="当前等级" value={points?.level ?? 1} />
+        <Stat title="当前经验" value={points?.exp ?? 0} />
       </View>
 
       {message ? <Text style={styles.message}>{message}</Text> : null}
@@ -195,28 +171,6 @@ export default function GrowthScreen() {
             </View>
           ))}
 
-          {rewards?.items.length ? (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>活跃度奖励</Text>
-              {rewards.items.map((reward) => (
-                <View key={reward.id} style={styles.card}>
-                  <View style={styles.cardMain}>
-                    <Text style={styles.cardTitle}>{reward.title}</Text>
-                    <Text style={styles.cardDesc}>{reward.description}</Text>
-                    <Text style={styles.meta}>
-                      需要 {reward.threshold} 活跃度 · 积分 +{reward.rewardPoints}
-                    </Text>
-                  </View>
-                  <ClaimButton
-                    disabled={!reward.reached || reward.claimedThisMonth || actingId !== null}
-                    claimed={reward.claimedThisMonth}
-                    acting={actingId === reward.id}
-                    onPress={() => claimReward(reward.id)}
-                  />
-                </View>
-              ))}
-            </View>
-          ) : null}
         </>
       ) : (
         <View style={styles.section}>
@@ -224,7 +178,7 @@ export default function GrowthScreen() {
             ledger.map((item) => <LedgerCard key={item.id} item={item} />)
           ) : (
             <View style={styles.empty}>
-              <Text style={styles.meta}>暂无积分流水</Text>
+              <Text style={styles.meta}>暂无钻石流水</Text>
             </View>
           )}
         </View>
@@ -253,7 +207,7 @@ function TaskCard({ task, acting, onClaim }: { task: TaskItem; acting: boolean; 
           <View style={[styles.smallProgressFill, { width: `${percent}%` }]} />
         </View>
         <Text style={styles.meta}>
-          {task.progress}/{task.target} · 积分 +{task.rewardPoints} · 经验 +{task.rewardExp} · 活跃 +{task.rewardActivity}
+          {task.progress}/{task.target} · 钻石 +{task.rewardPoints} · 经验 +{task.rewardExp}
         </Text>
       </View>
       <ClaimButton
@@ -304,7 +258,6 @@ function eventLabel(type: string) {
   if (type === 'post_create') return '发布帖子';
   if (type === 'comment_create') return '发表评论';
   if (type === 'task_complete') return '任务奖励';
-  if (type === 'activity_reward') return '活跃度奖励';
   if (type === 'exchange_skin') return '兑换皮肤';
   if (type === 'exchange_vip') return '兑换会员';
   return type;

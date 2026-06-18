@@ -254,7 +254,7 @@ func AdminPatchReport(gdb *gorm.DB) gin.HandlerFunc {
 //   - { role: ... }                   改角色
 //   - { ban: { days, reason? } }      封禁
 //   - { unban: true }                 解封
-//   - { pointsDelta, reason? }        加/减积分
+//   - { pointsDelta, reason? }        加/减钻石
 // =========================================================
 
 type userPatchBan struct {

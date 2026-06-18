@@ -17,7 +17,7 @@
       "vote": "發起投票,集思廣益(僅 PC 發佈)",
       "video": "上傳影片紀錄(PC & APP 均可發佈)",
       "event": "組織線下活動(僅 PC 可發佈)",
-      "help": "遇到問題求助,可設置懸賞積分",
+      "help": "遇到問題求助,可設置懸賞鑽石",
       "journal": "按時間線記錄植物狀態"
     },
     "typeBadge": {
@@ -52,12 +52,12 @@
       "urgencyLow": "不急",
       "urgencyNormal": "一般",
       "urgencyHigh": "緊急",
-      "bountyPoints": "懸賞積分",
-      "bountyHint": "發文後從你的積分扣除,採納答案時發給被採納者",
+      "bountyPoints": "懸賞鑽石",
+      "bountyHint": "發文後從你的鑽石扣除,採納答案時發給被採納者",
       "accept": "採納此回答",
       "solved": "已解決",
       "solvedAt": "{time} 被採納",
-      "rewardReceived": "🏆 你的回答被採納,獲得 {points} 懸賞積分"
+      "rewardReceived": "🏆 你的回答被採納,獲得 {points} 懸賞鑽石"
     },
     "empty": {
       "list": "還沒有貼文,等你來發第一條!",

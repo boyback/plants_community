@@ -8,6 +8,10 @@ import { AddressForm, type AddressFormValue } from './AddressForm';
 import type { Address } from '@/lib/types';
 import styles from './AddressPicker.module.scss';
 import { cx } from '@/lib/style-utils';
+import { Button } from '@/components/ui/Button';
+import { Switch } from '@/components/ui/Switch';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 
 
@@ -26,8 +30,7 @@ import { cx } from '@/lib/style-utils';
  *   | { mode: 'once', form: AddressFormValue }
  *
  * 父组件下单时根据 mode 决定 API 入参。
- */import { Input } from '@/components/ui/Input';
-import { Textarea } from '@/components/ui/Textarea';
+ */
 
 export type AddressPickerValue =
 {mode: 'saved';addressId: string;} |
@@ -100,11 +103,14 @@ export function AddressPicker({
     <div>
       <div className={cx(styles.r_1bb88326, styles.r_60fbb771, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_ac204c10, styles.r_7ebecbb6, styles.r_eb6a3cef, styles.r_359090c2)}>
         {TABS.map((tabItem) =>
-        <button
+        <Button
           key={tabItem.key}
           type="button"
+          variant={tab === tabItem.key ? 'primary' : 'ghost'}
+          size="sm"
+          fullWidth
           onClick={() => switchTab(tabItem.key)}
-          className={cn(cx(styles.r_36e579c0, styles.r_ac204c10, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_ceb69a6b),
+          className={cn(styles.tabButton, cx(styles.r_36e579c0, styles.r_ac204c10, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_ceb69a6b),
 
           tab === tabItem.key ? cx(styles.r_5e10cdb8, styles.r_438b2237, styles.r_5f6a59f1, styles.r_2689f395) : cx(styles.r_5fa66415, styles.r_9825203a)
 
@@ -112,7 +118,7 @@ export function AddressPicker({
           )}>
 
             {t(tabItem.labelKey)}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -123,13 +129,15 @@ export function AddressPicker({
         list.length === 0 ?
         <div className={cx(styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_54720a96, styles.r_8e63407b, styles.r_ca6bf630, styles.r_359090c2, styles.r_69335b95)}>
               {t('addresses.picker.noSaved')}
-              <button
+              <Button
             type="button"
+            variant="ghost"
+            size="sm"
             className={cx(styles.r_f58b0257, styles.r_5f6a59f1, styles.r_c82b67c8)}
             onClick={() => switchTab('new')}>
 
                 {t('addresses.picker.createNow')}
-              </button>
+              </Button>
             </div> :
 
         <ul className={cx(styles.r_4bb3e3c3, styles.r_6f7e013d, styles.r_92bf82f4)}>
@@ -137,13 +145,15 @@ export function AddressPicker({
             const selected = savedSelected === a.id;
             return (
               <li key={a.id}>
-                    <button
+                    <Button
                   type="button"
+                  variant="outline"
+                  fullWidth
                   onClick={() => {
                     setSavedSelected(a.id);
                     onChange({ mode: 'saved', addressId: a.id });
                   }}
-                  className={cn(cx(styles.r_60fbb771, styles.r_6da6a3c3, styles.r_60541e1e, styles.r_1004c0c3, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_eb6e8b88, styles.r_2eba0d65, styles.r_ceb69a6b),
+                  className={cn(styles.addressOption, cx(styles.r_60fbb771, styles.r_6da6a3c3, styles.r_60541e1e, styles.r_1004c0c3, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_eb6e8b88, styles.r_2eba0d65, styles.r_ceb69a6b),
 
                   selected ? cx(styles.r_d3b27cd9, styles.r_a8a62ca4) : cx(styles.r_88b684d2, styles.r_a5c39c39)
 
@@ -179,7 +189,7 @@ export function AddressPicker({
                       join(' ')}
                         </div>
                       </div>
-                    </button>
+                    </Button>
                   </li>);
 
           })}
@@ -201,15 +211,13 @@ export function AddressPicker({
           }} />
 
           <label className={cx(styles.r_eccd13ef, styles.r_52083e7d, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_359090c2)}>
-            <input
-            type="checkbox"
+            <Switch
             checked={newAsDefault}
             onChange={(e) => {
               const v = e.target.checked;
               setNewAsDefault(v);
               if (newForm) onChange({ mode: 'new', form: newForm, asDefault: v });
-            }}
-            className={cx(styles.r_11e59c6d, styles.r_dc7972eb, styles.r_5f66c7c0)} />
+            }} />
 
             {t('addresses.picker.alsoSetDefault')}
           </label>

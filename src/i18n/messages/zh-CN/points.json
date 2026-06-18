@@ -1,14 +1,14 @@
 {
   "points": {
-    "title": "积分中心",
-    "loginRequired": "登录后查看积分中心",
-    "balance": "我的积分余额",
-    "balanceDesc": "积分可在皮肤商城兑换专属装扮,或解锁 30 天大会员",
+    "title": "钻石中心",
+    "loginRequired": "登录后查看钻石中心",
+    "balance": "我的钻石余额",
+    "balanceDesc": "钻石可在皮肤商城兑换专属装扮,或解锁 30 天大会员",
     "sources": {
       "tasks": "📝 做任务",
       "tasksDesc": "每日 / 月度任务",
       "purchase": "🛍️ 购物返利",
-      "purchaseDesc": "购物可返积分",
+      "purchaseDesc": "购物可返钻石",
       "exchangeVip": "👑 兑大会员"
     },
     "tabs": {
@@ -17,7 +17,7 @@
       "sticker": "🌱 表情包",
       "pendant": "👑 头像挂件",
       "wardrobe": "👗 我的装扮",
-      "ledger": "📜 积分流水"
+      "ledger": "📜 钻石流水"
     },
     "ledger": {
       "types": {
@@ -28,7 +28,6 @@
         "comment_liked": "评论被赞",
         "followed": "被关注",
         "task_complete": "任务奖励",
-        "activity_reward": "活跃度奖励",
         "purchase_back": "购物返利",
         "recharge": "充值",
         "exchange_skin": "兑换皮肤",
@@ -36,7 +35,7 @@
         "refund": "退款回收",
         "admin": "系统调整"
       },
-      "empty": "还没有积分流水",
+      "empty": "还没有钻石流水",
       "loadMore": "加载更多"
     },
     "skin": {
@@ -48,7 +47,7 @@
       "owned": "已拥有",
       "redeem": "兑换 {n}",
       "free": "免费",
-      "notEnough": "积分不足",
+      "notEnough": "钻石不足",
       "vipOnly": "大会员专属",
       "vipLimit": "👑 VIP 限定",
       "rarity": {
@@ -60,7 +59,7 @@
       "preview": {
         "bubbleText": "这是 {name} 气泡"
       },
-      "exchangeConfirm": "确认兑换「{name}」?将扣除 {points} 积分",
+      "exchangeConfirm": "确认兑换「{name}」?将扣除 {points} 钻石",
       "exchangeSuccess": "🎉 兑换成功!",
       "exchangeFail": "兑换失败"
     }

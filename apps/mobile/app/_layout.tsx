@@ -31,7 +31,7 @@ export default function RootLayout() {
         <Stack.Screen name="settings" options={{ title: '设置' }} />
         <Stack.Screen name="addresses" options={{ title: '收货地址' }} />
         <Stack.Screen name="notifications" options={{ title: '消息' }} />
-        <Stack.Screen name="growth" options={{ title: '等级积分' }} />
+        <Stack.Screen name="growth" options={{ title: '等级钻石' }} />
         <Stack.Screen name="search" options={{ title: '搜索' }} />
         <Stack.Screen name="ranking" options={{ title: '排行榜' }} />
         <Stack.Screen name="user/[id]" options={{ title: '用户主页' }} />

@@ -25,8 +25,8 @@
     "eventEndAt": "종료 시각",
     "help": "도움 요청",
     "helpUrgency": "긴급도",
-    "helpBounty": "현상 포인트",
-    "helpBountyHint": "작성 시 포인트가 차감되며 채택 시 답변자에게 지급됩니다",
+    "helpBounty": "현상 다이아",
+    "helpBountyHint": "작성 시 다이아가 차감되며 채택 시 답변자에게 지급됩니다",
     "submit": "게시",
     "submitting": "게시 중…",
     "saveDraft": "초안 저장",
@@ -42,8 +42,8 @@
       "voteOptionsMax": "투표는 최대 8 개 항목",
       "videoUrlRequired": "동영상 게시글에는 URL 필요",
       "eventTimeInvalid": "종료 시각은 시작 시각 이후",
-      "bountyExceedBalance": "보유 포인트를 초과했습니다",
-      "bountyRange": "현상 포인트는 0 - 10000"
+      "bountyExceedBalance": "보유 다이아를 초과했습니다",
+      "bountyRange": "현상 다이아는 0 - 10000"
     },
     "preview": "미리보기",
     "tips": {

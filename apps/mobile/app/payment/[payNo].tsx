@@ -151,7 +151,7 @@ function paymentStatusLabel(status: PaymentSummary['status']) {
 function channelLabel(channel: PaymentSummary['channel']) {
   if (channel === 'alipay') return '支付宝';
   if (channel === 'wechat') return '微信';
-  return '积分';
+  return '钻石';
 }
 
 function bizTypeLabel(type: PaymentSummary['bizType']) {

@@ -192,7 +192,7 @@ export default function VipPage() {
         <div className={cx(styles.r_65281709, styles.r_2689f395, styles.r_5f6a59f1)}>📜 会员服务说明</div>
         <ul className={cx(styles.r_f242aff2, styles.r_1f33b438, styles.r_e2eedc57)}>
           <li>大会员是订阅制,到期后等级权限自动回落,不会清空账号</li>
-          <li>积分兑换月卡仅能 30 天为单位,重复兑换可累加时长</li>
+          <li>钻石兑换月卡仅能 30 天为单位,重复兑换可累加时长</li>
           <li>终身大会员与订阅时长不冲突,购买后永久保留</li>
           <li>本演示站不收取真实金额,所有支付走 Mock 网关</li>
         </ul>

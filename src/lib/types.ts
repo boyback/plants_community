@@ -329,7 +329,7 @@ export interface BannerItem {
 }
 
 // ============================================================
-// 交易 / 积分 / 任务 / 皮肤 / 会员
+// 交易 / 钻石 / 任务 / 皮肤 / 会员
 // ============================================================
 
 export type ProductSource = 'official' | 'c2c';
@@ -492,21 +492,10 @@ export interface TaskItem {
   icon: string;
   rewardPoints: number;
   rewardExp: number;
-  rewardActivity: number;
   target: number;
   progress: number;
   completed: boolean;
   claimed: boolean;
-}
-
-export interface ActivityRewardItem {
-  id: string;
-  threshold: number;
-  title: string;
-  description: string;
-  rewardPoints: number;
-  rewardSkin?: SkinItem | null;
-  claimedThisMonth: boolean;
 }
 
 export interface MonthlyRankRow {
@@ -521,8 +510,8 @@ export interface VipPlanInfo {
   key: VipPlanKey;
   title: string;
   subtitle: string;
-  amount: number;       // 分,积分卡为 0
-  pointsCost: number;   // 积分卡所需积分
+  amount: number;       // 分,钻石兑换卡为 0
+  pointsCost: number;   // 兑换所需钻石
   durationDays: number; // 终身为 99999
   recommended?: boolean;
 }

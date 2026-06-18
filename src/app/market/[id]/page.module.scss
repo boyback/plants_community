@@ -35,14 +35,14 @@
   gap: 16px;
 }
 
-.supportGrid {
+.productStage {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
   gap: 24px;
   align-items: start;
 }
 
-.commentsColumn,
+.commentsArea,
 .sidebarCards {
   min-width: 0;
 }

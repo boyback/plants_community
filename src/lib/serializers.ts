@@ -624,7 +624,7 @@ export function serializePlant(p: DBPlant): PlantSpecies {
 }
 
 // ============================================================
-// 交易 / 积分 / 任务 / 皮肤 / 会员
+// 交易 / 钻石 / 任务 / 皮肤 / 会员
 // ============================================================
 
 import type {
@@ -637,7 +637,6 @@ import type {
   UserSkin as DBUserSkin,
   Task as DBTask,
   TaskProgress as DBTaskProgress,
-  ActivityReward as DBActivityReward,
 } from '@prisma/client';
 
 import type {
@@ -647,7 +646,6 @@ import type {
   SkinItem,
   UserSkinItem,
   TaskItem,
-  ActivityRewardItem,
   EquipState,
 } from './types';
 
@@ -812,26 +810,10 @@ export function serializeTask(
     icon: t.icon,
     rewardPoints: t.rewardPoints,
     rewardExp: t.rewardExp,
-    rewardActivity: t.rewardActivity,
     target: t.target,
     progress: tp?.progress ?? 0,
     completed: tp?.completed ?? false,
     claimed: tp?.claimed ?? false,
-  };
-}
-
-export function serializeActivityReward(
-  r: DBActivityReward & { reward?: DBSkinItem | null },
-  claimedThisMonth = false
-): ActivityRewardItem {
-  return {
-    id: r.id,
-    threshold: r.threshold,
-    title: r.title,
-    description: r.description,
-    rewardPoints: r.rewardPoints,
-    rewardSkin: r.reward ? serializeSkin(r.reward) : null,
-    claimedThisMonth,
   };
 }
 

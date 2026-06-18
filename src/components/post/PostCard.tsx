@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Post } from '@/lib/types';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserIdentity } from '@/components/ui/UserIdentity';
 import { Icon } from '@/components/ui/Icon';
 import { PostTypeBadge } from '@/components/ui/PostTypeBadge';
 import { TopicTag } from '@/components/ui/TopicTag';
@@ -109,20 +109,14 @@ function FeedCard({ post, className, onVoteUpdate, onPostChanged, onPostDeleted 
         {/* 作者 + 时间（最上面一行） */}
         <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_77a2a20e, styles.r_d058ca6d, styles.r_7b89cd85)}>
           <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_7e0b7cdf)}>
-            <UserAvatar
-              src={post.author.avatar}
-              alt={post.author.name}
-              size={36}
-              pendant={post.author.equip?.pendant ?? null}
-              ring={false}
-              showFestival={false} />
-
-            <span className={cx(styles.r_7e0b7cdf, styles.r_e9fadafb)}>
-              <span className={cx(styles.r_0214b4b3, styles.r_f283ea9b, styles.r_2689f395, styles.r_399e11a5)}>{post.author.name}</span>
-              <span className={cx(styles.r_0214b4b3, styles.r_1dc571a3, styles.r_8ecebc9f, styles.r_6c4cc49e)}>
-                {formatFollowers(post.author.followers)} 粉丝
-              </span>
-            </span>
+            <UserIdentity
+              user={post.author}
+              size="sm"
+              variant="list"
+              asLink={false}
+              avatarRing={false}
+              subtitle={`${formatFollowers(post.author.followers)} 粉丝`}
+            />
             <AuthorBadgeIcons post={post} compact />
           </div>
           <span className={cx(styles.r_012fbd12, styles.r_66a36c90)}>{formatDateTime(post.createdAt)}</span>

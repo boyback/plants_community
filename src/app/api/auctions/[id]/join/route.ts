@@ -21,8 +21,8 @@ function pickId(req: Request) {
 /**
  * 参与拍卖:
  *   1. 创建/更新 AuctionParticipant(pending → 等待付款)
- *   2. 创建保证金支付单(走现金渠道) 或 直接扣积分(channel=points)
- *   3. 返回 payment(让前端跳到二维码页)或 直接成功(积分支付)
+ *   2. 创建保证金支付单(走现金渠道) 或 直接扣钻石(channel=points)
+ *   3. 返回 payment(让前端跳到二维码页)或 直接成功(钻石支付)
  */
 export const POST = handler(async (req) => {
   const me = await requireUser();
@@ -46,14 +46,14 @@ export const POST = handler(async (req) => {
 
   const depositAmount = auction.depositAmount;
 
-  // ===== 积分支付 =====
+  // ===== 钻石支付 =====
   if (body.channel === 'points') {
-    const pointsCost = Math.ceil(depositAmount / 100) * 100; // 1 元 = 100 积分(简化)
+    const pointsCost = Math.ceil(depositAmount / 100) * 100; // 1 元 = 100 钻石(简化)
     if (me.pointsBalance < pointsCost) {
-      return fail(400, `积分不足,需 ${pointsCost} 当前 ${me.pointsBalance}`);
+      return fail(400, `钻石不足,需 ${pointsCost} 当前 ${me.pointsBalance}`);
     }
     await prisma.$transaction(async (tx) => {
-      // 扣积分
+      // 扣钻石
       const u = await tx.user.update({
         where: { id: me.id },
         data: { pointsBalance: { decrement: pointsCost } },

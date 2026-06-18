@@ -152,7 +152,7 @@ export const POST = handler(async (req) => {
       price: body.price,
       originalPrice: body.originalPrice ?? null,
       stock: 1,
-      pointsBack: body.pointsBack ?? Math.round(body.price * 0.05) / 10, // 5% 回积分(粗略)
+      pointsBack: body.pointsBack ?? Math.round(body.price * 0.05) / 10, // 5% 回钻石(粗略)
       shipFrom: body.shipFrom,
       sellerId: me.id,
       genusId,

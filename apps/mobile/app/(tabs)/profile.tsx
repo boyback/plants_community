@@ -16,7 +16,7 @@ const menuItems: ProfileMenuItem[] = [
   { label: '我的交易', href: '/orders' },
   { label: '收藏', href: '/collections' },
   { label: '消息', href: '/notifications' },
-  { label: '等级积分', href: '/growth' },
+  { label: '等级钻石', href: '/growth' },
   { label: '设置', href: '/settings' },
 ];
 
@@ -139,7 +139,7 @@ export default function ProfileScreen() {
 
           <View style={styles.pointsCard}>
             <View style={styles.pointsHeader}>
-              <Text style={styles.pointsTitle}>积分与签到</Text>
+              <Text style={styles.pointsTitle}>钻石与签到</Text>
               <Pressable
                 disabled={signing || me?.signedInToday}
                 onPress={signIn}
@@ -151,7 +151,7 @@ export default function ProfileScreen() {
               </Pressable>
             </View>
             <Text style={styles.pointsText}>
-              {me?.signedInToday ? '今日已签到' : '今日未签到'} · 连续 {me?.signInStreak ?? 0} 天 · 积分{' '}
+              {me?.signedInToday ? '今日已签到' : '今日未签到'} · 连续 {me?.signInStreak ?? 0} 天 · 钻石{' '}
               {me?.pointsBalance ?? user.pointsBalance ?? 0}
             </Text>
             {error ? <Text style={styles.inlineError}>{error}</Text> : null}

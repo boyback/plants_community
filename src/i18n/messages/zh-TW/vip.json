@@ -13,21 +13,21 @@
       "quarterly": "季卡",
       "yearly": "年卡",
       "lifetime": "終身",
-      "monthly_points": "積分兌換月卡"
+      "monthly_points": "鑽石兌換月卡"
     },
     "planSubtitle": {
       "monthly": "暢享 30 天大會員",
       "quarterly": "90 天 · 比月卡省 9.9",
       "yearly": "365 天 · 全年最划算",
       "lifetime": "一次買斷 · 永久會員",
-      "monthly_points": "5000 積分 = 30 天"
+      "monthly_points": "5000 鑽石 = 30 天"
     },
     "priceCash": "NT${yuan}",
-    "pricePoints": "{points} 積分",
+    "pricePoints": "{points} 鑽石",
     "durationDays": "{days} 天",
     "recommended": "推薦",
     "buy": "立即開通",
-    "exchange": "積分兌換",
+    "exchange": "鑽石兌換",
     "benefits": {
       "title": "會員專屬權益",
       "noPostLimit": "發文不受等級限制",
@@ -39,6 +39,6 @@
     },
     "recentOrders": "近 20 筆會員訂單",
     "emptyOrders": "還沒有會員訂單",
-    "notEnoughPoints": "積分不足,目前 {current},需要 {need}"
+    "notEnoughPoints": "鑽石不足,目前 {current},需要 {need}"
   }
 }

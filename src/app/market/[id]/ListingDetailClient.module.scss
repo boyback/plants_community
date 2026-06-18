@@ -299,35 +299,6 @@
   gap: 10px;
 }
 
-.serviceList {
-  display: grid;
-  gap: 12px;
-  border-top: 1px solid rgb(var(--leaf-100));
-  padding-top: 18px;
-}
-
-.serviceItem {
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
-  gap: 10px;
-  color: rgb(var(--leaf-700));
-}
-
-.serviceItem span {
-  display: block;
-  color: rgb(var(--ink-800));
-  font-size: 13px;
-  line-height: 20px;
-  font-weight: 600;
-}
-
-.serviceItem p {
-  margin: 2px 0 0;
-  color: rgb(var(--leaf-700) / 0.75);
-  font-size: 12px;
-  line-height: 19px;
-}
-
 .shareLine {
   display: flex;
   align-items: center;

@@ -89,7 +89,7 @@ export function TermsEn() {
           compensate the seller and the platform.
         </li>
         <li>
-          In-service &quot;Points&quot;, &quot;Bounties&quot; and similar
+          In-service &quot;Diamonds&quot;, &quot;Bounties&quot; and similar
           virtual assets have <strong>no monetary value</strong> and cannot be
           withdrawn or transferred (except via platform-provided bounty grants).
         </li>

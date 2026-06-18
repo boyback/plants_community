@@ -141,6 +141,7 @@ export function PostComposer({
   const [mineAlbums, setMineAlbums] = useState<MineAlbumOption[]>([]);
   const [loadingMineAlbums, setLoadingMineAlbums] = useState(false);
   const [hasLoadedMineAlbums, setHasLoadedMineAlbums] = useState(false);
+  const [autoLocationChecked, setAutoLocationChecked] = useState(false);
 
   const contentImages = useMemo(() => extractImagesFromJson(contentJson), [contentJson]);
   const textCount = useMemo(() => {
@@ -184,6 +185,19 @@ export function PostComposer({
     finally(() => setLoadingMineAlbums(false));
     setHasLoadedMineAlbums(true);
   }, [albumSyncMode, hasLoadedMineAlbums, loadingMineAlbums]);
+
+  useEffect(() => {
+    if (isEdit || type !== "event" || autoLocationChecked || eventLocation.trim()) return;
+    setAutoLocationChecked(true);
+    api
+      .get<{ city: string | null }>("/api/geo/city")
+      .then((data) => {
+        const city = data.city;
+        if (!city) return;
+        setEventLocation((current) => current.trim() ? current : city);
+      })
+      .catch(() => null);
+  }, [autoLocationChecked, eventLocation, isEdit, type]);
 
   const clearValidationError = (key: string) => {
     setValidationErrors((prev) => {

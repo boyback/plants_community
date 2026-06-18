@@ -103,7 +103,7 @@ export function UserRowActions({
         disabled={busy}
         className={cx(styles.r_07389a77, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_d5eab218, styles.r_660d2eff, styles.r_d058ca6d, styles.r_eb6abb1f, styles.r_5399e21f, styles.r_b29d8adb)}>
 
-        积分
+        钻石
       </button>
       {banOpen && (
       banned ?
@@ -548,7 +548,7 @@ function PointsDialog({
 
   const submit = () => {
     const parsed = parseInt(delta, 10);
-    if (!Number.isFinite(parsed) || parsed === 0) return toast.error('积分调整值无效');
+    if (!Number.isFinite(parsed) || parsed === 0) return toast.error('钻石调整值无效');
     void onSave(parsed, reason);
   };
 
@@ -556,7 +556,7 @@ function PointsDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      title="积分调整"
+      title="钻石调整"
       maxWidth="sm"
       actions={
       <>
@@ -570,7 +570,7 @@ function PointsDialog({
       }>
 
       <div className={styles.r_6ed543e2}>
-        <p className={cx(styles.r_359090c2, styles.r_7b89cd85)}>为 {userName} 增减积分，支持正数或负数。</p>
+        <p className={cx(styles.r_359090c2, styles.r_7b89cd85)}>为 {userName} 增减钻石，支持正数或负数。</p>
         <label className={styles.r_0214b4b3}>
           <span className={cx(styles.r_65281709, styles.r_0214b4b3, styles.r_359090c2, styles.r_2689f395, styles.r_eb6abb1f)}>调整值</span>
           <Input

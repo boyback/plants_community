@@ -1,18 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Icon } from '@/components/ui/Icon';
 import { AvatarField } from '@/components/upload/AvatarField';
-import { useAuth } from '@/context/AuthContext';
-import { api, ApiError } from "@/lib/client-api";
-import { toast } from '@/components/ui/Toast';
-import styles from './page.module.scss';
-import { cx } from '@/lib/style-utils';
+import { Button, ButtonLink } from '@/components/ui/Button';
+import { Icon } from '@/components/ui/Icon';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
-
-
+import { SettingsPanel } from '@/components/settings/SettingsPanel';
+import { toast } from '@/components/ui/Toast';
+import { useAuth } from '@/context/AuthContext';
+import { api, ApiError } from '@/lib/client-api';
+import styles from './page.module.scss';
 
 export default function ProfileSettingsPage() {
   const { user, loading, refresh } = useAuth();
@@ -53,84 +51,74 @@ export default function ProfileSettingsPage() {
 
   if (loading || !user) {
     return (
-      <div className={cx(styles.r_0478c89a, styles.r_fc7473ca, styles.r_69335b95)}>加载中…</div>);
-
+      <SettingsPanel icon="user" title="个人资料">
+        <div className={styles.loading}>加载中...</div>
+      </SettingsPanel>
+    );
   }
 
   return (
-    <div className={cx(styles.r_b3542e05, styles.r_0478c89a)}>
-        <h1 className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_d5c9b000, styles.r_e83a7042)}>
-          👤 个人资料
-        </h1>
-
-        {/* 头像 */}
-        <section>
-          <div className={cx(styles.r_a77ed4d9, styles.r_fc7473ca, styles.r_2689f395)}>头像</div>
-          <div className={cx(styles.r_60fbb771, styles.r_60541e1e, styles.r_0c3bc985)}>
-            <AvatarField
-            value={avatar}
-            onChange={setAvatar}
-            alt={name}
-            size={96} />
-
-            <div className={cx(styles.r_d058ca6d, styles.r_7054e276, styles.r_69335b95)}>
-              点击或拖拽图片到圆框更换头像
+    <SettingsPanel
+      icon="user"
+      title="个人资料"
+      description="更新你的头像、昵称和个人简介，这些信息会展示在个人主页和社区互动中。"
+    >
+      <div className={styles.form}>
+        <section className={styles.avatarSection}>
+          <div className={styles.fieldHeader}>
+            <div className={styles.fieldTitle}>头像</div>
+            <div className={styles.fieldDesc}>建议使用清晰的正方形图片，大小不超过 10MB。</div>
+          </div>
+          <div className={styles.avatarRow}>
+            <AvatarField value={avatar} onChange={setAvatar} alt={name} size={96} />
+            <div className={styles.avatarHelp}>
+              点击或拖拽图片到头像区域即可更换。
               <br />
-              建议正方形 · 大小不超过 10MB
-              <br />
-              支持 JPG / PNG / WebP / GIF / HEIC
+              支持 JPG、PNG、WebP、GIF、HEIC。
             </div>
           </div>
         </section>
 
-        {/* 昵称 */}
-        <section>
-          <label className={styles.r_0214b4b3}>
-            <div className={cx(styles.r_65281709, styles.r_fc7473ca, styles.r_2689f395)}>昵称</div>
-            <Input
-            className={styles.r_9794ab45}
+        <section className={styles.fieldSection}>
+          <label className={styles.label} htmlFor="profile-name">
+            昵称
+          </label>
+          <Input
+            id="profile-name"
+            className={styles.input}
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={24}
-            placeholder="2-24 个字符" />
-
-            <div className={cx(styles.r_b6b02c0e, styles.r_d058ca6d, styles.r_6c4cc49e)}>
-              {name.length} / 24
-            </div>
-          </label>
+            placeholder="2-24 个字符"
+          />
+          <div className={styles.count}>{name.length} / 24</div>
         </section>
 
-        {/* 简介 */}
-        <section>
-          <label className={styles.r_0214b4b3}>
-            <div className={cx(styles.r_65281709, styles.r_fc7473ca, styles.r_2689f395)}>简介</div>
-            <Textarea
-            className={cx(styles.r_dd9ce2a7, styles.r_9794ab45)}
+        <section className={styles.fieldSection}>
+          <label className={styles.label} htmlFor="profile-bio">
+            简介
+          </label>
+          <Textarea
+            id="profile-bio"
+            className={styles.textarea}
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             maxLength={200}
-            placeholder="一两句介绍自己,留空也行" />
-
-            <div className={cx(styles.r_b6b02c0e, styles.r_d058ca6d, styles.r_6c4cc49e)}>
-              {bio.length} / 200
-            </div>
-          </label>
+            placeholder="用一两句话介绍自己，留空也可以"
+          />
+          <div className={styles.count}>{bio.length} / 200</div>
         </section>
 
-        <div className={cx(styles.r_60fbb771, styles.r_77a2a20e, styles.r_b950dda2, styles.r_88b684d2, styles.r_173fa8f0)}>
-          <button
-          type="button"
-          onClick={onSave}
-          disabled={busy}
-          className="btn-primary">
-
+        <div className={styles.actions}>
+          <Button type="button" onClick={onSave} disabled={busy}>
             <Icon name="check" size={14} />
-            {busy ? '保存中…' : '保存'}
-          </button>
-          <Link href="/settings" className="btn-outline">
+            {busy ? '保存中...' : '保存'}
+          </Button>
+          <ButtonLink href="/settings" variant="outline">
             取消
-          </Link>
+          </ButtonLink>
         </div>
-      </div>);
-
+      </div>
+    </SettingsPanel>
+  );
 }

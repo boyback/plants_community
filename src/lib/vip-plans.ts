@@ -36,8 +36,8 @@ export const VIP_PLANS = [
   },
   {
     key: 'monthly_points',
-    title: '积分兑月卡',
-    subtitle: '5000 积分 = 30 天',
+    title: '钻石兑月卡',
+    subtitle: '5000 钻石 = 30 天',
     amount: 0,
     pointsCost: 5000,
     durationDays: 30,
