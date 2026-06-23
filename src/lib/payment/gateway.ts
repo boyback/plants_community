@@ -194,6 +194,29 @@ function buildAlipayPagePayUrl(input: {
   return url.toString();
 }
 
+function buildAlipayReturnUrl(returnUrl: string | undefined, input: CreatePaymentInput): string | undefined {
+  if (!returnUrl) return undefined;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://plantcommunity.cn';
+  let url: URL;
+  try {
+    url = new URL(returnUrl);
+  } catch {
+    url = new URL(returnUrl.startsWith('/') ? returnUrl : `/${returnUrl}`, siteUrl);
+  }
+
+  url.searchParams.set('payNo', input.payNo);
+  if (input.meta.bizType) url.searchParams.set('bizType', input.meta.bizType);
+  if (input.meta.orderId) {
+    url.searchParams.set('orderId', input.meta.orderId);
+    url.searchParams.set('bizId', input.meta.orderId);
+  }
+  if (input.meta.participantId) {
+    url.searchParams.set('participantId', input.meta.participantId);
+    url.searchParams.set('bizId', input.meta.participantId);
+  }
+  return url.toString();
+}
+
 function getAlipay(): AlipaySdkInstance {
   if (_alipaySdk) return _alipaySdk;
   const {
@@ -260,7 +283,7 @@ export const AlipayGateway: PaymentGateway = {
       gateway: ALIPAY_GATEWAY ?? 'https://openapi.alipay.com/gateway.do',
       privateKey: privateKey.key,
       notifyUrl: ALIPAY_NOTIFY_URL,
-      returnUrl: ALIPAY_RETURN_URL,
+      returnUrl: buildAlipayReturnUrl(ALIPAY_RETURN_URL, input),
       bizContent,
     });
     if (!pagePayUrl) {

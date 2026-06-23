@@ -13,7 +13,6 @@ import { toast } from '@/components/ui/Toast';
 import type { Order, Payment } from '@/lib/types';
 import { PaymentQr, type PayChannel } from '@/components/payment/PaymentQr';
 import { AlipayPagePayButton } from '@/components/payment/AlipayPagePayButton';
-import { PaymentSuccessPanel } from '@/components/payment/PaymentSuccessPanel';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
 
@@ -97,6 +96,7 @@ export default function CheckoutPage() {
             if (pollTimerRef.current) clearInterval(pollTimerRef.current);
             toast.success(t('checkout.paySuccess'));
             await refresh();
+            router.replace(`/checkout/done?payNo=${encodeURIComponent(p.payNo)}&orderId=${encodeURIComponent(p.bizId)}&bizType=order`);
           } else if (p.status === 'expired' || p.status === 'cancelled') {
             if (pollTimerRef.current) clearInterval(pollTimerRef.current);
           } else if (p.status === 'pending') {
@@ -261,11 +261,9 @@ export default function CheckoutPage() {
 
           <div className={cx(styles.r_31f25533, styles.r_f3c543ad, styles.r_67d66567, styles.r_68f2db62, styles.r_9ac94195, styles.r_0478c89a)}>
             {paid ?
-            <PaymentSuccessPanel
-              primaryHref="/orders"
-              primaryLabel={t('checkout.viewMyOrders')}
-              secondaryHref="/market"
-              secondaryLabel={t('checkout.backToMarket')} /> :
+            <div className={cx(styles.r_f3c543ad, styles.r_4ead2714, styles.r_d16aae84, styles.r_67d66567, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_5e10cdb8, styles.r_359090c2, styles.r_6c4cc49e)}>
+              正在跳转支付结果...
+            </div> :
             creating || !payment ?
             channel === 'alipay' ?
             <AlipayPagePayButton /> :
