@@ -1,19 +1,7 @@
 export type PostType = 'rich' | 'image' | 'short' | 'vote' | 'video' | 'event' | 'help' | 'journal';
 
-/** 成长日记日志阶段(与 prisma JournalStage 对齐) */
-export type JournalStage =
-  | 'germinate'
-  | 'growing'
-  | 'flowering'
-  | 'fruiting'
-  | 'withering'
-  | 'repot'
-  | 'cutting'
-  | 'summer'
-  | 'winter'
-  | 'pest'
-  | 'watering'
-  | 'other';
+/** 成长日记日志阶段:内置阶段用固定 key,自定义阶段直接使用阶段名。 */
+export type JournalStage = string;
 
 export type JournalEndReason =
   | 'alive'
@@ -26,7 +14,9 @@ export interface JournalEntry {
   id: string;
   entryDate: string; // ISO
   stage: JournalStage;
+  stages?: JournalStage[];
   stageLabel?: string;
+  stageLabels?: string[];
   note: string;
   images: string[];
   orderIdx: number;
@@ -145,6 +135,15 @@ export interface SpeciesFull extends Board {
   level: 'species';
   latinName: string;
   alias: string[];
+  descriptionJson?: unknown;
+  descriptionText?: string;
+  descriptionTabs?: {
+    id: string;
+    title: string;
+    contentJson?: unknown;
+    contentHtml?: string;
+    contentText?: string;
+  }[];
   gallery: string[];
   difficulty: number;
   light: string;
@@ -315,8 +314,23 @@ export interface Message {
   id: string;
   from: 'me' | 'other';
   text: string;
+  payload?: MessagePayload;
   at: string;
 }
+
+export type MessagePayload =
+  | {
+      type: 'market_listing';
+      listing: {
+        id: string;
+        title: string;
+        cover: string;
+        minPrice: number;
+        maxPrice: number;
+        status: ProductStatus;
+        href: string;
+      };
+    };
 
 export interface BannerItem {
   id: string;
@@ -329,11 +343,11 @@ export interface BannerItem {
 }
 
 // ============================================================
-// 交易 / 钻石 / 任务 / 皮肤 / 会员
+// 交易 / 钻石 / 任务 / 皮肤
 // ============================================================
 
 export type ProductSource = 'official' | 'c2c';
-export type ProductStatus = 'on_sale' | 'sold_out' | 'off_shelf' | 'pending_review';
+export type ProductStatus = 'on_sale' | 'trading' | 'sold_out' | 'off_shelf' | 'pending_review';
 export type MarketTradeMode = 'platform_escrow' | 'online_payment' | 'external';
 
 export interface Product {
@@ -374,6 +388,9 @@ export interface MarketOrderListing {
   title: string;
   cover: string;
   tradeMode: MarketTradeMode;
+  tradeModes?: MarketTradeMode[];
+  externalUrl?: string;
+  contactNote?: string;
 }
 
 export interface MarketOrderItem {
@@ -424,7 +441,7 @@ export interface Order {
 
 export type PaymentChannel = 'wechat' | 'alipay' | 'points';
 export type PaymentStatus = 'pending' | 'paid' | 'expired' | 'cancelled' | 'refunded';
-export type PaymentBizType = 'order' | 'vip' | 'deposit' | 'auction_balance';
+export type PaymentBizType = 'order' | 'deposit' | 'auction_balance';
 
 export interface Payment {
   id: string;
@@ -464,7 +481,6 @@ export interface SkinItem {
   preview: string;
   description: string;
   pricePoints: number;
-  vipOnly: boolean;
   rarity: 'normal' | 'rare' | 'epic' | 'legendary';
   meta?: Record<string, unknown> | null;
 }
@@ -504,28 +520,8 @@ export interface MonthlyRankRow {
   score: number;
 }
 
-export type VipPlanKey = 'monthly' | 'quarterly' | 'yearly' | 'lifetime' | 'monthly_points';
-
-export interface VipPlanInfo {
-  key: VipPlanKey;
-  title: string;
-  subtitle: string;
-  amount: number;       // 分,钻石兑换卡为 0
-  pointsCost: number;   // 兑换所需钻石
-  durationDays: number; // 终身为 99999
-  recommended?: boolean;
-}
-
-export interface UserVipState {
-  isVip: boolean;
-  lifetime: boolean;
-  expireAt?: string | null;
-  daysLeft?: number | null;
-}
-
 export interface UserExtended extends User {
   exp?: number;
-  vip?: UserVipState;
   equip?: EquipState;
 }
 

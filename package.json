@@ -18,7 +18,9 @@
     "db:reseed": "prisma db push --force-reset --accept-data-loss && tsx prisma/seed.ts",
     "setup": "prisma db push && tsx prisma/seed.ts",
     "wechat:probe": "node -r dotenv/config scripts/wechat-probe.mjs",
-    "feed:refresh": "node -r dotenv/config scripts/feed-refresh.mjs"
+    "feed:refresh": "node -r dotenv/config scripts/feed-refresh.mjs",
+    "qiniu:upload-public": "node -r dotenv/config scripts/upload-public-to-qiniu.mjs",
+    "qiniu:upload-public:dry": "node -r dotenv/config scripts/upload-public-to-qiniu.mjs --dry-run"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -62,8 +64,10 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-easy-crop": "^5.5.7",
+    "react-gcolor-picker": "^1.3.5",
     "react-hot-toast": "^2.6.0",
     "react-photoswipe-gallery": "^4.0.0",
+    "react-select": "^5.10.2",
     "react-textarea-autosize": "^8.5.9",
     "sanitize-html": "^2.17.3",
     "sharp": "^0.34.5",

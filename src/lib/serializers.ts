@@ -28,6 +28,7 @@ import type {
   Badge,
   Notification,
   Message,
+  MessagePayload,
   Conversation,
   PlantSpecies,
   JournalInfo,
@@ -37,7 +38,9 @@ import type {
 } from './types';
 import { parseJsonArray } from './api';
 import { parseSpeciesGallery } from './species-gallery';
-import { STAGE_META } from './journal';
+import { getSpeciesDescriptionTabs } from './species-description-tabs';
+import { journalStageLabels, parseJournalStages, STAGE_META } from './journal';
+import { plainFromHtml } from './richtext';
 
 // ------------ User ------------
 
@@ -52,10 +55,11 @@ type UserWithRelations = DBUser & {
 };
 
 export function serializeUser(u: UserWithRelations): User {
-  return {
+  const user: User & { equipPendantId?: string | null } = {
     id: u.id,
     name: u.name,
     avatar: u.avatar,
+    equipPendantId: u.equipPendantId,
     bio: u.bio ?? undefined,
     level: u.level,
     pointsBalance: u.pointsBalance,
@@ -77,6 +81,7 @@ export function serializeUser(u: UserWithRelations): User {
       showFollowers: u.privacyShowFollowers,
     },
   };
+  return user;
 }
 
 // ------------ Board(旧结构,用作兜底) ------------
@@ -231,6 +236,13 @@ export function serializeSpeciesFull(s: SpeciesWithRelations) {
     level: 'species' as const,
     latinName: s.latinName,
     alias: parseJsonArray(s.alias),
+    descriptionJson: parseRichJson(s.descriptionJson),
+    descriptionText: s.descriptionText ?? plainFromHtml(s.description, 500),
+    descriptionTabs: getSpeciesDescriptionTabs((s as DBSpecies & { descriptionTabs?: string | null }).descriptionTabs, {
+      description: s.description,
+      descriptionJson: parseRichJson(s.descriptionJson),
+      descriptionText: s.descriptionText,
+    }),
     gallery: galleryData.items.map((item) => item.url),
     galleryItems: galleryData.items,
     coverPosition: galleryData.coverPosition,
@@ -487,11 +499,15 @@ export function serializePost(p: AnyPost, userVoted?: boolean, userVotedOptionId
 }
 
 function serializeJournalEntry(e: DBJournalEntry & { _count?: { likes?: number; comments?: number }; liked?: boolean }): JournalEntry {
+  const stages = parseJournalStages((e as DBJournalEntry & { stages?: string | null }).stages, e.stage as JournalStage);
+  const stageLabels = journalStageLabels(stages, e.stageLabel);
   return {
     id: e.id,
     entryDate: e.entryDate.toISOString(),
     stage: e.stage as JournalStage,
-    stageLabel: e.stageLabel ?? undefined,
+    stages,
+    stageLabel: stageLabels.join('、') || (e.stageLabel ?? undefined),
+    stageLabels,
     note: e.note,
     images: parseJsonArray(e.images),
     orderIdx: e.orderIdx,
@@ -596,8 +612,22 @@ export function serializeMessage(m: DBMessage, meId: string): Message {
     id: m.id,
     from: m.fromId === meId ? 'me' : 'other',
     text: m.text,
+    payload: parseMessagePayload((m as DBMessage & { payload?: string | null }).payload),
     at: m.createdAt.toISOString(),
   };
+}
+
+function parseMessagePayload(raw: string | null | undefined): MessagePayload | undefined {
+  if (!raw) return undefined;
+  try {
+    const value = JSON.parse(raw) as MessagePayload;
+    if (value?.type === 'market_listing' && value.listing?.id && value.listing?.title) {
+      return value;
+    }
+  } catch {
+    return undefined;
+  }
+  return undefined;
 }
 
 export interface ConversationSummary extends Conversation {}
@@ -680,7 +710,7 @@ export function serializeProduct(p: ProductWithRelations): Product {
 
 type OrderWithRelations = DBOrder & {
   product?: ProductWithRelations | null;
-  listing?: Pick<DBMarketListing, 'id' | 'title' | 'cover' | 'tradeMode'> | null;
+  listing?: Pick<DBMarketListing, 'id' | 'title' | 'cover' | 'tradeMode' | 'tradeModes' | 'externalUrl' | 'contactNote'> | null;
   listingItem?: Pick<DBMarketListingItem, 'id' | 'listingId' | 'title' | 'cover' | 'price'> | null;
   auction?: { id: string; title: string; cover: string } | null;
   buyer: UserWithRelations;
@@ -699,6 +729,9 @@ export function serializeOrder(o: OrderWithRelations): Order {
           title: o.listing.title,
           cover: o.listing.cover,
           tradeMode: o.listing.tradeMode as NonNullable<Order['tradeMode']>,
+          tradeModes: parseJsonArray(o.listing.tradeModes) as NonNullable<Order['listing']>['tradeModes'],
+          externalUrl: o.listing.externalUrl ?? undefined,
+          contactNote: o.listing.contactNote ?? undefined,
         }
       : undefined,
     listingItem: o.listingItem
@@ -767,7 +800,6 @@ export function serializeSkin(s: DBSkinItem): SkinItem {
     preview: s.preview,
     description: s.description,
     pricePoints: s.pricePoints,
-    vipOnly: s.vipOnly,
     rarity: s.rarity as SkinItem['rarity'],
     meta: s.meta ? safeJson(s.meta) : null,
   };

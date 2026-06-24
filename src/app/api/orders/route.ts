@@ -3,6 +3,7 @@ import { handler } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
 import { serializeOrder } from '@/lib/serializers';
 import { productInclude } from '@/lib/market-include';
+import { expirePendingOrders } from '@/lib/order-expiry';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,13 +25,15 @@ export const GET = handler(async (req) => {
     : { buyerId: me.id };
   if (status) where.status = status;
 
+  await expirePendingOrders(role === 'seller' ? { sellerId: me.id } : { buyerId: me.id });
+
   const list = await prisma.order.findMany({
     where,
     orderBy: { createdAt: 'desc' },
     take: 50,
     include: {
       product: { include: productInclude() },
-      listing: { select: { id: true, title: true, cover: true, tradeMode: true } },
+      listing: { select: { id: true, title: true, cover: true, tradeMode: true, tradeModes: true, externalUrl: true, contactNote: true } },
       listingItem: { select: { id: true, listingId: true, title: true, cover: true, price: true } },
       auction: { select: { id: true, title: true, cover: true } },
       buyer: userIncludeForOrder,

@@ -270,6 +270,74 @@
   color: #fff;
 }
 
+.messageListingCard {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 9px;
+  width: 236px;
+  max-width: 100%;
+  margin-bottom: 8px;
+  overflow: hidden;
+  border: 1px solid rgb(var(--leaf-100));
+  border-radius: 8px;
+  background: rgb(var(--surface));
+  color: rgb(var(--ink-800));
+  text-decoration: none;
+}
+
+.messageListingCard:hover {
+  border-color: rgb(var(--leaf-300));
+}
+
+.messageListingCardCompact {
+  width: 236px;
+  margin-bottom: 0;
+}
+
+.messageListingCover {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  background: rgb(var(--leaf-50));
+}
+
+.messageListingBody {
+  min-width: 0;
+  padding: 6px 8px 6px 0;
+}
+
+.messageListingLabel {
+  color: rgb(var(--leaf-700) / 0.72);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+}
+
+.messageListingTitle {
+  overflow: hidden;
+  margin-top: 1px;
+  color: rgb(var(--ink-800));
+  font-size: 12px;
+  line-height: 17px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.messageListingMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 3px;
+  color: rgb(var(--leaf-700) / 0.78);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.bubbleMe .messageListingCard {
+  border-color: rgb(255 255 255 / 0.35);
+}
+
 .composer {
   border-top: 1px solid rgb(var(--leaf-100));
   background: rgb(var(--surface));
@@ -278,6 +346,33 @@
 
 .composerBox {
   position: relative;
+}
+
+.pendingCardWrap {
+  position: relative;
+  width: max-content;
+  max-width: 100%;
+  margin-bottom: 10px;
+  border-radius: 8px;
+}
+
+.removePendingCard {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid rgb(var(--leaf-100));
+  border-radius: 999px;
+  background: rgb(var(--surface) / 0.94);
+  color: rgb(var(--leaf-700));
+  cursor: pointer;
+}
+
+.removePendingCard:hover {
+  background: rgb(var(--leaf-50));
 }
 
 .composerInput {

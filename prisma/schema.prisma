@@ -49,11 +49,6 @@ model User {
   // 钻石余额(冗余字段,流水累加结果)
   pointsBalance Int @default(0)
 
-  // 大会员
-  vipExpireAt DateTime? // 到期时间;>now 即 VIP
-  vipLifetime Boolean   @default(false) // 终身大会员
-  vipFirstAt  DateTime? // 第一次开通时间(用于股东标识)
-
   // 隐私开关:是否公开 关注列表 / 粉丝列表(默认均公开,符合社区默认)
   privacyShowFollowing Boolean @default(true)
   privacyShowFollowers Boolean @default(true)
@@ -120,7 +115,6 @@ model User {
   ordersAsSeller            Order[]                    @relation("OrderSeller")
   payments                  Payment[]
   ownedSkins                UserSkin[]
-  vipOrders                 VipOrder[]
 
   // 拍卖 / 地址簿
   addresses           Address[]
@@ -374,6 +368,22 @@ enum JournalStage {
   other
 }
 
+model JournalStageOption {
+  id        String   @id @default(cuid())
+  name      String   @unique @db.VarChar(50)
+  value     String   @unique @db.VarChar(50)
+  emoji     String   @default("") @db.VarChar(16)
+  orderIdx  Int      @default(0)
+  builtIn   Boolean  @default(false)
+  enabled   Boolean  @default(true)
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([enabled, orderIdx])
+  @@map("journal_stage_options")
+}
+
 enum HelpUrgency {
   low // 不急
   normal // 一般
@@ -582,6 +592,7 @@ model JournalEntry {
   entryDate  DateTime
   stage      JournalStage @default(other)
   stageLabel String?      @db.VarChar(50) // stage=other 时的自定义阶段名
+  stages     String?      @db.Text // 多阶段 JSON array,兼容旧 stage 主阶段
   note       String       @db.Text // 心得文本(纯文本/简单 markdown)
   // MySQL TEXT 不允许默认值,空 JSON 在应用层兜底为 "[]"
   images     String       @db.Text // JSON array,封面或多张图
@@ -700,6 +711,7 @@ model Message {
   fromId    String
   toId      String
   text      String    @db.Text
+  payload   String?   @db.Text
   readAt    DateTime?
   createdAt DateTime  @default(now())
 
@@ -816,6 +828,7 @@ enum MarketTradeMode {
 
 enum MarketListingStatus {
   on_sale
+  trading
   sold_out
   off_shelf
   pending_review
@@ -823,6 +836,7 @@ enum MarketListingStatus {
 
 enum MarketItemStatus {
   on_sale
+  trading
   sold_out
   off_shelf
 }
@@ -1046,7 +1060,7 @@ model Order {
 enum PaymentChannel {
   wechat
   alipay
-  points // 钻石支付(VIP 月卡可用)
+  points // 钻石支付
 }
 
 enum PaymentStatus {
@@ -1059,7 +1073,6 @@ enum PaymentStatus {
 
 enum PaymentBizType {
   order // 商品订单
-  vip // 大会员订阅
   deposit // 拍卖保证金
   auction_balance // 拍卖订单的尾款(本质也是 order,但单独标记便于追溯)
 }
@@ -1068,7 +1081,7 @@ model Payment {
   id        String         @id @default(cuid())
   payNo     String         @unique
   bizType   PaymentBizType
-  bizId     String // orderId 或 vipOrderId
+  bizId     String // orderId / participantId
   userId    String
   channel   PaymentChannel
   amount    Int // 单位:分
@@ -1100,7 +1113,6 @@ enum PointsEventType {
   purchase_back // 购物返利
   recharge // 充值买钻石
   exchange_skin // 兑换皮肤
-  exchange_vip // 兑换 VIP
   refund // 订单退款回收
   admin // 运营调整
 }
@@ -1134,7 +1146,6 @@ enum ExpEventType {
   comment_create
   followed
   purchase
-  vip_open
   admin
 }
 
@@ -1166,18 +1177,18 @@ enum TaskKind {
 }
 
 model Task {
-  id             String   @id @default(cuid())
-  slug           String   @unique
-  kind           TaskKind
-  title          String
-  description    String   @db.Text
-  icon           String   @default("🎯")
-  rewardPoints   Int      @default(0)
-  rewardExp      Int      @default(0)
-  target         Int      @default(1) // 进度目标(发 3 帖、签 7 天等)
-  triggerEvent   String // 由哪个事件推动:signin/post_create/comment/...
-  enabled        Boolean  @default(true)
-  orderIdx       Int      @default(0)
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  kind         TaskKind
+  title        String
+  description  String   @db.Text
+  icon         String   @default("🎯")
+  rewardPoints Int      @default(0)
+  rewardExp    Int      @default(0)
+  target       Int      @default(1) // 进度目标(发 3 帖、签 7 天等)
+  triggerEvent String // 由哪个事件推动:signin/post_create/comment/...
+  enabled      Boolean  @default(true)
+  orderIdx     Int      @default(0)
 
   progress TaskProgress[]
 
@@ -1223,11 +1234,11 @@ model SkinItem {
   preview     String // 预览图 URL 或 emoji
   description String   @db.Text
   pricePoints Int      @default(0) // 兑换钻石
-  vipOnly     Boolean  @default(false) // 仅大会员可用
   rarity      String   @default("normal") // normal/rare/epic/legendary
   meta        String?  @db.Text // JSON,前端渲染用(颜色/图集等)
   enabled     Boolean  @default(true)
   orderIdx    Int      @default(0)
+  createdAt   DateTime @default(now())
 
   owners UserSkin[]
 
@@ -1238,7 +1249,7 @@ model SkinItem {
 model UserSkin {
   userId       String
   skinId       String
-  obtainedFrom String // exchange / reward / vip / event
+  obtainedFrom String // exchange / reward / event / admin
   obtainedAt   DateTime @default(now())
 
   user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1247,36 +1258,6 @@ model UserSkin {
   @@id([userId, skinId])
   @@index([skinId])
   @@map("user_skins")
-}
-
-// ============================================================
-// 大会员
-// ============================================================
-
-enum VipPlan {
-  monthly // 月卡
-  quarterly // 季卡
-  yearly // 年卡
-  lifetime // 终身
-  monthly_points // 钻石兑换月卡
-}
-
-model VipOrder {
-  id           String      @id @default(cuid())
-  orderNo      String      @unique
-  userId       String
-  plan         VipPlan
-  amount       Int // 单位:分;钻石卡为 0
-  pointsCost   Int         @default(0) // 钻石消费数;现金卡为 0
-  durationDays Int // 增加多少天
-  status       OrderStatus @default(pending_payment) // 复用订单状态枚举
-  paidAt       DateTime?
-  createdAt    DateTime    @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, status])
-  @@map("vip_orders")
 }
 
 // ============================================================
@@ -1533,13 +1514,16 @@ model Genus {
 }
 
 model Species {
-  id          String  @id @default(cuid())
-  genusId     String
-  slug        String
-  name        String // 中文俗名
-  latinName   String // 拉丁学名
-  alias       String? @db.Text // 别名 / 品种系 / 园艺名(JSON array)
-  description String  @db.Text
+  id              String  @id @default(cuid())
+  genusId         String
+  slug            String
+  name            String // 中文俗名
+  latinName       String // 拉丁学名
+  alias           String? @db.Text // 别名 / 品种系 / 园艺名(JSON array)
+  description     String  @db.LongText // 已 sanitize 的 HTML;旧数据可能是纯文本
+  descriptionJson String? @db.LongText // ProseMirror JSON 字符串
+  descriptionText String? @db.Text // 纯文本摘要
+  descriptionTabs String? @db.LongText // 图鉴描述 tabs(JSON array)
 
   // 从原 Plant 表迁移的字段:
   cover      String

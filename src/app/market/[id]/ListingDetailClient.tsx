@@ -9,13 +9,16 @@ import { UserIdentity } from '@/components/ui/UserIdentity';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
+import { FloatingActionRail } from '@/components/ui/FloatingActionRail';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { AddressPicker, type AddressPickerValue, pickerValueToOrderBody, validateAddressPicker } from '@/components/address/AddressPicker';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from '@/lib/client-api';
+import { toast } from '@/components/ui/Toast';
 import { hasPermission, type Permission } from '@/lib/levels';
 import { registerPhotoSwipeGalleryUi } from '@/lib/photoswipe-ui';
+import type { EquipState } from '@/lib/types';
 import { cn, formatPrice } from '@/lib/utils';
 import styles from './ListingDetailClient.module.scss';
 
@@ -30,25 +33,26 @@ export interface MarketListingDetail {
   tradeModes: Array<'platform_escrow' | 'online_payment' | 'external'>;
   externalUrl?: string;
   contactNote?: string;
+  canViewExternalContact?: boolean;
   cover: string;
   minPrice: number;
   maxPrice: number;
   itemCount: number;
   viewCount: number;
   commentCount: number;
-  status: 'on_sale' | 'sold_out' | 'off_shelf' | 'pending_review';
+  status: 'on_sale' | 'trading' | 'sold_out' | 'off_shelf' | 'pending_review';
   createdAt: string;
   seller: {
     id: string;
     name: string;
     avatar: string;
+    equipPendantId?: string | null;
     bio?: string;
     level?: number;
     exp?: number;
     joinedAt?: string;
     role?: string;
-    vipExpireAt?: string;
-    vipLifetime?: boolean;
+    equip?: EquipState;
     badges?: unknown[];
     postsCount?: number;
     followersCount?: number;
@@ -87,7 +91,7 @@ interface MarketListingItem {
   cover: string;
   images: string[];
   description: string;
-  status: 'on_sale' | 'sold_out' | 'off_shelf';
+  status: 'on_sale' | 'trading' | 'sold_out' | 'off_shelf';
 }
 
 interface MarketListingComment {
@@ -98,10 +102,10 @@ interface MarketListingComment {
     id: string;
     name: string;
     avatar: string;
+    equipPendantId?: string | null;
     level?: number;
     role?: string;
-    vipExpireAt?: string;
-    vipLifetime?: boolean;
+    equip?: EquipState;
     badges?: unknown[];
     postsCount?: number;
     followersCount?: number;
@@ -111,11 +115,15 @@ interface MarketListingComment {
 
 export function ListingDetailClient({ listing }: { listing: MarketListingDetail }) {
   const router = useRouter();
-  const { user, vip } = useAuth();
+  const { user } = useAuth();
   const [activeItem, setActiveItem] = useState<MarketListingItem | null>(null);
   const [qty, setQty] = useState(1);
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
   const [addr, setAddr] = useState<AddressPickerValue>(null);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [reportText, setReportText] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
   const availableTradeModes = useMemo(
     () => normalizeTradeModes(listing.tradeModes, listing.tradeMode),
     [listing.tradeModes, listing.tradeMode]
@@ -135,12 +143,38 @@ export function ListingDetailClient({ listing }: { listing: MarketListingDetail 
     user
       ? {
           level: user.level,
-          isVip: vip.isVip,
           grantedPermissions: user.grantedPermissions as Permission[] | undefined,
           revokedPermissions: user.revokedPermissions as Permission[] | undefined
         }
       : null,
     'market:buy'
+  );
+
+  const privateMessageSeller = useCallback(() => {
+    if (!user) {
+      router.push('/login?redirect=' + encodeURIComponent(`/market/${listing.id}`));
+      return;
+    }
+    router.push(`/messages?to=${listing.seller.id}&listing=${listing.id}`);
+  }, [listing.id, listing.seller.id, router, user]);
+
+  const copyListingLink = useCallback(async () => {
+    const url = typeof window !== 'undefined' ? window.location.href : `/market/${listing.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('链接已复制');
+    } catch {
+      toast.error('复制失败，请手动复制地址栏链接');
+    }
+  }, [listing.id]);
+
+  const railItems = useMemo(
+    () => [
+      { icon: 'alert' as const, label: '举报交易信息', onClick: () => setShowReportDialog(true) },
+      { icon: 'message' as const, label: '私信卖家', onClick: privateMessageSeller, disabled: isMine },
+      { icon: 'share' as const, label: '复制链接', onClick: copyListingLink },
+    ],
+    [copyListingLink, isMine, privateMessageSeller]
   );
 
   const clampQuantity = useCallback((stock: number, value: number) => {
@@ -199,12 +233,14 @@ export function ListingDetailClient({ listing }: { listing: MarketListingDetail 
 
   return (
     <>
+      <FloatingActionRail items={railItems} contentMaxWidth={1280} />
+
       <div className={styles.productStack}>
         {listing.items.map((item) => {
-          const soldOut = listing.status !== 'on_sale' || item.status !== 'on_sale' || item.stock <= 0;
+          const unavailable = listing.status !== 'on_sale' || item.status !== 'on_sale' || item.stock <= 0;
+          const trading = listing.status === 'trading' || item.status === 'trading';
           const images = item.images.length ? item.images : [item.cover];
           const canOrderOnline = onlineTradeModes.length > 0;
-          const hasExternal = availableTradeModes.includes('external');
           const itemQuantity = clampQuantity(item.stock, itemQuantities[item.id] ?? 1);
           const detailText = uniqueTextBlocks([item.description, listing.description]).join('\n\n').trim();
           const hasDetail = Boolean(detailText);
@@ -252,10 +288,9 @@ export function ListingDetailClient({ listing }: { listing: MarketListingDetail 
                     {item.overallSize && <InfoRow label="整体" value={item.overallSize} />}
                     {item.potDiameter && <InfoRow label="盆径" value={item.potDiameter} />}
                     <InfoRow label="交易方式" value={availableTradeModes.map(tradeModeLabel).join(' / ')} />
-                    {listing.contactNote && <InfoRow label="联系备注" value={listing.contactNote} />}
                   </div>
 
-                  {!soldOut && canOrderOnline && !isMine && user && canBuy && (
+                  {!unavailable && canOrderOnline && !isMine && user && canBuy && (
                     <div className={styles.quantityPanel}>
                       <span className={styles.panelLabel}>数量</span>
                       <QuantityControl
@@ -268,38 +303,13 @@ export function ListingDetailClient({ listing }: { listing: MarketListingDetail 
 
                   <div className={styles.actionRow}>
                     {!canOrderOnline ? (
-                      <>
-                        <ButtonLink href={`/messages?to=${listing.seller.id}`} variant="outline" fullWidth>
-                          私信卖家
-                        </ButtonLink>
-                        {listing.externalUrl && (
-                          <ButtonLink href={listing.externalUrl} target="_blank" rel="noreferrer" variant="outline" fullWidth>
-                            打开三方链接
-                          </ButtonLink>
-                        )}
-                      </>
-                    ) : hasExternal ? (
-                      <>
-                        <BuyAction
-                          soldOut={soldOut}
-                          isMine={isMine}
-                          userId={user?.id}
-                          canBuy={canBuy}
-                          listingId={listing.id}
-                          onBuy={() => openBuy(item, itemQuantity)}
-                        />
-                        <ButtonLink href={`/messages?to=${listing.seller.id}`} variant="outline" fullWidth>
-                          私信卖家
-                        </ButtonLink>
-                        {listing.externalUrl && (
-                          <ButtonLink href={listing.externalUrl} target="_blank" rel="noreferrer" variant="outline" fullWidth>
-                            打开三方链接
-                          </ButtonLink>
-                        )}
-                      </>
+                      <Button disabled variant="muted" fullWidth>
+                        下单后可在支付页查看站外信息
+                      </Button>
                     ) : (
                       <BuyAction
-                        soldOut={soldOut}
+                        soldOut={unavailable}
+                        trading={trading}
                         isMine={isMine}
                         userId={user?.id}
                         canBuy={canBuy}
@@ -307,11 +317,6 @@ export function ListingDetailClient({ listing }: { listing: MarketListingDetail 
                         onBuy={() => openBuy(item, itemQuantity)}
                       />
                     )}
-                  </div>
-
-                  <div className={styles.shareLine}>
-                    <Icon name="share" size={15} />
-                    <span>可通过浏览器地址栏分享当前商品链接</span>
                   </div>
                 </aside>
               </div>
@@ -381,7 +386,7 @@ export function ListingDetailClient({ listing }: { listing: MarketListingDetail 
               <span>商品金额</span>
               <strong>{formatPrice(activeItem.price * qty)}</strong>
             </div>
-            {selectedTradeMode === 'online_payment' && (
+            {selectedTradeMode !== 'external' && (
               <div>
                 <span>平台手续费</span>
                 <span>卖家承担 1%</span>
@@ -399,6 +404,63 @@ export function ListingDetailClient({ listing }: { listing: MarketListingDetail 
           {err && <div className={styles.errorBox}>{err}</div>}
         </Dialog>
       )}
+
+      <Dialog
+        open={showReportDialog}
+        onClose={() => {
+          if (!reportSubmitting) setShowReportDialog(false);
+        }}
+        title="举报交易信息"
+        maxWidth="sm"
+      >
+        <Textarea
+          value={reportText}
+          onChange={(event) => {
+            setReportText(event.target.value.slice(0, 1000));
+            setReportError(null);
+          }}
+          rows={5}
+          maxLength={1000}
+          placeholder="请说明你发现的问题，例如虚假信息、诱导站外付款、冒充平台担保等"
+        />
+        <div className={styles.orderFooter}>
+          <span>{reportText.length} / 1000</span>
+          <Button
+            type="button"
+            disabled={reportSubmitting || reportText.trim().length < 5}
+            onClick={async () => {
+              if (reportText.trim().length < 5) {
+                setReportError('请至少填写 5 个字');
+                return;
+              }
+              setReportSubmitting(true);
+              setReportError(null);
+              try {
+                await api.post('/api/feedback', {
+                  category: 'content',
+                  content: [
+                    `举报交易信息：${listing.title}`,
+                    `商品ID：${listing.id}`,
+                    `卖家：${listing.seller.name} (${listing.seller.id})`,
+                    '',
+                    reportText.trim(),
+                  ].join('\n'),
+                });
+                setReportText('');
+                setShowReportDialog(false);
+                toast.success('举报已提交');
+              } catch (error) {
+                setReportError(error instanceof ApiError ? error.message : '提交失败，请稍后再试');
+              } finally {
+                setReportSubmitting(false);
+              }
+            }}
+          >
+            {reportSubmitting ? '提交中...' : '提交举报'}
+          </Button>
+        </div>
+        {reportError && <div className={styles.errorBox}>{reportError}</div>}
+      </Dialog>
     </>
   );
 }
@@ -487,6 +549,7 @@ export function MarketListingComments({ listing }: { listing: MarketListingDetai
 
 function BuyAction({
   soldOut,
+  trading,
   isMine,
   userId,
   canBuy,
@@ -494,12 +557,20 @@ function BuyAction({
   onBuy
 }: {
   soldOut: boolean;
+  trading: boolean;
   isMine: boolean;
   userId?: string;
   canBuy: boolean;
   listingId: string;
   onBuy: () => void;
 }) {
+  if (trading) {
+    return (
+      <Button disabled variant="muted" fullWidth>
+        交易中
+      </Button>
+    );
+  }
   if (soldOut) {
     return (
       <Button disabled variant="muted" fullWidth>
@@ -523,9 +594,9 @@ function BuyAction({
   }
   if (!canBuy) {
     return (
-      <ButtonLink href="/vip" variant="outline" fullWidth>
-        Lv.5 或会员可购买
-      </ButtonLink>
+      <Button disabled variant="muted" fullWidth>
+        Lv.5 可购买
+      </Button>
     );
   }
   return (
@@ -691,10 +762,11 @@ function InfoRow({ label, value }: { label: string; value: string | number }) {
 }
 
 function normalizeTradeModes(modes: TradeMode[] | undefined, fallback: TradeMode): TradeMode[] {
-  const allowed: TradeMode[] = ['platform_escrow', 'online_payment', 'external'];
+  const allowed: TradeMode[] = ['online_payment', 'external'];
   const selected = modes?.length ? modes : [fallback];
-  const result = Array.from(new Set(selected.filter((mode) => allowed.includes(mode))));
-  return result.length ? result : [fallback];
+  const normalized = selected.map((mode) => mode === 'platform_escrow' ? 'online_payment' : mode);
+  const result = Array.from(new Set(normalized.filter((mode) => allowed.includes(mode))));
+  return Array.from(new Set(['online_payment' as TradeMode, ...result]));
 }
 
 function uniqueTextBlocks(blocks: Array<string | null | undefined>) {
@@ -709,14 +781,12 @@ function uniqueTextBlocks(blocks: Array<string | null | undefined>) {
 }
 
 function tradeModeHint(mode: TradeMode) {
-  if (mode === 'platform_escrow') return '平台担保交易';
-  if (mode === 'online_payment') return '支付宝在线支付，手续费 1%';
+  if (mode === 'online_payment' || mode === 'platform_escrow') return '支付宝在线付款，平台担保结算，手续费 1%';
   return '自行联系，请确认交易风险';
 }
 
 function tradeModeLabel(mode: TradeMode) {
-  if (mode === 'platform_escrow') return '平台担保';
-  if (mode === 'online_payment') return '在线支付';
+  if (mode === 'online_payment' || mode === 'platform_escrow') return '平台担保交易';
   return '自行联系';
 }
 

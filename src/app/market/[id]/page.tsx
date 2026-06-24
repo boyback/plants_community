@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/Card';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { formatPrice } from '@/lib/utils';
+import { withUserPendants } from '@/lib/user-pendants';
 import { ListingDetailClient, MarketListingComments, type MarketListingDetail } from './ListingDetailClient';
 import { Prisma } from '@prisma/client';
 import styles from './page.module.scss';
@@ -68,6 +69,16 @@ export default async function MarketListingPage({
   raw.items;
   const detailItems = visibleItems.length ? visibleItems : raw.items;
   const itemMeta = await loadItemMeta(detailItems.map((item) => item.id));
+  const isMine = me?.id === raw.sellerId;
+  const externalOrderCount = !isMine && me ?
+  await prisma.order.count({
+    where: {
+      buyerId: me.id,
+      listingId: raw.id,
+      status: { notIn: ['cancelled', 'refunded'] },
+    },
+  }) :
+  0;
 
   const listing: MarketListingDetail = {
     id: raw.id,
@@ -80,6 +91,7 @@ export default async function MarketListingPage({
     tradeModes,
     externalUrl: raw.externalUrl ?? undefined,
     contactNote: raw.contactNote ?? undefined,
+    canViewExternalContact: Boolean(isMine || externalOrderCount > 0),
     cover: raw.cover,
     minPrice: raw.minPrice,
     maxPrice: raw.maxPrice,
@@ -92,13 +104,12 @@ export default async function MarketListingPage({
       id: raw.seller.id,
       name: raw.seller.name,
       avatar: raw.seller.avatar,
+      equipPendantId: raw.seller.equipPendantId,
       bio: raw.seller.bio ?? undefined,
       level: raw.seller.level,
       exp: raw.seller.exp,
       joinedAt: raw.seller.joinedAt.toISOString(),
       role: raw.seller.role,
-      vipExpireAt: raw.seller.vipExpireAt?.toISOString(),
-      vipLifetime: raw.seller.vipLifetime,
       badges: [],
       postsCount: raw.seller._count.posts,
       followersCount: raw.seller._count.followers,
@@ -136,10 +147,9 @@ export default async function MarketListingPage({
         id: comment.author.id,
         name: comment.author.name,
         avatar: comment.author.avatar,
+        equipPendantId: comment.author.equipPendantId,
         level: comment.author.level,
         role: comment.author.role,
-        vipExpireAt: comment.author.vipExpireAt?.toISOString(),
-        vipLifetime: comment.author.vipLifetime,
         badges: [],
         postsCount: comment.author._count.posts,
         followersCount: comment.author._count.followers,
@@ -163,7 +173,7 @@ export default async function MarketListingPage({
     select: { id: true, title: true, cover: true, minPrice: true, maxPrice: true }
   });
 
-  const isMine = me?.id === raw.sellerId;
+  const listingWithPendants = await withUserPendants(listing, listing);
 
   return (
     <Shell withSidebar={false}>
@@ -184,26 +194,26 @@ export default async function MarketListingPage({
               编辑
             </ButtonLink>
           }
-            <ListingDetailClient listing={listing} />
+            <ListingDetailClient listing={listingWithPendants} />
           </div>
           <aside className={styles.sidebarCards}>
           <Card>
             <div className={styles.cardTitle}>卖家信息</div>
             <div className={styles.sellerRow}>
-              <UserIdentity user={listing.seller} size="md" variant="list" />
+              <UserIdentity user={listingWithPendants.seller} size="md" variant="list" />
               <div className={styles.sellerText}>
-                {listing.seller.bio &&
+                {listingWithPendants.seller.bio &&
                 <div className={styles.sellerBio}>
-                    {listing.seller.bio}
+                    {listingWithPendants.seller.bio}
                   </div>
                 }
               </div>
             </div>
             <div className={styles.sellerActions}>
-              <ButtonLink href={`/user/${listing.seller.id}?tab=products`} variant="outline" size="sm" fullWidth>
+              <ButtonLink href={`/user/${listingWithPendants.seller.id}?tab=products`} variant="outline" size="sm" fullWidth>
                 主页
               </ButtonLink>
-              <ButtonLink href={`/messages?to=${listing.seller.id}`} variant="outline" size="sm" fullWidth>
+              <ButtonLink href={`/messages?to=${listingWithPendants.seller.id}&listing=${listing.id}`} variant="outline" size="sm" fullWidth>
                 私信
               </ButtonLink>
             </div>
@@ -235,8 +245,8 @@ export default async function MarketListingPage({
           <Card className={styles.tradeNotice}>
             <div>交易须知</div>
             <ul>
-              <li>平台担保和在线支付会生成站内订单。</li>
-              <li>在线支付收取 1% 手续费，买家支付金额不变。</li>
+              <li>平台担保交易会生成站内订单，并通过支付宝在线付款。</li>
+              <li>平台收取 1% 手续费，买家支付金额不变。</li>
               <li>自行联系/三方平台交易不在站内付款，请自行确认风险。</li>
             </ul>
           </Card>
@@ -244,7 +254,7 @@ export default async function MarketListingPage({
         </div>
 
         <div className={styles.commentsArea}>
-          <MarketListingComments listing={listing} />
+        <MarketListingComments listing={listingWithPendants} />
         </div>
       </div>
     </Shell>);

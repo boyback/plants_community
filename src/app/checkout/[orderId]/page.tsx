@@ -1,24 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Shell } from '@/components/layout/Shell';
 import { Icon } from '@/components/ui/Icon';
+import { ButtonLink } from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from "@/lib/client-api";
-import { cn, countdown, formatPrice } from '@/lib/utils';
+import { cn, formatPrice } from '@/lib/utils';
 import { toast } from '@/components/ui/Toast';
-import type { Order, Payment } from '@/lib/types';
-import { PaymentQr, type PayChannel } from '@/components/payment/PaymentQr';
+import type { MarketTradeMode, Order, Payment } from '@/lib/types';
 import { AlipayPagePayButton } from '@/components/payment/AlipayPagePayButton';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
 
 
 
-type Channel = PayChannel;
+type Channel = 'alipay' | 'external';
 
 export default function CheckoutPage() {
   const params = useParams<{orderId: string;}>();
@@ -29,11 +29,9 @@ export default function CheckoutPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [channel, setChannel] = useState<Channel>('alipay');
   const [payment, setPayment] = useState<Payment | null>(null);
-  const [now, setNow] = useState(Date.now());
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [abandoned, setAbandoned] = useState(false);
   const [regenTick, setRegenTick] = useState(0);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -57,9 +55,14 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (!order) return;
     if (order.status !== 'pending_payment') return;
+    if (channel === 'external') {
+      setPayment(null);
+      setCreating(false);
+      setErr(null);
+      return;
+    }
     setCreating(true);
     setErr(null);
-    setAbandoned(false);
     api.
     post<Payment>('/api/payments', {
       bizType: "order",
@@ -92,7 +95,6 @@ export default function CheckoutPage() {
           if (p.status === 'paid') {
             everScanned = false;
             notScanningStreak = 0;
-            setAbandoned(false);
             if (pollTimerRef.current) clearInterval(pollTimerRef.current);
             toast.success(t('checkout.paySuccess'));
             await refresh();
@@ -103,12 +105,8 @@ export default function CheckoutPage() {
             if (p.scanning) {
               everScanned = true;
               notScanningStreak = 0;
-              setAbandoned(false);
             } else if (everScanned) {
               notScanningStreak += 1;
-              if (notScanningStreak >= 2) {
-                setAbandoned(true);
-              }
             }
           }
         } catch {
@@ -123,7 +121,7 @@ export default function CheckoutPage() {
 
 
           // ignore
-        }}, 1500);}, 4000);const tick = setInterval(() => setNow(Date.now()), 1000);return () => {clearTimeout(startTimer);if (pollTimerRef.current) clearInterval(pollTimerRef.current);clearInterval(tick);};
+        }}, 1500);}, 4000);return () => {clearTimeout(startTimer);if (pollTimerRef.current) clearInterval(pollTimerRef.current);};
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payment?.payNo]);
 
@@ -169,9 +167,15 @@ export default function CheckoutPage() {
 
   const expired = payment && payment.status === 'expired';
   const paid = payment && payment.status === 'paid';
-  const remain = payment ? new Date(payment.expireAt).getTime() - now : 0;
   const orderCover = order.product?.cover ?? order.listingItem?.cover ?? order.listing?.cover ?? order.auctionCover ?? '';
   const orderTitle = order.product?.title ?? order.listingItem?.title ?? order.listing?.title ?? order.auctionTitle ?? t('checkout.orderLabel');
+  const tradeModes = normalizeCheckoutTradeModes(order.listing?.tradeModes, order.listing?.tradeMode ?? order.tradeMode);
+  const canUseExternal = order.source === 'product' && tradeModes.includes('external');
+  const externalInfo = order.listing?.externalUrl?.trim() ?? '';
+  const externalNote = order.listing?.contactNote?.trim() ?? '';
+  const externalMessageHref = order.seller?.id && order.listing?.id
+    ? `/messages?to=${order.seller.id}&listing=${order.listing.id}`
+    : null;
 
   return (
     <Shell withSidebar={false}>
@@ -222,58 +226,56 @@ export default function CheckoutPage() {
             <div className={cx(styles.r_1bb88326, styles.r_fc7473ca, styles.r_2689f395)}>{t('checkout.pickChannel')}</div>
             <div className={cx(styles.r_f3c543ad, styles.r_be2e831b, styles.r_1004c0c3)}>
               <ChannelCard
-                active={channel === 'wechat'}
-                onClick={() => setChannel('wechat')}
-                icon="💚"
-                title={t('checkout.channelWechat')}
-                subtitle="WeChat Pay" />
-
-              <ChannelCard
                 active={channel === 'alipay'}
                 onClick={() => setChannel('alipay')}
-                icon="💙"
-                title={t('checkout.channelAlipay')}
-                subtitle="Alipay" />
+                icon={<Icon name="shop" size={22} />}
+                title="平台担保交易"
+                subtitle="支付宝付款" />
 
-              <ChannelCard
-                active={channel === 'escrow'}
-                onClick={() => setChannel('escrow')}
-                icon="🛡️"
-                title="官方中介"
-                subtitle="担保交易" />
-
+              {canUseExternal && (
+                <ChannelCard
+                  active={channel === 'external'}
+                  onClick={() => setChannel('external')}
+                  icon={<Icon name="link" size={22} />}
+                  title="自行联系 / 三方平台"
+                  subtitle="查看站外信息" />
+              )}
             </div>
-            {channel === 'escrow' &&
+            {channel === 'external' &&
             <div className={cx(styles.r_eccd13ef, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_97f24a4b, styles.r_67d2289d, styles.r_eb6e8b88, styles.r_359090c2, styles.r_7054e276, styles.r_67e74965)}>
-                <div className={cx(styles.r_65281709, styles.r_e83a7042)}>🛡️ 官方中介担保流程</div>
-                <ol className={cx(styles.r_a0df6401, styles.r_e2eedc57, styles.r_fdb4af3a)}>
-                  <li>买家把货款转入官方平台担保账户</li>
-                  <li>卖家收到「平台已收款」通知后发货</li>
-                  <li>买家收货确认后,平台把货款转给卖家</li>
-                  <li>纠纷可申请客服仲裁,平台收 1% 手续费</li>
-                </ol>
+                <div className={cx(styles.r_65281709, styles.r_e83a7042)}>站外交易信息</div>
+                {externalInfo ? (
+                  <div className={styles.externalInfoText}>{externalInfo}</div>
+                ) : (
+                  <div className={styles.externalInfoText}>卖家暂未填写站外信息，请先通过站内私信确认。</div>
+                )}
+                {externalNote && (
+                  <div className={styles.externalInfoNote}>{externalNote}</div>
+                )}
                 <div className={cx(styles.r_50d0d216, styles.r_85d79ebf)}>
-                  📩 选择此方式后,请联系客服 admin@plantcommunity.cn 获取担保账户
+                  自行联系 / 三方平台交易不经过平台收款、发货、退款和结算流程，请自行核对对方身份与商品信息。
                 </div>
+                {externalMessageHref && (
+                  <ButtonLink href={externalMessageHref} size="sm" className={styles.externalMessageButton}>
+                    <Icon name="message" size={14} />
+                    去通知卖家
+                  </ButtonLink>
+                )}
               </div>
             }
           </div>
 
           <div className={cx(styles.r_31f25533, styles.r_f3c543ad, styles.r_67d66567, styles.r_68f2db62, styles.r_9ac94195, styles.r_0478c89a)}>
-            {paid ?
+            {channel === 'external' ?
+            <div className={styles.externalInfoEmpty}>
+              <Icon name="link" size={28} />
+              <div>已显示站外信息</div>
+              <p>如需继续平台担保交易，请切回支付宝付款。</p>
+            </div> :
+            paid ?
             <div className={cx(styles.r_f3c543ad, styles.r_4ead2714, styles.r_d16aae84, styles.r_67d66567, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_5e10cdb8, styles.r_359090c2, styles.r_6c4cc49e)}>
               正在跳转支付结果...
             </div> :
-            creating || !payment ?
-            channel === 'alipay' ?
-            <AlipayPagePayButton /> :
-            <div className={cx(styles.r_f3c543ad, styles.r_4ead2714, styles.r_d16aae84, styles.r_67d66567, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_5e10cdb8, styles.r_359090c2, styles.r_6c4cc49e)}>
-                {t('checkout.generatingQr', {
-                channel: channel === 'wechat' ? t('checkout.channelWechat') : t('checkout.channelAlipay')
-              })}
-              </div> :
-            channel === 'alipay' ?
-            <AlipayPagePayButton pagePayUrl={payment.pagePayUrl} /> :
             expired ?
             <div className={cx(styles.r_f3c543ad, styles.r_4ead2714, styles.r_d16aae84, styles.r_67d66567, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_5e10cdb8)}>
                 <div className={styles.r_751fb0d1}>⌛</div>
@@ -286,34 +288,9 @@ export default function CheckoutPage() {
                   {t('checkout.qrRegenerate')}
                 </button>
               </div> :
-            <>
-                <PaymentQr
-                  text={payment.qrcode ?? payment.payNo}
-                  channel={channel}
-                  status={payment.status}
-                  scanning={payment.scanning ?? false} />
-
-                <div className={cx(styles.r_eccd13ef, styles.r_ca6bf630, styles.r_359090c2, styles.r_5f6a59f1)}>
-                  {abandoned ?
-                <div className={cx(styles.r_60fbb771, styles.r_8dddea07, styles.r_3960ffc2, styles.r_44ee8ba0)}>
-                      <span className={cx(styles.r_d058ca6d, styles.r_85d79ebf)}>
-                        {t('checkout.abandoned')}
-                      </span>
-                      <button
-                    type="button"
-                    onClick={() => setRegenTick((n) => n + 1)}
-                    className={cx(styles.r_d058ca6d, styles.r_5f6a59f1, styles.r_c82b67c8, styles.r_81be6435)}>
-
-                        {t('checkout.regenerate')}
-                      </button>
-                    </div> :
-
-                <div className={cx(styles.r_b6b02c0e, styles.r_1dc571a3, styles.r_6c4cc49e)}>
-                      {t('checkout.qrExpiresIn', { time: countdown(remain) })}
-                    </div>
-                }
-                </div>
-              </>
+            creating || !payment ?
+            <AlipayPagePayButton /> :
+            <AlipayPagePayButton pagePayUrl={payment.pagePayUrl} />
             }
           </div>
 
@@ -370,33 +347,6 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-
-      {/* 移动端粘底:总额 + 倒计时(支付未完成时显示) */}
-      {payment && payment.status === 'pending' && !expired && channel !== 'alipay' &&
-      <div
-        className={cx(styles.r_7bc55599, styles.r_3f6397bf, styles.r_189f036c, styles.r_0f2fff0a, styles.r_b950dda2, styles.r_88b684d2, styles.r_f5ebd4d0, styles.r_0b2e8c28, styles.r_a327049c)}
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-
-          <div className={cx(styles.r_0e12dc7d, styles.r_60fbb771, styles.r_2cc8041e, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_f0faeb26, styles.r_1b2d54a3)}>
-            <div>
-              <div className={cx(styles.r_d058ca6d, styles.r_69335b95)}>{t('checkout.amount')}</div>
-              <div className={cx(styles.r_42536e69, styles.r_69450ef1, styles.r_595fceba)}>
-                {formatPrice(order.totalPrice)}
-              </div>
-            </div>
-            <div className={styles.r_308fc069}>
-              <div className={cx(styles.r_1dc571a3, styles.r_6c4cc49e)}>
-                {t('checkout.qrExpiresIn', { time: countdown(remain) })}
-              </div>
-              <div className={cx(styles.r_15e1b1f4, styles.r_1dc571a3, styles.r_69335b95)}>
-                {t('checkout.scanWith', {
-                channel: channel === 'wechat' ? t('checkout.channelWechat') : t('checkout.channelAlipay')
-              })}
-              </div>
-            </div>
-          </div>
-        </div>
-      }
     </Shell>);
 
 }
@@ -413,7 +363,7 @@ function ChannelCard({
 
 
 
-}: {active: boolean;onClick: () => void;icon: string;title: string;subtitle: string;}) {
+}: {active: boolean;onClick: () => void;icon: ReactNode;title: string;subtitle: string;}) {
   return (
     <button
       type="button"
@@ -437,4 +387,13 @@ function ChannelCard({
       }
     </button>);
 
+}
+
+function normalizeCheckoutTradeModes(
+  modes: MarketTradeMode[] | undefined,
+  fallback?: Order['tradeMode']
+): Array<'online_payment' | 'external'> {
+  const selected = Array.isArray(modes) && modes.length ? modes : fallback ? [fallback] : [];
+  const normalized = selected.map((mode) => mode === 'platform_escrow' ? 'online_payment' : mode);
+  return Array.from(new Set(['online_payment' as const, ...normalized.filter((mode): mode is 'online_payment' | 'external' => mode === 'online_payment' || mode === 'external')]));
 }

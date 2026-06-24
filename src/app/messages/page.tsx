@@ -16,8 +16,19 @@ import { useRealtime, type RealtimePayload } from '@/context/RealtimeContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from '@/lib/client-api';
 import type { Conversation, Message, User } from '@/lib/types';
-import { cn, timeAgo } from '@/lib/utils';
+import { cn, formatPrice, timeAgo } from '@/lib/utils';
 import styles from './page.module.scss';
+
+type MarketListingMessageCard = {
+  id: string;
+  title: string;
+  cover: string;
+  minPrice: number;
+  maxPrice: number;
+  status: string;
+  sellerId: string;
+  href: string;
+};
 
 export default function Page() {
   return (
@@ -33,11 +44,13 @@ function MessagesInner() {
   const { subscribe } = useRealtime();
   const searchParams = useSearchParams();
   const initialTo = searchParams.get('to');
+  const initialListingId = searchParams.get('listing');
 
   const [list, setList] = useState<Conversation[]>([]);
   const [activePeer, setActivePeer] = useState<string | null>(null);
   const [activeData, setActiveData] = useState<{ user: User; messages: Message[] } | null>(null);
   const [draft, setDraft] = useState('');
+  const [pendingListing, setPendingListing] = useState<MarketListingMessageCard | null>(null);
   const [query, setQuery] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -88,6 +101,27 @@ function MessagesInner() {
   }, [activePeer]);
 
   useEffect(() => {
+    if (!initialListingId || !activePeer) {
+      setPendingListing(null);
+      return;
+    }
+    let cancelled = false;
+    api
+      .get<MarketListingMessageCard>(`/api/market/listings/${initialListingId}/message-card`)
+      .then((card) => {
+        if (!cancelled && card.sellerId === activePeer) {
+          setPendingListing(card);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setPendingListing(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activePeer, initialListingId]);
+
+  useEffect(() => {
     if (!user) return;
     const handler = (payload: RealtimePayload) => {
       const msg = payload.data as {
@@ -95,6 +129,7 @@ function MessagesInner() {
         fromId: string;
         toId: string;
         text: string;
+        payload?: Message['payload'];
         createdAt: string;
       } | null;
       if (!msg) return;
@@ -110,6 +145,7 @@ function MessagesInner() {
                     id: msg.id,
                     from: 'other',
                     text: msg.text,
+                    payload: msg.payload,
                     at: msg.createdAt,
                   } satisfies Message,
                 ],
@@ -146,9 +182,16 @@ function MessagesInner() {
       const msg = await api.post<Message>('/api/messages', {
         toId: activePeer,
         text: draft.trim(),
+        payload: pendingListing
+          ? {
+              type: 'market_listing',
+              listingId: pendingListing.id,
+            }
+          : undefined,
       });
       setActiveData((data) => (data ? { ...data, messages: [...data.messages, msg] } : data));
       setDraft('');
+      setPendingListing(null);
       await loadList();
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : t('messages.errorSend'));
@@ -240,6 +283,7 @@ function MessagesInner() {
                   showLevel
                   className={styles.peerIdentity}
                   avatarClassName={styles.peerAvatar}
+                  avatarPendantLayout="compact"
                 />
                 <ButtonLink href={`/user/${activeData.user.id}`} variant="ghost" size="sm" className={styles.profileLink}>
                   {t('nav.myProfile')}
@@ -264,6 +308,19 @@ function MessagesInner() {
 
               <footer className={styles.composer}>
                 <div className={styles.composerBox}>
+                  {pendingListing && (
+                    <div className={styles.pendingCardWrap}>
+                      <MessageListingCard listing={pendingListing} compact />
+                      <button
+                        type="button"
+                        className={styles.removePendingCard}
+                        onClick={() => setPendingListing(null)}
+                        aria-label="移除商品卡片"
+                      >
+                        <Icon name="close" size={14} />
+                      </button>
+                    </div>
+                  )}
                   <Textarea
                     autoResize
                     minRows={3}
@@ -326,6 +383,7 @@ function ConversationButton({
           asLink={false}
           showName={false}
           avatarClassName={styles.conversationAvatar}
+          avatarPendantLayout="compact"
         />
         {conversation.unread > 0 ? <span className={styles.unreadBadge}>{conversation.unread}</span> : null}
       </div>
@@ -351,7 +409,57 @@ function Bubble({ msg, peer, peerName, me }: { msg: Message; peer: string; peerN
         size={null}
         className={styles.bubbleAvatar}
       />
-      <div className={cn(styles.bubble, isMe ? styles.bubbleMe : styles.bubbleOther)}>{msg.text}</div>
+      <div className={cn(styles.bubble, isMe ? styles.bubbleMe : styles.bubbleOther)}>
+        {msg.payload?.type === 'market_listing' && (
+          <MessageListingCard listing={msg.payload.listing} />
+        )}
+        {msg.text}
+      </div>
     </div>
   );
+}
+
+function MessageListingCard({
+  listing,
+  compact = false,
+}: {
+  listing: {
+    id: string;
+    title: string;
+    cover: string;
+    minPrice: number;
+    maxPrice: number;
+    status: string;
+    href: string;
+  };
+  compact?: boolean;
+}) {
+  return (
+    <a href={listing.href} className={cn(styles.messageListingCard, compact && styles.messageListingCardCompact)}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={listing.cover} alt={listing.title} className={styles.messageListingCover} />
+      <div className={styles.messageListingBody}>
+        <div className={styles.messageListingLabel}>交易商品</div>
+        <div className={styles.messageListingTitle}>{listing.title}</div>
+        <div className={styles.messageListingMeta}>
+          <span>{formatListingPrice(listing.minPrice, listing.maxPrice)}</span>
+          <span>{listingStatusLabel(listing.status)}</span>
+        </div>
+      </div>
+    </a>
+  );
+}
+
+function formatListingPrice(minPrice: number, maxPrice: number) {
+  if (minPrice === maxPrice) return formatPrice(minPrice);
+  return `${formatPrice(minPrice)} - ${formatPrice(maxPrice)}`;
+}
+
+function listingStatusLabel(status: string) {
+  if (status === 'on_sale') return '在售';
+  if (status === 'trading') return '交易中';
+  if (status === 'sold_out') return '已售罄';
+  if (status === 'off_shelf') return '已下架';
+  if (status === 'pending_review') return '待审核';
+  return status;
 }
