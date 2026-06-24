@@ -9,6 +9,7 @@ import type { Board, BoardLevel } from '@/lib/types';
 import styles from './BoardSelect.module.scss';
 import { cx } from '@/lib/style-utils';
 import { Input } from '@/components/ui/Input';
+import { Select, type SelectOption } from '@/components/ui/Select';
 
 
 
@@ -309,7 +310,7 @@ export function BoardSelect(props: SingleBoardSelectProps | MultiBoardSelectProp
                       </span>
                 }
                   </span>
-                  <span className={cx(styles.r_012fbd12, styles.r_ac204c10, styles.r_7ebecbb6, styles.r_d5eab218, styles.r_465609a2, styles.r_1dc571a3, styles.r_8ecebc9f, styles.r_5f6a59f1)}>
+                  <span className={cn(cx(styles.r_012fbd12, styles.r_ac204c10, styles.r_d5eab218, styles.r_465609a2, styles.r_1dc571a3, styles.r_8ecebc9f, styles.r_5f6a59f1), styles.levelTag)}>
                     {levelLabel(option.level)}
                   </span>
                   {isRecent && !selected &&
@@ -326,6 +327,29 @@ export function BoardSelect(props: SingleBoardSelectProps | MultiBoardSelectProp
   ) :
   null;
 
+  if (!isMultiple) {
+    const selectOptions: SelectOption[] = options.map((option) => ({
+      value: option.key,
+      label: formatBoardPathLabel(option)
+    }));
+
+    return (
+      <Select
+        value={selectedOption?.key ?? ''}
+        onValueChange={(value, option) => {
+          const boardOption = optionByKey.get(value);
+          if (!boardOption) return;
+          saveRecentOption(boardOption.key);
+          props.onChange({ ...pickSelection(boardOption), label: option?.label ?? formatBoardPathLabel(boardOption) });
+        }}
+        options={selectOptions}
+        placeholder={loading ? '板块加载中...' : placeholder}
+        error={invalid}
+        searchable
+        disabled={loading} />
+    );
+  }
+
   return (
     <div ref={containerRef} className={cx(styles.r_d89972fe, styles.r_36e579c0)}>
       {isMultiple ?
@@ -337,22 +361,20 @@ export function BoardSelect(props: SingleBoardSelectProps | MultiBoardSelectProp
         onClick={() => inputRef.current?.focus()}>
 
           {selectedOptions.map((option) =>
-        <span
+        <button
           key={option.key}
-          className={cx(styles.r_52083e7d, styles.r_c0980a65, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_f2b23104, styles.r_d5eab218, styles.r_465609a2, styles.r_359090c2, styles.r_5f6a59f1)}>
+          type="button"
+          className={cn(cx(styles.r_52083e7d, styles.r_c0980a65, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_d5eab218, styles.r_465609a2, styles.r_359090c2, styles.r_5f6a59f1), styles.selectedTagButton)}
+          onClick={(event) => {
+            event.stopPropagation();
+            removeOption(option);
+          }}>
 
-              <span className={styles.r_f283ea9b}>{formatBoardPathLabel(option)}</span>
-              <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              removeOption(option);
-            }}
-            className={cx(styles.r_012fbd12, styles.r_b17d6a13, styles.r_5eca0425)}>
-
+              <span className={cn(styles.r_f283ea9b, styles.selectedTagLabel)}>{formatBoardPathLabel(option)}</span>
+              <span className={cn(cx(styles.r_012fbd12, styles.r_b17d6a13), styles.selectedTagRemove)} aria-hidden>
                 x
-              </button>
-            </span>
+              </span>
+            </button>
         )}
           <Input
           ref={inputRef}

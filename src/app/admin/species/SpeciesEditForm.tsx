@@ -15,6 +15,16 @@ import styles from './SpeciesEditForm.module.scss';
 import { cx } from '@/lib/style-utils';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
+import { toast } from '@/components/ui/Toast';
+import { RichTextEditor } from '@/components/richtext/RichTextEditor';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Icon } from '@/components/ui/Icon';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import {
+  getSpeciesDescriptionTabs,
+  type SpeciesDescriptionTab,
+} from '@/lib/species-description-tabs';
 
 
 
@@ -26,6 +36,9 @@ export interface SpeciesData {
   latinName: string;
   alias: string | null;
   description: string;
+  descriptionJson?: unknown;
+  descriptionText?: string | null;
+  descriptionTabs?: unknown;
   cover: string;
   gallery: string;
   difficulty: number;
@@ -69,7 +82,13 @@ export function SpeciesEditForm({
   const [name, setName] = useState(species?.name ?? '');
   const [latinName, setLatinName] = useState(species?.latinName ?? '');
   const [alias, setAlias] = useState(species?.alias ?? "[]");
-  const [description, setDescription] = useState(species?.description ?? '');
+  const initialDescriptionTabs = getSpeciesDescriptionTabs(species?.descriptionTabs, {
+    description: species?.description,
+    descriptionJson: parseRichTextValue(species?.descriptionJson),
+    descriptionText: species?.descriptionText,
+  });
+  const [descriptionTabs, setDescriptionTabs] = useState<SpeciesDescriptionTab[]>(initialDescriptionTabs);
+  const [activeDescriptionTabId, setActiveDescriptionTabId] = useState(initialDescriptionTabs[0]?.id ?? '');
   const [cover, setCover] = useState(species?.cover ?? '');
   const initialGallery = parseSpeciesGallery(species?.gallery);
   const [gallery, setGallery] = useState(species?.gallery ?? "[]");
@@ -109,9 +128,16 @@ export function SpeciesEditForm({
 
   const submit = async () => {
     setErr(null);
-    if (!genusId) return setErr('属必选');
+    if (!genusId) {
+      setErr('属必选');
+      toast.error('属必选');
+      return;
+    }
     if (!slug.trim() || !name.trim() || !latinName.trim() || !cover.trim()) {
-      return setErr('slug / 中文名 / 拉丁名 / 封面图 必填');
+      const message = 'slug / 中文名 / 拉丁名 / 封面图 必填';
+      setErr(message);
+      toast.error(message);
+      return;
     }
 
     setBusy(true);
@@ -122,7 +148,8 @@ export function SpeciesEditForm({
         name: name.trim(),
         latinName: latinName.trim(),
         alias: alias.trim() || "[]",
-        description: description.trim(),
+        description: species?.description ?? '',
+        descriptionTabs,
         cover: cover.trim(),
         gallery: galleryForSave(),
         difficulty,
@@ -149,9 +176,12 @@ export function SpeciesEditForm({
       } else {
         await api.patch(`/api/admin/species/${species!.id}`, body);
       }
+      toast.success(isNew ? '新建成功' : '保存成功');
       onDone?.();
     } catch (e) {
-      setErr(e instanceof ApiError ? e.message : '保存失败');
+      const message = e instanceof ApiError ? e.message : '保存失败';
+      setErr(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -209,13 +239,12 @@ export function SpeciesEditForm({
             placeholder={'["月夜","月光"]'} />
 
         </Field>
-        <Field label="描述">
-          <Textarea
-            className={cx(styles.r_dd9ce2a7, styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_03b4dd7f)}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            maxLength={2000} />
-
+        <Field label="描述 Tabs">
+          <DescriptionTabsEditor
+            tabs={descriptionTabs}
+            activeId={activeDescriptionTabId}
+            onActiveChange={setActiveDescriptionTabId}
+            onChange={setDescriptionTabs} />
         </Field>
       </Section>
 
@@ -444,6 +473,149 @@ function Field({ label, children }: {label: string;children: React.ReactNode;}) 
       {children}
     </div>);
 
+}
+
+function createDescriptionTab(index: number): SpeciesDescriptionTab {
+  const titles = ['品种简介', '形态特征', '养护建议'];
+  return {
+    id: `tab-${Date.now()}-${index}`,
+    title: titles[index] ?? `栏目 ${index + 1}`,
+  };
+}
+
+function DescriptionTabsEditor({
+  tabs,
+  activeId,
+  onActiveChange,
+  onChange,
+}: {
+  tabs: SpeciesDescriptionTab[];
+  activeId: string;
+  onActiveChange: (id: string) => void;
+  onChange: (tabs: SpeciesDescriptionTab[]) => void;
+}) {
+  const activeTab = tabs.find((tab) => tab.id === activeId) ?? tabs[0];
+
+  const setTabs = (nextTabs: SpeciesDescriptionTab[], nextActiveId = activeId) => {
+    onChange(nextTabs);
+    if (!nextTabs.some((tab) => tab.id === nextActiveId)) {
+      onActiveChange(nextTabs[0]?.id ?? '');
+      return;
+    }
+    onActiveChange(nextActiveId);
+  };
+
+  const updateTab = (id: string, patch: Partial<SpeciesDescriptionTab>) => {
+    onChange(tabs.map((tab) => tab.id === id ? { ...tab, ...patch } : tab));
+  };
+
+  const addTab = () => {
+    const tab = createDescriptionTab(tabs.length);
+    setTabs([...tabs, tab], tab.id);
+  };
+
+  const removeTab = (id: string) => {
+    setTabs(tabs.filter((tab) => tab.id !== id));
+  };
+
+  const moveTab = (id: string, direction: -1 | 1) => {
+    const index = tabs.findIndex((tab) => tab.id === id);
+    const targetIndex = index + direction;
+    if (index < 0 || targetIndex < 0 || targetIndex >= tabs.length) return;
+    const next = tabs.slice();
+    const [item] = next.splice(index, 1);
+    next.splice(targetIndex, 0, item);
+    setTabs(next, id);
+  };
+
+  return (
+    <Card padding="compact" className={styles.descriptionTabsEditor}>
+      <div className={styles.descriptionTabsToolbar}>
+        <Tabs value={activeTab?.id ?? ''} onValueChange={onActiveChange}>
+          <TabsList className={styles.descriptionTabsList}>
+            {tabs.map((tab) =>
+            <TabsTrigger key={tab.id} value={tab.id}>
+                {tab.title}
+              </TabsTrigger>
+            )}
+          </TabsList>
+          {tabs.map((tab) =>
+          <TabsContent key={tab.id} value={tab.id} className={styles.descriptionTabPanel}>
+              <div className={styles.descriptionTabControls}>
+                <Input
+                value={tab.title}
+                onChange={(event) => updateTab(tab.id, { title: event.target.value })}
+                maxLength={24}
+                showCount
+                placeholder="栏目名称"
+                wrapperClassName={styles.descriptionTabTitleInput} />
+
+                <div className={styles.descriptionTabButtons}>
+                  <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  iconOnly
+                  aria-label="向左移动"
+                  disabled={tabs.indexOf(tab) === 0}
+                  onClick={() => moveTab(tab.id, -1)}>
+
+                    <Icon name="arrow-left" size={14} />
+                  </Button>
+                  <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  iconOnly
+                  aria-label="向右移动"
+                  disabled={tabs.indexOf(tab) === tabs.length - 1}
+                  onClick={() => moveTab(tab.id, 1)}>
+
+                    <Icon name="arrow-right" size={14} />
+                  </Button>
+                  <Button
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  iconOnly
+                  aria-label="删除栏目"
+                  onClick={() => removeTab(tab.id)}>
+
+                    <Icon name="trash" size={14} />
+                  </Button>
+                </div>
+              </div>
+              <RichTextEditor
+              key={tab.id}
+              value={tab.contentJson}
+              defaultValue={tab.contentJson ?? tab.contentHtml ?? tab.contentText}
+              onChange={(json) => updateTab(tab.id, { contentJson: json, contentHtml: undefined, contentText: undefined })}
+              placeholder="写一点品种形态、上色特点、养护观察..."
+              charLimit={4000}
+              minHeight={180} />
+            </TabsContent>
+          )}
+        </Tabs>
+        {tabs.length === 0 &&
+        <div className={styles.descriptionTabsEmpty}>暂无描述栏目</div>
+        }
+        <Button type="button" variant="outline" size="sm" onClick={addTab}>
+          <Icon name="plus" size={14} />
+          新增栏目
+        </Button>
+      </div>
+    </Card>);
+}
+
+function parseRichTextValue(value: unknown): unknown {
+  if (!value) return undefined;
+  if (typeof value !== 'string') return value;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' ? parsed : value;
+  } catch {
+    return value;
+  }
 }
 
 function GalleryMetaEditor({

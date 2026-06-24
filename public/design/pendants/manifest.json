@@ -1,0 +1,14 @@
+[
+  { "slug": "pendant-leaf-crown", "name": "叶冠环", "rarity": "normal", "assetUrl": "/design/pendants/pendant-leaf-crown.svg" },
+  { "slug": "pendant-flower-bud", "name": "花苞角标", "rarity": "rare", "assetUrl": "/design/pendants/pendant-flower-bud.svg" },
+  { "slug": "pendant-dew-ring", "name": "露珠边框", "rarity": "normal", "assetUrl": "/design/pendants/pendant-dew-ring.svg" },
+  { "slug": "pendant-sun-speckle", "name": "晒斑光环", "rarity": "rare", "assetUrl": "/design/pendants/pendant-sun-speckle.svg" },
+  { "slug": "pendant-archive-bookmark", "name": "图鉴书签", "rarity": "epic", "assetUrl": "/design/pendants/pendant-archive-bookmark.svg" },
+  { "slug": "pendant-timeline-marker", "name": "时间轴节点", "rarity": "rare", "assetUrl": "/design/pendants/pendant-timeline-marker.svg" },
+  { "slug": "pendant-trade-tag", "name": "交易挂牌", "rarity": "rare", "assetUrl": "/design/pendants/pendant-trade-tag.svg" },
+  { "slug": "pendant-moderator-badge", "name": "版主盾徽", "rarity": "epic", "assetUrl": "/design/pendants/pendant-moderator-badge.svg" },
+  { "slug": "pendant-silver-peyote", "name": "银冠玉光环", "rarity": "legendary", "assetUrl": "/design/pendants/pendant-silver-peyote.svg" },
+  { "slug": "pendant-star-asterias", "name": "星兜星环", "rarity": "legendary", "assetUrl": "/design/pendants/pendant-star-asterias.svg" },
+  { "slug": "pendant-haworthia-window", "name": "玉露透窗", "rarity": "epic", "assetUrl": "/design/pendants/pendant-haworthia-window.svg" },
+  { "slug": "pendant-variegata-ribbon", "name": "锦化彩边", "rarity": "legendary", "assetUrl": "/design/pendants/pendant-variegata-ribbon.svg" }
+]

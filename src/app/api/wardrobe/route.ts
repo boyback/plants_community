@@ -2,11 +2,13 @@ import { prisma } from '@/lib/db';
 import { handler } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
 import { serializeUserSkin, serializeEquip } from '@/lib/serializers';
+import { syncAvatarPendantUnlocks } from '@/lib/avatar-pendant-unlocks';
 
 export const dynamic = 'force-dynamic';
 
 export const GET = handler(async () => {
   const me = await requireUser();
+  await syncAvatarPendantUnlocks(me.id);
 
   const owned = await prisma.userSkin.findMany({
     where: { userId: me.id },

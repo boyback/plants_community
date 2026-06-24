@@ -27,7 +27,7 @@ export function PrivacyEn() {
         </li>
         <li>
           <strong>Transaction data</strong> — orders, shipping addresses, diamond ledger,
-          auction bids and deposits, VIP subscriptions. Shipping addresses are considered
+          auction bids and deposits. Shipping addresses are considered
           sensitive and are shared only with the relevant seller for fulfillment.
         </li>
         <li>

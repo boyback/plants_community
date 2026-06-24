@@ -113,6 +113,10 @@ export default async function AdminDashboard() {
             <QuickLink href="/admin/users" emoji="👥" label="用户管理" />
             <QuickLink href="/admin/orders" emoji="📦" label="订单处理" />
             <QuickLink href="/admin/announcements" emoji="📣" label="发公告" />
+            <QuickLink href="/admin/pendants" emoji="👑" label="头像挂饰" />
+            <QuickLink href="/admin/skins/bubble" emoji="💬" label="评论气泡" />
+            <QuickLink href="/admin/skins/reaction" emoji="👍" label="点赞按钮" />
+            <QuickLink href="/admin/skins/sticker" emoji="🌱" label="表情包" />
             <QuickLink href="/admin/badges" emoji="🏅" label="发放徽章" />
             <QuickLink href="/admin/logs" emoji="📜" label="操作日志" />
           </div>

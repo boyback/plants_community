@@ -13,6 +13,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
+import { jsonWithUserPendants } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,7 +94,7 @@ export async function GET(req: Request) {
       })
       .slice(0, shuffle ? 16 : 8);
 
-    return NextResponse.json({
+    return jsonWithUserPendants({
       ok: true,
       data: {
         hot,
@@ -125,6 +126,7 @@ async function loadParticipantStats(where: any) {
             id: true,
             name: true,
             avatar: true,
+            equipPendantId: true,
           },
         },
       },

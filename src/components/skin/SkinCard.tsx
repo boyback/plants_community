@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils';
 import type { SkinItem } from '@/lib/types';
 import { useI18n } from '@/i18n/I18nContext';
+import { ReactionIcon } from '@/components/skin/ReactionIcon';
 import styles from './SkinCard.module.scss';
 import { cx } from '@/lib/style-utils';
 
@@ -41,6 +42,11 @@ export function SkinCard({
 
 }: {skin: SkinItem;owned?: boolean;equipped?: boolean;onExchange?: () => void;onEquip?: () => void;onUnequip?: () => void;busy?: boolean;}) {
   const { t } = useI18n();
+  const meta = (skin.meta ?? {}) as Record<string, unknown>;
+  const isLockedPendant = skin.kind === 'pendant' && !owned;
+  const unlockLabel = typeof meta.unlockLabel === 'string' ? meta.unlockLabel : '通过社区玩法解锁';
+  const unlockDescription = typeof meta.unlockDescription === 'string' ? meta.unlockDescription : unlockLabel;
+
   return (
     <div className={cn(cx(styles.r_60fbb771, styles.r_8dddea07, styles.r_2cd02d11, styles.r_eb6e8b88), RARITY_RING[skin.rarity])}>
       <div
@@ -50,6 +56,11 @@ export function SkinCard({
         )}>
 
         <SkinPreview skin={skin} />
+        {isLockedPendant &&
+        <div className={styles.lockedOverlay} aria-hidden>
+            <span>未解锁</span>
+          </div>
+        }
         <span
           className={cn(cx(styles.r_da4dbfbc, styles.r_7b2d6393, styles.r_9a2db8f9, styles.r_ac204c10, styles.r_d5eab218, styles.r_465609a2, styles.r_1dc571a3),
 
@@ -58,11 +69,6 @@ export function SkinCard({
 
           {t(`points.skin.rarity.${skin.rarity}`)}
         </span>
-        {skin.vipOnly &&
-        <span className={cx(styles.r_da4dbfbc, styles.r_d83be576, styles.r_9a2db8f9, styles.r_ac204c10, styles.r_735dd972, styles.r_d5eab218, styles.r_465609a2, styles.r_1dc571a3, styles.r_2689f395, styles.r_5c6230d2)}>
-            {t('points.skin.vipLimit')}
-          </span>
-        }
         {equipped &&
         <span className={cx(styles.r_da4dbfbc, styles.r_f6babb33, styles.r_e632769a, styles.r_efaa0701, styles.r_ac204c10, styles.r_45499621, styles.r_d5eab218, styles.r_465609a2, styles.r_1dc571a3, styles.r_2689f395, styles.r_72a4c7cd)}>
             {t('points.skin.equippedBadge')}
@@ -76,8 +82,8 @@ export function SkinCard({
       </div>
 
       <div className={cx(styles.r_50d0d216, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_44ee8ba0)}>
-        {skin.vipOnly && skin.pricePoints === 0 ?
-        <span className={cx(styles.r_359090c2, styles.r_85d79ebf, styles.r_2689f395)}>{t('points.skin.vipOnly')}</span> :
+        {isLockedPendant ?
+        <span className={styles.unlockText} title={unlockDescription}>{unlockLabel}</span> :
         skin.pricePoints === 0 ?
         <span className={cx(styles.r_359090c2, styles.r_5f6a59f1)}>{t('points.skin.free')}</span> :
 
@@ -86,13 +92,21 @@ export function SkinCard({
           </span>
         }
 
-        {owned ?
+        {isLockedPendant ?
+        <button
+          type="button"
+          disabled
+          className={cn(styles.actionButton, styles.lockedButton, cx(styles.r_92172c7d, styles.r_ebb407e8, styles.r_3330f90a))}>
+
+            未解锁
+          </button> :
+        owned ?
         equipped ?
         <button
           type="button"
           onClick={onUnequip}
           disabled={busy}
-          className={cx(styles.r_92172c7d, styles.r_ebb407e8, styles.r_3330f90a)}>
+          className={cn(styles.actionButton, styles.unequipButton, cx(styles.r_92172c7d, styles.r_ebb407e8, styles.r_3330f90a))}>
 
               {t('points.skin.unequip')}
             </button> :
@@ -101,7 +115,7 @@ export function SkinCard({
           type="button"
           onClick={onEquip}
           disabled={busy}
-          className={cx(styles.r_92172c7d, styles.r_ebb407e8, styles.r_3330f90a)}>
+          className={cn(styles.actionButton, styles.equipButton, cx(styles.r_92172c7d, styles.r_ebb407e8, styles.r_3330f90a))}>
 
               {t('points.skin.equip')}
             </button> :
@@ -111,7 +125,7 @@ export function SkinCard({
           type="button"
           onClick={onExchange}
           disabled={busy}
-          className={cx(styles.r_92172c7d, styles.r_ebb407e8, styles.r_3330f90a)}>
+          className={cn(styles.actionButton, styles.exchangeButton, cx(styles.r_92172c7d, styles.r_ebb407e8, styles.r_3330f90a))}>
 
             {t('points.skin.exchange')}
           </button>
@@ -143,10 +157,11 @@ export function SkinPreview({ skin, size = 'md' }: {skin: SkinItem;size?: 'sm' |
   }
 
   if (skin.kind === 'reaction') {
-    const emoji = meta.emoji as string ?? skin.preview;
     return (
       <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
-        <span className={styles.r_751fb0d1}>{emoji}</span>
+        <span className={styles.reactionStatePreview}><ReactionIcon skin={skin} size={28} /></span>
+        <span className={styles.r_359090c2}>→</span>
+        <span className={styles.reactionStatePreview}><ReactionIcon skin={skin} active size={28} /></span>
         <span className={cx(styles.r_359090c2, styles.r_69335b95)}>{skin.name}</span>
       </div>);
 
@@ -166,20 +181,11 @@ export function SkinPreview({ skin, size = 'md' }: {skin: SkinItem;size?: 'sm' |
   }
 
   if (skin.kind === 'pendant') {
-    const ringColor = meta.color as string ?? '#66b985';
-    const gradient = meta.gradient as string | undefined;
-    return (
-      <div
-        className={cx(styles.r_f3c543ad, styles.r_acaee621, styles.r_baceed34, styles.r_67d66567, styles.r_ac204c10)}
-        style={{
-          background: gradient ?? ringColor,
-          padding: 4
-        }}>
-
-        <div className={cx(styles.r_f3c543ad, styles.r_668b21aa, styles.r_6da6a3c3, styles.r_67d66567, styles.r_ac204c10, styles.r_5e10cdb8, styles.r_3febee09)}>
-          {skin.preview}
-        </div>
-      </div>);
+    const assetUrl =
+    typeof meta.assetUrl === 'string' ? meta.assetUrl :
+    skin.preview?.startsWith('/') ? skin.preview :
+    undefined;
+    return assetUrl ? <img src={assetUrl} alt={skin.name} className={styles.pendantAssetPreview} /> : null;
 
   }
 

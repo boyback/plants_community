@@ -5,7 +5,7 @@
  *
  * 业务规则:
  *   - 图片:≤ 10 MB,任意用户可传
- *   - 视频:≤ 100 MB,仅 VIP 可传
+ *   - 视频:≤ 100 MB,需满足视频发布等级权限
  *   - 大于 5 MB 的文件走分片上传(/api/upload/init|chunk|finish)
  *   - sha256 秒传:相同文件直接返回已有 url
  *
@@ -203,7 +203,7 @@ export const CHUNK_SIZE = 5 * 1024 * 1024; // 每片 5 MB
 
 /** 图片单文件最大 */
 export const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
-/** 视频单文件最大(VIP 限定) */
+/** 视频单文件最大 */
 export const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100 MB
 
 /** 兼容旧代码:默认上传上限(老 /api/upload 一次性接口仍走这个) */

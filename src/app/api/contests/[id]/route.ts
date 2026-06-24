@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { jsonWithUserPendants } from '@/lib/api';
 
 export async function GET(
   req: NextRequest,
@@ -14,6 +15,7 @@ export async function GET(
             id: true,
             name: true,
             avatar: true,
+            equipPendantId: true,
           },
         },
         _count: {
@@ -34,7 +36,7 @@ export async function GET(
       data: { viewCount: { increment: 1 } },
     });
 
-    return NextResponse.json(contest);
+    return jsonWithUserPendants(contest);
   } catch (error) {
     console.error('获取大赛详情失败:', error);
     return NextResponse.json({ error: '获取大赛详情失败' }, { status: 500 });
@@ -92,12 +94,13 @@ export async function PATCH(
             id: true,
             name: true,
             avatar: true,
+            equipPendantId: true,
           },
         },
       },
     });
 
-    return NextResponse.json(contest);
+    return jsonWithUserPendants(contest);
   } catch (error) {
     console.error('更新大赛失败:', error);
     return NextResponse.json({ error: '更新大赛失败' }, { status: 500 });

@@ -2,7 +2,6 @@
  * 等级与权限定义
  *
  * 等级 1~10 阶梯,每级对应不同 EXP 阈值与解锁权限。
- * 大会员(VIP)拥有部分权限的「无限制」加成,使权限计算 = 等级 OR VIP。
  */
 
 export type Permission =
@@ -30,7 +29,6 @@ export interface LevelDef {
 /**
  * 关键设计:
  * - permissions 使用「累积」语义,低等级权限自动包含在高等级里(由 hasPermission 实现)
- * - 大会员独立加成不放在这里
  */
 export const LEVELS: LevelDef[] = [
   { level: 1,  name: '新苗',       expRequired: 0,     permissions: ['comment', 'post:short'],     perks: ['可发评论', '可发短内容贴'] },
@@ -43,21 +41,6 @@ export const LEVELS: LevelDef[] = [
   { level: 8,  name: '园艺师',     expRequired: 3500,  permissions: ['market:sell'],               perks: ['可在交易区出售'] },
   { level: 9,  name: '大师',       expRequired: 6000,  permissions: ['market:pin'],                perks: ['可申请置顶帖子'] },
   { level: 10, name: '宗师',       expRequired: 10000, permissions: ['badge:choose'],              perks: ['自选展示徽章'] },
-];
-
-/** 大会员独立解锁的权限(无视等级) */
-export const VIP_PERMISSIONS: Permission[] = [
-  'comment',
-  'post:short',
-  'post:rich',
-  'post:image',
-  'post:video',
-  'post:vote',
-  'post:event',
-  'post:collect',
-  'market:buy',
-  'market:sell',
-  'market:pin',
 ];
 
 export const ALL_PERMISSIONS: Permission[] = [
@@ -100,12 +83,11 @@ export function permissionsForLevel(level: number): Permission[] {
   return [...set];
 }
 
-/** 判断用户(可能是 VIP)是否拥有某权限 */
+/** 判断用户是否拥有某权限 */
 export function hasPermission(
   user:
     | {
         level: number;
-        isVip?: boolean;
         grantedPermissions?: Permission[];
         revokedPermissions?: Permission[];
       }
@@ -116,7 +98,6 @@ export function hasPermission(
   if (!user) return false;
   if (user.revokedPermissions?.includes(perm)) return false;
   if (user.grantedPermissions?.includes(perm)) return true;
-  if (user.isVip && VIP_PERMISSIONS.includes(perm)) return true;
   return permissionsForLevel(user.level).includes(perm);
 }
 
@@ -173,7 +154,7 @@ export const PERMISSION_LABEL: Record<Permission, string> = {
 export function permissionHint(perm: Permission): string {
   const def = LEVELS.find((l) => l.permissions.includes(perm));
   if (!def) return '权限不足';
-  return `需要 Lv.${def.level}「${def.name}」或开通大会员`;
+  return `需要 Lv.${def.level}「${def.name}」`;
 }
 
 /**

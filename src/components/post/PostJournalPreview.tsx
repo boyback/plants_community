@@ -58,7 +58,7 @@ function JournalEntryPreview({ entry }: {entry: JournalEntry;}) {
   const mm = String(date.getMonth() + 1).padStart(2, '0');
   const dd = String(date.getDate()).padStart(2, '0');
   const meta = STAGE_META[entry.stage] || STAGE_META.other;
-  const stageText = entry.stage === 'other' && entry.stageLabel ? entry.stageLabel : meta.zh;
+  const stageText = entry.stageLabel || meta.zh;
 
   return (
     <div className={styles.r_da7c36cd}>

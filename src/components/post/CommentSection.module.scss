@@ -112,3 +112,235 @@
 .r_66a36c90{--tw-text-opacity:1;color:rgb(156 163 175/var(--tw-text-opacity))}
 .r_5399e21f:hover{--tw-bg-opacity:1;background-color:rgb(249 250 251/var(--tw-bg-opacity))}
 .r_9cab05a6:hover{--tw-bg-opacity:1;background-color:rgb(243 244 246/var(--tw-bg-opacity))}
+
+.commentItem {
+  background: #fff;
+}
+
+.commentActions {
+  flex-shrink: 0;
+}
+
+.commentBodyRow {
+  display: flex;
+  flex-direction: column;
+  width: auto;
+  max-width: 100%;
+  margin-top: 14px;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.commentContentBubble {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.commentContentBubble > * {
+  box-sizing: border-box;
+  width: max-content;
+  max-width: 100%;
+  padding: 2px 20px;
+  border-radius: 6px;
+  background: var(--comment-bubble-bg, rgb(var(--leaf-50) / 0.75));
+  color: var(--comment-bubble-color, inherit);
+  overflow-wrap: break-word;
+  word-break: normal;
+  white-space: normal;
+}
+
+.commentContentBubble > :first-child {
+  margin-top: 0;
+}
+
+.commentContentBubble > :last-child {
+  margin-bottom: 0;
+}
+
+.journalRefCard {
+  width: fit-content;
+  max-width: min(100%, 576px);
+  margin-top: 14px;
+  margin-bottom: 0;
+  background: rgb(var(--leaf-50) / 0.72);
+}
+
+.replyItem {
+  width: 100%;
+}
+
+.commentStreamRow {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.commentStreamRowCompact {
+  gap: 12px;
+}
+
+.commentStreamAvatar {
+  flex-shrink: 0;
+}
+
+.commentStreamMain {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.commentStreamHeader {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: nowrap;
+}
+
+.commentUserInfo {
+  min-width: 0;
+}
+
+.commentNameLine {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.commentStreamName {
+  min-width: 0;
+  color: rgb(var(--ink-900));
+}
+
+.commentStreamName span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.commentMetaLine {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  color: rgb(var(--leaf-700) / 0.62);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.commentFloor {
+  color: rgb(var(--leaf-800));
+  font-weight: 700;
+}
+
+.commentStreamActions {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  min-height: 28px;
+  align-items: center;
+  gap: 10px;
+  color: rgb(var(--leaf-700) / 0.72);
+  white-space: nowrap;
+}
+
+.commentIconButton,
+.commentTextButton {
+  display: inline-flex;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 6px;
+  color: rgb(var(--leaf-700) / 0.72);
+  font-size: 12px;
+  line-height: 16px;
+  transition: color .15s ease, background-color .15s ease;
+}
+
+.commentIconButton {
+  min-width: 28px;
+  padding: 0 6px;
+}
+
+.commentTextButton {
+  padding: 0 8px;
+}
+
+.commentIconButton:hover,
+.commentTextButton:hover {
+  background: rgb(var(--leaf-50));
+  color: rgb(var(--leaf-800));
+}
+
+.commentLikeButton {
+  min-width: 32px;
+}
+
+.commentLiked {
+  color: rgb(244 63 94);
+}
+
+.commentRepliesPanel {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgb(var(--leaf-50) / 0.55);
+}
+
+.commentRepliesPanel > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 14px;
+}
+
+.replyTargetPrefix {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: rgb(var(--ink-500));
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.replyTargetPrefix button {
+  color: rgb(var(--leaf-700));
+  font-weight: 600;
+}
+
+.replyTargetPrefix button:hover {
+  color: rgb(var(--leaf-900));
+}
+
+.moreButton {
+  width: 30px;
+  justify-content: center;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.commentMenuPopover {
+  min-width: 104px;
+}
+
+.commentMenuPanel {
+  width: 104px;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgb(var(--ink-900) / 0.12), 0 2px 8px rgb(var(--ink-900) / 0.06);
+}
+
+.commentMenuArrow {
+  box-shadow: -1px -1px 0 rgb(var(--leaf-100));
+}
+
+.commentMenuItem {
+  height: 40px;
+  line-height: 24px;
+}

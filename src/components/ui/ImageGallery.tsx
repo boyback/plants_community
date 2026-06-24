@@ -17,6 +17,7 @@ interface ImageGalleryProps {
   labels?: Array<{label?: string;note?: string;} | undefined>;
   className?: string;
   imageClassName?: string;
+  maxVisible?: number;
 }
 
 interface ImageSize {
@@ -24,7 +25,7 @@ interface ImageSize {
   height: number;
 }
 
-export function ImageGallery({ images, livePhotoMap, equalCells, labels, className, imageClassName }: ImageGalleryProps) {
+export function ImageGallery({ images, livePhotoMap, equalCells, labels, className, imageClassName, maxVisible }: ImageGalleryProps) {
   const [imageSizes, setImageSizes] = useState<Record<string, ImageSize>>({});
   const pswpRef = useRef<PhotoSwipe | null>(null);
 
@@ -81,7 +82,9 @@ export function ImageGallery({ images, livePhotoMap, equalCells, labels, classNa
     };
   }, []);
 
-  const n = images.length;
+  const visibleImages = maxVisible && maxVisible > 0 ? images.slice(0, maxVisible) : images;
+  const remainingCount = Math.max(0, images.length - visibleImages.length);
+  const n = visibleImages.length;
   let layoutClass = "";
   let cellClass = (_i: number) => styles.r_b59cd297;
 
@@ -105,16 +108,17 @@ export function ImageGallery({ images, livePhotoMap, equalCells, labels, classNa
   return (
     <div className={cn(styles.r_d89972fe, className)}>
       <div className={cn(cx(styles.r_f3c543ad, styles.r_77a2a20e, styles.r_2cd02d11, styles.r_0c5e9137), layoutClass)}>
-        {images.map((src, index) => {
+        {visibleImages.map((src, index) => {
           const isLive = Boolean(livePhotoMap?.[src]);
           const label = labels?.[index];
+          const showRemaining = remainingCount > 0 && index === visibleImages.length - 1;
 
           return (
             <button
               key={`${src}-${index}`}
               type="button"
               onClick={() => openPhotoSwipe(index)}
-              className={cn(cx(styles.r_d89972fe, styles.r_3bbc8c13, styles.r_2cd02d11, styles.r_7ebecbb6, styles.r_2eba0d65),
+              className={cn(cx(styles.r_d89972fe, styles.r_3bbc8c13, styles.r_2cd02d11, styles.r_7ebecbb6, styles.r_2eba0d65), styles.galleryCell,
 
               cellClass(index),
               imageClassName
@@ -126,7 +130,7 @@ export function ImageGallery({ images, livePhotoMap, equalCells, labels, classNa
                 alt={`图片 ${index + 1}`}
                 fill
                 sizes="(max-width:768px) 50vw, 400px"
-                className={styles.r_7d85d0c2}
+                className={cn(styles.r_7d85d0c2, styles.galleryImage)}
                 unoptimized
                 onLoad={(event) => handleImageLoad(src, event)} />
 
@@ -140,6 +144,11 @@ export function ImageGallery({ images, livePhotoMap, equalCells, labels, classNa
               <span className={cx(styles.r_a4326536, styles.r_da4dbfbc, styles.r_3f6397bf, styles.r_189f036c, styles.r_79257b8c, styles.r_cf68a10c, styles.r_99b2f889, styles.r_0fe2b3da, styles.r_eb6e8b88, styles.r_e193b504)}>
                   {label.label && <span className={cx(styles.r_0214b4b3, styles.r_fc7473ca, styles.r_e83a7042, styles.r_72a4c7cd)}>{label.label}</span>}
                   {label.note && <span className={cx(styles.r_15e1b1f4, styles.r_0214b4b3, styles.r_d058ca6d, styles.r_0bd86ef1)}>{label.note}</span>}
+                </span>
+              }
+              {showRemaining &&
+              <span className={styles.remainingOverlay}>
+                  <span className={styles.remainingCount}>+{remainingCount}</span>
                 </span>
               }
             </button>);

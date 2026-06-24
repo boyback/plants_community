@@ -22,8 +22,7 @@ export type AppEvent =
   | { kind: 'comment_create'; userId: string; commentId: string; postId: string }
   | { kind: 'followed'; userId: string; followerId: string }
   | { kind: 'vote_cast'; userId: string; postId: string }
-  | { kind: 'purchase_paid'; userId: string; orderId: string; amountCent: number; pointsBack: number }
-  | { kind: 'vip_open'; userId: string; days: number };
+  | { kind: 'purchase_paid'; userId: string; orderId: string; amountCent: number; pointsBack: number };
 
 // 各事件的「奖励配方」
 const REWARD_CONFIG: Record<
@@ -38,7 +37,6 @@ const REWARD_CONFIG: Record<
   followed:       { points: 5,  exp: 5 },
   vote_cast:      { points: 0,  exp: 0 },
   purchase_paid:  { points: 0,  exp: 10 }, // points 由 pointsBack 决定
-  vip_open:       { points: 0,  exp: 50 },
 };
 
 const monthKey = (d = new Date()) =>
@@ -47,17 +45,6 @@ const dayKey = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
     d.getDate()
   ).padStart(2, '0')}`;
-
-// 事件 → 默认 reward 计算 + VIP 加成
-async function getMultiplier(userId: string): Promise<number> {
-  const u = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { vipExpireAt: true, vipLifetime: true },
-  });
-  if (!u) return 1;
-  const isVip = u.vipLifetime || (u.vipExpireAt && u.vipExpireAt.getTime() > Date.now());
-  return isVip ? 10 : 1;
-}
 
 /**
  * 主入口:发出事件 → 写所有副作用
@@ -71,7 +58,7 @@ export async function emitEvent(ev: AppEvent): Promise<{
   unlockedPerms?: string[];
 }> {
   const baseCfg = REWARD_CONFIG[ev.kind];
-  const multiplier = await getMultiplier(ev.userId);
+  const multiplier = 1;
 
   let pts = baseCfg.points * multiplier;
   let exp = baseCfg.exp * multiplier;
@@ -240,7 +227,6 @@ function pointsTypeFor(kind: AppEvent['kind']):
   | 'purchase_back'
   | 'recharge'
   | 'exchange_skin'
-  | 'exchange_vip'
   | 'refund'
   | 'admin' {
   switch (kind) {
@@ -262,7 +248,6 @@ function expTypeFor(kind: AppEvent['kind']):
   | 'comment_create'
   | 'followed'
   | 'purchase'
-  | 'vip_open'
   | 'admin' {
   switch (kind) {
     case 'signin':         return 'signin';
@@ -272,7 +257,6 @@ function expTypeFor(kind: AppEvent['kind']):
     case 'comment_create': return 'comment_create';
     case 'followed':       return 'followed';
     case 'purchase_paid':  return 'purchase';
-    case 'vip_open':       return 'vip_open';
     default:               return 'admin';
   }
 }
@@ -321,6 +305,5 @@ function remarkFor(ev: AppEvent): string {
     case 'followed':       return '被关注';
     case 'vote_cast':      return '参与投票';
     case 'purchase_paid':  return '订单返利';
-    case 'vip_open':       return '开通大会员';
   }
 }

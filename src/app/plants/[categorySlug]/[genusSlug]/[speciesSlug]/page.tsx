@@ -8,7 +8,10 @@ import { SpeciesContributionButton } from '@/components/species/SpeciesContribut
 import { SpeciesCareVotePanel } from '@/components/species/SpeciesCareVotePanel';
 import { SpeciesRatingPanel } from '@/components/species/SpeciesRatingPanel';
 import { SpeciesGalleryWall } from '@/components/species/SpeciesGalleryWall';
-import { Icon, type IconName } from '@/components/ui/Icon';
+import { RichTextView } from '@/components/richtext/RichTextView';
+import { Card } from '@/components/ui/Card';
+import { Icon } from '@/components/ui/Icon';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { prisma } from '@/lib/db';
 import { REVIEW_FILTER_ENABLED } from "@/lib/feature-flags";
@@ -21,6 +24,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { cn, formatNumber } from '@/lib/utils';
 import { incrementSpeciesDailyStat } from "@/lib/species-daily-stats";
 import { removeCoverFromGallery } from "@/lib/species-gallery";
+import { plainFromHtml } from "@/lib/richtext";
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
 
@@ -53,10 +57,11 @@ export async function generateMetadata({
   const aliases = parseJsonArray(species.alias);
   const tips = parseJsonArray(species.tips);
   const title = `${species.name}${species.latinName ? `(${species.latinName})` : ''} 养护图鉴`;
+  const descriptionText = species.descriptionText || plainFromHtml(species.description, 500);
   const description = [
   `${species.name}${species.latinName ? `(${species.latinName})` : ''}`,
   aliases.length ? `别名:${aliases.join('、')}` : '',
-  species.description?.slice(0, 80),
+  descriptionText.slice(0, 80),
   tips[0]].
 
   filter(Boolean).
@@ -109,16 +114,20 @@ export default async function PlantSpeciesPage({
   const full = serializeSpeciesFull(species);
   await incrementSpeciesDailyStat(species.id, 'views');
   const mePromise = getCurrentUser().catch(() => null);
-  const [postsRaw, relatedSpecies, taxonomy, contributionUsersRaw, contributionStatsRaw, collectTotalRows, me] = await Promise.all([
+  const speciesPostWhere = {
+    speciesId: species.id,
+    deleted: false,
+    ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' as const } : {})
+  };
+  const [postsRaw, postTotal, relatedSpecies, taxonomy, contributionUsersRaw, contributionStatsRaw, collectTotalRows, me] = await Promise.all([
   prisma.post.findMany({
-    where: {
-      speciesId: species.id,
-      deleted: false,
-      ...(REVIEW_FILTER_ENABLED ? { reviewStatus: 'published' } : {})
-    },
+    where: speciesPostWhere,
     orderBy: { createdAt: 'desc' },
     take: 12,
     include: postInclude()
+  }),
+  prisma.post.count({
+    where: speciesPostWhere
   }),
   prisma.species.findMany({
     where: { genusId: species.genusId, id: { not: species.id } },
@@ -158,7 +167,6 @@ export default async function PlantSpeciesPage({
   );
 
   const galleryItems = removeCoverFromGallery(full.galleryItems ?? [], full.cover).slice(0, 8);
-  const metrics = makeMetrics(species._count.posts, species._count.journals, species.ratingCount, full.difficulty);
   const contributors = contributionUsersRaw;
   const contributorTotal = Number(contributionStatsRaw[0]?.total ?? 0);
   const collectTotal = Number(collectTotalRows[0]?.total ?? 0);
@@ -183,7 +191,7 @@ export default async function PlantSpeciesPage({
     name: full.name,
     latinName: full.latinName,
     family: `${species.genus.board?.name ?? ''} · ${species.genus.name}`,
-    description: full.description,
+    description: full.descriptionText || plainFromHtml(full.description, 500),
     cover: full.cover.startsWith('http') ? full.cover : `${SITE_URL}${full.cover}`,
     url: speciesUrl,
     difficulty: full.difficulty
@@ -208,22 +216,28 @@ export default async function PlantSpeciesPage({
           url: `/plants/${params.categorySlug}/${params.genusSlug}/${params.speciesSlug}`,
           collected: initiallyCollected,
           collectTotal,
+          postTotal,
+          editorUrl: `/editor?category=${encodeURIComponent(params.categorySlug)}&genus=${encodeURIComponent(params.genusSlug)}&species=${encodeURIComponent(params.speciesSlug)}`,
           compared: initiallyCompared
         }} />
 
-      <div className={cx(styles.r_0e12dc7d, styles.r_6da6a3c3, styles.r_726bb2cc, styles.r_3e7ce58d, styles.r_9438a4a9, styles.r_834439ca)}>
+      <div className={cx(styles.speciesPage, styles.r_0e12dc7d, styles.r_6da6a3c3, styles.r_726bb2cc, styles.r_3e7ce58d, styles.r_9438a4a9, styles.r_834439ca)}>
         <PlantBreadcrumb path={full.path} />
         <TaxonomyPanel taxonomy={taxonomy} current={params} />
 
-        <div className={cx(styles.r_f3c543ad, styles.r_b39e60c3, styles.r_2824946b)}>
-          <main className={cx(styles.r_7e0b7cdf, styles.r_6ed543e2)}>
+        <div className={cx(styles.speciesLayout, styles.r_f3c543ad, styles.r_b39e60c3, styles.r_2824946b)}>
+          <main data-species-detail-content className={cx(styles.speciesMain, styles.r_7e0b7cdf, styles.r_6ed543e2)}>
             <DetailHero
               full={full}
               boardName={species.genus.board?.name ?? ''}
               genusName={species.genus.name}
-              galleryItems={galleryItems}
-              metrics={metrics}
-              collectTotal={collectTotal} />
+              galleryItems={galleryItems} />
+
+
+            <InfoCards
+              full={full}
+              boardName={species.genus.board?.name ?? ''}
+              genusName={species.genus.name} />
 
 
             <SpeciesCareVotePanel
@@ -253,12 +267,6 @@ export default async function PlantSpeciesPage({
                 fruiting: '秋季',
                 propagation: '播种、扦插'
               }} />
-
-
-            <InfoCards
-              full={full}
-              boardName={species.genus.board?.name ?? ''}
-              genusName={species.genus.name} />
 
 
             <LowerModules
@@ -315,8 +323,8 @@ function TaxonomyPanel({
   const currentGenus = currentBoard?.genera.find((genus) => genus.slug === current.genusSlug);
 
   return (
-    <section className={cx(styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_8e63407b, styles.r_438b2237)}>
-      <div className={styles.r_6ed543e2}>
+    <section className={cx(styles.taxonomyPanel, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_8e63407b, styles.r_438b2237)}>
+      <div className={cx(styles.taxonomyRows, styles.r_6ed543e2)}>
         <TaxonomyFilterRow label="科">
           {taxonomy.map((board) =>
           <TaxonomyChip
@@ -410,9 +418,9 @@ function PlantBreadcrumb({
 
 function TaxonomyFilterRow({ label, children }: {label: string;children: React.ReactNode;}) {
   return (
-    <div className={cx(styles.r_60fbb771, styles.r_60541e1e, styles.r_77a2a20e, styles.r_359090c2)}>
-      <span className={cx(styles.r_b6b02c0e, styles.r_e7e37107, styles.r_012fbd12, styles.r_6c4cc49e)}>{label}</span>
-      <div className={cx(styles.r_60fbb771, styles.r_36e579c0, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_58284b4e)}>{children}</div>
+    <div className={cx(styles.taxonomyRow, styles.r_60fbb771, styles.r_60541e1e, styles.r_77a2a20e, styles.r_359090c2)}>
+      <span className={cx(styles.taxonomyLabel, styles.r_b6b02c0e, styles.r_e7e37107, styles.r_012fbd12, styles.r_6c4cc49e)}>{label}</span>
+      <div className={cx(styles.taxonomyChips, styles.r_60fbb771, styles.r_36e579c0, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_58284b4e)}>{children}</div>
     </div>);
 
 }
@@ -429,9 +437,9 @@ function TaxonomyChip({
   return (
     <Link
       href={href}
-      className={cn(cx(styles.r_52083e7d, styles.r_d0a52b31, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_421ac2be, styles.r_0b91436d, styles.r_359090c2, styles.r_ceb69a6b),
+      className={cn(cx(styles.taxonomyChip, styles.r_52083e7d, styles.r_d0a52b31, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_421ac2be, styles.r_0b91436d, styles.r_359090c2, styles.r_ceb69a6b),
 
-      active ? cx(styles.r_f2b23104, styles.r_2689f395, styles.r_5f6a59f1) : cx(styles.r_b85c981b, styles.r_5756b7b4, styles.r_9825203a)
+      active ? cx(styles.taxonomyChipActive, styles.r_f2b23104, styles.r_2689f395, styles.r_5f6a59f1) : cx(styles.r_b85c981b, styles.r_5756b7b4, styles.r_9825203a)
       )}>
 
       {children}
@@ -443,9 +451,7 @@ function DetailHero({
   full,
   boardName,
   genusName,
-  galleryItems,
-  metrics,
-  collectTotal
+  galleryItems
 
 
 
@@ -453,57 +459,28 @@ function DetailHero({
 
 
 
-}: {full: FullSpecies;boardName: string;genusName: string;galleryItems: NonNullable<FullSpecies['galleryItems']>;metrics: DetailMetrics;collectTotal: number;}) {
+}: {full: FullSpecies;boardName: string;genusName: string;galleryItems: NonNullable<FullSpecies['galleryItems']>;}) {
+  const descriptionTabs = getDescriptionTabs(full);
+
   return (
-    <section className={cx(styles.r_2cd02d11, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_438b2237)}>
-      <div className={cx(styles.r_d89972fe, styles.r_357868ab, styles.r_2cd02d11, styles.r_7ebecbb6, styles.r_7d81d989)}>
-        <Image
-          src={full.cover}
-          alt={full.name}
-          fill
-          priority
-          unoptimized
-          className={styles.r_7d85d0c2}
-          style={{ objectPosition: full.coverPosition ?? 'center center' }} />
+    <section className={styles.heroStack}>
+      <div className={cx(styles.heroCard, styles.r_2cd02d11, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_438b2237)}>
+        <div className={cx(styles.heroMedia, styles.r_d89972fe, styles.r_357868ab, styles.r_2cd02d11, styles.r_7ebecbb6, styles.r_7d81d989)}>
+          <Image
+            src={full.cover}
+            alt={full.name}
+            fill
+            priority
+            unoptimized
+            className={styles.r_7d85d0c2}
+            style={{ objectPosition: full.coverPosition ?? 'center center' }} />
 
-        <div className={cx(styles.r_da4dbfbc, styles.r_7b7df044, styles.r_79257b8c, styles.r_0bb032b9, styles.r_3e4c86d8, styles.r_0fe2b3da)} />
-
-        <div className={cx(styles.r_da4dbfbc, styles.r_3f6397bf, styles.r_189f036c, styles.r_8e63407b, styles.r_72a4c7cd, styles.r_c1713f19)}>
-          <div className={cx(styles.r_f3c543ad, styles.r_0c3bc985, styles.r_db4636ce)}>
-            <div className={cx(styles.r_7e0b7cdf, styles.r_c7d50d5f)}>
-              <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_77a2a20e)}>
-                <h1 className={cx(styles.r_3febee09, styles.r_69450ef1, styles.r_c58992ca)}>{full.name}</h1>
-                <span className={cx(styles.r_f3c543ad, styles.r_cd0d9c51, styles.r_72470489, styles.r_012fbd12, styles.r_67d66567, styles.r_ac204c10, styles.r_6bceb016, styles.r_72a4c7cd)}>
-                  <Icon name="check" size={12} />
-                </span>
-              </div>
-              {full.latinName && <p className={cx(styles.r_b6b02c0e, styles.r_fc7473ca, styles.r_90665ca6, styles.r_201d4d37)}>{full.latinName}</p>}
-              <p className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_ed24b98e)}>{boardName} · {genusName}</p>
-              {full.description &&
-              <p className={cx(styles.r_eccd13ef, styles.r_054cb4e3, styles.r_fc7473ca, styles.r_18550d59, styles.r_40ba14f7, styles.r_9a090339)}>
-                  {full.description}
-                </p>
-              }
-              <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_77a2a20e)}>
-                <SidebarTag icon="plants" text={full.growthType ?? '易养护'} />
-                <SidebarTag icon="trophy" text="观赏性强" />
-                <SidebarTag icon="star" text="经典品种" />
-              </div>
-            </div>
-
-            <div className={cx(styles.r_7e0b7cdf, styles.r_c7d50d5f)}>
-              <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_77a2a20e)}>
-                <SidebarStat label="收藏人数" value={compactNumber(collectTotal)} icon="bookmark" />
-                <SidebarStat label="玩家记录" value={metrics.journalsText} icon="camera" />
-                <SidebarStat label="热度指数" value={metrics.heatText} icon="star" />
-                <SidebarStat label="最近热度" value={`↑ ${metrics.recentGrowth}%`} icon="arrow-right" />
-              </div>
-            </div>
-          </div>
+          <div className={cx(styles.heroOverlay, styles.r_da4dbfbc, styles.r_7b7df044, styles.r_79257b8c, styles.r_0bb032b9, styles.r_3e4c86d8, styles.r_0fe2b3da)} />
         </div>
-      </div>
 
-      <GalleryBlock speciesName={full.name} items={galleryItems} />
+        <GalleryBlock speciesName={full.name} items={galleryItems} />
+      </div>
+      <DescriptionTabsCard tabs={descriptionTabs} />
     </section>);
 
 }
@@ -511,15 +488,12 @@ function DetailHero({
 function GalleryBlock({
   speciesName,
   items
-
-
-
 }: {speciesName: string;items: NonNullable<FullSpecies['galleryItems']>;}) {
   return (
-    <div className={cx(styles.r_b950dda2, styles.r_88b684d2, styles.r_c07e54fd)}>
+    <div className={cx(styles.galleryBlock, styles.r_b950dda2, styles.r_88b684d2, styles.r_c07e54fd)}>
       <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_6f27f4f7, styles.r_8ef2268e, styles.r_1004c0c3)}>
         <div>
-          <h2 className={cx(styles.r_42536e69, styles.r_69450ef1, styles.r_4ddaa618)}>图集</h2>
+          <h2 className={cx(styles.sectionTitle, styles.r_42536e69, styles.r_69450ef1, styles.r_4ddaa618)}>图集</h2>
         </div>
       </div>
 
@@ -528,24 +502,46 @@ function GalleryBlock({
 
 }
 
-function SidebarTag({ icon, text }: {icon: IconName;text: string;}) {
-  return (
-    <span className={cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_ac204c10, styles.r_ca6bcd4b, styles.r_d296b7d2, styles.r_990f052a, styles.r_0e17f2bd, styles.r_660d2eff, styles.r_359090c2, styles.r_2689f395, styles.r_72a4c7cd)}>
-      <Icon name={icon} size={12} />
-      {text}
-    </span>);
-
+function getDescriptionTabs(full: FullSpecies) {
+  const fallbackTabs = full.description ? [{
+    id: 'description',
+    title: '品种简介',
+    contentJson: full.descriptionJson,
+    contentHtml: full.descriptionJson ? full.description : undefined,
+    contentText: full.descriptionJson ? undefined : full.descriptionText || full.description
+  }] : [];
+  return (full.descriptionTabs ?? fallbackTabs)
+    .map((tab, index) => ({
+      ...tab,
+      id: tab.id || `description-tab-${index}`,
+      title: tab.title || `栏目 ${index + 1}`
+    }));
 }
 
-function SidebarStat({ label, value, icon }: {label: string;value: string;icon: IconName;}) {
+function DescriptionTabsCard({ tabs }: {tabs: ReturnType<typeof getDescriptionTabs>;}) {
+  if (tabs.length === 0) return null;
   return (
-    <div className={cx(styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_6b9a4169, styles.r_990f052a, styles.r_eb6e8b88, styles.r_72a4c7cd, styles.r_438b2237)}>
-      <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_77a2a20e, styles.r_d058ca6d, styles.r_ed24b98e)}>
-        <span>{label}</span>
-        <Icon name={icon} size={13} />
-      </div>
-      <div className={cx(styles.r_50d0d216, styles.r_d5c9b000, styles.r_69450ef1)}>{value}</div>
-    </div>);
+    <Card padding="none" className={styles.descriptionTabsCard}>
+      <Tabs defaultValue={tabs[0]?.id}>
+        <TabsList className={styles.descriptionTabsList}>
+          {tabs.map((tab) =>
+          <TabsTrigger key={tab.id} value={tab.id}>
+              {tab.title}
+            </TabsTrigger>
+          )}
+        </TabsList>
+        {tabs.map((tab) =>
+        <TabsContent key={tab.id} value={tab.id} className={styles.descriptionTabsContent}>
+            <RichTextView
+            json={tab.contentJson}
+            html={tab.contentJson ? tab.contentHtml : undefined}
+            text={tab.contentJson ? undefined : tab.contentText || tab.contentHtml}
+            size="sm"
+            className={cx(styles.descriptionText, styles.r_a2edcb1a, styles.r_170cee3f)} />
+          </TabsContent>
+        )}
+      </Tabs>
+    </Card>);
 
 }
 
@@ -566,21 +562,21 @@ function RightActionRail({
   const hiddenContributorCount = Math.max(0, contributorTotal - visibleContributors.length);
 
   return (
-    <aside className={cx(styles.r_3e7ce58d, styles.r_f271783c, styles.r_6a0dd79a, styles.r_bb3508ed)}>
-      <section className={cx(styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_8e63407b, styles.r_438b2237)}>
-        <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
+    <aside className={cx(styles.sideRail, styles.r_3e7ce58d, styles.r_f271783c, styles.r_6a0dd79a, styles.r_bb3508ed)}>
+      <section className={cx(styles.sideCard, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_8e63407b, styles.r_438b2237)}>
+        <div className={cx(styles.sideCardHeaderGap, styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
           <img src="/icons/plants_difficulty_medal.svg" alt="" className={cx(styles.r_cd0d9c51, styles.r_72470489)} />
-          <h2 className={cx(styles.r_69450ef1, styles.r_4ddaa618)}>难度评分</h2>
+          <h2 className={cx(styles.sideCardHeading, styles.r_69450ef1, styles.r_4ddaa618)}>难度评分</h2>
         </div>
-        <div className={styles.r_0ab86672}>
+        <div className={cx(styles.sideCardBodyFlush, styles.r_0ab86672)}>
           <SpeciesRatingPanel speciesId={full.id} fallbackAvg={full.difficulty} />
         </div>
       </section>
 
-      <section className={cx(styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_8e63407b, styles.r_438b2237)}>
-        <h2 className={cx(styles.r_69450ef1, styles.r_4ddaa618)}>图鉴贡献</h2>
+      <section className={cx(styles.sideCard, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_8e63407b, styles.r_438b2237)}>
+        <h2 className={cx(styles.sideCardHeading, styles.sideCardHeadingGap, styles.r_69450ef1, styles.r_4ddaa618)}>图鉴贡献</h2>
         {visibleContributors.length > 0 ?
-        <div className={cx(styles.r_0ab86672, styles.r_f3c543ad, styles.r_736c5589, styles.r_41c9ba83)}>
+        <div className={cx(styles.sideCardBodyFlush, styles.r_0ab86672, styles.r_f3c543ad, styles.r_736c5589, styles.r_41c9ba83)}>
             {visibleContributors.map((user, index) =>
           <Link
             key={user.id}
@@ -602,7 +598,7 @@ function RightActionRail({
           }
           </div> :
 
-        <div className={cx(styles.r_0ab86672, styles.r_c10ff8c0, styles.r_7ebecbb6, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_e7eab4cb)}>
+        <div className={cx(styles.sideCardBodyFlush, styles.r_0ab86672, styles.r_c10ff8c0, styles.r_7ebecbb6, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2, styles.r_e7eab4cb)}>
             还没有已采纳的贡献
           </div>
         }
@@ -610,9 +606,9 @@ function RightActionRail({
         <p className={cx(styles.r_eccd13ef, styles.r_359090c2, styles.r_7b89cd85)}>已有 {contributorTotal} 位玩家参与完善</p>
       </section>
 
-      <section className={cx(styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_8e63407b, styles.r_438b2237)}>
-        <div className={cx(styles.r_1bb88326, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_1004c0c3)}>
-          <h2 className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>同属其他品种</h2>
+      <section className={cx(styles.sideCard, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_8e63407b, styles.r_438b2237)}>
+        <div className={cx(styles.sideCardHeaderGap, styles.r_1bb88326, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_1004c0c3)}>
+          <h2 className={cx(styles.sideCardHeading, styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>同属其他品种</h2>
           <Link
             href={`/plants/${params.categorySlug}/${params.genusSlug}`}
             className={cx(styles.r_d058ca6d, styles.r_5f6a59f1, styles.r_f673f4a7)}>
@@ -668,7 +664,10 @@ function RelatedSpeciesCard({
         </div>
         <div className={cx(styles.r_15e1b1f4, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_44ee8ba0, styles.r_1dc571a3, styles.r_6c4cc49e)}>
           <span className={cx(styles.r_7e0b7cdf, styles.r_f283ea9b, styles.r_90665ca6)}>{item.latinName}</span>
-          <span className={styles.r_012fbd12}>📝 {item._count?.posts ?? 0}</span>
+          <span className={cx(styles.r_012fbd12, styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0)}>
+            <Icon name="edit" size={11} />
+            {item._count?.posts ?? 0}
+          </span>
         </div>
       </div>
     </Link>);
@@ -687,7 +686,7 @@ function InfoCards({
   const care = getCareProfile(full);
 
   return (
-    <section className={cx(styles.r_f3c543ad, styles.r_0c3bc985, styles.r_5067ab35)}>
+    <section className={cx(styles.infoGrid, styles.r_f3c543ad, styles.r_0c3bc985, styles.r_5067ab35)}>
       <InfoGroup title="基础信息">
         <InfoRow label="中文名" value={full.name} />
         <InfoRow label="拉丁名" value={full.latinName} />
@@ -711,7 +710,7 @@ function InfoCards({
 
 function InfoGroup({ title, badge, children }: {title: string;badge?: string;children: React.ReactNode;}) {
   return (
-    <section className={cx(styles.r_7e0b7cdf, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_c07e54fd, styles.r_438b2237)}>
+    <section className={cx(styles.infoCard, styles.r_7e0b7cdf, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_c07e54fd, styles.r_438b2237)}>
       <div className={cx(styles.r_da019856, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_1004c0c3)}>
         <h3 className={cx(styles.r_4ee73492, styles.r_69450ef1, styles.r_4ddaa618)}>{title}</h3>
         {badge && <span className={cx(styles.r_ac204c10, styles.r_7ebecbb6, styles.r_0e17f2bd, styles.r_660d2eff, styles.r_d058ca6d, styles.r_e83a7042, styles.r_e7eab4cb)}>{badge}</span>}
@@ -723,7 +722,7 @@ function InfoGroup({ title, badge, children }: {title: string;badge?: string;chi
 
 function InfoRow({ label, value }: {label: string;value: string;}) {
   return (
-    <div className={cx(styles.r_60fbb771, styles.r_60541e1e, styles.r_8ef2268e, styles.r_1004c0c3, styles.r_65fdbade, styles.r_5ff6a729, styles.r_f4cc511f, styles.r_c2db4490, styles.r_dcd339c6)}>
+    <div className={cx(styles.infoRow, styles.r_60fbb771, styles.r_60541e1e, styles.r_8ef2268e, styles.r_1004c0c3, styles.r_65fdbade, styles.r_5ff6a729, styles.r_f4cc511f, styles.r_c2db4490, styles.r_dcd339c6)}>
       <span className={cx(styles.r_012fbd12, styles.r_7b89cd85)}>{label}</span>
       <span className={cx(styles.r_308fc069, styles.r_2689f395, styles.r_399e11a5)}>{value}</span>
     </div>);
@@ -777,7 +776,7 @@ function LowerModules({
   return (
     <section className={cx(styles.r_f3c543ad, styles.r_0c3bc985)}>
       {full.tips.length > 0 &&
-      <section className={cx(styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_c07e54fd, styles.r_438b2237)}>
+      <section className={cx(styles.contentCard, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_c07e54fd, styles.r_438b2237)}>
           <SectionHead title="养护经验" />
           <div className={cx(styles.r_f3c543ad, styles.r_1004c0c3, styles.r_e4d6f343)}>
             {full.tips.slice(0, 6).map((tip, index) =>
@@ -792,13 +791,13 @@ function LowerModules({
         </section>
       }
 
-      <section className={cx(styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_c07e54fd, styles.r_438b2237)}>
+      <section className={cx(styles.contentCard, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_c07e54fd, styles.r_438b2237)}>
         <SectionHead title="玩家作品精选" href={`/board/${params.categorySlug}/${params.genusSlug}/${params.speciesSlug}`} />
         <div className={cx(styles.r_f3c543ad, styles.r_1004c0c3, styles.r_e00ad816, styles.r_4558bce6)}>
           {posts.slice(0, 4).map((post) => {
             const cover = post.cover ?? post.images?.[0] ?? full.cover;
             return (
-              <Link key={post.id} href={`/post/${post.id}`} className={cx(styles.r_64292b1c, styles.r_2cd02d11, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8)}>
+              <Link key={post.id} href={`/post/${post.id}`} className={cx(styles.workCard, styles.r_64292b1c, styles.r_2cd02d11, styles.r_c10ff8c0, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8)}>
                 <div className={cx(styles.r_d89972fe, styles.r_357868ab, styles.r_7ebecbb6)}>
                   <Image src={cover} alt={post.title} fill className={cx(styles.r_7d85d0c2, styles.r_56bf8ae8, styles.r_1a9195e1)} unoptimized />
                 </div>
@@ -837,24 +836,6 @@ function firstHref(board: Taxonomy[number]) {
   const species = genus?.species[0];
   if (!genus || !species) return '/plants';
   return `/plants/${board.slug}/${genus.slug}/${species.slug}`;
-}
-
-type DetailMetrics = ReturnType<typeof makeMetrics>;
-
-function makeMetrics(posts: number, journals: number, ratingCount: number, difficulty: number) {
-  const favorites = Math.max(1280, posts * 236 + ratingCount * 71 + difficulty * 420);
-  const heat = Math.max(6800, posts * 310 + journals * 180 + ratingCount * 95 + difficulty * 900);
-  const recentGrowth = Math.min(42, Math.max(8, Math.round((posts + ratingCount + difficulty * 3) % 35) + 8));
-  return {
-    favorites,
-    favoritesText: compactNumber(favorites),
-    journals,
-    journalsText: compactNumber(Math.max(1200, journals * 180 + posts * 120)),
-    heat,
-    heatText: compactNumber(heat),
-    recentGrowth,
-    contributors: Math.max(12, Math.round((posts + ratingCount) / 2))
-  };
 }
 
 function compactNumber(n: number) {

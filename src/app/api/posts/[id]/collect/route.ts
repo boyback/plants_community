@@ -27,7 +27,7 @@ export const GET = handler(async (req) => {
 export const POST = handler(async (req) => {
   const me = await requireUser();
   if (!(await hasUserPermission(me, 'post:collect'))) {
-    return fail(403, '需要 Lv.3 以上才能收藏帖子,开通大会员可解锁');
+    return fail(403, '需要 Lv.3 以上才能收藏帖子');
   }
   const postId = pickPostId(req);
 

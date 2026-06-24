@@ -5,26 +5,31 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Shell } from '@/components/layout/Shell';
 import { Empty } from '@/components/ui/Empty';
+import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { api, ApiError } from "@/lib/client-api";
 import { toast } from '@/components/ui/Toast';
 import { cn, formatDateTime } from '@/lib/utils';
 import { SkinCard } from '@/components/skin/SkinCard';
-import type { SkinItem, SkinKind, PointsLedgerItem } from '@/lib/types';
+import type { SkinItem, SkinKind, PointsLedgerItem, EquipState } from '@/lib/types';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
 
 
 
-const KIND_TABS: {key: SkinKind | 'wardrobe' | 'ledger';labelKey: string;}[] = [
+type PointsTabKey = SkinKind | 'ledger';
+
+const KIND_TABS: {key: PointsTabKey;labelKey: string;}[] = [
 { key: 'bubble', labelKey: 'points.tabs.bubble' },
 { key: 'reaction', labelKey: 'points.tabs.reaction' },
 { key: 'sticker', labelKey: 'points.tabs.sticker' },
 { key: 'pendant', labelKey: 'points.tabs.pendant' },
-{ key: 'wardrobe', labelKey: 'points.tabs.wardrobe' },
 { key: 'ledger', labelKey: 'points.tabs.ledger' }];
 
+function normalizeTab(value: string | null): PointsTabKey {
+  return KIND_TABS.some((item) => item.key === value) ? value as PointsTabKey : 'bubble';
+}
 
 export default function Page() {
   return (
@@ -37,15 +42,23 @@ export default function Page() {
 function PointsInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, loading: authLoading, pointsBalance, refresh, vip, equip } = useAuth();
+  const { user, loading: authLoading, pointsBalance, refresh, equip, setEquipItem } = useAuth();
   const { t } = useI18n();
-  const [tab, setTab] = useState<(typeof KIND_TABS)[number]['key']>(
-    searchParams.get('tab') as (typeof KIND_TABS)[number]['key'] ?? 'bubble'
-  );
+  const [tab, setTab] = useState<PointsTabKey>(normalizeTab(searchParams.get('tab')));
+  const [localEquip, setLocalEquip] = useState<EquipState>(equip);
+
+  useEffect(() => {
+    setLocalEquip(equip);
+  }, [equip]);
+
+  const updateLocalEquip = (kind: SkinKind, item: SkinItem | null) => {
+    setLocalEquip((prev) => ({ ...prev, [kind]: item }));
+    setEquipItem(kind, item);
+  };
 
   if (!authLoading && !user) {
     return (
-      <Shell>
+      <Shell withSidebar={false}>
         <div className={cx(styles.r_0e12dc7d, styles.r_9794ab45, styles.r_a4d0f420, styles.r_ca6bf630)}>
           <div className={styles.r_a95699d9}>💎</div>
           <div className={cx(styles.r_eccd13ef, styles.r_42536e69, styles.r_e83a7042)}>{t('points.loginRequired')}</div>
@@ -58,10 +71,10 @@ function PointsInner() {
   }
 
   return (
-    <Shell>
+    <Shell withSidebar={false}>
       <div className={cx(styles.r_b6777c6d, styles.r_f3c543ad, styles.r_d7c83398, styles.r_0c3bc985, styles.r_19d9b25e)}>
         {/* 余额卡 */}
-        <div className={cx(styles.r_2cd02d11, styles.r_422d1002)}>
+        <Card padding="none" className={cx(styles.r_2cd02d11, styles.summaryTopCard)}>
           <div className={cx(styles.r_39b2e003, styles.r_925d3564, styles.r_70203aca, styles.r_c07e54fd, styles.r_72a4c7cd)}>
             <div className={cx(styles.r_359090c2, styles.r_714816ef)}>{t('points.balance')}</div>
             <div className={cx(styles.r_b6b02c0e, styles.r_60fbb771, styles.r_b7012bb2, styles.r_77a2a20e)}>
@@ -81,40 +94,19 @@ function PointsInner() {
               <div className={cx(styles.r_4ee73492, styles.r_e83a7042, styles.r_5f6a59f1)}>{t('points.sources.purchase')}</div>
               <div className={cx(styles.r_b6b02c0e, styles.r_1dc571a3, styles.r_69335b95)}>{t('points.sources.purchaseDesc')}</div>
             </Link>
-            <Link href="/vip" className={cx(styles.r_8e63407b, styles.r_5756b7b4)}>
-              <div className={cx(styles.r_4ee73492, styles.r_e83a7042, styles.r_5f6a59f1)}>{t('points.sources.exchangeVip')}</div>
-              <div className={cx(styles.r_b6b02c0e, styles.r_1dc571a3, styles.r_69335b95)}>5000 → {t('vip.plans.monthly')}</div>
-            </Link>
           </div>
-        </div>
+        </Card>
 
-        {/* VIP / 装扮 状态卡 */}
-        <div className={styles.r_8e63407b}>
+        {/* 装扮状态卡 */}
+        <Card className={cx(styles.r_8e63407b, styles.summaryTopCard)}>
           <div className={cx(styles.r_fc7473ca, styles.r_e83a7042)}>我的状态</div>
           <div className={cx(styles.r_eccd13ef, styles.r_6f7e013d, styles.r_359090c2)}>
-            <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e)}>
-              <span className={styles.r_69335b95}>大会员</span>
-              {vip.isVip ?
-              <span className={cx(styles.r_ac204c10, styles.r_735dd972, styles.r_d5eab218, styles.r_465609a2, styles.r_5c6230d2, styles.r_2689f395)}>
-                  👑 {vip.lifetime ? '终身' : '活跃中'}
-                </span> :
-
-              <Link href="/vip" className={cx(styles.r_5f6a59f1, styles.r_f673f4a7)}>去开通</Link>
-              }
-            </div>
-            <Equip label="评论气泡" item={equip.bubble} kind="bubble" />
-            <Equip label="点赞按钮" item={equip.reaction} kind="reaction" />
-            <Equip label="表情包" item={equip.sticker} kind="sticker" />
-            <Equip label="头像挂件" item={equip.pendant} kind="pendant" />
+            <Equip label="评论气泡" item={localEquip.bubble} kind="bubble" />
+            <Equip label="点赞按钮" item={localEquip.reaction} kind="reaction" />
+            <Equip label="表情包" item={localEquip.sticker} kind="sticker" />
+            <Equip label="头像挂件" item={localEquip.pendant} kind="pendant" />
           </div>
-          <button
-            type="button"
-            onClick={() => setTab('wardrobe')}
-            className={cx(styles.r_eccd13ef, styles.r_6da6a3c3, styles.r_dd702538)}>
-
-            管理装扮
-          </button>
-        </div>
+        </Card>
       </div>
 
       {/* Tab */}
@@ -141,12 +133,15 @@ function PointsInner() {
         )}
       </div>
 
-      {tab === 'wardrobe' ?
-      <Wardrobe onChange={refresh} /> :
-      tab === 'ledger' ?
+      {tab === 'ledger' ?
       <Ledger /> :
 
-      <SkinShop kind={tab} onChange={refresh} />
+      <SkinShop
+        key={tab}
+        kind={tab}
+        equippedId={localEquip[tab]?.id ?? null}
+        onEquipChange={updateLocalEquip}
+        onChange={refresh} />
       }
     </Shell>);
 
@@ -175,10 +170,20 @@ interface SkinFromAPI extends SkinItem {
   owned: boolean;
 }
 
-function SkinShop({ kind, onChange }: {kind: SkinKind;onChange: () => void | Promise<void>;}) {
+function SkinShop({
+  kind,
+  equippedId,
+  onEquipChange,
+  onChange
+}: {kind: SkinKind;equippedId?: string | null;onEquipChange: (kind: SkinKind, item: SkinItem | null) => void;onChange: () => void | Promise<void>;}) {
   const [list, setList] = useState<SkinFromAPI[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [localEquippedId, setLocalEquippedId] = useState<string | null>(equippedId ?? null);
+
+  useEffect(() => {
+    setLocalEquippedId(equippedId ?? null);
+  }, [equippedId, kind]);
 
   const load = () => {
     setLoading(true);
@@ -194,8 +199,9 @@ function SkinShop({ kind, onChange }: {kind: SkinKind;onChange: () => void | Pro
     setBusyId(id);
     try {
       await api.post(`/api/skins/${id}/exchange`);
-      load();
-      onChange();
+      setList((items) => items.map((item) => item.id === id ? { ...item, owned: true } : item));
+      await onChange();
+      toast.success('兑换成功');
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : '兑换失败');
     } finally {
@@ -203,112 +209,82 @@ function SkinShop({ kind, onChange }: {kind: SkinKind;onChange: () => void | Pro
     }
   };
 
-  if (loading) return <div className={cx(styles.r_1100bef6, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>加载中...</div>;
-  if (list.length === 0) return <Empty icon="🌵" title="暂无皮肤" />;
-
-  return (
-    <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3, styles.r_ab1b20c2, styles.r_d59f314f, styles.r_a4ecef1e)}>
-      {list.map((s) =>
-      <SkinCard
-        key={s.id}
-        skin={s}
-        owned={s.owned}
-        busy={busyId === s.id}
-        onExchange={() => exchange(s.id)} />
-
-      )}
-    </div>);
-
-}
-
-/* ---------------- 我的装扮 ---------------- */
-
-function Wardrobe({ onChange }: {onChange: () => void | Promise<void>;}) {
-  const [data, setData] = useState<{
-    owned: (SkinItem & {obtainedFrom: string;obtainedAt: string;})[];
-    equip: {
-      bubble?: SkinItem | null;
-      reaction?: SkinItem | null;
-      sticker?: SkinItem | null;
-      pendant?: SkinItem | null;
-    };
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState<string | null>(null);
-
-  const load = () => {
-    setLoading(true);
-    api.
-    get<NonNullable<typeof data>>(`/api/wardrobe`).
-    then(setData).
-    catch(() => null).
-    finally(() => setLoading(false));
-  };
-  useEffect(load, []);
-
   const equip = async (kind: SkinKind, skinId: string | null) => {
-    setBusyId(skinId ?? "unequip-" + kind);
+    const busyKey = skinId ?? "unequip-" + kind;
+    setBusyId(busyKey);
     try {
+      const authInfo = await api.get<null | { user?: { id?: string } }>('/api/auth/me');
+      if (!authInfo?.user) {
+        toast.error('请先登录后再佩戴');
+        return;
+      }
       await api.post(`/api/wardrobe/equip`, { kind, skinId });
-      load();
-      onChange();
+      const item = skinId ? list.find((skin) => skin.id === skinId) ?? null : null;
+      setLocalEquippedId(skinId);
+      onEquipChange(kind, item);
+      toast.success(skinId ? '佩戴成功' : '已卸下');
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : '操作失败');
+      toast.error(e instanceof ApiError ? e.message : skinId ? '佩戴失败' : '卸下失败');
     } finally {
       setBusyId(null);
     }
   };
 
-  if (loading) return <div className={cx(styles.r_1100bef6, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>加载中...</div>;
-  if (!data) return null;
-
-  const equipMap = data.equip;
-
-  const ownedByKind = (k: SkinKind) => data.owned.filter((s) => s.kind === k);
-
-  const KIND_TITLE: Record<SkinKind, string> = {
-    bubble: '💬 评论气泡',
-    reaction: '👍 点赞按钮',
-    sticker: '🌱 表情包',
-    pendant: '👑 头像挂件'
-  };
-
-  if (data.owned.length === 0) {
-    return (
-      <Empty
-        icon="👗"
-        title="装扮箱空空如也"
-        desc="去皮肤商城兑换喜欢的皮肤吧" />);
-
-
-  }
+  if (loading) return <SkinGridSkeleton />;
+  if (list.length === 0) return <Empty icon="🌵" title="暂无皮肤" />;
 
   return (
-    <div className={styles.r_b3542e05}>
-      {(['bubble', 'reaction', 'sticker', 'pendant'] as SkinKind[]).map((k) => {
-        const ownedList = ownedByKind(k);
-        const equippedId = (equipMap as Record<string, SkinItem | null | undefined>)[k]?.id;
-        if (ownedList.length === 0) return null;
+    <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3, styles.r_ab1b20c2, styles.r_d59f314f, styles.r_a4ecef1e)}>
+      {list.map((s) => {
+        const equipped = localEquippedId === s.id;
         return (
-          <section key={k}>
-            <h3 className={cx(styles.r_a77ed4d9, styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>{KIND_TITLE[k]}</h3>
-            <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3, styles.r_ab1b20c2, styles.r_d59f314f, styles.r_a4ecef1e)}>
-              {ownedList.map((s) =>
-              <SkinCard
-                key={s.id}
-                skin={s}
-                owned
-                equipped={equippedId === s.id}
-                busy={busyId === s.id}
-                onEquip={() => equip(k, s.id)}
-                onUnequip={() => equip(k, null)} />
-
-              )}
-            </div>
-          </section>);
+          <SkinCard
+            key={s.id}
+            skin={s}
+            owned={s.owned}
+            equipped={equipped}
+            busy={busyId === s.id || equipped && busyId === "unequip-" + kind}
+            onExchange={() => exchange(s.id)}
+            onEquip={() => equip(kind, s.id)}
+            onUnequip={() => equip(kind, null)} />);
 
       })}
     </div>);
+
+}
+
+function SkinGridSkeleton() {
+  return (
+    <div className={cx(styles.r_f3c543ad, styles.r_8e75e3db, styles.r_1004c0c3, styles.r_ab1b20c2, styles.r_d59f314f, styles.r_a4ecef1e)}>
+      {Array.from({ length: 5 }).map((_, index) =>
+      <div key={index} className={styles.skinSkeletonCard}>
+          <div className={styles.skinSkeletonPreview} />
+          <div className={styles.skinSkeletonLine} />
+          <div className={styles.skinSkeletonLineShort} />
+          <div className={styles.skinSkeletonFooter}>
+            <span />
+            <span />
+          </div>
+        </div>
+      )}
+    </div>);
+
+}
+
+function LedgerSkeleton() {
+  return (
+    <ul className={styles.ledgerList}>
+      {Array.from({ length: 5 }).map((_, index) =>
+      <li key={index} className={styles.ledgerSkeletonItem}>
+          <span />
+          <div>
+            <i />
+            <em />
+          </div>
+          <b />
+        </li>
+      )}
+    </ul>);
 
 }
 
@@ -328,13 +304,14 @@ function Ledger() {
     finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className={cx(styles.r_1100bef6, styles.r_ca6bf630, styles.r_fc7473ca, styles.r_6c4cc49e)}>{t('common.loading')}</div>;
+  if (loading) return <LedgerSkeleton />;
   if (list.length === 0) return <Empty icon="📜" title={t('points.ledger.empty')} />;
 
   return (
-    <ul className={cx(styles.r_fa6acbf8, styles.r_6f8e581a)}>
+    <ul className={styles.ledgerList}>
       {list.map((item) =>
-      <li key={item.id} className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_d139dd09, styles.r_1b2d54a3)}>
+      <li key={item.id}>
+        <Card className={cx(styles.ledgerCard, styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3)}>
           <div
           className={cn(cx(styles.r_f3c543ad, styles.r_e7a768f9, styles.r_ae2181c7, styles.r_012fbd12, styles.r_67d66567, styles.r_ac204c10, styles.r_fc7473ca),
 
@@ -351,6 +328,7 @@ function Ledger() {
             </div>
           </div>
           <div className={cx(styles.r_359090c2, styles.r_6c4cc49e)}>余额 {item.balance}</div>
+        </Card>
         </li>
       )}
     </ul>);

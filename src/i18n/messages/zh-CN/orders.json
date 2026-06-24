@@ -32,6 +32,7 @@
       "ship": "卖家发货",
       "confirm": "确认收货",
       "review": "评价",
+      "refund": "申请退款",
       "viewProduct": "查看商品",
       "viewAuction": "查看拍卖"
     },
@@ -40,6 +41,9 @@
     "inputTracking": "输入物流单号(可选)",
     "reviewPlaceholder": "写点对商品的真实感受(可选)",
     "submitReview": "提交评价",
+    "refundReason": "退款原因",
+    "refundPlaceholder": "请简单说明退款原因",
+    "submitRefund": "提交申请",
     "pickRating": "选择评分",
     "confirmCancel": "确定要取消这个订单吗?"
   }

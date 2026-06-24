@@ -7,7 +7,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
 import Color from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
-import { Extension, mergeAttributes } from '@tiptap/core';
+import { Extension, mergeAttributes, type CommandProps } from '@tiptap/core';
 import Gapcursor from '@tiptap/extension-gapcursor';
 
 const ListMarkerColor = Extension.create({
@@ -28,6 +28,54 @@ const ListMarkerColor = Extension.create({
         },
       },
     ];
+  },
+});
+
+const FONT_SIZE_OPTIONS = new Set(['12px', '14px', '16px', '18px', '20px', '24px', '28px']);
+
+function normalizeFontSize(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim().toLowerCase();
+  const match = trimmed.match(/^(\d+(?:\.\d+)?)px$/);
+  if (!match) return null;
+  const px = `${Math.round(Number(match[1]))}px`;
+  return FONT_SIZE_OPTIONS.has(px) ? px : null;
+}
+
+const FontSize = Extension.create({
+  name: 'fontSize',
+  addGlobalAttributes() {
+    return [
+      {
+        types: ['textStyle'],
+        attributes: {
+          fontSize: {
+            default: null,
+            parseHTML: (element) => normalizeFontSize(element.style.fontSize),
+            renderHTML: (attributes) => {
+              const fontSize = normalizeFontSize(attributes.fontSize);
+              if (!fontSize) return {};
+              return { style: `font-size: ${fontSize};` };
+            },
+          },
+        },
+      },
+    ];
+  },
+  addCommands() {
+    return {
+      setFontSize:
+        (fontSize: string) =>
+        ({ chain }: CommandProps) => {
+          const next = normalizeFontSize(fontSize);
+          if (!next) return false;
+          return chain().setMark('textStyle', { fontSize: next }).run();
+        },
+      unsetFontSize:
+        () =>
+        ({ chain }: CommandProps) =>
+          chain().setMark('textStyle', { fontSize: null }).removeEmptyTextStyle().run(),
+    } as never;
   },
 });
 
@@ -232,6 +280,7 @@ const baseExtensions = [
     types: ['heading', 'paragraph'],
   }),
   TextStyle,
+  FontSize,
   Color.configure({
     types: ['textStyle'],
   }),

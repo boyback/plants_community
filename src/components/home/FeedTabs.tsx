@@ -13,7 +13,7 @@ import { PostAdminMenu } from '@/components/post/PostAdminMenu';
 import { PostCardSkeleton } from '@/components/post/PostCardSkeleton';
 import { TopicTag } from '@/components/ui/TopicTag';
 import { Tooltip } from '@/components/ui/Tooltip';
-import { STAGE_META } from '@/lib/journal';
+import { journalStageLabels, normalizeJournalStages, STAGE_META } from '@/lib/journal';
 import { useI18n } from '@/i18n/I18nContext';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from "@/lib/client-api";
@@ -729,7 +729,8 @@ function EntryItem({ entry, meta }: {entry: any;meta: any;}) {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
-  const stageText = entry.stage === 'other' && entry.stageLabel ? entry.stageLabel : meta.zh;
+  const stages = normalizeJournalStages(entry.stages, entry.stage);
+  const stageText = (entry.stageLabels ?? journalStageLabels(stages, entry.stageLabel)).join('、') || meta.zh;
   return (
     <div className={styles.r_da7c36cd}>
       <div className={cx(styles.r_60fbb771, styles.r_60541e1e, styles.r_77a2a20e)}>

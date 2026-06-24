@@ -7,6 +7,11 @@ export function ok<T>(data: T, init?: ResponseInit) {
   return NextResponse.json({ ok: true, data }, init);
 }
 
+export async function jsonWithUserPendants<T>(data: T, init?: ResponseInit) {
+  const { withUserPendants } = await import('@/lib/user-pendants');
+  return NextResponse.json(await withUserPendants(data, data), init);
+}
+
 export function fail(status: number, message: string, detail?: unknown) {
   return NextResponse.json(
     { ok: false, error: { message, detail } },
@@ -30,7 +35,8 @@ export function handler<T>(fn: (req: Request) => Promise<T | NextResponse>) {
     try {
       const r = await fn(req);
       if (r instanceof NextResponse) return r;
-      return ok(r);
+      const { withUserPendants } = await import('@/lib/user-pendants');
+      return ok(await withUserPendants(r, r));
     } catch (e) {
       if (e instanceof HttpError) return fail(e.status, e.message);
       if (e instanceof ZodError) {

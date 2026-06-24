@@ -62,3 +62,52 @@
 .r_358505cf{--tw-border-opacity:1;border-color:rgb(243 244 246/var(--tw-border-opacity))}
 .r_5399e21f:hover{--tw-bg-opacity:1;background-color:rgb(249 250 251/var(--tw-bg-opacity))}
 .r_74f84935{background-color:#f9fafb66}
+
+.descriptionTabsEditor {
+  border-color: rgb(var(--leaf-100));
+  box-shadow: none;
+}
+
+.descriptionTabsToolbar {
+  display: grid;
+  gap: 12px;
+}
+
+.descriptionTabsList {
+  padding: 0 0 0;
+}
+
+.descriptionTabPanel {
+  padding: 12px 0 0;
+}
+
+.descriptionTabControls {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.descriptionTabTitleInput {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.descriptionTabButtons {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.descriptionTabsEmpty {
+  min-height: 96px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed rgb(var(--leaf-200));
+  border-radius: 8px;
+  background-color: rgb(var(--leaf-50) / 0.42);
+  color: rgb(var(--leaf-700) / 0.72);
+  font-size: 13px;
+  line-height: 20px;
+}

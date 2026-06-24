@@ -6,7 +6,7 @@ import { requireUser } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 
 const Body = z.object({
-  status: z.enum(['on_sale', 'off_shelf']),
+  status: z.enum(['on_sale', 'trading', 'sold_out', 'off_shelf']),
 });
 
 function pickId(req: Request) {
@@ -34,6 +34,21 @@ export const PATCH = handler(async (req) => {
       await tx.marketListingItem.updateMany({
         where: { listingId: id },
         data: { status: 'off_shelf' },
+      });
+    } else if (body.status === 'trading') {
+      await tx.marketListingItem.updateMany({
+        where: { listingId: id, status: { not: 'off_shelf' } },
+        data: { status: 'trading' },
+      });
+    } else if (body.status === 'sold_out') {
+      await tx.marketListingItem.updateMany({
+        where: { listingId: id, status: { not: 'off_shelf' } },
+        data: { status: 'sold_out', stock: 0 },
+      });
+    } else if (body.status === 'on_sale') {
+      await tx.marketListingItem.updateMany({
+        where: { listingId: id, status: { in: ['trading', 'sold_out'] } },
+        data: { status: 'on_sale' },
       });
     }
   });

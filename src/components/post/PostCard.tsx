@@ -229,7 +229,7 @@ function CoverImage({
   return (
     <div
       ref={containerRef}
-      className={cn(cx(styles.r_d89972fe, styles.r_6da6a3c3, styles.r_2cd02d11, styles.r_7ebecbb6),
+      className={cn(cx(styles.r_d89972fe, styles.r_6da6a3c3, styles.r_2cd02d11, styles.r_7ebecbb6), styles.coverFrame,
 
       isVeryTall && styles.r_c9d4f29e
       )}>
@@ -245,7 +245,7 @@ function CoverImage({
             if (img.naturalWidth) setNaturalW(img.naturalWidth);
             if (img.naturalHeight) setNaturalH(img.naturalHeight);
           }}
-          className={cn(cx(styles.r_0214b4b3, styles.r_b1104f41, styles.r_eadef238, styles.r_84432211, styles.r_7b9cdafa),
+          className={cn(cx(styles.r_0214b4b3, styles.r_b1104f41, styles.r_eadef238, styles.r_84432211), styles.coverImage,
 
           isLandscape ? styles.r_4bb3e3c3 : isVeryTall ? styles.r_668b21aa : ''
           )}

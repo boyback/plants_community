@@ -1,10 +1,14 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import { Form } from "radix-ui";
 import { Icon } from '@/components/ui/Icon';
+import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { MultiImageUploadGrid } from '@/components/upload/MultiImageUploadGrid';
-import { ALL_STAGES, STAGE_META } from '@/lib/journal';
+import { MultiSelect, type SelectOption } from '@/components/ui/Select';
+import { ALL_STAGES, STAGE_META, normalizeJournalStages } from '@/lib/journal';
+import { toast } from '@/components/ui/Toast';
 import type { JournalStage } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import styles from './JournalEditor.module.scss';
@@ -17,6 +21,7 @@ export interface JournalDraftEntry {
   id?: string;
   entryDate: string; // yyyy-MM-dd
   stage: JournalStage | '';
+  stages?: JournalStage[];
   stageLabel?: string;
   note: string;
   images: string[];
@@ -27,6 +32,27 @@ export interface JournalDraft {
   startDate: string; // yyyy-MM-dd
   entries: JournalDraftEntry[];
 }
+
+interface JournalStageOption {
+  id: string;
+  name: string;
+  value: string;
+  emoji: string;
+  orderIdx: number;
+  builtIn: boolean;
+  canDelete?: boolean;
+}
+
+const fallbackStageOptions: JournalStageOption[] = ALL_STAGES
+  .filter((stage) => stage !== 'other')
+  .map((stage, index) => ({
+    id: stage,
+    name: STAGE_META[stage]?.zh ?? stage,
+    value: stage,
+    emoji: STAGE_META[stage]?.emoji ?? '',
+    orderIdx: index,
+    builtIn: true
+  }));
 
 export function emptyJournalDraft(): JournalDraft {
   const today = new Date().toISOString().slice(0, 10);
@@ -46,6 +72,7 @@ interface Props {
 }
 
 export function JournalEditor({ value, onChange, validationErrors }: Props) {
+  const [stageOptions, setStageOptions] = useState<JournalStageOption[]>(fallbackStageOptions);
   const patch = (p: Partial<JournalDraft>) => onChange({ ...value, ...p });
   const patchEntry = (i: number, p: Partial<JournalDraftEntry>) => {
     const entries = value.entries.map((e, k) => k === i ? { ...e, ...p } : e);
@@ -65,6 +92,32 @@ export function JournalEditor({ value, onChange, validationErrors }: Props) {
     if (value.entries.length === 1) return;
     onChange({ ...value, entries: value.entries.filter((_, k) => k !== i) });
   };
+  const mergeStageOption = (option: JournalStageOption) => {
+    setStageOptions((current) => {
+      const exists = current.some((item) => item.value === option.value);
+      const next = exists ? current.map((item) => item.value === option.value ? option : item) : [...current, option];
+      return [...next].sort((a, b) => a.orderIdx - b.orderIdx || a.name.localeCompare(b.name, 'zh-CN'));
+    });
+  };
+  const removeStageOption = (value: string) => {
+    setStageOptions((current) => current.filter((item) => item.value !== value));
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/journal-stages')
+      .then((res) => res.json())
+      .then((data) => {
+        const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+        if (!cancelled && list.length > 0) setStageOptions(list);
+      })
+      .catch(() => {
+        if (!cancelled) setStageOptions(fallbackStageOptions);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className={styles.r_3e7ce58d}>
@@ -120,10 +173,10 @@ export function JournalEditor({ value, onChange, validationErrors }: Props) {
             </div>
             <div className={cx(styles.r_15e1b1f4, styles.r_359090c2, styles.r_bb87c54c)}>按时间追加状态、操作和配图，共 {value.entries.length} 条</div>
           </div>
-          <button type="button" className={cx(styles.r_ed8a5df7, styles.r_23b4e5ed, styles.r_dd702538)} onClick={addEntry}>
+          <Button type="button" variant="outline" size="sm" onClick={addEntry}>
             <Icon name="plus" size={14} />
             添加记录
-          </button>
+          </Button>
         </div>
 
         <div className={styles.r_6ed543e2}>
@@ -132,23 +185,29 @@ export function JournalEditor({ value, onChange, validationErrors }: Props) {
             key={i}
             entry={entry}
             index={i}
+            stageOptions={stageOptions}
             isLast={i === value.entries.length - 1}
             locked={Boolean(entry.id)}
             canDelete={value.entries.length > 1}
             validationErrors={validationErrors}
+            onStageCreated={mergeStageOption}
+            onStageDeleted={removeStageOption}
             onPatch={(p) => patchEntry(i, p)}
             onRemove={() => removeEntry(i)} />
 
           )}
         </div>
-        <button
+        <Button
           type="button"
-          className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_426b8b75, styles.r_6da6a3c3, styles.r_3960ffc2, styles.r_86843cf1, styles.r_77a2a20e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_a29b7a64, styles.r_691861bc, styles.r_54720a96, styles.r_359090c2, styles.r_2689f395, styles.r_5f6a59f1, styles.r_56bf8ae8, styles.r_a5c39c39, styles.r_5756b7b4)}
+          variant="outline"
+          size="md"
+          fullWidth
+          className={cx(styles.r_eccd13ef, styles.r_a29b7a64, styles.r_54720a96)}
           onClick={addEntry}>
 
           <Icon name="plus" size={14} />
           继续添加一条记录
-        </button>
+        </Button>
         {validationErrors?.has('journalEntries') &&
         <div className={cx(styles.r_50d0d216, styles.r_359090c2, styles.r_fa512798)}>至少需要一条有效记录（包含日期和内容或图片）</div>
         }
@@ -160,10 +219,13 @@ export function JournalEditor({ value, onChange, validationErrors }: Props) {
 function EntryCard({
   entry,
   index,
+  stageOptions,
   isLast,
   locked,
   canDelete,
   validationErrors,
+  onStageCreated,
+  onStageDeleted,
   onPatch,
   onRemove
 
@@ -175,11 +237,11 @@ function EntryCard({
 
 
 
-}: {entry: JournalDraftEntry;index: number;isLast: boolean;locked: boolean;canDelete: boolean;validationErrors?: Set<string>;onPatch: (p: Partial<JournalDraftEntry>) => void;onRemove: () => void;}) {
-  const currentStage = isKnownJournalStage(entry.stage) ? STAGE_META[entry.stage] : null;
+}: {entry: JournalDraftEntry;index: number;stageOptions: JournalStageOption[];isLast: boolean;locked: boolean;canDelete: boolean;validationErrors?: Set<string>;onStageCreated: (option: JournalStageOption) => void;onStageDeleted: (value: string) => void;onPatch: (p: Partial<JournalDraftEntry>) => void;onRemove: () => void;}) {
+  const selectedStages = normalizeJournalStages(entry.stages, entry.stage);
+  const currentStage = selectedStages[0] ? STAGE_META[selectedStages[0]] : null;
   const dateInvalid = validationErrors?.has(`journalEntryDate:${index}`);
   const stageInvalid = validationErrors?.has(`journalEntryStage:${index}`);
-  const stageLabelInvalid = validationErrors?.has(`journalEntryStageLabel:${index}`);
   const imagesInvalid = validationErrors?.has(`journalEntryImages:${index}`);
   const noteInvalid = validationErrors?.has(`journalEntryNote:${index}`);
 
@@ -193,12 +255,8 @@ function EntryCard({
         <div className={cx(styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_c3a8ec23, styles.r_eb6e8b88)}>
           <div className={cx(styles.r_1bb88326, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_77a2a20e)}>
             <div className={cx(styles.r_60fbb771, styles.r_7e0b7cdf, styles.r_3960ffc2, styles.r_77a2a20e)}>
-              <span className={cx(styles.r_359090c2, styles.r_e83a7042, styles.r_4ddaa618)}>记录 #{index + 1}</span>
-              {currentStage &&
-              <span className={cn(cx(styles.r_ac204c10, styles.r_ca6bcd4b, styles.r_d5eab218, styles.r_465609a2, styles.r_d058ca6d, styles.r_2689f395), currentStage.color)}>
-                  {currentStage.zh}
-                </span>
-              }
+              <span className={cx(styles.r_359090c2, styles.r_e83a7042, styles.r_4ddaa618)}>#{index + 1}</span>
+              <StageBadges stages={selectedStages} stageLabel={entry.stageLabel} />
             </div>
             <span className={cx(styles.r_ac204c10, styles.r_5e10cdb8, styles.r_d5eab218, styles.r_465609a2, styles.r_d058ca6d, styles.r_2689f395, styles.r_7b89cd85)}>已创建，不能二次编辑</span>
           </div>
@@ -206,7 +264,7 @@ function EntryCard({
             <div className={cx(styles.r_359090c2, styles.r_2689f395, styles.r_23531fd3)}>日期</div>
             <div className={styles.r_399e11a5}>{entry.entryDate}</div>
             <div className={cx(styles.r_359090c2, styles.r_2689f395, styles.r_23531fd3)}>阶段</div>
-            <div className={styles.r_399e11a5}>{currentStage?.zh ?? entry.stageLabel ?? '其他'}</div>
+            <div className={styles.r_399e11a5}>{stageText(selectedStages, entry.stageLabel)}</div>
             {entry.note &&
             <>
                 <div className={cx(styles.r_359090c2, styles.r_2689f395, styles.r_23531fd3)}>心得</div>
@@ -240,12 +298,8 @@ function EntryCard({
       <div className={cx(styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_eb6e8b88, styles.r_438b2237)}>
         <div className={cx(styles.r_1bb88326, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_77a2a20e)}>
           <div className={cx(styles.r_60fbb771, styles.r_7e0b7cdf, styles.r_3960ffc2, styles.r_77a2a20e)}>
-            <span className={cx(styles.r_359090c2, styles.r_e83a7042, styles.r_4ddaa618)}>记录 #{index + 1}</span>
-            {currentStage &&
-            <span className={cn(cx(styles.r_ac204c10, styles.r_ca6bcd4b, styles.r_d5eab218, styles.r_465609a2, styles.r_d058ca6d, styles.r_2689f395), currentStage.color)}>
-                {currentStage.zh}
-              </span>
-            }
+            <span className={cx(styles.r_359090c2, styles.r_e83a7042, styles.r_4ddaa618)}>#{index + 1}</span>
+            <StageBadges stages={selectedStages} stageLabel={entry.stageLabel} />
           </div>
           <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
             <Form.Field name={`journalEntryDate:${index}`} serverInvalid={dateInvalid}>
@@ -280,7 +334,7 @@ function EntryCard({
 
         <Form.Field name={`journalEntryStage:${index}`} serverInvalid={stageInvalid}>
           <Form.Control
-            value={entry.stage}
+            value={selectedStages.join(',')}
             required
             readOnly
             tabIndex={-1}
@@ -288,35 +342,21 @@ function EntryCard({
             className={styles.r_2daa8e5e} />
 
           <StagePicker
-            value={isKnownJournalStage(entry.stage) ? entry.stage : ''}
+            value={selectedStages}
+            options={stageOptions}
             invalid={stageInvalid}
-            onChange={(stage) => onPatch({ stage, ...(stage === 'other' ? {} : { stageLabel: '' }) })} />
+            onChange={(stages) => onPatch({
+              stages,
+              stage: stages[0] ?? '',
+              stageLabel: ''
+            })}
+            onStageCreated={onStageCreated}
+            onStageDeleted={onStageDeleted} />
 
           <Form.Message match="valueMissing" forceMatch={stageInvalid} className={cx(styles.r_b6b02c0e, styles.r_0214b4b3, styles.r_359090c2, styles.r_fa512798)}>
             请选择阶段
           </Form.Message>
         </Form.Field>
-
-        {entry.stage === 'other' &&
-        <Form.Field name={`journalEntryStageLabel:${index}`} serverInvalid={stageLabelInvalid} className={styles.r_eccd13ef}>
-            <Form.Label className={cx(styles.r_65281709, styles.r_0214b4b3, styles.r_d058ca6d, styles.r_21d33c50)}>
-              <span className={styles.r_fa512798}>*</span> 其他阶段
-            </Form.Label>
-            <Form.Control asChild>
-              <Input
-              required
-              className={cn(cx(styles.r_e7a768f9, styles.r_4f43b5cb), stageLabelInvalid && cx(styles.r_3b7f9781, styles.r_fdae7b46))}
-              placeholder="例如：服盆、控养、修根"
-              value={entry.stageLabel ?? ''}
-              onChange={(e) => onPatch({ stageLabel: e.target.value })}
-              maxLength={50} />
-
-            </Form.Control>
-            <Form.Message match="valueMissing" forceMatch={stageLabelInvalid} className={cx(styles.r_b6b02c0e, styles.r_0214b4b3, styles.r_359090c2, styles.r_fa512798)}>
-              选择其他阶段时，请填写阶段名称
-            </Form.Message>
-          </Form.Field>
-        }
 
         <Form.Field name={`journalEntryImages:${index}`} serverInvalid={imagesInvalid} className={styles.r_eccd13ef}>
           <Form.Control
@@ -375,41 +415,146 @@ function EntryCard({
 
 function StagePicker({
   value,
+  options,
   invalid,
-  onChange
+  onChange,
+  onStageCreated,
+  onStageDeleted
 
 
 
 
-}: {value: JournalStage | '';invalid?: boolean;onChange: (stage: JournalStage | '') => void;}) {
+}: {value: JournalStage[];options: JournalStageOption[];invalid?: boolean;onChange: (stages: JournalStage[]) => void;onStageCreated: (option: JournalStageOption) => void;onStageDeleted: (value: string) => void;}) {
+  const selectOptions: SelectOption[] = useMemo(() => {
+    const selectedCustomOptions = value
+      .filter((stage) => !options.some((option) => option.value === stage))
+      .map((stage) => ({
+        value: stage,
+        label: stage,
+        custom: true
+      }));
+    return [
+      ...selectedCustomOptions,
+      ...options.map((stage) => ({
+        id: stage.id,
+        value: stage.value,
+        label: `${stage.emoji ? `${stage.emoji} ` : ''}${stage.name}`,
+        canDelete: stage.canDelete
+      }))
+    ];
+  }, [options, value]);
+
+  const deleteStage = async (option: SelectOption) => {
+    if (!option.id) return;
+    const toastId = toast.loading('阶段删除中...');
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 10000);
+    try {
+      const res = await fetch(`/api/journal-stages?id=${encodeURIComponent(option.id)}`, {
+        method: 'DELETE',
+        signal: controller.signal
+      });
+      const payload = await res.json();
+      if (!res.ok || payload?.ok === false) {
+        throw new Error(payload?.error?.message || '阶段删除失败');
+      }
+      onStageDeleted(option.value);
+      onChange(value.filter((stage) => stage !== option.value));
+      toast.dismiss(toastId);
+      toast.success('阶段已删除');
+    } catch (error) {
+      toast.dismiss(toastId);
+      toast.error(error instanceof DOMException && error.name === 'AbortError' ? '阶段删除超时，请重试' : error instanceof Error ? error.message : '阶段删除失败');
+    } finally {
+      window.clearTimeout(timer);
+    }
+  };
+
   return (
     <div>
       <div className={cx(styles.r_65281709, styles.r_d058ca6d, styles.r_21d33c50)}><span className={styles.r_fa512798}>*</span> 阶段</div>
-      <div className={cn(cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_58284b4e, styles.r_5f22e64f), invalid && cx(styles.r_16b1efa5, styles.r_6b7b677a))}>
-        {ALL_STAGES.map((stage) => {
-          const meta = STAGE_META[stage];
-          const selected = value === stage;
-
-          return (
-            <button
-              key={stage}
-              type="button"
-              className={cn(cx(styles.r_ac204c10, styles.r_ca6bcd4b, styles.r_0b91436d, styles.r_660d2eff, styles.r_359090c2, styles.r_2689f395, styles.r_56bf8ae8),
-
-              selected ? meta.color : cx(styles.r_88b684d2, styles.r_5e10cdb8, styles.r_23531fd3, styles.r_5aae3db6, styles.r_5756b7b4)
-              )}
-              onClick={() => onChange(selected ? '' : stage)}>
-
-              <span className={styles.r_61816240}>{meta.emoji}</span>
-              {meta.zh}
-            </button>);
-
-        })}
-      </div>
+      <MultiSelect
+        creatable
+        compact
+        options={selectOptions}
+        value={value}
+        onValueChange={(next) => onChange(next.map(normalizeStageName).filter(Boolean))}
+        onCreateOption={async (input) => {
+          const label = input.trim().replace(/^#/, '');
+          if (!label) {
+            toast.error('请输入阶段名称');
+            return;
+          }
+          const toastId = toast.loading('阶段创建中...');
+          const controller = new AbortController();
+          const timer = window.setTimeout(() => controller.abort(), 10000);
+          try {
+            const res = await fetch('/api/journal-stages', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: label }),
+              signal: controller.signal
+            });
+            const payload = await res.json();
+            if (!res.ok || payload?.ok === false) {
+              throw new Error(payload?.error?.message || '阶段创建失败');
+            }
+            const created = payload?.data ?? payload;
+            onStageCreated(created);
+            onChange(Array.from(new Set([...value, created.value])));
+            toast.dismiss(toastId);
+            toast.success('阶段已创建');
+          } catch (error) {
+            toast.dismiss(toastId);
+            toast.error(error instanceof DOMException && error.name === 'AbortError' ? '阶段创建超时，请重试' : error instanceof Error ? error.message : '阶段创建失败');
+          } finally {
+            window.clearTimeout(timer);
+          }
+        }}
+        placeholder="选择阶段"
+        error={invalid}
+        noOptionsMessage="没有匹配阶段"
+        formatCreateLabel={(input) => `输入文字按确认键创建阶段：${input.trim().replace(/^#/, '')}`}
+        formatOptionLabel={(option) => (
+          <span className={styles.stageSelectOption}>
+            <span className={styles.stageSelectOptionText}>{option.label}</span>
+            {option.canDelete &&
+              <button
+                type="button"
+                className={styles.stageSelectDelete}
+                aria-label={`删除阶段 ${option.label}`}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  void deleteStage(option);
+                }}>
+                <Icon name="trash" size={12} />
+              </button>
+            }
+          </span>
+        )} />
     </div>);
 
 }
 
-function isKnownJournalStage(value: string | undefined): value is JournalStage {
-  return (ALL_STAGES as string[]).includes(value ?? '');
+function normalizeStageName(value: string | undefined): JournalStage {
+  return value?.trim().replace(/^#/, '') ?? '';
+}
+
+function StageBadges({ stages, stageLabel }: {stages: JournalStage[];stageLabel?: string;}) {
+  return (
+    <>
+      {stages.map((stage) => {
+        const meta = STAGE_META[stage];
+        return (
+          <span key={stage} className={cn(cx(styles.r_ac204c10, styles.r_ca6bcd4b, styles.r_d5eab218, styles.r_465609a2, styles.r_d058ca6d, styles.r_2689f395), meta?.color ?? styles.r_7ebecbb6)}>
+            {stage === 'other' ? stageLabel || STAGE_META.other.zh : meta?.zh ?? stage}
+          </span>);
+      })}
+    </>);
+}
+
+function stageText(stages: JournalStage[], stageLabel?: string) {
+  if (stages.length === 0) return stageLabel || '其他';
+  return stages.map((stage) => stage === 'other' ? stageLabel || STAGE_META.other.zh : STAGE_META[stage]?.zh ?? stage).join('、');
 }

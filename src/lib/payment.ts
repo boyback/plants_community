@@ -14,6 +14,7 @@ import {
 } from '@prisma/client';
 import { emitEvent } from './events';
 import { pickGateway } from './payment/gateway';
+import { expirePendingOrder } from './order-expiry';
 
 const PAY_EXPIRE_MINUTES = 15;
 const _paymentPagePayUrls = new Map<string, { url: string; expireAt: number }>();
@@ -103,16 +104,18 @@ export async function createOrderPayment(params: {
 }) {
   const order = await prisma.order.findUnique({ where: { id: params.orderId } });
   if (!order) throw new Error('订单不存在');
-  if (order.status !== 'pending_payment') throw new Error('订单状态不允许支付');
+  if (await expirePendingOrder(order.id)) throw new Error('订单已超时关闭');
+  const freshOrder = await prisma.order.findUnique({ where: { id: params.orderId } });
+  if (!freshOrder || freshOrder.status !== 'pending_payment') throw new Error('订单状态不允许支付');
 
   return createWithGateway({
     bizType: PaymentBizType.order,
-    bizId: order.id,
-    userId: order.buyerId,
-    amount: order.totalPrice,
+    bizId: freshOrder.id,
+    userId: freshOrder.buyerId,
+    amount: freshOrder.totalPrice,
     channel: params.channel,
-    subject: `订单 ${order.orderNo}`,
-    meta: { bizType: 'order', orderId: order.id },
+    subject: `订单 ${freshOrder.orderNo}`,
+    meta: { bizType: 'order', orderId: freshOrder.id },
   });
 }
 
@@ -152,40 +155,22 @@ export async function createAuctionBalancePayment(params: {
   const order = await prisma.order.findUnique({ where: { id: params.orderId } });
   if (!order) throw new Error('订单不存在');
   if (order.source !== 'auction') throw new Error('该订单不是拍卖订单');
-  if (order.status !== 'pending_payment') throw new Error('订单状态不允许支付');
+  if (await expirePendingOrder(order.id)) throw new Error('订单已超时关闭');
+  const freshOrder = await prisma.order.findUnique({ where: { id: params.orderId } });
+  if (!freshOrder || freshOrder.status !== 'pending_payment') throw new Error('订单状态不允许支付');
 
-  const balance = order.totalPrice - order.depositPaid;
+  const balance = freshOrder.totalPrice - freshOrder.depositPaid;
   if (balance <= 0) throw new Error('订单余额已结清');
 
   return createWithGateway({
     bizType: PaymentBizType.auction_balance,
-    bizId: order.id,
-    userId: order.buyerId,
+    bizId: freshOrder.id,
+    userId: freshOrder.buyerId,
     amount: balance,
     channel: params.channel,
-    subject: `拍卖尾款 ${order.orderNo}`,
-    meta: { bizType: 'auction_balance', orderId: order.id },
+    subject: `拍卖尾款 ${freshOrder.orderNo}`,
+    meta: { bizType: 'auction_balance', orderId: freshOrder.id },
     payNoPrefix: 'AB',
-  });
-}
-
-/** 创建大会员订阅的支付单 */
-export async function createVipPayment(params: {
-  vipOrderId: string;
-  channel: PaymentChannel;
-}) {
-  const order = await prisma.vipOrder.findUnique({ where: { id: params.vipOrderId } });
-  if (!order) throw new Error('订单不存在');
-  if (order.status !== 'pending_payment') throw new Error('订单状态不允许支付');
-
-  return createWithGateway({
-    bizType: PaymentBizType.vip,
-    bizId: order.id,
-    userId: order.userId,
-    amount: order.amount,
-    channel: params.channel,
-    subject: `大会员 ${order.plan}`,
-    meta: { bizType: 'vip', vipOrderId: order.id },
   });
 }
 
@@ -217,6 +202,9 @@ export async function queryPayment(payNo: string) {
       where: { id: p.id },
       data: { status: PaymentStatus.expired },
     });
+    if (p.bizType === PaymentBizType.order || p.bizType === PaymentBizType.auction_balance) {
+      await expirePendingOrder(p.bizId);
+    }
     return { ...p, status: PaymentStatus.expired };
   }
 
@@ -248,6 +236,9 @@ export async function queryPayment(payNo: string) {
           where: { id: p.id },
           data: { status: remote === 'cancelled' ? PaymentStatus.cancelled : PaymentStatus.expired },
         });
+        if (p.bizType === PaymentBizType.order || p.bizType === PaymentBizType.auction_balance) {
+          await expirePendingOrder(p.bizId);
+        }
         return { ...p, status: remote === 'cancelled' ? PaymentStatus.cancelled : PaymentStatus.expired };
       } else if (remote === 'scanning') {
         _scanningUntil.set(p.payNo, Date.now() + SCANNING_STICKY_MS);
@@ -305,8 +296,6 @@ export async function confirmPayment(payNo: string) {
 
   if (payment.bizType === PaymentBizType.order) {
     await onOrderPaid(payment.bizId);
-  } else if (payment.bizType === PaymentBizType.vip) {
-    await onVipOrderPaid(payment.bizId);
   } else if (payment.bizType === PaymentBizType.deposit) {
     await onDepositPaid(payment.bizId);
   } else if (payment.bizType === PaymentBizType.auction_balance) {
@@ -365,18 +354,31 @@ async function onOrderPaid(orderId: string) {
   }
 
   if (order.source === 'product' && order.listingItemId) {
-    const item = await prisma.marketListingItem.update({
-      where: { id: order.listingItemId },
+    const updateResult = await prisma.marketListingItem.updateMany({
+      where: {
+        id: order.listingItemId,
+        status: 'on_sale',
+        stock: { gte: order.quantity },
+      },
       data: {
         stock: { decrement: order.quantity },
         soldCount: { increment: order.quantity },
       },
     });
+    if (updateResult.count === 0) {
+      throw new Error('商品库存不足或已不可购买');
+    }
+
+    const item = await prisma.marketListingItem.findUnique({
+      where: { id: order.listingItemId },
+      select: { id: true, listingId: true, stock: true },
+    });
+    if (!item) return;
 
     if (item.stock <= 0) {
       await prisma.marketListingItem.update({
         where: { id: item.id },
-        data: { status: 'sold_out' },
+        data: { status: 'trading' },
       });
     }
 
@@ -391,7 +393,7 @@ async function onOrderPaid(orderId: string) {
     if (activeCount === 0) {
       await prisma.marketListing.update({
         where: { id: item.listingId },
-        data: { status: 'sold_out' },
+        data: { status: 'trading' },
       });
     }
   }
@@ -433,60 +435,4 @@ async function onOrderPaid(orderId: string) {
       link: '/orders',
     },
   });
-}
-
-async function onVipOrderPaid(vipOrderId: string) {
-  const vo = await prisma.vipOrder.findUnique({ where: { id: vipOrderId } });
-  if (!vo) return;
-
-  await prisma.vipOrder.update({
-    where: { id: vipOrderId },
-    data: { status: OrderStatus.completed, paidAt: new Date() },
-  });
-
-  await applyVipMembership(vo.userId, vo.plan, vo.durationDays);
-}
-
-/**
- * 应用会员权益(延长到期时间或终身)。
- * 也供钻石兑换月卡复用。
- */
-export async function applyVipMembership(
-  userId: string,
-  plan: 'monthly' | 'quarterly' | 'yearly' | 'lifetime' | 'monthly_points',
-  durationDays: number
-) {
-  const u = await prisma.user.findUnique({ where: { id: userId } });
-  if (!u) return;
-
-  if (plan === 'lifetime') {
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        vipLifetime: true,
-        vipFirstAt: u.vipFirstAt ?? new Date(),
-      },
-    });
-  } else {
-    const baseTs = Math.max(Date.now(), u.vipExpireAt?.getTime() ?? 0);
-    const newExpire = new Date(baseTs + durationDays * 86400_000);
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        vipExpireAt: newExpire,
-        vipFirstAt: u.vipFirstAt ?? new Date(),
-      },
-    });
-  }
-
-  await prisma.notification.create({
-    data: {
-      recipientId: userId,
-      type: 'system',
-      text: '🎉 大会员开通成功!发帖、出售已无限制,享受 VIP 全部专属权益',
-      link: '/vip',
-    },
-  });
-
-  await emitEvent({ kind: 'vip_open', userId, days: durationDays });
 }

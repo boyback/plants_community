@@ -54,3 +54,110 @@
 
 /* Local repair rules for migrated CSS module references. */
 .r_355a3d3a{--tw-ring-color:rgb(219 234 254/var(--tw-ring-opacity))}.r_8a82c94b{border-color:rgb(221 214 254/var(--tw-border-opacity))}.r_2e15338e{--tw-ring-color:rgb(253 230 138/var(--tw-ring-opacity))}
+
+.r_eb6e8b88 {
+  border-width: 0;
+  border-style: solid;
+  background-color: rgb(var(--surface));
+  box-shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 10px 28px rgb(16 24 40 / 0.06);
+}
+
+.pendantAssetPreview {
+  display: block;
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+}
+
+.r_68f2db62 {
+  min-width: 138px;
+  border-radius: 999px;
+  text-align: center;
+}
+
+.reactionStatePreview {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+}
+
+.lockedOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  background: rgb(15 23 42 / 0.42);
+  backdrop-filter: saturate(0.75);
+}
+
+.lockedOverlay span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 112px;
+  height: 34px;
+  border: 2px solid rgb(255 255 255 / 0.76);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.16);
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0;
+  transform: rotate(-18deg);
+}
+
+.unlockText {
+  min-width: 0;
+  overflow: hidden;
+  color: rgb(var(--leaf-700) / 0.72);
+  font-size: 12px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actionButton {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  height: 26px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-weight: 600;
+  line-height: 16px !important;
+  white-space: nowrap;
+  word-break: keep-all;
+  cursor: pointer;
+}
+
+.actionButton:disabled {
+  cursor: not-allowed;
+}
+
+.lockedButton {
+  border-color: rgb(var(--ink-100));
+  background: rgb(var(--ink-50));
+  color: rgb(var(--ink-500));
+}
+
+.equipButton {
+  background: rgb(var(--leaf-600));
+  color: #fff;
+}
+
+.unequipButton {
+  border-color: rgb(var(--leaf-200));
+  background: #fff;
+  color: rgb(var(--leaf-700));
+}
+
+.exchangeButton {
+  border-color: rgb(var(--leaf-100));
+  background: rgb(var(--leaf-50));
+  color: rgb(var(--leaf-700));
+}

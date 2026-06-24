@@ -17,7 +17,7 @@ import { cn, formatDate, formatNumber, boardUrl, formatPrice } from '@/lib/utils
 import { api, ApiError } from "@/lib/client-api";
 import { LEVELS } from '@/lib/levels';
 import { useI18n } from '@/i18n/I18nContext';
-import type { Badge, Board, Post, User } from '@/lib/types';
+import type { Badge, Board, EquipState, Post, User } from '@/lib/types';
 import styles from './UserPageClient.module.scss';
 import { cx } from '@/lib/style-utils';
 
@@ -43,8 +43,8 @@ type UserMarketProduct = {
   images: string[];
   price: number;
   stock: number;
-  status: 'on_sale' | 'sold_out' | 'off_shelf';
-  listingStatus: 'on_sale' | 'sold_out' | 'off_shelf' | 'pending_review';
+  status: 'on_sale' | 'trading' | 'sold_out' | 'off_shelf';
+  listingStatus: 'on_sale' | 'trading' | 'sold_out' | 'off_shelf' | 'pending_review';
   createdAt: string;
   url: string;
   shipFrom: string;
@@ -74,6 +74,7 @@ type UserCommentItem = {
       id: string;
       name: string;
       avatar: string;
+      equip?: EquipState;
       level: number;
     };
     parent: {
@@ -82,6 +83,7 @@ type UserCommentItem = {
         id: string;
         name: string;
         avatar: string;
+        equip?: EquipState;
         level: number;
       };
     } | null;
@@ -123,7 +125,7 @@ type UserLikedItem =
         likeCount: number;
         imageCount: number;
         createdAt: string;
-        user: { id: string; name: string; avatar: string };
+        user: { id: string; name: string; avatar: string; equip?: EquipState };
       };
     };
 
@@ -146,12 +148,12 @@ type UserCollectedItem =
         stock: number;
         soldCount: number;
         collectCount: number;
-        status: 'on_sale' | 'sold_out' | 'off_shelf';
+        status: 'on_sale' | 'trading' | 'sold_out' | 'off_shelf';
         listing: {
           id: string;
           title: string;
           shipFrom: string;
-          status: 'on_sale' | 'sold_out' | 'off_shelf' | 'pending_review';
+          status: 'on_sale' | 'trading' | 'sold_out' | 'off_shelf' | 'pending_review';
         };
       };
     }
@@ -177,7 +179,7 @@ type UserCollectedItem =
 type UserCollectedMarketItem = Extract<UserCollectedItem, { type: 'marketItem' }>['marketItem'];
 type UserCollectedSpecies = Extract<UserCollectedItem, { type: 'species' }>['species'];
 
-type ProductFilter = 'all' | 'on_sale' | 'sold';
+type ProductFilter = 'all' | 'on_sale' | 'trading' | 'sold';
 
 const tabs: {key: TabKey;labelKey?: string;label?: string;}[] = [
 { key: 'posts', labelKey: 'user.tabs.posts' },
@@ -200,9 +202,7 @@ export function UserPageClient({
   likedItems,
   collectedItems,
   products,
-  exp = 0,
-  vip,
-  daysLeft
+  exp = 0
 
 
 
@@ -215,7 +215,7 @@ export function UserPageClient({
 
 
 
-}: {user: User;isMe: boolean;initialFollowed: boolean;posts: Post[];comments: UserCommentItem[];likedItems: UserLikedItem[];collectedItems: UserCollectedItem[];products: UserMarketProduct[];exp?: number;vip?: {isVip: boolean;lifetime: boolean;expireAt: string | null;};daysLeft?: number | null;}) {
+}: {user: User;isMe: boolean;initialFollowed: boolean;posts: Post[];comments: UserCommentItem[];likedItems: UserLikedItem[];collectedItems: UserCollectedItem[];products: UserMarketProduct[];exp?: number;}) {
   const { t } = useI18n();
   const [tab, setTab] = useState<TabKey>(() => {
     if (typeof window === 'undefined') return 'posts';
@@ -299,7 +299,7 @@ export function UserPageClient({
         <div className={cx(styles.r_d89972fe, styles.r_236812d6, styles.r_60fbb771, styles.r_1ee35081, styles.r_8dddea07, styles.r_77c08e01, styles.r_0c3bc985, styles.r_c07e54fd, styles.r_4102dddf, styles.r_bf60a82f)}>
           <div className={styles.profileHeroIdentity}>
             <UserIdentity
-              user={{ ...user, vip }}
+              user={user}
               size="xl"
               variant="profile"
               asLink={false}
@@ -307,9 +307,11 @@ export function UserPageClient({
               className={styles.profileIdentity}
               nameClassName={styles.profileIdentityName}
               textClassName={styles.profileIdentityText}
+              nameExtra={
+                <span className={styles.profileIdentityLevel}>Lv.{user.level} · {currentDef ? t(`levels.name.${currentDef.level}`) : ''}</span>
+              }
               subtitle={
                 <span className={styles.profileIdentityMeta}>
-                  <span className={styles.profileIdentityLevel}>Lv.{user.level} · {currentDef ? t(`levels.name.${currentDef.level}`) : ''}</span>
                   <span className={styles.profileIdentityBio}>{user.bio || t('user.noBio')}</span>
                   {nextDef &&
                   <span className={styles.profileIdentityExp}>
@@ -347,16 +349,6 @@ export function UserPageClient({
                       className={styles.r_b5a12a16}>
                       <span className={cx(styles.r_e83a7042, styles.r_72a4c7cd)}>{formatNumber(user.following)}</span> {t('user.stats.following')}
                     </button>
-                    {vip?.isVip &&
-                    <span className={styles.r_ae5ebb30}>
-                      · 👑{' '}
-                      {vip.lifetime ?
-                      t('user.vip.lifetime') :
-                      daysLeft !== null && daysLeft !== undefined ?
-                      t('user.vip.remainDays', { days: daysLeft }) :
-                      t('user.vip.member')}
-                    </span>
-                    }
                   </span>
                 </span>
               }
@@ -712,13 +704,15 @@ function UserProductsTab({
 
 }: {products: UserMarketProduct[];filter: ProductFilter;onFilterChange: (filter: ProductFilter) => void;}) {
   const counts = useMemo(() => {
-    const onSale = products.filter((item) => !isProductSold(item)).length;
-    const sold = products.length - onSale;
-    return { all: products.length, on_sale: onSale, sold };
+    const trading = products.filter(isProductTrading).length;
+    const sold = products.filter(isProductSold).length;
+    const onSale = products.length - trading - sold;
+    return { all: products.length, on_sale: onSale, trading, sold };
   }, [products]);
 
   const filteredProducts = useMemo(() => {
-    if (filter === 'on_sale') return products.filter((item) => !isProductSold(item));
+    if (filter === 'on_sale') return products.filter((item) => !isProductSold(item) && !isProductTrading(item));
+    if (filter === 'trading') return products.filter(isProductTrading);
     if (filter === 'sold') return products.filter(isProductSold);
     return products;
   }, [filter, products]);
@@ -730,6 +724,7 @@ function UserProductsTab({
           {[
           { key: 'all' as const, label: '全部', count: counts.all },
           { key: 'on_sale' as const, label: '在售', count: counts.on_sale },
+          { key: 'trading' as const, label: '交易中', count: counts.trading },
           { key: 'sold' as const, label: '已售', count: counts.sold }].
           map((item) =>
           <button
@@ -766,6 +761,7 @@ function UserProductsTab({
 function UserProductCard({ product }: {product: UserMarketProduct;}) {
   const images = product.images?.length ? product.images : [product.cover];
   const sold = isProductSold(product);
+  const trading = isProductTrading(product);
   const taxonLabels = product.taxons.map((taxon) => taxon.label).filter(Boolean);
 
   return (
@@ -785,9 +781,9 @@ function UserProductCard({ product }: {product: UserMarketProduct;}) {
               +{images.length - 1}
             </div>
           }
-          {sold &&
+          {(sold || trading) &&
           <span className={cx(styles.r_da4dbfbc, styles.r_d83be576, styles.r_9a2db8f9, styles.r_c10ff8c0, styles.r_272d24a2, styles.r_d5eab218, styles.r_465609a2, styles.r_d058ca6d, styles.r_2689f395, styles.r_72a4c7cd)}>
-              已售
+              {trading ? '交易中' : '已售'}
             </span>
           }
         </div>
@@ -808,7 +804,7 @@ function UserProductCard({ product }: {product: UserMarketProduct;}) {
         <div className={cx(styles.r_60fbb771, styles.r_6f27f4f7, styles.r_8ef2268e, styles.r_77a2a20e)}>
           <div className={cx(styles.r_9669b98a, styles.r_69450ef1, styles.r_18550d59, styles.r_595fceba)}>{formatPrice(product.price)}</div>
           <span className={cx(styles.r_012fbd12, styles.r_d058ca6d, styles.r_69335b95)}>
-            {sold ? '已售' : `库存 ${product.stock}`}
+            {trading ? '交易中' : sold ? '已售' : `库存 ${product.stock}`}
           </span>
         </div>
         {taxonLabels.length > 0 &&
@@ -834,6 +830,10 @@ function UserProductCard({ product }: {product: UserMarketProduct;}) {
 
 function isProductSold(product: UserMarketProduct) {
   return product.status === 'sold_out' || product.listingStatus === 'sold_out' || product.stock <= 0;
+}
+
+function isProductTrading(product: UserMarketProduct) {
+  return product.status === 'trading' || product.listingStatus === 'trading';
 }
 
 function stripRichText(html: string): string {

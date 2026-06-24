@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Comment, Post, SkinItem } from '@/lib/types';
 import { UserIdentity } from '@/components/ui/UserIdentity';
+import { UserName } from '@/components/ui/UserName';
 import { Icon } from '@/components/ui/Icon';
+import { ReactionIcon } from '@/components/skin/ReactionIcon';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { formatNumber, cn } from '@/lib/utils';
@@ -20,14 +22,23 @@ import { cx } from '@/lib/style-utils';
 
 type SortKey = 'new' | 'hot';
 type JournalEntryCommentTarget = NonNullable<Comment['journalEntryRef']>;
+type FlatReply = {
+  comment: Comment;
+  replyTo?: {
+    id: string;
+    name: string;
+    authorId: string;
+  };
+};
 
 export function CommentSection({
   post,
-  authorPendants = {}
+  authorPendants = {},
+  authorBubbles = {}
 
 
 
-}: {post: Post;authorPendants?: Record<string, SkinItem>;}) {
+}: {post: Post;authorPendants?: Record<string, SkinItem>;authorBubbles?: Record<string, SkinItem>;}) {
   const { user, equip } = useAuth();
   const { t } = useI18n();
   const [commentText, setCommentText] = useState('');
@@ -119,7 +130,7 @@ export function CommentSection({
 
             }
               <PlainCommentComposer
-              title={journalTarget ? '引用记录留言' : '评论'}
+              title="评论"
               value={commentText}
               onChange={setCommentText}
               images={commentImages}
@@ -170,7 +181,7 @@ export function CommentSection({
         </div>
       </div>
 
-      <div className={cx(styles.r_fa6acbf8, styles.r_1790d566)}>
+      <div>
         {sorted.length === 0 ?
         <div className={styles.r_845f5336}>
             <Empty title={t('detail.post.commentsEmpty')} />
@@ -187,7 +198,8 @@ export function CommentSection({
           onReplyAdded={(parentId, reply) => {
             setComments((prev) => addReplyToCommentTree(prev, parentId, reply));
           }}
-          myBubble={user?.id === c.author.id ? myBubble : null}
+          myBubble={authorBubbles[c.author.id] ?? (user?.id === c.author.id ? myBubble : null)}
+          authorBubbles={authorBubbles}
           authorPendants={authorPendants} />
 
         )
@@ -207,6 +219,18 @@ function addReplyToCommentTree(comments: Comment[], parentId: string, reply: Com
   });
 }
 
+function flattenReplies(replies: Comment[], parent?: Comment): FlatReply[] {
+  return replies
+    .flatMap((reply) => [
+      {
+        comment: reply,
+        replyTo: parent ? { id: parent.id, name: parent.author.name, authorId: parent.author.id } : undefined
+      },
+      ...flattenReplies(reply.replies ?? [], reply)
+    ])
+    .sort((a, b) => new Date(a.comment.createdAt).getTime() - new Date(b.comment.createdAt).getTime());
+}
+
 function CommentItem({
   comment,
   floor,
@@ -215,6 +239,7 @@ function CommentItem({
   postId,
   onReplyAdded,
   myBubble,
+  authorBubbles,
   authorPendants
 
 
@@ -225,23 +250,18 @@ function CommentItem({
 
 
 
-}: {comment: Comment;floor: number;liked: boolean;onLike: () => void;postId: string;onReplyAdded: (parentId: string, reply: Comment) => void;myBubble?: SkinItem | null;authorPendants: Record<string, SkinItem>;}) {
-  const { user } = useAuth();
+}: {comment: Comment;floor: number;liked: boolean;onLike: () => void;postId: string;onReplyAdded: (parentId: string, reply: Comment) => void;myBubble?: SkinItem | null;authorBubbles: Record<string, SkinItem>;authorPendants: Record<string, SkinItem>;}) {
+  const { user, equip } = useAuth();
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [replyImages, setReplyImages] = useState<string[]>([]);
   const [replySubmitting, setReplySubmitting] = useState(false);
   const [replyErr, setReplyErr] = useState<string | null>(null);
-  const [replyTarget, setReplyTarget] = useState<{id: string;name: string;} | null>(null);
+  const [replyTarget, setReplyTarget] = useState<{id: string;name: string;authorId?: string;} | null>(null);
   const [repliesExpanded, setRepliesExpanded] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const bubbleMeta = myBubble?.meta as Record<string, unknown> | undefined;
-  const bubbleStyle = bubbleMeta ?
-  {
-    background: bubbleMeta.bg as string | undefined,
-    color: bubbleMeta.color as string | undefined
-  } :
-  undefined;
+  const bubbleStyle = getCommentBubbleStyle(myBubble);
+  const canReplyComment = user?.id !== comment.author.id;
 
   const submitReply = async () => {
     const text = replyText.trim();
@@ -266,35 +286,54 @@ function CommentItem({
     }
   };
 
-  const openReplyComposer = (target?: {id: string;name: string;}) => {
+  const openReplyComposer = (target?: {id: string;name: string;authorId?: string;}) => {
     if (!user) {
       window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
       return;
     }
+    if (target?.authorId === user.id || !canReplyComment && !target) return;
     setReplyTarget(target ?? null);
     setReplyOpen(true);
   };
-  const replies = comment.replies ?? [];
+  const replies = flattenReplies(comment.replies ?? []);
   const visibleReplies = repliesExpanded ? replies : replies.slice(0, 3);
   const hiddenRepliesCount = Math.max(0, replies.length - visibleReplies.length);
 
   return (
-    <div id={`comment-${comment.id}`} className={styles.r_c07e54fd}>
-      <div className={cx(styles.r_f3c543ad, styles.r_0c3bc985, styles.r_b6142548)}>
-        <CommentAuthorCard
-          author={comment.author}
-          pendant={authorPendants[comment.author.id] ?? null} />
+    <div id={`comment-${comment.id}`} className={cn(styles.r_c07e54fd, styles.commentItem)}>
+      <div className={styles.commentStreamRow}>
+        <UserIdentity
+          user={{ ...comment.author, equip: { pendant: authorPendants[comment.author.id] ?? null } }}
+          size="md"
+          showName={false}
+          avatarRing={false}
+          className={styles.commentStreamAvatar}
+        />
 
-
-        <div className={styles.r_7e0b7cdf}>
-          <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_77a2a20e)}>
-            <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_a14daebf, styles.r_6c4cc49e)}>
-              <span className={cx(styles.r_61816240, styles.r_e83a7042, styles.r_e7eab4cb)}>
-                #{floor} 楼
-              </span>
-              <span>{formatFullDateTime(comment.createdAt)}</span>
+        <div className={styles.commentStreamMain}>
+          <div className={styles.commentStreamHeader}>
+            <div className={styles.commentUserInfo}>
+              <div className={styles.commentNameLine}>
+                <UserName
+                  user={{ ...comment.author, equip: { pendant: authorPendants[comment.author.id] ?? null } }}
+                  size="sm"
+                  className={styles.commentStreamName}
+                />
+                <CommentBadges badges={comment.author.badges} compact />
+              </div>
+              <div className={styles.commentMetaLine}>
+                <span className={styles.commentFloor}>#{floor} 楼</span>
+                <span>·</span>
+                <span>{formatFullDateTime(comment.createdAt)}</span>
+                <span>·</span>
+                <span>Lv.{comment.author.level}</span>
+                <span>·</span>
+                <span>{formatNumber(comment.author.posts)} 帖</span>
+              </div>
             </div>
-            <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_77c08e01, styles.r_58284b4e, styles.r_359090c2)}>
+
+            <div className={cn(styles.commentActions, styles.commentStreamActions)}>
+              {canReplyComment &&
               <button
                 type="button"
                 onClick={() => {
@@ -304,45 +343,44 @@ function CommentItem({
                     openReplyComposer();
                   }
                 }}
-                className={cx(styles.r_f3c543ad, styles.r_d0a52b31, styles.r_cbbf90f9, styles.r_67d66567, styles.r_421ac2be, styles.r_69335b95, styles.r_ceb69a6b, styles.r_5756b7b4, styles.r_9825203a)}
+                className={styles.commentIconButton}
                 aria-label="回复"
                 aria-expanded={replyOpen}>
 
                 <Icon name="comment" size={13} />
               </button>
+              }
               <button
                 type="button"
                 onClick={onLike}
-                className={cn(cx(styles.r_52083e7d, styles.r_d0a52b31, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_421ac2be, styles.r_d5eab218, styles.r_ceb69a6b, styles.r_5756b7b4),
+                className={cn(styles.commentIconButton, styles.commentLikeButton, liked && styles.commentLiked)}>
 
-                liked ? styles.r_fa512798 : cx(styles.r_69335b95, styles.r_9825203a)
-                )}>
-
-                <Icon name="heart" size={13} fill={liked ? 'currentColor' : 'none'} />
+                {equip.reaction ? (
+                  <ReactionIcon skin={equip.reaction} active={liked} size={13} />
+                ) : (
+                  <Icon name="heart" size={13} fill={liked ? 'currentColor' : 'none'} />
+                )}
                 {formatNumber(comment.likes + (liked ? 1 : 0))}
               </button>
               <CommentMoreMenu
                 open={moreOpen}
                 onOpenChange={setMoreOpen} />
-
             </div>
           </div>
 
-          <div
-            className={cn(styles.r_50d0d216,
+          {comment.journalEntryRef && <JournalEntryCommentRef refInfo={comment.journalEntryRef} />}
 
-            myBubble && myBubble.slug !== "bubble-default" && cx(styles.r_bb0c4bfc, styles.r_c0980a65, styles.r_a217b4ea, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_438b2237)
-            )}
-            style={myBubble && myBubble.slug !== "bubble-default" ? bubbleStyle : undefined}>
-
-            {comment.journalEntryRef && <JournalEntryCommentRef refInfo={comment.journalEntryRef} />}
+          <div className={styles.commentBodyRow}>
             <RichTextView
               json={comment.contentJson}
               html={comment.content}
               text={comment.contentText}
               size="sm"
-              className={"comment-rich-text"} />
-
+              className={cn(
+                "comment-rich-text",
+                styles.commentContentBubble
+              )}
+              style={bubbleStyle} />
           </div>
 
           <div
@@ -370,14 +408,16 @@ function CommentItem({
           </div>
 
           {replies.length > 0 &&
-          <div className={cx(styles.r_eccd13ef, styles.r_6f7e013d, styles.r_a217b4ea, styles.r_52f53b18, styles.r_eb6e8b88)}>
-              {visibleReplies.map((r) =>
+          <div className={styles.commentRepliesPanel}>
+              {visibleReplies.map((item) =>
             <ReplyItem
-              key={r.id}
-              reply={r}
-              pendant={authorPendants[r.author.id] ?? null}
-              authorPendants={authorPendants}
-              onReplyTarget={openReplyComposer} />
+              key={item.comment.id}
+              reply={item.comment}
+              replyTo={item.replyTo}
+              pendant={authorPendants[item.comment.author.id] ?? null}
+              bubble={authorBubbles[item.comment.author.id] ?? (user?.id === item.comment.author.id ? equip.bubble ?? null : null)}
+              onReplyTarget={openReplyComposer}
+            />
 
             )}
               {hiddenRepliesCount > 0 &&
@@ -401,7 +441,7 @@ function JournalEntryCommentRef({ refInfo }: {refInfo: NonNullable<Comment['jour
   return (
     <a
       href={`#journal-entry-${refInfo.id}`}
-      className={cx(styles.r_a77ed4d9, styles.r_60fbb771, styles.r_9ef2b581, styles.r_77a2a20e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_52f53b18, styles.r_7660b450, styles.r_2eba0d65, styles.r_56bf8ae8, styles.r_5aae3db6, styles.r_5756b7b4)}>
+      className={cn(cx(styles.r_a77ed4d9, styles.r_60fbb771, styles.r_9ef2b581, styles.r_77a2a20e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_52f53b18, styles.r_7660b450, styles.r_2eba0d65, styles.r_56bf8ae8, styles.r_5aae3db6, styles.r_5756b7b4), styles.journalRefCard)}>
 
       {refInfo.image ?
       <img src={refInfo.image} alt="" className={cx(styles.r_508ebf85, styles.r_e7e37107, styles.r_012fbd12, styles.r_421ac2be, styles.r_7d85d0c2)} /> :
@@ -412,7 +452,7 @@ function JournalEntryCommentRef({ refInfo }: {refInfo: NonNullable<Comment['jour
       }
       <span className={styles.r_7e0b7cdf}>
         <span className={cx(styles.r_0214b4b3, styles.r_359090c2, styles.r_e83a7042, styles.r_e7eab4cb)}>
-          引用记录：{refInfo.dateLabel} · {refInfo.stageLabel}
+          引用记录 · {refInfo.dateLabel} · {refInfo.stageLabel}
         </span>
         {refInfo.note && <span className={cx(styles.r_15e1b1f4, styles.r_f50e2015, styles.r_0214b4b3, styles.r_d058ca6d, styles.r_7b89cd85)}>{refInfo.note}</span>}
       </span>
@@ -458,64 +498,86 @@ function JournalEntryCommentTargetBanner({
 
 function ReplyItem({
   reply,
+  replyTo,
   pendant,
-  authorPendants,
+  bubble,
   onReplyTarget
 
 
 
 
 
-}: {reply: Comment;pendant?: SkinItem | null;authorPendants: Record<string, SkinItem>;onReplyTarget: (target: {id: string;name: string;}) => void;}) {
-  const childReplies = reply.replies ?? [];
+}: {reply: Comment;replyTo?: {id: string;name: string;authorId: string;};pendant?: SkinItem | null;bubble?: SkinItem | null;onReplyTarget: (target: {id: string;name: string;authorId?: string;}) => void;}) {
+  const { user } = useAuth();
+  const bubbleStyle = getCommentBubbleStyle(bubble);
+  const canReply = user?.id !== reply.author.id;
 
   return (
-    <article id={`comment-${reply.id}`} className={cx(styles.r_60fbb771, styles.r_6da6a3c3, styles.r_77a2a20e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_359090c2)}>
-      <UserIdentity
-        user={{ ...reply.author, equip: { pendant } }}
-        size="sm"
-        showName={false}
-        avatarRing={false}
-      />
-      <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
-        <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_60541e1e, styles.r_8ef2268e, styles.r_77a2a20e)}>
-          <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_58284b4e)}>
-            <UserIdentity user={{ ...reply.author, equip: { pendant } }} size="xs" showAvatar={false} showLevel />
-            <span className={styles.r_6c4cc49e}>{formatNumber(reply.author.posts)} 帖</span>
-            <CommentBadges badges={reply.author.badges} compact />
-          </div>
-          <span className={cx(styles.r_60fbb771, styles.r_012fbd12, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_6c4cc49e)}>
-            <span>{formatFullDateTime(reply.createdAt)}</span>
-            <button
-              type="button"
-              onClick={() => onReplyTarget({ id: reply.id, name: reply.author.name })}
-              className={cx(styles.r_52083e7d, styles.r_f6fe9024, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_421ac2be, styles.r_d5eab218, styles.r_69335b95, styles.r_ceb69a6b, styles.r_5756b7b4, styles.r_9825203a)}>
-
-              <Icon name="comment" size={12} />
-              回复
-            </button>
-          </span>
-        </div>
-        <RichTextView
-          json={reply.contentJson}
-          html={reply.content}
-          text={reply.contentText}
+    <article id={`comment-${reply.id}`} className={styles.replyItem}>
+      <div className={cn(styles.commentStreamRow, styles.commentStreamRowCompact)}>
+        <UserIdentity
+          user={{ ...reply.author, equip: { pendant } }}
           size="sm"
-          className={cx("comment-rich-text", styles.r_15e1b1f4)} />
+          showName={false}
+          avatarRing={false}
+          className={styles.commentStreamAvatar}
+        />
 
-        {childReplies.length > 0 &&
-        <div className={cx(styles.r_50d0d216, styles.r_6f7e013d, styles.r_d4f78465, styles.r_88b684d2, styles.r_81976f3f)}>
-            {childReplies.map((child) =>
-          <ReplyItem
-            key={child.id}
-            reply={child}
-            pendant={authorPendants[child.author.id] ?? null}
-            authorPendants={authorPendants}
-            onReplyTarget={onReplyTarget} />
+        <div className={styles.commentStreamMain}>
+          <div className={styles.commentStreamHeader}>
+            <div className={styles.commentUserInfo}>
+              <div className={styles.commentNameLine}>
+                <UserName
+                  user={{ ...reply.author, equip: { pendant } }}
+                  size="xs"
+                  className={styles.commentStreamName}
+                />
+                <CommentBadges badges={reply.author.badges} compact />
+              </div>
+              <div className={styles.commentMetaLine}>
+                <span>{formatFullDateTime(reply.createdAt)}</span>
+                <span>·</span>
+                <span>Lv.{reply.author.level}</span>
+                <span>·</span>
+                <span>{formatNumber(reply.author.posts)} 帖</span>
+              </div>
+            </div>
 
-          )}
+            <div className={cn(styles.commentActions, styles.commentStreamActions)}>
+              {canReply &&
+              <button
+                type="button"
+                onClick={() => onReplyTarget({ id: reply.id, name: reply.author.name, authorId: reply.author.id })}
+                className={styles.commentTextButton}>
+
+                <Icon name="comment" size={12} />
+                回复
+              </button>
+              }
+            </div>
           </div>
-        }
+
+          <div className={styles.commentBodyRow}>
+            {replyTo &&
+            <span className={styles.replyTargetPrefix}>
+              回复 {user?.id === replyTo.authorId ?
+              <span>@{replyTo.name}</span> :
+              <button type="button" onClick={() => onReplyTarget(replyTo)}>@{replyTo.name}</button>
+              }
+            </span>
+            }
+            <RichTextView
+              json={reply.contentJson}
+              html={reply.content}
+              text={reply.contentText}
+              size="sm"
+              className={cn(
+                "comment-rich-text",
+                styles.commentContentBubble
+              )}
+              style={bubbleStyle} />
+          </div>
+        </div>
       </div>
     </article>);
 
@@ -554,25 +616,24 @@ function CommentMoreMenu({
       <button
         type="button"
         onClick={() => onOpenChange(!open)}
-        className={cx(styles.r_52083e7d, styles.r_d0a52b31, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_421ac2be, styles.r_d5eab218, styles.r_66a36c90, styles.r_ceb69a6b, styles.r_9cab05a6, styles.r_3364420b)}
+        className={cn(cx(styles.r_52083e7d, styles.r_d0a52b31, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_421ac2be, styles.r_66a36c90, styles.r_ceb69a6b, styles.r_9cab05a6, styles.r_3364420b), styles.moreButton)}
         title="更多"
         aria-label="更多"
         aria-haspopup="menu"
         aria-expanded={open}>
 
-        <Icon name="menu" size={13} />
-        更多
+        <Icon name="more-horizontal" size={16} strokeWidth={2.8} />
       </button>
 
       {open &&
-      <div role="menu" className={cx(styles.r_da4dbfbc, styles.r_d8cdcad2, styles.r_5e8a03e0, styles.r_181b2866, styles.r_f46b61a9)}>
-          <div className={cx(styles.r_d89972fe, styles.r_69da7e4f, styles.r_421ac2be, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_660d2eff, styles.r_a739868a)}>
-            <div className={cx(styles.r_da4dbfbc, styles.r_b770696a, styles.r_7b2d6393, styles.r_6a60c09e, styles.r_9cea0567, styles.r_c74901da, styles.r_d4f78465, styles.r_b950dda2, styles.r_88b684d2, styles.r_5e10cdb8)} />
+      <div role="menu" className={cn(cx(styles.r_da4dbfbc, styles.r_d8cdcad2, styles.r_5e8a03e0, styles.r_181b2866, styles.r_f46b61a9), styles.commentMenuPopover)}>
+          <div className={cn(cx(styles.r_d89972fe, styles.r_69da7e4f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_660d2eff, styles.r_a739868a), styles.commentMenuPanel)}>
+            <div className={cn(cx(styles.r_da4dbfbc, styles.r_b770696a, styles.r_7b2d6393, styles.r_6a60c09e, styles.r_9cea0567, styles.r_c74901da, styles.r_d4f78465, styles.r_b950dda2, styles.r_88b684d2, styles.r_5e10cdb8), styles.commentMenuArrow)} />
             <button
             type="button"
             role="menuitem"
             onClick={close}
-            className={cx(styles.r_0214b4b3, styles.r_6da6a3c3, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_ca6bf630, styles.r_359090c2, styles.r_2689f395, styles.r_eb6abb1f, styles.r_5756b7b4)}>
+            className={cn(cx(styles.r_0214b4b3, styles.r_6da6a3c3, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_ca6bf630, styles.r_359090c2, styles.r_2689f395, styles.r_eb6abb1f, styles.r_5756b7b4), styles.commentMenuItem)}>
 
               举报
             </button>
@@ -581,7 +642,7 @@ function CommentMoreMenu({
             type="button"
             role="menuitem"
             onClick={close}
-            className={cx(styles.r_0214b4b3, styles.r_6da6a3c3, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_ca6bf630, styles.r_359090c2, styles.r_2689f395, styles.r_595fceba, styles.r_85cfcc24)}>
+            className={cn(cx(styles.r_0214b4b3, styles.r_6da6a3c3, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_ca6bf630, styles.r_359090c2, styles.r_2689f395, styles.r_595fceba, styles.r_85cfcc24), styles.commentMenuItem)}>
 
               删除
             </button>
@@ -589,31 +650,6 @@ function CommentMoreMenu({
         </div>
       }
     </div>);
-
-}
-
-function CommentAuthorCard({
-  author,
-  pendant
-
-
-
-}: {author: Comment['author'];pendant?: SkinItem | null;}) {
-  return (
-    <aside className={cx(styles.r_a217b4ea, styles.r_52f53b18, styles.r_0e17f2bd, styles.r_1b2d54a3, styles.r_ca6bf630)}>
-      <UserIdentity
-        user={{ ...author, equip: { pendant } }}
-        size="lg"
-        variant="profile"
-        nameClassName={cx(styles.r_50d0d216, styles.r_0214b4b3, styles.r_f283ea9b, styles.r_fc7473ca, styles.r_e83a7042, styles.r_4ddaa618, styles.r_81be6435)}
-      />
-      <div className={cx(styles.r_b6b02c0e, styles.r_60fbb771, styles.r_3960ffc2, styles.r_86843cf1, styles.r_58284b4e, styles.r_d058ca6d, styles.r_7b89cd85)}>
-        <span>Lv.{author.level}</span>
-        <span>·</span>
-        <span>{formatNumber(author.posts)} 帖</span>
-      </div>
-      <CommentBadges badges={author.badges} />
-    </aside>);
 
 }
 
@@ -643,6 +679,15 @@ function CommentBadges({
       )}
     </div>);
 
+}
+
+function getCommentBubbleStyle(bubble?: SkinItem | null): CSSProperties | undefined {
+  if (!bubble || bubble.slug === "bubble-default") return undefined;
+  const meta = bubble.meta as Record<string, unknown> | undefined;
+  const style: CSSProperties & Record<string, string | undefined> = {};
+  if (typeof meta?.bg === "string") style["--comment-bubble-bg"] = meta.bg;
+  if (typeof meta?.color === "string") style["--comment-bubble-color"] = meta.color;
+  return Object.keys(style).length > 0 ? style : undefined;
 }
 
 function formatFullDateTime(iso: string): string {

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Icon, type IconName } from '@/components/ui/Icon';
+import type { SkinItem } from '@/lib/types';
+import { ReactionIcon } from '@/components/skin/ReactionIcon';
 import { cn, formatNumber } from '@/lib/utils';
 import styles from './FloatingActionRail.module.scss';
 import { cx } from '@/lib/style-utils';
@@ -11,9 +13,11 @@ import { cx } from '@/lib/style-utils';
 export type FloatingActionItem = {
   icon: IconName;
   label: string;
+  labelClassName?: string;
   count?: number;
   active?: boolean;
   activeCls?: string;
+  reactionSkin?: SkinItem | null;
   disabled?: boolean;
   onClick?: () => void;
 };
@@ -113,8 +117,12 @@ function ActionButton({ item }: {item: FloatingActionItem;}) {
       title={item.label}
       aria-label={item.label}>
 
-      <Icon name={item.icon} size={16} fill={item.active ? 'currentColor' : 'none'} />
-      <span>{item.label}</span>
+      {item.icon === 'thumbs-up' && item.reactionSkin ? (
+        <ReactionIcon skin={item.reactionSkin} active={item.active} size={16} />
+      ) : (
+        <Icon name={item.icon} size={16} fill={item.active ? 'currentColor' : 'none'} />
+      )}
+      <span className={item.labelClassName}>{item.label}</span>
       {typeof item.count === 'number' &&
       <span className={cn(cx(styles.r_d058ca6d, styles.r_2689f395, styles.r_66a36c90), item.active && styles.r_c324756a)}>
           {formatNumber(item.count)}

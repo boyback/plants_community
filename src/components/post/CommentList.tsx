@@ -5,6 +5,7 @@ import { useState } from 'react';
 import type { Comment, SkinItem } from '@/lib/types';
 import { UserIdentity } from '@/components/ui/UserIdentity';
 import { Icon } from '@/components/ui/Icon';
+import { ReactionIcon } from '@/components/skin/ReactionIcon';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
 import { timeAgo, formatNumber, cn } from '@/lib/utils';
@@ -22,6 +23,7 @@ interface CommentListProps {
   postId: string;
   onCommentAdded?: (comment: Comment) => void;
   onReplyAdded?: (commentId: string, reply: Comment) => void;
+  authorBubbles?: Record<string, SkinItem>;
   compact?: boolean;
 }
 
@@ -34,6 +36,7 @@ export function CommentList({
   comments,
   postId,
   onReplyAdded,
+  authorBubbles = {},
   compact = false
 }: CommentListProps) {
   const { user, equip } = useAuth();
@@ -46,7 +49,7 @@ export function CommentList({
         key={comment.id}
         comment={comment}
         postId={postId}
-        myBubble={user?.id === comment.author.id ? myBubble : null}
+        myBubble={authorBubbles[comment.author.id] ?? (user?.id === comment.author.id ? myBubble : null)}
         onReplyAdded={onReplyAdded} />
 
       )}
@@ -65,7 +68,7 @@ function CommentItem({
 
 
 }: {comment: Comment;postId: string;myBubble?: SkinItem | null;onReplyAdded?: (commentId: string, reply: Comment) => void;}) {
-  const { user } = useAuth();
+  const { user, equip } = useAuth();
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyTarget, setReplyTarget] = useState<{id: string;name: string;} | null>(null);
   const [repliesExpanded, setRepliesExpanded] = useState(false);
@@ -108,7 +111,7 @@ function CommentItem({
             <div
             className={cn(styles.r_b6b02c0e,
 
-            Boolean(myBubble) && cx(styles.r_bb0c4bfc, styles.r_c0980a65, styles.r_0c5e9137, styles.r_d5eab218, styles.r_660d2eff, styles.r_438b2237)
+            Boolean(myBubble) && styles.commentBubble
             )}
             style={myBubble ? bubbleStyle : undefined}>
 
@@ -128,7 +131,11 @@ function CommentItem({
               liked ? styles.r_fa512798 : cx(styles.r_69335b95, styles.r_9825203a)
               )}>
 
-                <Icon name="heart" size={12} fill={liked ? 'currentColor' : 'none'} />
+                {equip.reaction ? (
+                  <ReactionIcon skin={equip.reaction} active={liked} size={12} />
+                ) : (
+                  <Icon name="heart" size={12} fill={liked ? 'currentColor' : 'none'} />
+                )}
                 {formatNumber(comment.likes + (liked ? 1 : 0))}
               </button>
               <button

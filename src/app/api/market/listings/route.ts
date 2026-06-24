@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
-import { handler, fail, stringifyJson } from '@/lib/api';
+import { handler, fail, stringifyJson, jsonWithUserPendants } from '@/lib/api';
 import { getCurrentUser, requireUser } from '@/lib/auth';
 import { hasUserPermission } from '@/lib/permissions';
 import { Prisma, type AuctionStatus, type MarketListingStatus, type MarketTradeMode } from '@prisma/client';
@@ -49,9 +49,9 @@ const CreateListingBody = z.object({
   shipFrom: z.string().min(1, '请输入发货地').max(40),
   tags: z.array(z.string().min(1).max(20)).max(8).optional(),
   description: z.string().max(2000).optional(),
-  tradeMode: z.enum(['platform_escrow', 'online_payment', 'external']).default('platform_escrow'),
+  tradeMode: z.enum(['platform_escrow', 'online_payment', 'external']).default('online_payment'),
   tradeModes: z.array(z.enum(['platform_escrow', 'online_payment', 'external'])).min(1).max(3).optional(),
-  externalUrl: z.string().url().optional().or(z.literal('')),
+  externalUrl: z.string().max(500).optional().or(z.literal('')),
   contactNote: z.string().max(500).optional(),
   items: z.array(CreateItemBody).min(1).max(20),
 });
@@ -147,7 +147,7 @@ export async function GET(req: Request) {
     let products: ListingItem[] = [];
     if (type === 'all' || type === 'product') {
       const where: Record<string, unknown> = {
-        status: { in: ['on_sale', 'sold_out'] as MarketListingStatus[] },
+        status: { in: ['on_sale', 'trading', 'sold_out'] as MarketListingStatus[] },
       };
       if (priceMin) where.maxPrice = { ...(where.maxPrice as object), gte: priceMin };
       if (priceMax) where.minPrice = { ...(where.minPrice as object), lte: priceMax };
@@ -163,6 +163,7 @@ export async function GET(req: Request) {
         take: limit,
         select: {
           id: true,
+          status: true,
           title: true,
           description: true,
           cover: true,
@@ -175,13 +176,14 @@ export async function GET(req: Request) {
           createdAt: true,
           shipFrom: true,
           tags: true,
-          seller: { select: { id: true, name: true, avatar: true } },
+          seller: { select: { id: true, name: true, avatar: true, equipPendantId: true } },
           genus: { select: { slug: true, name: true, cover: true } },
           items: {
             where: { status: { not: 'off_shelf' } },
             orderBy: { createdAt: 'asc' },
             select: {
               id: true,
+              status: true,
               title: true,
               description: true,
               price: true,
@@ -219,6 +221,8 @@ export async function GET(req: Request) {
               images: images.length ? images : [item.cover],
               price: item.price,
               itemCount: 1,
+              status: item.status,
+              listingStatus: p.status,
               views: p.viewCount,
               comments: p.commentCount,
               tradeMode: p.tradeMode,
@@ -282,7 +286,7 @@ export async function GET(req: Request) {
           currentPrice: true,
           createdAt: true,
           endAt: true,
-          seller: { select: { id: true, name: true, avatar: true } },
+          seller: { select: { id: true, name: true, avatar: true, equipPendantId: true } },
           bidCount: true,
           genus: { select: { slug: true, name: true, cover: true } },
         },
@@ -346,7 +350,7 @@ export async function GET(req: Request) {
       return new Date(y.createdAt).getTime() - new Date(x.createdAt).getTime();
     });
 
-    return Response.json({ ok: true, data: { items: merged.slice(0, limit) } });
+    return jsonWithUserPendants({ ok: true, data: { items: merged.slice(0, limit) } });
   } catch (error) {
     console.error('Error in /api/market/listings:', error);
     return Response.json(
@@ -359,7 +363,7 @@ export async function GET(req: Request) {
 export const POST = handler(async (req) => {
   const me = await requireUser();
   if (!(await hasUserPermission(me, 'market:sell'))) {
-    return fail(403, '当前等级不允许在交易区出售，开通会员或升到 Lv.8 后可解锁');
+    return fail(403, '当前等级不允许在交易区出售，升到 Lv.8 后可解锁');
   }
 
   const body = CreateListingBody.parse(await req.json());
@@ -522,9 +526,11 @@ function parseJsonArray(raw: string | null | undefined): string[] {
 }
 
 function normalizeTradeModes(modes: MarketTradeMode[] | undefined, fallback: MarketTradeMode): MarketTradeMode[] {
-  const allowed: MarketTradeMode[] = ['platform_escrow', 'online_payment', 'external'];
-  const result = Array.from(new Set((modes?.length ? modes : [fallback]).filter((mode) => allowed.includes(mode))));
-  return result.length ? result : [fallback];
+  const allowed: MarketTradeMode[] = ['online_payment', 'external'];
+  const selected = modes?.length ? modes : [fallback];
+  const normalized = selected.map((mode) => mode === 'platform_escrow' ? 'online_payment' : mode);
+  const result = Array.from(new Set(normalized.filter((mode) => allowed.includes(mode))));
+  return Array.from(new Set(['online_payment' as MarketTradeMode, ...result]));
 }
 
 async function loadListingTradeModes(ids: string[]) {

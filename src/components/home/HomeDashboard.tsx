@@ -594,7 +594,7 @@ function FeatureGrid({ stats }: {stats: HomeStats;}) {
 
 
   return (
-    <section className={cx(styles.r_2cad2f15, styles.r_f3c543ad, styles.r_0c3bc985, styles.r_e4d6f343, styles.r_a1de1eab)}>
+    <section className={cx(styles.r_2cad2f15, styles.r_f3c543ad, styles.r_0c3bc985)}>
       {items.map((item) =>
       <Link
         key={item.title}
@@ -712,7 +712,19 @@ function formatDateShort(iso: string) {
 }
 
 function getPostCover(post: Post) {
-  return post.cover ?? post.images?.[0] ?? post.species?.cover ?? null;
+  return post.cover ?? post.images?.[0] ?? getNearestJournalEntryImage(post) ?? post.species?.cover ?? null;
+}
+
+function getNearestJournalEntryImage(post: Post) {
+  const entries = post.journal?.entries ?? [];
+  const now = Date.now();
+  return entries
+    .filter((entry) => entry.images.length > 0)
+    .sort((a, b) => {
+      const diff = Math.abs(new Date(a.entryDate).getTime() - now) - Math.abs(new Date(b.entryDate).getTime() - now);
+      if (diff !== 0) return diff;
+      return new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime();
+    })[0]?.images[0] ?? null;
 }
 
 function useTodaySignedCount() {

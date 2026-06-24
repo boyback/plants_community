@@ -24,7 +24,7 @@ export function PostActions({
 
 
 }: {post: Post;initialLiked?: boolean;initialCollected?: boolean;initialCollectedTotal?: number;}) {
-  const { user } = useAuth();
+  const { user, equip } = useAuth();
   const { t } = useI18n();
   const router = useRouter();
   const [liked, setLiked] = useState(initialLiked);
@@ -119,6 +119,7 @@ export function PostActions({
         count: likes,
         active: liked,
         activeCls: cx(styles.r_0759a0f1, styles.r_595fceba),
+        reactionSkin: equip.reaction ?? null,
         onClick: toggleLike
       },
       { icon: 'comment', label: '评论', count: post.comments, onClick: scrollToComments },

@@ -74,3 +74,37 @@
 
 /* Recovered utility rules referenced by this CSS module. */
 .r_c3a8ec23{background-color:#f9fafb99}
+
+.stageSelectOption {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.stageSelectOptionText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stageSelectDelete {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgb(244 63 94);
+  cursor: pointer;
+}
+
+.stageSelectDelete:hover {
+  background: rgb(255 228 230);
+}

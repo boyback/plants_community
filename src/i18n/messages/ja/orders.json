@@ -32,6 +32,7 @@
       "ship": "発送済みにする",
       "confirm": "受取確認",
       "review": "評価する",
+      "refund": "返金を申請",
       "viewProduct": "商品を見る",
       "viewAuction": "オークションを見る"
     },
@@ -40,6 +41,9 @@
     "inputTracking": "追跡番号を入力(任意)",
     "reviewPlaceholder": "率直な感想をどうぞ(任意)",
     "submitReview": "評価を送信",
+    "refundReason": "返金理由",
+    "refundPlaceholder": "返金理由を簡単に入力してください",
+    "submitRefund": "申請を送信",
     "pickRating": "評価を選ぶ",
     "confirmCancel": "この注文をキャンセルしますか?"
   }

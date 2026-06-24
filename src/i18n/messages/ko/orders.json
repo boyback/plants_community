@@ -32,6 +32,7 @@
       "ship": "발송 완료",
       "confirm": "수령 확인",
       "review": "리뷰 작성",
+      "refund": "환불 신청",
       "viewProduct": "상품 보기",
       "viewAuction": "경매 보기"
     },
@@ -40,6 +41,9 @@
     "inputTracking": "송장번호 입력(선택)",
     "reviewPlaceholder": "솔직한 후기를 남겨주세요(선택)",
     "submitReview": "리뷰 제출",
+    "refundReason": "환불 사유",
+    "refundPlaceholder": "환불 사유를 간단히 입력해 주세요",
+    "submitRefund": "신청 제출",
     "pickRating": "평점 선택",
     "confirmCancel": "이 주문을 취소하시겠습니까?"
   }

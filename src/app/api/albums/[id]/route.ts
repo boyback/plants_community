@@ -18,7 +18,7 @@ export const GET = handler(async (req) => {
     where: { id },
     include: {
       user: {
-        select: { id: true, name: true, avatar: true },
+        select: { id: true, name: true, avatar: true, equipPendantId: true },
       },
       images: {
         orderBy: { orderIdx: 'asc' },

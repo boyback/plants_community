@@ -17,6 +17,8 @@ type SpeciesActionItem = {
   url: string;
   collected: boolean;
   collectTotal: number;
+  postTotal: number;
+  editorUrl: string;
   compared: boolean;
 };
 
@@ -79,8 +81,13 @@ export function SpeciesDetailActions({ species }: {species: SpeciesActionItem;})
     }
   };
 
+  const openEditor = () => {
+    router.push(species.editorUrl);
+  };
+
   return (
     <FloatingActionRail
+      anchorSelector="[data-species-detail-content]"
       items={[
       { icon: 'share', label: '分享', onClick: share },
       {
@@ -91,6 +98,13 @@ export function SpeciesDetailActions({ species }: {species: SpeciesActionItem;})
         activeCls: cx(styles.r_67d2289d, styles.r_47d65ecb),
         onClick: toggleFavorite,
         disabled: collectBusy
+      },
+      {
+        icon: 'camera',
+        label: '玩家记录',
+        labelClassName: styles.actionLabelCompact,
+        count: species.postTotal,
+        onClick: openEditor
       },
       {
         icon: 'link',

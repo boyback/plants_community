@@ -66,7 +66,7 @@ export const GET = handler(async (req) => {
           reviewedAt: true,
         }),
         createdAt: true,
-        author: { select: { id: true, name: true, avatar: true, level: true, role: true } },
+        author: { select: { id: true, name: true, avatar: true, equipPendantId: true, level: true, role: true } },
         _count: { select: { comments: true, likes: true } },
       },
     }),

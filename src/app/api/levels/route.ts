@@ -1,5 +1,5 @@
 import { handler } from '@/lib/api';
-import { LEVELS, VIP_PERMISSIONS, PERMISSION_LABEL } from '@/lib/levels';
+import { LEVELS, PERMISSION_LABEL } from '@/lib/levels';
 import {
   getLevelExpConfigs,
   getLevelPermissionConfigs,
@@ -23,7 +23,6 @@ export const GET = handler(async () => {
       perks: l.perks,
     })),
     levelPermissionConfigs: configs,
-    vipPermissions: VIP_PERMISSIONS,
     permissionLabel: PERMISSION_LABEL,
   };
 });

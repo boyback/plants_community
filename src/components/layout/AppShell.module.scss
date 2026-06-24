@@ -190,6 +190,14 @@
 
 .appHeader {}
 
+/* px-vw: off */
+@media (min-width: 769px) {
+  .r_f38d6f75 {
+    min-width: 1132px;
+  }
+}
+/* px-vw: on */
+
 :global(html[data-scroll-locked='true']) .appHeader {
   transform: translateY(0) !important;
 }

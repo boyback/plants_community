@@ -28,7 +28,6 @@ import {
 import { COOKIE_LOCALE, defaultLocale, negotiateLocale, type Locale } from '@/i18n/config';
 import { loadLocaleMessagesServer } from "@/i18n/server-loader";
 import { getCurrentUser } from '@/lib/auth';
-import { isVipActive } from '@/lib/vip';
 import { prisma } from '@/lib/db';
 import { serializeUser, serializeEquip } from '@/lib/serializers';
 import { expProgressConfigured } from '@/lib/permissions';
@@ -136,7 +135,6 @@ export default async function RootLayout({ children }: {children: React.ReactNod
   let initialExp = 0;
   let initialExpProgress = null as Awaited<ReturnType<typeof expProgressConfigured>> | null;
   let initialPointsBalance = 0;
-  let initialVip = { isVip: false, lifetime: false, expireAt: null as string | null };
   let initialEquip = {};
 
   if (me) {
@@ -164,11 +162,6 @@ export default async function RootLayout({ children }: {children: React.ReactNod
       initialExp = full.exp;
       initialExpProgress = await expProgressConfigured(full.exp);
       initialPointsBalance = full.pointsBalance;
-      initialVip = {
-        isVip: isVipActive(full),
-        lifetime: full.vipLifetime,
-        expireAt: full.vipExpireAt?.toISOString() ?? null
-      };
 
       // 装扮
       const ids = [
@@ -223,7 +216,6 @@ export default async function RootLayout({ children }: {children: React.ReactNod
                     initialExp={initialExp}
                     initialExpProgress={initialExpProgress}
                     initialPointsBalance={initialPointsBalance}
-                    initialVip={initialVip}
                     initialEquip={initialEquip}>
 
                     <RealtimeProvider>

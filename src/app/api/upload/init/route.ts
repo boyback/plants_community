@@ -14,7 +14,7 @@ import path from 'path';
 import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
-import { isVipActive } from '@/lib/vip';
+import { hasUserPermission } from '@/lib/permissions';
 import {
   ALLOWED_IMAGE_MIME,
   ALLOWED_VIDEO_MIME,
@@ -64,8 +64,8 @@ export const POST = handler(async (req) => {
         `视频过大,最大 ${Math.round(MAX_VIDEO_SIZE / 1024 / 1024)} MB`
       );
     }
-    if (!isVipActive(me)) {
-      return fail(403, '视频上传仅限大会员');
+    if (!(await hasUserPermission(me, 'post:video'))) {
+      return fail(403, '需要 Lv.5 以上才能上传视频');
     }
   }
 

@@ -7,7 +7,7 @@ import { postInclude } from '@/lib/post-include';
 import { processRichInput } from '@/lib/richtext';
 import { postNeedsReview } from '@/lib/post-review';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
-import { ALL_STAGES, STAGE_META } from '@/lib/journal';
+import { ALL_STAGES, STAGE_META, normalizeJournalStages, primaryJournalStage } from '@/lib/journal';
 import { createUserPlantCode } from '@/lib/user-plant-code';
 import { AlbumSyncInput, collectAlbumSyncImages, syncPostImagesToAlbum } from '@/lib/album-sync';
 
@@ -111,6 +111,7 @@ const JournalPatch = z.object({
         id: z.string().optional(),
         entryDate: z.string(),
         stage: z.string().optional(),
+        stages: z.array(z.string().trim().min(1).max(50)).optional(),
         stageLabel: z.string().trim().max(50).optional(),
         note: z.string().trim().max(2000).default(''),
         images: z.array(z.string()).min(1, '每条记录都需要上传配图').max(9).default([]),
@@ -121,7 +122,7 @@ const JournalPatch = z.object({
 }).superRefine((journal, ctx) => {
   journal.entries.forEach((entry, index) => {
     if (entry.id) return;
-    if (!entry.stage) {
+    if (normalizeJournalStages(entry.stages, entry.stage).length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['entries', index, 'stage'],
@@ -142,7 +143,7 @@ const PatchBody = z.object({
   title: z.string().min(1).max(500).optional(),
   content: z.unknown().optional(),
   contentJson: z.unknown().optional(),
-  tags: z.array(z.string()).max(10).optional(),
+  tags: z.array(z.string()).optional(),
   images: z.array(z.string()).optional(),
   cover: z.string().nullable().optional(),
   videoUrl: z.string().nullable().optional(),
@@ -346,8 +347,9 @@ export const PATCH = handler(async (req) => {
           data: newEntries.map((entry, index) => ({
             journalId: journal.id,
             entryDate: new Date(entry.entryDate),
-            stage: normalizeJournalStage(entry.stage) as any,
-            stageLabel: normalizeJournalStage(entry.stage) === 'other' ? entry.stageLabel || null : null,
+            stage: primaryJournalStage(normalizeJournalStages(entry.stages, normalizeJournalStage(entry.stage))) as any,
+            stages: stringifyJson(normalizeJournalStages(entry.stages, normalizeJournalStage(entry.stage))),
+            stageLabel: entry.stageLabel || null,
             note: entry.note,
             images: stringifyJson(entry.images),
             orderIdx: startOrderIdx + index + 1,
@@ -358,7 +360,7 @@ export const PATCH = handler(async (req) => {
       const latestEntry = await tx.journalEntry.findFirst({
         where: { journalId: journal.id },
         orderBy: [{ entryDate: 'desc' }, { orderIdx: 'desc' }],
-        select: { stage: true, stageLabel: true, note: true },
+        select: { stage: true, stages: true, stageLabel: true, note: true },
       });
       const currentStage = latestEntry?.stage ?? 'growing';
       const species = await tx.species.findUnique({
@@ -510,5 +512,5 @@ function normalizeJournalStage(value: string | undefined): string {
   if ((ALL_STAGES as string[]).includes(value)) return value;
 
   const matched = ALL_STAGES.find((stage) => STAGE_META[stage].zh === value);
-  return matched ?? 'other';
+  return matched ?? value;
 }

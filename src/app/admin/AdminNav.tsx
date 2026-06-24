@@ -30,6 +30,10 @@ const NAV: {section: string;items: {href: string;label: string;minRole: Role;}[]
   items: [
   { href: '/admin/users', label: '👥 用户权限', minRole: 'admin' },
   { href: '/admin/permissions', label: '🔐 权限管理', minRole: 'admin' },
+  { href: '/admin/pendants', label: '👑 头像挂饰', minRole: 'admin' },
+  { href: '/admin/skins/bubble', label: '💬 评论气泡', minRole: 'admin' },
+  { href: '/admin/skins/reaction', label: '👍 点赞按钮', minRole: 'admin' },
+  { href: '/admin/skins/sticker', label: '🌱 表情包', minRole: 'admin' },
   { href: '/admin/badges', label: '🏅 徽章发放', minRole: 'admin' },
   { href: '/admin/points', label: '💎 钻石调整', minRole: 'admin' }]
 
@@ -78,7 +82,7 @@ export function AdminNav({ role }: {role: string;}) {
           if (items.length === 0) return null;
           return (
             <div key={sec.section}>
-              <div className={cx(styles.r_d7c1392c, styles.r_d5eab218, styles.r_1dc571a3, styles.r_2689f395, styles.r_117ec720, styles.r_09ace3a4, styles.r_7b89cd85)}>
+              <div className={cx(styles.r_d7c1392c, styles.r_d5eab218, styles.r_1dc571a3, styles.r_2689f395, styles.r_117ec720, styles.r_09ace3a4, styles.r_7b89cd85, styles.sectionTitle)}>
                 {sec.section}
               </div>
               <ul className={styles.r_e2eedc57}>

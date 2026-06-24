@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Card } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
 import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/context/AuthContext';
@@ -132,7 +133,7 @@ export function SpeciesCareVotePanel({
   };
 
   return (
-    <div className={cx(styles.r_2cd02d11, styles.r_eb6bde8d, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_438b2237)}>
+    <Card padding="none" className={styles.careCard}>
       <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_1004c0c3, styles.r_8e63407b)}>
         <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_58284b4e)}>
           <h2 className={cx(styles.r_42536e69, styles.r_69450ef1, styles.r_4ddaa618)}>养护参数</h2>
@@ -322,7 +323,7 @@ export function SpeciesCareVotePanel({
         </div>
       }
       {err && <div className={cx(styles.r_3a22f30b, styles.r_eccd13ef, styles.r_5f22e64f, styles.r_0759a0f1, styles.r_d5eab218, styles.r_660d2eff, styles.r_d058ca6d, styles.r_b54428d1)}>{err}</div>}
-    </div>);
+    </Card>);
 
 }
 

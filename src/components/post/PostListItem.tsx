@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { PostAdminMenu } from '@/components/post/PostAdminMenu';
 import { Icon } from '@/components/ui/Icon';
+import { ReactionIcon } from '@/components/skin/ReactionIcon';
 import { TopicTag } from '@/components/ui/TopicTag';
 import { UserIdentity } from '@/components/ui/UserIdentity';
 import { PostVotePreview, type PostVoteUpdateHandler } from '@/components/post/PostVotePreview';
@@ -29,7 +30,7 @@ export function PostListItem({
 
 
 }: {post: Post;showDivider?: boolean;onVoteUpdate?: PostVoteUpdateHandler;liked?: boolean;likeCount?: number;onLikeClick?: () => void;likeBusy?: boolean;}) {
-  const { user } = useAuth();
+  const { user, equip } = useAuth();
   const cover = post.cover ?? post.images?.[0] ?? null;
   const contentImages = (post.images ?? []).filter((image) => image && image !== cover);
   const displayImages = contentImages.slice(0, 3);
@@ -155,7 +156,11 @@ export function PostListItem({
               liked && styles.postStatButtonActive
             )}
             aria-pressed={liked}>
-            <Icon name="thumbs-up" size={14} />
+            {equip.reaction ? (
+              <ReactionIcon skin={equip.reaction} active={liked} size={14} />
+            ) : (
+              <Icon name="thumbs-up" size={14} />
+            )}
             {formatNumber(likeCount ?? post.likes)}
           </button> :
           <span className={cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0)}>

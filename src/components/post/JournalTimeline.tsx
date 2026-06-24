@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { Post, JournalEntry, JournalStage } from '@/lib/types';
-import { ALL_STAGES, STAGE_META } from '@/lib/journal';
+import { ALL_STAGES, journalStageLabels, normalizeJournalStages, STAGE_META } from '@/lib/journal';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
 import { ImageGallery } from '@/components/ui/ImageGallery';
@@ -115,7 +115,8 @@ function EntryNode({
 
 }: {entry: JournalEntry;startDate: string;isFirst: boolean;isLast: boolean;}) {
   const meta = STAGE_META[entry.stage] || STAGE_META.other;
-  const stageText = entry.stage === 'other' && entry.stageLabel ? entry.stageLabel : meta.zh;
+  const stages = normalizeJournalStages(entry.stages, entry.stage);
+  const stageLabels = entry.stageLabels ?? journalStageLabels(stages, entry.stageLabel);
   const date = new Date(entry.entryDate);
   const start = new Date(startDate);
   const day = Math.floor(
@@ -143,14 +144,7 @@ function EntryNode({
             })}
           </span>
           <span className={cx(styles.r_d058ca6d, styles.r_69335b95)}>第 {day < 0 ? 0 : day} 天</span>
-          <span
-            className={cn(cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_44ee8ba0, styles.r_ac204c10, styles.r_ca6bcd4b, styles.r_d5eab218, styles.r_465609a2, styles.r_d058ca6d),
-
-            meta.color
-            )}>
-
-            {meta.emoji} {stageText}
-          </span>
+          <StageBadgeList stages={stages} labels={stageLabels} />
         </div>
         {entry.note &&
         <p className={cx(styles.r_b6b02c0e, styles.r_a2edcb1a, styles.r_fc7473ca, styles.r_18550d59, styles.r_6ee7f802)}>
@@ -163,6 +157,54 @@ function EntryNode({
       </div>
     </li>);
 
+}
+
+function StageBadgeList({ stages, labels }: {stages: JournalStage[];labels: string[];}) {
+  return (
+    <span className={styles.entryStageList}>
+      {stages.map((stage, index) => {
+        const meta = STAGE_META[stage] ?? STAGE_META.other;
+        return (
+          <span key={stage} className={cn(styles.entryStageBadge, meta.color)}>
+            <span>{meta.emoji}</span>
+            {labels[index] ?? meta.zh}
+          </span>);
+      })}
+    </span>);
+}
+
+function StagePicker({
+  value,
+  onChange
+}: {value: JournalStage[];onChange: (stages: JournalStage[]) => void;}) {
+  return (
+    <div className={styles.stagePicker}>
+      <div className={cx(styles.r_65281709, styles.r_359090c2, styles.r_21d33c50)}>
+        <span className={styles.r_fa512798}>*</span> 阶段
+      </div>
+      <div className={styles.stagePickerGrid}>
+        {ALL_STAGES.map((stage) => {
+          const meta = STAGE_META[stage];
+          const selected = value.includes(stage);
+          return (
+            <button
+              key={stage}
+              type="button"
+              className={cn(styles.stageOption, selected ? meta.color : styles.stageOptionIdle)}
+              onClick={() => onChange(selected ? value.filter((item) => item !== stage) : [...value, stage])}>
+              <span>{meta.emoji}</span>
+              {meta.zh}
+            </button>);
+        })}
+      </div>
+    </div>);
+}
+
+function getOtherStageLabel(entry: JournalEntry) {
+  const stages = normalizeJournalStages(entry.stages, entry.stage);
+  const otherIndex = stages.indexOf('other');
+  if (otherIndex >= 0) return entry.stageLabels?.[otherIndex] ?? (entry.stage === 'other' ? entry.stageLabel ?? '' : '');
+  return '';
 }
 
 function AddEntryDialog({
@@ -178,7 +220,7 @@ function AddEntryDialog({
 
   const today = new Date().toISOString().slice(0, 10);
   const [entryDate, setEntryDate] = useState(today);
-  const [stage, setStage] = useState<JournalStage>("growing");
+  const [stages, setStages] = useState<JournalStage[]>(["growing"]);
   const [stageLabel, setStageLabel] = useState('');
   const [note, setNote] = useState('');
   const [images, setImages] = useState<string[]>([]);
@@ -188,7 +230,8 @@ function AddEntryDialog({
 
   const submit = async () => {
     if (!entryDate) return setErr('请选择日期');
-    if (stage === 'other' && !stageLabel.trim()) return setErr('选择其他阶段时，请填写阶段名称');
+    if (stages.length === 0) return setErr('请选择至少一个阶段');
+    if (stages.includes('other') && !stageLabel.trim()) return setErr('选择其他阶段时，请填写阶段名称');
     if (images.length === 0) return setErr('每条记录都需要上传配图');
     setBusy(true);
     setErr('');
@@ -197,8 +240,9 @@ function AddEntryDialog({
         `/api/posts/${postId}/journal`,
         {
           entryDate: new Date(entryDate).toISOString(),
-          stage,
-          stageLabel: stage === 'other' ? stageLabel.trim() : undefined,
+          stage: stages[0],
+          stages,
+          stageLabel: stages.includes('other') ? stageLabel.trim() : undefined,
           note,
           images
         }
@@ -234,26 +278,14 @@ function AddEntryDialog({
                 onChange={(e) => setEntryDate(e.target.value)} />
 
             </label>
-            <label className={styles.r_0214b4b3}>
-              <div className={cx(styles.r_65281709, styles.r_359090c2, styles.r_21d33c50)}>阶段</div>
-              <select
-                className="input"
-                value={stage}
-                onChange={(e) => {
-                  const next = e.target.value as JournalStage;
-                  setStage(next);
-                  if (next !== 'other') setStageLabel('');
-                }}>
-
-                {ALL_STAGES.map((s) =>
-                <option key={s} value={s}>
-                    {STAGE_META[s].emoji} {STAGE_META[s].zh}
-                  </option>
-                )}
-              </select>
-            </label>
+            <StagePicker
+              value={stages}
+              onChange={(next) => {
+                setStages(next);
+                if (!next.includes('other')) setStageLabel('');
+              }} />
           </div>
-          {stage === 'other' &&
+          {stages.includes('other') &&
           <label className={styles.r_0214b4b3}>
               <div className={cx(styles.r_65281709, styles.r_359090c2, styles.r_21d33c50)}>
                 <span className={styles.r_fa512798}>*</span> 其他阶段
@@ -357,8 +389,8 @@ function EditEntryDialog({
   useBodyScrollLock(true);
 
   const [entryDate, setEntryDate] = useState(entry.entryDate.slice(0, 10));
-  const [stage, setStage] = useState<JournalStage>(entry.stage);
-  const [stageLabel, setStageLabel] = useState(entry.stageLabel ?? '');
+  const [stages, setStages] = useState<JournalStage[]>(normalizeJournalStages(entry.stages, entry.stage));
+  const [stageLabel, setStageLabel] = useState(getOtherStageLabel(entry));
   const [note, setNote] = useState(entry.note);
   const [images, setImages] = useState<string[]>(entry.images);
   const [imgInput, setImgInput] = useState('');
@@ -367,7 +399,9 @@ function EditEntryDialog({
 
   const submit = async () => {
     if (!entryDate) return setErr('请选择日期');
-    if (stage === 'other' && !stageLabel.trim()) return setErr('选择其他阶段时，请填写阶段名称');
+    if (stages.length === 0) return setErr('请选择至少一个阶段');
+    if (stages.includes('other') && !stageLabel.trim()) return setErr('选择其他阶段时，请填写阶段名称');
+    const displayStageLabels = journalStageLabels(stages, stageLabel.trim());
     setBusy(true);
     setErr('');
     try {
@@ -375,8 +409,9 @@ function EditEntryDialog({
         `/api/posts/${postId}/journal/${entry.id}`,
         {
           entryDate: new Date(entryDate).toISOString(),
-          stage,
-          stageLabel: stage === 'other' ? stageLabel.trim() : undefined,
+          stage: stages[0],
+          stages,
+          stageLabel: stages.includes('other') ? stageLabel.trim() : undefined,
           note,
           images
         }
@@ -384,8 +419,10 @@ function EditEntryDialog({
       onUpdated({
         ...entry,
         entryDate: new Date(entryDate).toISOString(),
-        stage,
-        stageLabel: stage === 'other' ? stageLabel.trim() : undefined,
+        stage: stages[0],
+        stages,
+        stageLabel: displayStageLabels.join('、'),
+        stageLabels: displayStageLabels,
         note,
         images
       });
@@ -419,26 +456,14 @@ function EditEntryDialog({
                 onChange={(e) => setEntryDate(e.target.value)} />
 
             </label>
-            <label className={styles.r_0214b4b3}>
-              <div className={cx(styles.r_65281709, styles.r_359090c2, styles.r_21d33c50)}>阶段</div>
-              <select
-                className="input"
-                value={stage}
-                onChange={(e) => {
-                  const next = e.target.value as JournalStage;
-                  setStage(next);
-                  if (next !== 'other') setStageLabel('');
-                }}>
-
-                {ALL_STAGES.map((s) =>
-                <option key={s} value={s}>
-                    {STAGE_META[s].emoji} {STAGE_META[s].zh}
-                  </option>
-                )}
-              </select>
-            </label>
+            <StagePicker
+              value={stages}
+              onChange={(next) => {
+                setStages(next);
+                if (!next.includes('other')) setStageLabel('');
+              }} />
           </div>
-          {stage === 'other' &&
+          {stages.includes('other') &&
           <label className={styles.r_0214b4b3}>
               <div className={cx(styles.r_65281709, styles.r_359090c2, styles.r_21d33c50)}>
                 <span className={styles.r_fa512798}>*</span> 其他阶段

@@ -14,11 +14,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { ReactionIcon } from '@/components/skin/ReactionIcon';
 import { cn, formatNumber } from '@/lib/utils';
 import { api, ApiError } from "@/lib/client-api";
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/i18n/I18nContext';
-import type { Post } from '@/lib/types';
+import type { Post, SkinItem } from '@/lib/types';
 import styles from './MobileActionBar.module.scss';
 import { cx } from '@/lib/style-utils';
 
@@ -33,7 +34,7 @@ export function MobileActionBar({
 
 
 }: {post: Post;initialLiked?: boolean;initialCollected?: boolean;}) {
-  const { user } = useAuth();
+  const { user, equip } = useAuth();
   const { t } = useI18n();
   const router = useRouter();
   const [liked, setLiked] = useState(initialLiked);
@@ -103,6 +104,7 @@ export function MobileActionBar({
             label={formatNumber(likes)}
             active={liked}
             activeCls={styles.r_fa512798}
+            reactionSkin={equip.reaction ?? null}
             onClick={toggleLike} />
 
           <BottomBtn
@@ -163,14 +165,15 @@ function BottomBtn({
   label,
   onClick,
   active,
-  activeCls
+  activeCls,
+  reactionSkin
 
 
 
 
 
 
-}: {icon: Parameters<typeof Icon>[0]['name'];label: string;onClick?: () => void;active?: boolean;activeCls?: string;}) {
+}: {icon: Parameters<typeof Icon>[0]['name'];label: string;onClick?: () => void;active?: boolean;activeCls?: string;reactionSkin?: SkinItem | null;}) {
   return (
     <button
       type="button"
@@ -180,7 +183,11 @@ function BottomBtn({
       active ? activeCls : styles.r_b85c981b
       )}>
 
-      <Icon name={icon} size={20} fill={active ? 'currentColor' : 'none'} />
+      {icon === 'thumbs-up' && reactionSkin ? (
+        <ReactionIcon skin={reactionSkin} active={active} size={20} />
+      ) : (
+        <Icon name={icon} size={20} fill={active ? 'currentColor' : 'none'} />
+      )}
       <span className={styles.r_c2385a46}>{label}</span>
     </button>);
 

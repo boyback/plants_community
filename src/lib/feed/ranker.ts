@@ -15,8 +15,6 @@ export interface HotInputs {
   shares: number;
   views: number;
   createdAt: Date | string | number;
-  /** 作者是否 VIP(可选,加权 1.1) */
-  authorVip?: boolean;
   /** 是否有封面(可选,加权 1.05) */
   hasCover?: boolean;
 }
@@ -26,7 +24,7 @@ export interface HotInputs {
  * 公式(HN 变体):
  *   gravity = 1.6
  *   score = log(1 + interactions + epsilon) / (hoursSince + 2)^gravity
- *   × modifier(VIP/封面/新帖 boost)
+ *   × modifier(封面/新帖 boost)
  *
  * 最低返回 0。
  */
@@ -44,7 +42,6 @@ export function computeHotScore(input: HotInputs, now: Date = new Date()): numbe
   const base = Math.log10(1 + interactions + 1) / Math.pow(hours + 2, gravity);
 
   let modifier = 1;
-  if (input.authorVip) modifier *= 1.1;
   if (input.hasCover) modifier *= 1.05;
   // 最新 24h 给 1.3x 新帖 boost
   if (hours < 24) modifier *= 1.3;

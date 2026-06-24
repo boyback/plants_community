@@ -35,7 +35,7 @@ const Body = z.object({
 export const POST = handler(async (req) => {
   const me = await requireUser();
   if (!(await hasUserPermission(me, 'market:buy'))) {
-    return fail(403, '需要 Lv.5 以上才能购买,或开通大会员');
+    return fail(403, '需要 Lv.5 以上才能购买');
   }
 
   const productId = pickId(req);

@@ -60,7 +60,7 @@ export function PostMetaFields({
       }
 
       <FieldRow label={t('editor.tags')}>
-        <TagSelector value={tags} onChange={onTagsChange} max={6} />
+        <TagSelector value={tags} onChange={onTagsChange} />
       </FieldRow>
 
       <FieldRow label={t('editor.cover')}>

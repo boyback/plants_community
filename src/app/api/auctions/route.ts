@@ -72,7 +72,7 @@ const CreateBody = z.object({
 export const POST = handler(async (req) => {
   const me = await requireUser();
   if (!(await hasUserPermission(me, 'market:sell'))) {
-    return fail(403, '当前等级不允许发布拍卖,Lv.8 起或大会员可发布');
+    return fail(403, '当前等级不允许发布拍卖,Lv.8 起可发布');
   }
   const body = CreateBody.parse(await req.json());
 

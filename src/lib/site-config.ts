@@ -11,15 +11,12 @@ import { prisma } from './db';
 export interface SiteConfigShape {
   /** 上传现场照所需最低用户等级(1-10) */
   photoUploadMinLevel: number;
-  /** 是否仅 VIP 才能上传(true 时无视等级,只看 VIP) */
-  photoUploadVipOnly: boolean;
   /** 'auto' 上传即发布;'manual' 上传后需管理员审核 */
   photoModeration: 'auto' | 'manual';
 }
 
 export const SITE_CONFIG_DEFAULTS: SiteConfigShape = {
   photoUploadMinLevel: 3,
-  photoUploadVipOnly: false,
   photoModeration: 'auto',
 };
 
@@ -44,8 +41,6 @@ export async function getSiteConfig(force = false): Promise<SiteConfigShape> {
         v <= 10
       ) {
         merged.photoUploadMinLevel = v;
-      } else if (r.key === 'photoUploadVipOnly' && typeof v === 'boolean') {
-        merged.photoUploadVipOnly = v;
       } else if (
         r.key === 'photoModeration' &&
         (v === 'auto' || v === 'manual')
@@ -79,17 +74,14 @@ export async function setSiteConfig(
 
 /** 用于权限判断:当前用户是否有上传现场照的资格 */
 export function canUploadSpeciesPhoto(
-  user: { level: number; isVip?: boolean } | null,
+  user: { level: number } | null,
   cfg: SiteConfigShape
 ): { ok: true } | { ok: false; reason: string } {
   if (!user) return { ok: false, reason: '请先登录' };
-  if (cfg.photoUploadVipOnly && !user.isVip) {
-    return { ok: false, reason: '当前仅大会员可上传现场照' };
-  }
   if (user.level < cfg.photoUploadMinLevel) {
     return {
       ok: false,
-      reason: `等级 Lv.${cfg.photoUploadMinLevel} 才能上传现场照(开通大会员可解锁)`,
+      reason: `等级 Lv.${cfg.photoUploadMinLevel} 才能上传现场照`,
     };
   }
   return { ok: true };

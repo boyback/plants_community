@@ -19,6 +19,9 @@ function readBool(name: string, fallback: boolean): boolean {
 /** 是否启用 Post.reviewStatus 过滤(默认关 — 等服务器跑 init-db 同步 schema) */
 export const REVIEW_FILTER_ENABLED = readBool('REVIEW_FILTER_ENABLED', false);
 
+/** 是否允许作者编辑成长时间轴记录日期。设为 0/false/off 后入口和接口都会关闭。 */
+export const JOURNAL_ENTRY_DATE_EDIT_ENABLED = readBool('JOURNAL_ENTRY_DATE_EDIT_ENABLED', true);
+
 /**
  * 微信登录是否启用。
  * 双门:必须 凭证齐 + 全局开关(WECHAT_LOGIN_ENABLED)都打开。

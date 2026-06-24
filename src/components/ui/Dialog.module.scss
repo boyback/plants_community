@@ -82,6 +82,11 @@
   transform: translate(-50%, -50%) !important;
 }
 
+.dialogFit {
+  width: fit-content;
+  max-width: calc(100vw - 32px);
+}
+
 .dialogContent[data-state='open'] {
   animation-name: rysDialogZoomIn;
 }

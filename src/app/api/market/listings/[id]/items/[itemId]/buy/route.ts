@@ -22,7 +22,7 @@ const Body = z.object({
 export const POST = handler(async (req) => {
   const me = await requireUser();
   if (!(await hasUserPermission(me, 'market:buy'))) {
-    return fail(403, '需要 Lv.5 以上才能购买，或开通会员');
+    return fail(403, '需要 Lv.5 以上才能购买');
   }
 
   const params = pickParams(req);
@@ -39,7 +39,8 @@ export const POST = handler(async (req) => {
   if (!item || item.listingId !== listingId) return fail(404, '商品不存在');
   if (item.listing.status !== 'on_sale') return fail(400, '交易帖当前不可购买');
   const allowedTradeModes = await loadListingTradeModes(item.listingId, item.listing.tradeMode);
-  const selectedTradeMode = body.tradeMode ?? allowedTradeModes.find((mode) => mode !== 'external') ?? allowedTradeModes[0];
+  const requestedTradeMode: MarketTradeMode | undefined = body.tradeMode === 'platform_escrow' ? 'online_payment' : body.tradeMode;
+  const selectedTradeMode = requestedTradeMode ?? allowedTradeModes.find((mode) => mode !== 'external') ?? allowedTradeModes[0];
   if (!allowedTradeModes.includes(selectedTradeMode)) return fail(400, '请选择卖家支持的交易方式');
   if (selectedTradeMode === 'external') return fail(400, '该交易方式为自行联系/三方平台交易，不能在线下单');
   if (item.status !== 'on_sale') return fail(400, '商品当前不可购买');
@@ -50,9 +51,8 @@ export const POST = handler(async (req) => {
   if ('error' in address) return fail(address.status, address.error);
 
   const totalPrice = item.price * body.quantity;
-  const platformFee = selectedTradeMode === 'online_payment'
-    ? Math.ceil(totalPrice * 0.01)
-    : 0;
+  const effectiveTradeMode: MarketTradeMode = selectedTradeMode === 'platform_escrow' ? 'online_payment' : selectedTradeMode;
+  const platformFee = Math.ceil(totalPrice * 0.01);
   const sellerAmount = totalPrice - platformFee;
 
   const order = await prisma.order.create({
@@ -61,7 +61,7 @@ export const POST = handler(async (req) => {
       source: 'product',
       listingId: item.listingId,
       listingItemId: item.id,
-      tradeMode: selectedTradeMode,
+      tradeMode: effectiveTradeMode,
       buyerId: me.id,
       sellerId: item.listing.sellerId,
       quantity: body.quantity,
@@ -87,14 +87,16 @@ async function loadListingTradeModes(id: string, fallback: MarketTradeMode): Pro
     `;
     return normalizeTradeModes(parseJsonArray(rows[0]?.tradeModes) as MarketTradeMode[], fallback);
   } catch {
-    return [fallback];
+    return normalizeTradeModes(undefined, fallback);
   }
 }
 
 function normalizeTradeModes(modes: MarketTradeMode[] | undefined, fallback: MarketTradeMode): MarketTradeMode[] {
-  const allowed: MarketTradeMode[] = ['platform_escrow', 'online_payment', 'external'];
-  const result = Array.from(new Set((modes?.length ? modes : [fallback]).filter((mode) => allowed.includes(mode))));
-  return result.length ? result : [fallback];
+  const allowed: MarketTradeMode[] = ['online_payment', 'external'];
+  const selected = modes?.length ? modes : [fallback];
+  const normalized = selected.map((mode) => mode === 'platform_escrow' ? 'online_payment' : mode);
+  const result = Array.from(new Set(normalized.filter((mode) => allowed.includes(mode))));
+  return Array.from(new Set(['online_payment' as MarketTradeMode, ...result]));
 }
 
 function parseJsonArray(raw: string | null | undefined): string[] {

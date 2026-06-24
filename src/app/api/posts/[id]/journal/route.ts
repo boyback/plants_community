@@ -7,36 +7,24 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler, fail, stringifyJson } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
+import { journalStageLabels, normalizeJournalStages, primaryJournalStage } from '@/lib/journal';
 
 export const dynamic = 'force-dynamic';
 
-const STAGES = [
-  'germinate',
-  'growing',
-  'flowering',
-  'fruiting',
-  'withering',
-  'repot',
-  'cutting',
-  'summer',
-  'winter',
-  'pest',
-  'watering',
-  'other',
-] as const;
-
 const AddEntryBody = z.object({
   entryDate: z.string(),
-  stage: z.enum(STAGES).default('other'),
+  stage: z.string().trim().max(50).optional(),
+  stages: z.array(z.string().trim().min(1).max(50)).max(12).optional(),
   stageLabel: z.string().trim().max(50).optional(),
   note: z.string().max(2000).default(''),
   images: z.array(z.string()).min(1, '每条记录都需要上传配图').max(9),
 }).superRefine((body, ctx) => {
-  if (body.stage === 'other' && !body.stageLabel?.trim()) {
+  const stages = normalizeJournalStages(body.stages, body.stage);
+  if (stages.length === 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      path: ['stageLabel'],
-      message: '选择其他阶段时，请填写阶段名称',
+      path: ['stages'],
+      message: '请选择至少一个阶段',
     });
   }
 });
@@ -76,6 +64,8 @@ export const POST = handler(async (req) => {
   const me = await requireUser();
   const postId = pickPostId(req);
   const body = AddEntryBody.parse(await req.json());
+  const stages = normalizeJournalStages(body.stages, body.stage);
+  const primaryStage = primaryJournalStage(stages);
 
   const r = await findOwnedJournal(postId, me.id);
   if (r.error) return fail(400, r.error);
@@ -91,8 +81,9 @@ export const POST = handler(async (req) => {
     data: {
       journalId: r.journal!.id,
       entryDate: new Date(body.entryDate),
-      stage: body.stage,
-      stageLabel: body.stage === 'other' ? body.stageLabel || null : null,
+      stage: primaryStage as any,
+      stages: stringifyJson(stages),
+      stageLabel: body.stageLabel || null,
       note: body.note,
       images: stringifyJson(body.images),
       orderIdx,
@@ -104,12 +95,15 @@ export const POST = handler(async (req) => {
     where: { id: postId },
     data: { updatedAt: new Date() },
   });
+  const stageLabels = journalStageLabels(stages, entry.stageLabel);
 
   return {
     id: entry.id,
     entryDate: entry.entryDate.toISOString(),
     stage: entry.stage,
-    stageLabel: entry.stageLabel ?? undefined,
+    stages,
+    stageLabel: stageLabels.join('、') || (entry.stageLabel ?? undefined),
+    stageLabels,
     note: entry.note,
     images: body.images,
     orderIdx: entry.orderIdx,

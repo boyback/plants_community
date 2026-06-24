@@ -10,7 +10,6 @@ import {
   type LevelDef,
   type Permission,
 } from '@/lib/levels';
-import { isVipActive } from '@/lib/vip';
 
 export interface PermissionOverrides {
   grantedPermissions: Permission[];
@@ -140,8 +139,6 @@ export async function hasUserPermission(
   user: {
     id: string;
     level: number;
-    vipExpireAt: Date | null;
-    vipLifetime: boolean;
     role?: string | null;
     isSuperAdmin?: boolean | null;
   },
@@ -154,7 +151,6 @@ export async function hasUserPermission(
   return hasPermission(
     {
       level: 0,
-      isVip: isVipActive(user),
       grantedPermissions: [...levelPermissions, ...overrides.grantedPermissions],
       revokedPermissions: overrides.revokedPermissions,
     },

@@ -28,6 +28,7 @@ function normalizeUser(raw: any) {
     id: user.id,
     name: user.name,
     avatar: user.avatar,
+    equipPendantId: (user as typeof user & { equipPendantId?: string | null }).equipPendantId,
     level: user.level,
     pointsBalance: user.pointsBalance,
     posts: user.posts,

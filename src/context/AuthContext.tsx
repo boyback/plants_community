@@ -8,14 +8,8 @@ import {
   ReactNode,
   useCallback } from
 'react';
-import type { User, EquipState } from '@/lib/types';
+import type { User, EquipState, SkinItem, SkinKind } from '@/lib/types';
 import { api, ApiError } from "@/lib/client-api";
-
-interface VipState {
-  isVip: boolean;
-  lifetime: boolean;
-  expireAt: string | null;
-}
 
 interface ExpProgressInfo {
   level: number;
@@ -36,18 +30,16 @@ interface AuthContextValue {
   exp: number;
   expProgress: ExpProgressInfo | null;
   pointsBalance: number;
-  vip: VipState;
   equip: EquipState;
   login: (name: string, password: string) => Promise<{ok: boolean;msg?: string;}>;
   register: (name: string, password: string) => Promise<{ok: boolean;msg?: string;}>;
   logout: () => Promise<void>;
   signIn: () => Promise<void>;
   refresh: () => Promise<void>;
+  setEquipItem: (kind: SkinKind, item: SkinItem | null) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-
-const DEFAULT_VIP: VipState = { isVip: false, lifetime: false, expireAt: null };
 
 export function AuthProvider({
   children,
@@ -57,7 +49,6 @@ export function AuthProvider({
   initialExp = 0,
   initialExpProgress = null,
   initialPointsBalance = 0,
-  initialVip = DEFAULT_VIP,
   initialEquip = {}
 
 
@@ -69,7 +60,7 @@ export function AuthProvider({
 
 
 
-}: {children: ReactNode;initialUser?: User | null;initialSignInStreak?: number;initialSignedInToday?: boolean;initialExp?: number;initialExpProgress?: ExpProgressInfo | null;initialPointsBalance?: number;initialVip?: VipState;initialEquip?: EquipState;}) {
+}: {children: ReactNode;initialUser?: User | null;initialSignInStreak?: number;initialSignedInToday?: boolean;initialExp?: number;initialExpProgress?: ExpProgressInfo | null;initialPointsBalance?: number;initialEquip?: EquipState;}) {
   const [user, setUser] = useState<User | null>(initialUser ?? null);
   const [loading, setLoading] = useState(!initialUser);
   const [signedInToday, setSignedInToday] = useState(initialSignedInToday);
@@ -80,7 +71,6 @@ export function AuthProvider({
     initialExpProgress
   );
   const [pointsBalance, setPointsBalance] = useState(initialPointsBalance);
-  const [vip, setVip] = useState<VipState>(initialVip);
   const [equip, setEquip] = useState<EquipState>(initialEquip);
 
   const refresh = useCallback(async () => {
@@ -93,7 +83,6 @@ export function AuthProvider({
         exp: number;
         expProgress: ExpProgressInfo;
         pointsBalance: number;
-        vip: VipState;
         equip: EquipState;
       }>('/api/auth/me');
       if (!res) {
@@ -106,7 +95,6 @@ export function AuthProvider({
         setExp(res.exp);
         setExpProgressState(res.expProgress);
         setPointsBalance(res.pointsBalance);
-        setVip(res.vip);
         setEquip(res.equip);
       }
     } catch {
@@ -152,7 +140,6 @@ export function AuthProvider({
     setExp(0);
     setExpProgressState(null);
     setPointsBalance(0);
-    setVip(DEFAULT_VIP);
     setEquip({});
   };
 
@@ -160,6 +147,10 @@ export function AuthProvider({
     await api.post<{signInStreak: number;signedInToday: boolean;}>('/api/auth/signin');
     await refresh();
   };
+
+  const setEquipItem = useCallback((kind: SkinKind, item: SkinItem | null) => {
+    setEquip((prev) => ({ ...prev, [kind]: item }));
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -172,13 +163,13 @@ export function AuthProvider({
         exp,
         expProgress: expProgressState,
         pointsBalance,
-        vip,
         equip,
         login,
         register,
         logout,
         signIn,
-        refresh
+        refresh,
+        setEquipItem
       }}>
 
       {children}

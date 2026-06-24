@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
-import { isVipActive } from '@/lib/vip';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,12 +10,27 @@ function pickId(req: Request) {
   return parts[parts.length - 2];
 }
 
+function parseMeta(meta?: string | null) {
+  if (!meta) return {};
+  try {
+    const parsed = JSON.parse(meta) as unknown;
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : {};
+  } catch {
+    return {};
+  }
+}
+
 export const POST = handler(async (req) => {
   const me = await requireUser();
   const id = pickId(req);
   const skin = await prisma.skinItem.findUnique({ where: { id } });
   if (!skin || !skin.enabled) return fail(404, '皮肤不存在');
-  if (skin.vipOnly && !isVipActive(me)) return fail(403, '该皮肤仅大会员可解锁');
+  const meta = parseMeta(skin.meta);
+  if (skin.kind === 'pendant' && meta.unlockType !== 'points') {
+    return fail(403, '该头像挂饰需要通过社区玩法解锁');
+  }
 
   // 已拥有
   const owned = await prisma.userSkin.findUnique({

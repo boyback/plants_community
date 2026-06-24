@@ -61,9 +61,10 @@ export const POST = handler(async (req) => {
   if (body.parentId) {
     const parent = await prisma.comment.findUnique({
       where: { id: body.parentId },
-      select: { postId: true },
+      select: { postId: true, authorId: true },
     });
     if (!parent || parent.postId !== postId) return fail(400, '父评论无效');
+    if (parent.authorId === me.id) return fail(400, '不能回复自己的评论');
   }
 
   const comment = await prisma.comment.create({

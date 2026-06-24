@@ -30,7 +30,7 @@ export default function MarketPage() {
 
           <div className={cx(styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_9ac94195, styles.r_eb6e8b88, styles.r_d058ca6d, styles.r_7054e276, styles.r_21d33c50)}>
             <div className={cx(styles.r_65281709, styles.r_2689f395, styles.r_5f6a59f1)}>安全交易</div>
-            支持 支付宝 / 微信 / 官方中介担保<br />
+            支持 支付宝平台担保交易<br />
             纠纷可申请客服仲裁
           </div>
         </aside>

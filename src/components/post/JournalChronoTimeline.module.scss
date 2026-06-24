@@ -15,8 +15,8 @@
 
 .timelineImageButton {
   position: relative;
-  width: 90px;
-  height: 90px;
+  width: calc((100% - 40px) / 6);
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   border: 0;
   border-radius: 8px;
@@ -25,17 +25,79 @@
   padding: 0;
 }
 
+.timelineDateButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.timelineDateButton:hover {
+  color: rgb(var(--leaf-700));
+}
+
+.timelineDateEditor {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+
+.timelineDateInput {
+  width: 88px;
+  height: 28px;
+  border: 1px solid rgb(var(--leaf-100));
+  border-radius: 8px;
+  background: rgb(var(--surface));
+  color: rgb(var(--ink-700));
+  font-size: 11px;
+  padding: 0 4px;
+}
+
+.timelineDateActions {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.timelineDateIconButton {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid rgb(var(--leaf-100));
+  border-radius: 8px;
+  background: rgb(var(--surface));
+  color: rgb(var(--leaf-700));
+  cursor: pointer;
+}
+
+.timelineDateIconButton:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+.timelineStageList {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .timelineStageButton {
   display: inline-flex;
   min-width: 58px;
   height: 32px;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgb(var(--leaf-100));
+  gap: 4px;
+  border: 1px solid;
   border-radius: 8px;
-  background: rgb(var(--surface));
   box-shadow: 0 1px 2px rgb(16 24 40 / 0.05);
-  color: rgb(var(--leaf-700));
   font-size: 14px;
   font-weight: 700;
   line-height: 20px;

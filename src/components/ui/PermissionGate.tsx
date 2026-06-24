@@ -25,16 +25,13 @@ export function PermissionGate({
 
 
 }: {perm: Permission;children: ReactNode;hideWhenAllowed?: boolean;}) {
-  const { user, vip } = useAuth() as ReturnType<typeof useAuth> & {
-    vip?: {isVip?: boolean;};
-  };
+  const { user } = useAuth();
   const { t } = useI18n();
 
   const allowed = hasPermission(
     user ?
     {
       level: user.level,
-      isVip: !!vip?.isVip,
       grantedPermissions: user.grantedPermissions as Permission[] | undefined,
       revokedPermissions: user.revokedPermissions as Permission[] | undefined
     } :
@@ -84,9 +81,6 @@ export function PermissionGate({
       <div className={cx(styles.r_0ab86672, styles.r_60fbb771, styles.r_86843cf1, styles.r_77a2a20e)}>
         <Link href="/tasks" className={styles.r_dd702538}>
           {t('permission.doTasksToLevel')}
-        </Link>
-        <Link href="/vip" className={styles.r_dd702538}>
-          {t('permission.openVip')}
         </Link>
       </div>
     </div>);

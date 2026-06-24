@@ -158,7 +158,7 @@ export function PlainCommentComposer({
               type="button"
               onClick={onSubmit}
               disabled={isEmpty || submitting || isUploading}
-              className={cx(styles.r_426b8b75, styles.r_012fbd12, styles.r_e82ae8be, styles.r_421ac2be, styles.r_9c6a87c1, styles.r_d139dd09, styles.r_fc7473ca, styles.r_e83a7042, styles.r_72a4c7cd, styles.r_56bf8ae8, styles.r_0bdeb0f4, styles.r_5f533b3a, styles.r_bda7a224)}>
+              className={cx(styles.composerSubmitButton, styles.r_426b8b75, styles.r_012fbd12, styles.r_e82ae8be, styles.r_421ac2be, styles.r_9c6a87c1, styles.r_d139dd09, styles.r_fc7473ca, styles.r_e83a7042, styles.r_72a4c7cd, styles.r_56bf8ae8, styles.r_0bdeb0f4, styles.r_5f533b3a, styles.r_bda7a224)}>
 
               {submitting ? '发送中...' : isUploading ? '上传中...' : submitLabel}
             </button>
@@ -215,7 +215,7 @@ export function PlainCommentComposer({
               type="button"
               onClick={onSubmit}
               disabled={isEmpty || submitting || isUploading}
-              className={cx(styles.r_426b8b75, styles.r_012fbd12, styles.r_e82ae8be, styles.r_421ac2be, styles.r_9c6a87c1, styles.r_d139dd09, styles.r_fc7473ca, styles.r_e83a7042, styles.r_72a4c7cd, styles.r_56bf8ae8, styles.r_0bdeb0f4, styles.r_5f533b3a, styles.r_bda7a224)}>
+              className={cx(styles.composerSubmitButton, styles.r_426b8b75, styles.r_012fbd12, styles.r_e82ae8be, styles.r_421ac2be, styles.r_9c6a87c1, styles.r_d139dd09, styles.r_fc7473ca, styles.r_e83a7042, styles.r_72a4c7cd, styles.r_56bf8ae8, styles.r_0bdeb0f4, styles.r_5f533b3a, styles.r_bda7a224)}>
 
               {submitting ? '发送中...' : isUploading ? '上传中...' : submitLabel}
             </button>

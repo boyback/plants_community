@@ -26,6 +26,17 @@ const TEXT_COLOR_OPTIONS = [
 { name: "灰色", value: "#64748b", swatch: "#64748b" }] as
 const;
 
+const FONT_SIZE_OPTIONS = [
+{ label: "16", value: "" },
+{ label: "12", value: "12px" },
+{ label: "14", value: "14px" },
+{ label: "16", value: "16px" },
+{ label: "18", value: "18px" },
+{ label: "20", value: "20px" },
+{ label: "24", value: "24px" },
+{ label: "28", value: "28px" }] as
+const;
+
 /**
  * 工具栏:统一在编辑器上方,样式与社区其它按钮一致。
  *
@@ -56,35 +67,35 @@ export function Toolbar({ editor }: {editor: Editor | null;}) {
         <ToolBtn
           title={t("editor.toolbar.bold")}
           active={editor.isActive("bold")}
-          onClick={() => editor.chain().focus().toggleBold().run()}>
+          onClick={() => runOnSelection(editor, () => editor.chain().focus().toggleBold().run())}>
 
           <span className={styles.r_69450ef1}>B</span>
         </ToolBtn>
         <ToolBtn
           title={t("editor.toolbar.italic")}
           active={editor.isActive("italic")}
-          onClick={() => editor.chain().focus().toggleItalic().run()}>
+          onClick={() => runOnSelection(editor, () => editor.chain().focus().toggleItalic().run())}>
 
           <span className={styles.r_90665ca6}>I</span>
         </ToolBtn>
         <ToolBtn
           title={t("editor.toolbar.underline")}
           active={editor.isActive("underline")}
-          onClick={() => editor.chain().focus().toggleUnderline().run()}>
+          onClick={() => runOnSelection(editor, () => editor.chain().focus().toggleUnderline().run())}>
 
           <span className={styles.r_c82b67c8}>U</span>
         </ToolBtn>
         <ToolBtn
           title={t("editor.toolbar.strike")}
           active={editor.isActive("strike")}
-          onClick={() => editor.chain().focus().toggleStrike().run()}>
+          onClick={() => runOnSelection(editor, () => editor.chain().focus().toggleStrike().run())}>
 
           <span className={styles.r_093ca562}>S</span>
         </ToolBtn>
         <ToolBtn
           title={t("editor.toolbar.code")}
           active={editor.isActive("code")}
-          onClick={() => editor.chain().focus().toggleCode().run()}>
+          onClick={() => runOnSelection(editor, () => editor.chain().focus().toggleCode().run())}>
 
           <span className={cx(styles.r_0e65706b, styles.r_d058ca6d)}>{"<>"}</span>
         </ToolBtn>
@@ -97,7 +108,7 @@ export function Toolbar({ editor }: {editor: Editor | null;}) {
           title={t("editor.toolbar.h1")}
           active={editor.isActive("heading", { level: 1 })}
           onClick={() =>
-          editor.chain().focus().toggleHeading({ level: 1 }).run()
+          runOnSelection(editor, () => editor.chain().focus().toggleHeading({ level: 1 }).run())
           }>
 
           <span className={cx(styles.r_d058ca6d, styles.r_69450ef1)}>H1</span>
@@ -106,7 +117,7 @@ export function Toolbar({ editor }: {editor: Editor | null;}) {
           title={t("editor.toolbar.h2")}
           active={editor.isActive("heading", { level: 2 })}
           onClick={() =>
-          editor.chain().focus().toggleHeading({ level: 2 }).run()
+          runOnSelection(editor, () => editor.chain().focus().toggleHeading({ level: 2 }).run())
           }>
 
           <span className={cx(styles.r_d058ca6d, styles.r_69450ef1)}>H2</span>
@@ -115,7 +126,7 @@ export function Toolbar({ editor }: {editor: Editor | null;}) {
           title={t("editor.toolbar.h3")}
           active={editor.isActive("heading", { level: 3 })}
           onClick={() =>
-          editor.chain().focus().toggleHeading({ level: 3 }).run()
+          runOnSelection(editor, () => editor.chain().focus().toggleHeading({ level: 3 }).run())
           }>
 
           <span className={cx(styles.r_d058ca6d, styles.r_69450ef1)}>H3</span>
@@ -128,14 +139,14 @@ export function Toolbar({ editor }: {editor: Editor | null;}) {
         <ToolBtn
           title={t("editor.toolbar.bulletList")}
           active={editor.isActive("bulletList")}
-          onClick={() => editor.chain().focus().toggleBulletList().run()}>
+          onClick={() => runOnSelection(editor, () => editor.chain().focus().toggleBulletList().run())}>
 
           •
         </ToolBtn>
         <ToolBtn
           title={t("editor.toolbar.orderedList")}
           active={editor.isActive("orderedList")}
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+          onClick={() => runOnSelection(editor, () => editor.chain().focus().toggleOrderedList().run())}>
 
           1.
         </ToolBtn>
@@ -143,7 +154,7 @@ export function Toolbar({ editor }: {editor: Editor | null;}) {
         <ToolBtn
           title={t("editor.toolbar.blockquote")}
           active={editor.isActive("blockquote")}
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}>
+          onClick={() => runOnSelection(editor, () => editor.chain().focus().toggleBlockquote().run())}>
 
           <span className={styles.r_69cdf25a}>❝</span>
         </ToolBtn>
@@ -161,31 +172,32 @@ export function Toolbar({ editor }: {editor: Editor | null;}) {
         <ToolBtn
           title='左对齐'
           active={editor.isActive({ textAlign: "left" })}
-          onClick={() => editor.chain().focus().setTextAlign("left").run()}>
+          onClick={() => runOnSelection(editor, () => editor.chain().focus().setTextAlign("left").run())}>
 
           <AlignIcon align='left' />
         </ToolBtn>
         <ToolBtn
           title='居中'
           active={editor.isActive({ textAlign: "center" })}
-          onClick={() => editor.chain().focus().setTextAlign("center").run()}>
+          onClick={() => runOnSelection(editor, () => editor.chain().focus().setTextAlign("center").run())}>
 
           <AlignIcon align='center' />
         </ToolBtn>
         <ToolBtn
           title='右对齐'
           active={editor.isActive({ textAlign: "right" })}
-          onClick={() => editor.chain().focus().setTextAlign("right").run()}>
+          onClick={() => runOnSelection(editor, () => editor.chain().focus().setTextAlign("right").run())}>
 
           <AlignIcon align='right' />
         </ToolBtn>
         <ToolBtn
           title='高亮'
           active={editor.isActive("highlight")}
-          onClick={() => editor.chain().focus().toggleHighlight().run()}>
+          onClick={() => runOnSelection(editor, () => editor.chain().focus().toggleHighlight().run())}>
 
           🖍
         </ToolBtn>
+        <FontSizePicker editor={editor} />
         <TextColorPicker editor={editor} />
       </Group>
 
@@ -197,7 +209,13 @@ export function Toolbar({ editor }: {editor: Editor | null;}) {
           label='链接'
           icon='link'
           active={editor.isActive("link")}
-          onClick={() => setLinkOpen(true)} />
+          onClick={() => {
+            if (editor.state.selection.empty) {
+              toast.error("请先选中要添加链接的内容");
+              return;
+            }
+            setLinkOpen(true);
+          }} />
 
         <InsertToolBtn
           title={t("editor.toolbar.image")}
@@ -211,11 +229,17 @@ export function Toolbar({ editor }: {editor: Editor | null;}) {
 
       <Group>
         <ToolBtn
+          title="清除选区格式"
+          onClick={() => clearSelectedFormatting(editor)}>
+
+          <Icon name="sparkles" size={13} />
+        </ToolBtn>
+        <ToolBtn
           title={t("editor.toolbar.undo")}
           onClick={() => editor.chain().focus().undo().run()}
           disabled={!editor.can().undo()}>
 
-          <Icon name="arrow-right" size={13} className={styles.r_895f127d} />
+          <Icon name="arrow-left" size={13} />
         </ToolBtn>
         <ToolBtn
           title={t("editor.toolbar.redo")}
@@ -226,9 +250,7 @@ export function Toolbar({ editor }: {editor: Editor | null;}) {
         </ToolBtn>
         <ToolBtn
           title={t("editor.toolbar.clear")}
-          onClick={() =>
-          editor.chain().focus().clearNodes().unsetAllMarks().run()
-          }>
+          onClick={() => clearSelectedFormatting(editor)}>
 
           ✕
         </ToolBtn>
@@ -266,14 +288,15 @@ export function Toolbar({ editor }: {editor: Editor | null;}) {
           onCancel={() => setLinkOpen(false)}
           onInsert={(url) => {
             if (!url) {
-              editor.chain().focus().unsetLink().run();
+              runOnSelection(editor, () => editor.chain().focus().unsetLink().run(), "请先选中要取消链接的内容");
             } else {
-              editor.
-              chain().
-              focus().
-              extendMarkRange("link").
-              setLink({ href: url }).
-              run();
+              runOnSelection(editor, () => {
+                editor.
+                chain().
+                focus().
+                setLink({ href: url }).
+                run();
+              }, "请先选中要添加链接的内容");
             }
             setLinkOpen(false);
           }} />,
@@ -283,6 +306,55 @@ export function Toolbar({ editor }: {editor: Editor | null;}) {
       }
     </div>);
 
+}
+
+function clearSelectedFormatting(editor: Editor) {
+  const { from, to, empty } = editor.state.selection;
+  if (empty) {
+    toast.error("请先选中要清除格式的内容");
+    return;
+  }
+
+  const text = editor.state.doc.textBetween(from, to, "\n", "\n");
+  if (!text) {
+    editor.chain().focus().deleteSelection().run();
+    toast.success("已删除选中内容");
+    return;
+  }
+
+  if (selectionHasBlockFormatting(editor, from, to)) {
+    editor.chain().focus().insertContentAt({ from, to }, toPlainParagraphs(text)).run();
+  } else {
+    editor.chain().focus().insertContentAt({ from, to }, text).run();
+  }
+  toast.success("已清除选区格式");
+}
+
+function selectionHasBlockFormatting(editor: Editor, from: number, to: number) {
+  let hasBlockFormatting = false;
+  editor.state.doc.nodesBetween(from, to, (node) => {
+    if (hasBlockFormatting || !node.isBlock) return false;
+    const hasTextAlign = typeof node.attrs?.textAlign === "string" && node.attrs.textAlign !== "left";
+    const hasListMarkerColor = typeof node.attrs?.markerColor === "string";
+    hasBlockFormatting = node.type.name !== "paragraph" || hasTextAlign || hasListMarkerColor;
+    return !hasBlockFormatting;
+  });
+  return hasBlockFormatting;
+}
+
+function toPlainParagraphs(text: string) {
+  return text.split(/\r?\n/).map((line) => ({
+    type: "paragraph",
+    content: line ? [{ type: "text", text: line }] : undefined
+  }));
+}
+
+function runOnSelection(editor: Editor, action: () => void, message = "请先选中要设置格式的内容") {
+  if (editor.state.selection.empty) {
+    toast.error(message);
+    return;
+  }
+  action();
 }
 
 function Group({ children }: {children: React.ReactNode;}) {
@@ -372,6 +444,38 @@ function AlignIcon({ align }: {align: "left" | "center" | "right";}) {
 
 }
 
+function FontSizePicker({ editor }: {editor: Editor;}) {
+  const currentSize = (editor.getAttributes("textStyle")?.fontSize as string | undefined) ?? "";
+
+  const applyFontSize = (fontSize: string) => {
+    runOnSelection(editor, () => {
+      const chain = editor.chain().focus();
+      if (fontSize) {
+        chain.setFontSize(fontSize);
+      } else {
+        chain.unsetFontSize();
+      }
+      chain.run();
+    }, "请先选中要设置字号的内容");
+  };
+
+  return (
+    <select
+      title="字号"
+      aria-label="字号"
+      value={currentSize}
+      onChange={(event) => applyFontSize(event.currentTarget.value)}
+      className={cx(styles.r_d0a52b31, styles.r_07389a77, styles.r_ca6bcd4b, styles.r_d5eab218, styles.r_69cdf25a, styles.r_eb6abb1f, styles.r_5e10cdb8)}>
+
+      {FONT_SIZE_OPTIONS.map((item) =>
+      <option key={item.label} value={item.value}>
+          {item.label}
+        </option>
+      )}
+    </select>);
+
+}
+
 function TextColorPicker({ editor }: {editor: Editor;}) {
   const currentColor = (
   editor.getAttributes("textStyle")?.color as string | undefined)?.
@@ -384,13 +488,15 @@ function TextColorPicker({ editor }: {editor: Editor;}) {
   );
   const isCustomColor = Boolean(currentColor && !isPresetColor);
   const applyColor = (color: string | null) => {
-    const chain = editor.chain().focus();
-    if (color) {
-      chain.setColor(color);
-    } else {
-      chain.unsetColor();
-    }
-    chain.run();
+    runOnSelection(editor, () => {
+      const chain = editor.chain().focus();
+      if (color) {
+        chain.setColor(color);
+      } else {
+        chain.unsetColor();
+      }
+      chain.run();
+    }, "请先选中要设置颜色的内容");
   };
 
   return (
@@ -472,6 +578,10 @@ function MarkerColorPicker({ editor }: {editor: Editor;}) {
   const isCustomColor = Boolean(currentColor && !isPresetColor);
 
   const applyMarkerColor = (color: string | null) => {
+    if (editor.state.selection.empty) {
+      toast.error("请先选中列表项内容");
+      return;
+    }
     if (!isListItem) {
       toast.error("请先把光标放到列表项里");
       return;

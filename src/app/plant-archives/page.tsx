@@ -3,6 +3,8 @@ import { AppShell } from '@/components/layout/AppShell';
 import { parseJsonArray } from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { journalStageLabels, parseJournalStages } from '@/lib/journal';
+import type { JournalStage } from '@/lib/types';
 import { PlantArchiveClient, type PlantArchiveItem, type PlantArchiveStats, type PlantArchiveStatus } from './PlantArchiveClient';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
@@ -79,10 +81,12 @@ export default async function PlantArchivesPage() {
     const postImages = journals.flatMap((journal) => parseJsonArray(journal.post.images));
     const latestImages = latest ? parseJsonArray(latest.entry.images) : [];
     const cover = latestImages[0] ?? plant.cover ?? postImages[0] ?? plant.species.cover ?? null;
+    const latestStages = latest ? parseJournalStages(
+      (latest.entry as typeof latest.entry & { stages?: string | null }).stages,
+      latest.entry.stage as JournalStage
+    ) : [];
     const stageLabel = latest ?
-    latest.entry.stage === 'other' ?
-    latest.entry.stageLabel || STAGE_LABELS.other :
-    STAGE_LABELS[latest.entry.stage] ?? STAGE_LABELS.other :
+    journalStageLabels(latestStages, latest.entry.stageLabel).join('、') || STAGE_LABELS.other :
     '暂无记录';
     const lastUpdatedAt = latest?.entry.entryDate ?? plant.updatedAt;
 

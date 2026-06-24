@@ -9,14 +9,16 @@ import {
   type JournalChronoEntry } from
 "@/components/post/JournalChronoTimeline";
 import { PostAdminMenu } from "@/components/post/PostAdminMenu";
-import { Avatar } from "@/components/ui/Avatar";
 import { Icon } from "@/components/ui/Icon";
+import { ImageGallery } from "@/components/ui/ImageGallery";
+import { ButtonLink } from "@/components/ui/Button";
+import { UserIdentity } from "@/components/ui/UserIdentity";
 import { prisma } from "@/lib/db";
 import { postInclude } from "@/lib/post-include";
 import { serializePost, serializeSkin } from "@/lib/serializers";
 import { getCurrentUser } from "@/lib/auth";
-import { formatNumber, formatDateTime, timeAgo } from "@/lib/utils";
-import { REVIEW_FILTER_ENABLED } from "@/lib/feature-flags";
+import { formatNumber, formatDateTime } from "@/lib/utils";
+import { JOURNAL_ENTRY_DATE_EDIT_ENABLED, REVIEW_FILTER_ENABLED } from "@/lib/feature-flags";
 import { lookupLivePhotos } from "@/lib/live-photo";
 import type { Metadata } from "next";
 import type { Post, SkinItem } from "@/lib/types";
@@ -24,7 +26,7 @@ import { parseJsonArray } from "@/lib/api";
 import { jsonLdScript, postJsonLd, breadcrumbJsonLd } from "@/lib/jsonld";
 import { PostBody } from "@/components/post/PostBody";
 import { CommentSection } from "@/components/post/CommentSection";
-import { STAGE_META as JOURNAL_STAGE_META } from "@/lib/journal";
+import { journalStageLabels, normalizeJournalStages, STAGE_META as JOURNAL_STAGE_META } from "@/lib/journal";
 import { cn } from "@/lib/utils";
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
@@ -53,6 +55,42 @@ type SpeciesRailItem = {
     ratings?: number;
   };
 };
+
+const commentAuthorInclude = {
+  _count: {
+    select: { posts: true, followers: true, following: true }
+  },
+  badges: { include: { badge: true } }
+} as const;
+
+const commentRepliesLevel3 = {
+  where: { deleted: false },
+  orderBy: { createdAt: "asc" as const },
+  include: {
+    author: { include: commentAuthorInclude },
+    journalEntry: true
+  }
+} as const;
+
+const commentRepliesLevel2 = {
+  where: { deleted: false },
+  orderBy: { createdAt: "asc" as const },
+  include: {
+    author: { include: commentAuthorInclude },
+    journalEntry: true,
+    replies: commentRepliesLevel3
+  }
+} as const;
+
+const commentRepliesLevel1 = {
+  where: { deleted: false },
+  orderBy: { createdAt: "asc" as const },
+  include: {
+    author: { include: commentAuthorInclude },
+    journalEntry: true,
+    replies: commentRepliesLevel2
+  }
+} as const;
 
 export async function generateMetadata({
   params
@@ -120,43 +158,9 @@ export default async function PostDetailPage({
         orderBy: { createdAt: "asc" },
         take: 50,
         include: {
-          author: {
-            include: {
-              _count: {
-                select: { posts: true, followers: true, following: true }
-              },
-              badges: { include: { badge: true } }
-            }
-          },
+          author: { include: commentAuthorInclude },
           journalEntry: true,
-          replies: {
-            where: { deleted: false },
-            orderBy: { createdAt: "asc" },
-            include: {
-              author: {
-                include: {
-                  _count: {
-                    select: { posts: true, followers: true, following: true }
-                  },
-                  badges: { include: { badge: true } }
-                }
-              },
-              replies: {
-                where: { deleted: false },
-                orderBy: { createdAt: "asc" },
-                include: {
-                  author: {
-                    include: {
-                      _count: {
-                        select: { posts: true, followers: true, following: true }
-                      },
-                      badges: { include: { badge: true } }
-                    }
-                  }
-                }
-              }
-            }
-          }
+          replies: commentRepliesLevel1
         }
       }
     }
@@ -229,32 +233,57 @@ export default async function PostDetailPage({
   const commentAuthorPendantPairs = [
   ...postRaw.comments.map((comment) => ({
     authorId: comment.author.id,
-    pendantId: comment.author.equipPendantId
+    pendantId: comment.author.equipPendantId,
+    bubbleId: comment.author.equipBubbleId
   })),
   ...postRaw.comments.flatMap((comment) =>
   comment.replies.map((reply) => ({
     authorId: reply.author.id,
-    pendantId: reply.author.equipPendantId
+    pendantId: reply.author.equipPendantId,
+    bubbleId: reply.author.equipBubbleId
   }))
   )].
-  filter((item): item is {authorId: string;pendantId: string;} =>
-  Boolean(item.pendantId)
+  filter((item) => Boolean(item.pendantId) || Boolean(item.bubbleId));
+  const commentAuthorPendantPairsOnly = commentAuthorPendantPairs.filter(
+    (item): item is {authorId: string;pendantId: string;bubbleId: string | null;} => Boolean(item.pendantId)
   );
-  const commentAuthorPendantIds = commentAuthorPendantPairs.map((item) => item.pendantId);
-  const commentAuthorPendantRows =
+  const commentAuthorBubblePairsOnly = commentAuthorPendantPairs.filter(
+    (item): item is {authorId: string;pendantId: string | null;bubbleId: string;} => Boolean(item.bubbleId)
+  );
+  const commentAuthorPendantIds = commentAuthorPendantPairsOnly.map((item) => item.pendantId);
+  const commentAuthorBubbleIds = commentAuthorBubblePairsOnly.map((item) => item.bubbleId);
+  const [postAuthorPendantRow, commentAuthorPendantRows, commentAuthorBubbleRows] = await Promise.all([
+  postRaw.author.equipPendantId ?
+  prisma.skinItem.findUnique({ where: { id: postRaw.author.equipPendantId } }) :
+  Promise.resolve(null),
   commentAuthorPendantIds.length > 0 ?
-  await prisma.skinItem.findMany({
+  prisma.skinItem.findMany({
     where: { id: { in: [...new Set(commentAuthorPendantIds)] } }
   }) :
-  [];
+  [],
+  commentAuthorBubbleIds.length > 0 ?
+  prisma.skinItem.findMany({
+    where: { id: { in: [...new Set(commentAuthorBubbleIds)] } }
+  }) :
+  []]
+  );
   const commentPendantById = new Map(
     commentAuthorPendantRows.map((skin) => [skin.id, serializeSkin(skin)])
   );
+  const commentBubbleById = new Map(
+    commentAuthorBubbleRows.map((skin) => [skin.id, serializeSkin(skin)])
+  );
   const commentAuthorPendants = Object.fromEntries(
-    commentAuthorPendantPairs.
+    commentAuthorPendantPairsOnly.
     map((item) => [item.authorId, commentPendantById.get(item.pendantId)] as const).
     filter((item): item is readonly [string, SkinItem] => Boolean(item[1]))
   ) as Record<string, SkinItem>;
+  const commentAuthorBubbles = Object.fromEntries(
+    commentAuthorBubblePairsOnly.
+    map((item) => [item.authorId, commentBubbleById.get(item.bubbleId)] as const).
+    filter((item): item is readonly [string, SkinItem] => Boolean(item[1]))
+  ) as Record<string, SkinItem>;
+  const postAuthorPendant = postAuthorPendantRow ? serializeSkin(postAuthorPendantRow) : null;
 
   const visiblePostWhere = {
     deleted: false,
@@ -331,6 +360,7 @@ export default async function PostDetailPage({
   const journalChronoEntries = post.type === "journal" && post.journal?.entries ?
   makeJournalChronoEntries(post) :
   [];
+  const nearestJournalEntryImage = getNearestJournalEntryImage(journalChronoEntries);
   const journalPlant = postRaw.journal?.userPlantId ?
   await prisma.userPlant.findUnique({
     where: { id: postRaw.journal.userPlantId },
@@ -343,7 +373,7 @@ export default async function PostDetailPage({
     }
   }) :
   null;
-  const journalCompareFallback = post.cover ?? post.images?.[0] ?? post.species?.cover ?? "";
+  const journalCompareFallback = post.cover ?? post.images?.[0] ?? nearestJournalEntryImage ?? post.species?.cover ?? "";
   const cover = post.cover ?
   post.cover.startsWith("http") ?
   post.cover :
@@ -379,7 +409,7 @@ export default async function PostDetailPage({
             data-post-detail-card
             className={cx(styles.r_2cd02d11, styles.r_68f2db62, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_438b2237)}>
             <div className={cx(styles.r_65fdbade, styles.r_23d3773a, styles.r_d139dd09, styles.r_cb11fec3, styles.r_e341df82)}>
-              <div className={cx(styles.r_da019856, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_58284b4e, styles.r_359090c2, styles.r_69335b95)}>
+              <div className={cx(styles.breadcrumb, styles.r_da019856, styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_58284b4e, styles.r_359090c2, styles.r_69335b95)}>
                 <Link href="/" className={styles.r_81be6435}>
                   社区
                 </Link>
@@ -479,7 +509,8 @@ export default async function PostDetailPage({
                 post={post}
                 speciesDetail={speciesDetail}
                 plant={journalPlant}
-                entries={journalChronoEntries} /> :
+                entries={journalChronoEntries}
+                canEditEntryDates={JOURNAL_ENTRY_DATE_EDIT_ENABLED && me?.id === post.author.id} /> :
 
 
               <PostBody
@@ -498,12 +529,12 @@ export default async function PostDetailPage({
 
           </article>
 
-          <CommentSection post={post} authorPendants={commentAuthorPendants} />
+          <CommentSection post={post} authorPendants={commentAuthorPendants} authorBubbles={commentAuthorBubbles} />
         </div>
 
         <aside className={cx(styles.r_99d72c7f, styles.r_7e0b7cdf, styles.r_b43b4c08, styles.r_f271783c, styles.r_69a4bc69, styles.r_c830740d, styles.r_478cc171, styles.r_90b8aaf3)}>
           <PostDetailRightRail
-            post={post}
+            post={postAuthorPendant ? { ...post, author: { ...post.author, equip: { ...(post.author.equip ?? {}), pendant: postAuthorPendant } } } : post}
             related={related}
             sameGenusSpecies={sameGenusSpecies}
             communityEvents={communityEvents}
@@ -530,6 +561,17 @@ function makeJournalChronoEntries(post: Post): JournalChronoEntry[] {
   }).
   map((entry) => {
     const meta = JOURNAL_STAGE_META[entry.stage] ?? JOURNAL_STAGE_META.other;
+    const stages = normalizeJournalStages(entry.stages, entry.stage);
+    const stageLabels = entry.stageLabels ?? journalStageLabels(stages, entry.stageLabel);
+    const stageItems = stages.map((stage, index) => {
+      const stageMeta = JOURNAL_STAGE_META[stage] ?? JOURNAL_STAGE_META.other;
+      return {
+        key: `${entry.id}-${stage}`,
+        label: stageLabels[index] ?? stageMeta.zh,
+        icon: stageMeta.emoji,
+        className: stageMeta.color,
+      };
+    });
     const date = new Date(entry.entryDate);
     return {
       id: entry.id,
@@ -539,9 +581,10 @@ function makeJournalChronoEntries(post: Post): JournalChronoEntry[] {
       dateLabel: formatDateOnly(date),
       yearLabel: String(date.getFullYear()),
       monthDayLabel: monthDay(date),
-      stageLabel: entry.stage === "other" ? entry.stageLabel || meta.zh : meta.zh,
+      stageLabel: stageLabels.join('、') || entry.stageLabel || meta.zh,
       stageIcon: meta.emoji,
       stageClassName: meta.color,
+      stageItems,
       note: entry.note,
       images: entry.images,
       comments: entry.comments
@@ -549,17 +592,29 @@ function makeJournalChronoEntries(post: Post): JournalChronoEntry[] {
   });
 }
 
+function getNearestJournalEntryImage(entries: JournalChronoEntry[]) {
+  const now = Date.now();
+  return entries.
+  filter((entry) => entry.images.length > 0).
+  sort((a, b) => {
+    const diff = Math.abs(new Date(a.dateIso).getTime() - now) - Math.abs(new Date(b.dateIso).getTime() - now);
+    if (diff !== 0) return diff;
+    return new Date(b.dateIso).getTime() - new Date(a.dateIso).getTime();
+  })[0]?.images[0] ?? null;
+}
+
 function JournalPlantDetailContent({
   post,
   speciesDetail,
   plant,
-  entries
+  entries,
+  canEditEntryDates
 
 
 
 
 
-}: {post: Post;speciesDetail: SpeciesRailItem | null;plant: {id: string;nickname: string;acquiredAt: Date;cover?: string | null;note?: string | null;} | null;entries: JournalChronoEntry[];}) {
+}: {post: Post;speciesDetail: SpeciesRailItem | null;plant: {id: string;nickname: string;acquiredAt: Date;cover?: string | null;note?: string | null;} | null;entries: JournalChronoEntry[];canEditEntryDates: boolean;}) {
   const journalStartDate = post.journal?.startDate ? new Date(post.journal.startDate) : new Date(post.createdAt);
   const entriesAsc = [...entries].sort(
     (a, b) => new Date(a.dateIso).getTime() - new Date(b.dateIso).getTime()
@@ -567,9 +622,10 @@ function JournalPlantDetailContent({
   const entriesDesc = [...entriesAsc].reverse();
   const firstEntry = entriesAsc[0] ?? null;
   const latestEntry = entriesDesc[0] ?? null;
-  const cover = firstEntry?.images[0] ?? plant?.cover ?? post.cover ?? post.images?.[0] ?? post.species?.cover ?? speciesDetail?.cover ?? "";
+  const nearestJournalEntryImage = getNearestJournalEntryImage(entries);
+  const cover = post.cover ?? post.images?.[0] ?? nearestJournalEntryImage ?? post.species?.cover ?? speciesDetail?.cover ?? plant?.cover ?? "";
   const nickname = plant?.nickname ?? post.journal?.subjectName ?? post.title;
-  const acquiredAt = plant?.acquiredAt ?? journalStartDate;
+  const acquiredAt = firstEntry ? new Date(firstEntry.dateIso) : plant?.acquiredAt ?? journalStartDate;
   const speciesLabel = speciesDetail?.name ?? post.journal?.speciesName ?? post.species?.name ?? post.board.name;
   const speciesHrefValue = speciesDetail ? speciesHref(speciesDetail) : post.board.level === "species" ? `/board/${post.board.path.map((item) => item.slug).join("/")}` : "/plants";
   return (
@@ -633,7 +689,7 @@ function JournalPlantDetailContent({
         <div>
           <h3 className={cx(styles.r_4ee73492, styles.r_69450ef1, styles.r_6d623258)}>成长时间轴</h3>
         </div>
-        <JournalChronoTimeline entries={entries} />
+        <JournalChronoTimeline entries={entries} canEditDates={canEditEntryDates} />
       </section>
     </div>);
 
@@ -683,20 +739,39 @@ function PostDetailRightRail({
   );
   const firstEntry = journalEntriesAsc[0] ?? null;
   const latestEntry = journalEntriesAsc[journalEntriesAsc.length - 1] ?? null;
+  const compareItems = [
+  {
+    date: firstEntry ? firstEntry.dateLabel : journalStartDate ? formatDateOnly(journalStartDate) : "开始",
+    src: firstEntry?.images[0] ?? journalCompareFallback
+  },
+  {
+    date: latestEntry ? latestEntry.dateLabel : "暂无",
+    src: latestEntry?.images[0] ?? journalCompareFallback
+  }].
+  filter((item): item is {date: string;src: string;} => Boolean(item.src));
 
   return (
     <>
       <SideCard title="作者信息">
-        <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3)}>
-          <Avatar src={post.author.avatar} alt={post.author.name} size={52} ring />
-          <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
-            <Link
-              href={`/user/${post.author.id}`}
-              className={cx(styles.r_0214b4b3, styles.r_f283ea9b, styles.r_fc7473ca, styles.r_69450ef1, styles.r_6d623258, styles.r_81be6435)}>
-
-              {post.author.name}
-            </Link>
-            <div className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_5f6a59f1)}>Lv.{post.author.level}</div>
+        <div className={styles.authorHeader}>
+          <div className={styles.authorIdentity}>
+            <UserIdentity
+              user={post.author}
+              size="lg"
+              variant="profile"
+              showLevel
+              avatarPendantLayout="reserve"
+              nameClassName={styles.authorName}
+              textClassName={styles.authorText}
+            />
+          </div>
+          <div className={styles.authorActions}>
+            <ButtonLink href={`/user/${post.author.id}`} size="sm" className={styles.authorAction}>
+              关注
+            </ButtonLink>
+            <ButtonLink href={`/messages?to=${post.author.id}`} variant="outline" size="sm" className={styles.authorAction}>
+              私信
+            </ButtonLink>
           </div>
         </div>
         {post.author.bio &&
@@ -709,36 +784,20 @@ function PostDetailRightRail({
           <RailStat label="图鉴收藏" value={formatNumber(post.author.pointsBalance)} />
           <RailStat label="关注" value={formatNumber(post.author.followers)} />
         </div>
-        <div className={cx(styles.r_0ab86672, styles.r_f3c543ad, styles.r_8e75e3db, styles.r_77a2a20e)}>
-          <Link
-            href={`/user/${post.author.id}`}
-            className={cx(styles.r_a217b4ea, styles.r_6bceb016, styles.r_f0faeb26, styles.r_03b4dd7f, styles.r_ca6bf630, styles.r_359090c2, styles.r_e83a7042, styles.r_72a4c7cd, styles.r_e269e58c)}>
-
-            关注
-          </Link>
-          <Link
-            href={`/messages?to=${post.author.id}`}
-            className={cx(styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_f0faeb26, styles.r_03b4dd7f, styles.r_ca6bf630, styles.r_359090c2, styles.r_e83a7042, styles.r_eb6abb1f, styles.r_5756b7b4)}>
-
-            私信
-          </Link>
-        </div>
       </SideCard>
 
       {post.type === "journal" && post.journal &&
       <>
           <SideCard title="成长对比">
-            <div className={cx(styles.r_f3c543ad, styles.r_83da9951, styles.r_3960ffc2, styles.r_77a2a20e)}>
-              <CompareImage
-              date={firstEntry ? firstEntry.dateLabel : journalStartDate ? formatDateOnly(journalStartDate) : "开始"}
-              src={firstEntry?.images[0] ?? journalCompareFallback} />
+            {compareItems.length > 0 ?
+            <ImageGallery
+              images={compareItems.map((item) => item.src)}
+              labels={compareItems.map((item) => ({ label: item.date }))} /> :
 
-              <Icon name="arrow-right" size={20} className={styles.r_b17d6a13} />
-              <CompareImage
-              date={latestEntry ? latestEntry.dateLabel : "暂无"}
-              src={latestEntry?.images[0] ?? journalCompareFallback} />
-
-            </div>
+            <div className={cx(styles.r_f3c543ad, styles.r_b59cd297, styles.r_67d66567, styles.r_5f22e64f, styles.r_7ebecbb6, styles.r_d058ca6d, styles.r_7b89cd85)}>
+                暂无对比图片
+              </div>
+            }
             <p className={cx(styles.r_eccd13ef, styles.r_ca6bf630, styles.r_359090c2, styles.r_7054e276, styles.r_7b89cd85)}>从第一张记录到现在，这一路的变化都在这里。</p>
           </SideCard>
 
@@ -800,7 +859,7 @@ function PostDetailRightRail({
                   {item.title}
                 </div>
                 <div className={cx(styles.r_b6b02c0e, styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_d058ca6d, styles.r_7b89cd85)}>
-                  <span>{timeAgo(item.createdAt)}</span>
+                  <span>{formatDateTime(item.createdAt)}</span>
                   <span>{formatNumber(item.views)} 浏览</span>
                 </div>
               </Link>
@@ -810,23 +869,6 @@ function PostDetailRightRail({
       }
 
     </>);
-
-}
-
-function CompareImage({ date, src }: {date: string;src: string;}) {
-  return (
-    <div>
-      <div className={cx(styles.r_a77ed4d9, styles.r_ca6bf630, styles.r_d058ca6d, styles.r_7b89cd85)}>{date}</div>
-      <div className={cx(styles.r_d89972fe, styles.r_b59cd297, styles.r_2cd02d11, styles.r_5f22e64f, styles.r_7ebecbb6)}>
-        {src ?
-        <Image src={src} alt={date} fill unoptimized className={styles.r_7d85d0c2} /> :
-
-        <div className={cx(styles.r_f3c543ad, styles.r_668b21aa, styles.r_67d66567, styles.r_5f6a59f1)}>
-            <Icon name="plants" size={18} />
-          </div>
-        }
-      </div>
-    </div>);
 
 }
 
@@ -867,7 +909,10 @@ function RailStat({ label, value }: {label: string;value: string;}) {
 }
 
 function MiniPostItem({ post, compact }: {post: Post;compact?: boolean;}) {
-  const image = post.cover ?? post.images?.[0] ?? firstImageFromHtml(post.content);
+  const image = post.cover ?? post.images?.[0] ?? getNearestPostJournalEntryImage(post) ?? post.species?.cover ?? firstImageFromHtml(post.content);
+  const description = post.type === "journal" ?
+  getNearestPostJournalEntryNote(post) :
+  post.contentText?.trim() || textFromHtml(post.content) || "";
   return (
     <Link href={`/post/${post.id}`} className={cx(styles.r_64292b1c, styles.r_60fbb771, styles.r_1004c0c3)}>
       <div
@@ -890,22 +935,70 @@ function MiniPostItem({ post, compact }: {post: Post;compact?: boolean;}) {
         }
       </div>
       <div className={cx(styles.r_7e0b7cdf, styles.r_36e579c0)}>
-        <div className={cx(styles.r_054cb4e3, styles.r_359090c2, styles.r_e83a7042, styles.r_7054e276, styles.r_399e11a5, styles.r_d94501d2)}>
+        <div className={cx(styles.miniPostTextLine, styles.r_f50e2015, styles.r_359090c2, styles.r_e83a7042, styles.r_7054e276, styles.r_399e11a5, styles.r_d94501d2)}>
           {post.title}
         </div>
-        <div className={cx(styles.r_b6b02c0e, styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_d058ca6d, styles.r_66a36c90)}>
-          <span>{formatNumber(post.views)} 阅读</span>
-          <span>{formatNumber(post.likes)} 喜欢</span>
+        <div className={cx(styles.miniPostTextLine, styles.miniPostDescription, styles.r_b6b02c0e, styles.r_f50e2015, styles.r_d058ca6d, styles.r_66a36c90)}>
+          {description}
+        </div>
+        <div className={cx(styles.miniPostMetaRow, styles.r_b6b02c0e, styles.r_60fbb771, styles.r_3960ffc2, styles.r_d058ca6d, styles.r_66a36c90)}>
+          <span>{formatDateTime(post.createdAt)}</span>
+          <span className={styles.miniPostMetaActions}>
+            <span className={styles.miniPostMetaItem}>
+              <Icon name="eye" size={12} />
+              {formatNumber(post.views)}
+            </span>
+            <span className={styles.miniPostMetaDivider} />
+            <span className={styles.miniPostMetaItem}>
+              <Icon name="thumbs-up" size={12} />
+              {formatNumber(post.likes)}
+            </span>
+          </span>
         </div>
       </div>
     </Link>);
 
 }
 
+function getNearestPostJournalEntryImage(post: Post) {
+  const entries = post.journal?.entries ?? [];
+  const now = Date.now();
+  return entries.
+  filter((entry) => entry.images.length > 0).
+  sort((a, b) => {
+    const diff = Math.abs(new Date(a.entryDate).getTime() - now) - Math.abs(new Date(b.entryDate).getTime() - now);
+    if (diff !== 0) return diff;
+    return new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime();
+  })[0]?.images[0] ?? null;
+}
+
+function getNearestPostJournalEntryNote(post: Post) {
+  const entries = post.journal?.entries ?? [];
+  const now = Date.now();
+  return [...entries].
+  sort((a, b) => {
+    const diff = Math.abs(new Date(a.entryDate).getTime() - now) - Math.abs(new Date(b.entryDate).getTime() - now);
+    if (diff !== 0) return diff;
+    return new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime();
+  })[0]?.note.trim() ?? "";
+}
+
 function firstImageFromHtml(html?: string) {
   const match = html?.match(/<img[^>]+src=(?:"([^"]+)"|'([^']+)')/i);
   const src = match?.[1] ?? match?.[2];
   return src?.replace(/&amp;/g, "&");
+}
+
+function textFromHtml(html?: string) {
+  return html?.
+  replace(/<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>/gi, " ").
+  replace(/<[^>]+>/g, " ").
+  replace(/&nbsp;/g, " ").
+  replace(/&amp;/g, "&").
+  replace(/&quot;/g, '"').
+  replace(/&#039;/g, "'").
+  replace(/\s+/g, " ").
+  trim();
 }
 
 function speciesHref(species: SpeciesRailItem) {

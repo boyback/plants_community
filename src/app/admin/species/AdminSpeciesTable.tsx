@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { api, ApiError } from "@/lib/client-api";
-import { ConfirmDialog } from '@/components/ui/Dialog';
+import { ConfirmDialog, Dialog } from '@/components/ui/Dialog';
+import { toast } from '@/components/ui/Toast';
 import { SpeciesEditForm, type GenusOption, type SpeciesData } from './SpeciesEditForm';
-import { useBodyScrollLock } from '@/lib/hooks/useBodyScrollLock';
 import styles from './AdminSpeciesTable.module.scss';
 import { cx } from '@/lib/style-utils';
 
@@ -35,7 +35,6 @@ export function AdminSpeciesTable({
   const [creating, setCreating] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<SpeciesRow | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  useBodyScrollLock(Boolean(editing || creating));
 
   const close = () => {
     setEditing(null);
@@ -54,10 +53,11 @@ export function AdminSpeciesTable({
     setDeletingId(species.id);
     try {
       await api.delete(`/api/admin/species/${species.id}`);
+      toast.success('删除成功');
       setPendingDelete(null);
       router.refresh();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : '删除失败');
+      toast.error(e instanceof ApiError ? e.message : '删除失败');
     } finally {
       setDeletingId(null);
     }
@@ -154,35 +154,22 @@ export function AdminSpeciesTable({
         + 新建品种
       </button>
 
-      {(editing || creating) &&
-      <div className={cx(styles.r_7bc55599, styles.r_7b7df044, styles.r_181b2866, styles.r_60fbb771, styles.r_60541e1e, styles.r_86843cf1, styles.r_92bf82f4, styles.r_2ccc1c42, styles.r_f0faeb26, styles.r_a1f611f0)}>
-          <div className={cx(styles.r_6da6a3c3, styles.r_cf3893e3, styles.r_a217b4ea, styles.r_5e10cdb8, styles.r_14e46609)}>
-            <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_65fdbade, styles.r_358505cf, styles.r_d139dd09, styles.r_cb11fec3)}>
-              <div>
-                <h2 className={cx(styles.r_42536e69, styles.r_e83a7042, styles.r_4ddaa618)}>
-                  {creating ? '新建品种' : `编辑品种：${editing!.name}`}
-                </h2>
-                <p className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_7b89cd85)}>保存后留在品种数据列表页</p>
-              </div>
-              <button
-              type="button"
-              onClick={close}
-              className={cx(styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_7ae4c063, styles.r_0e17f2bd, styles.r_ec0091ee, styles.r_359090c2, styles.r_5399e21f)}>
+      <Dialog
+        open={Boolean(editing || creating)}
+        onClose={close}
+        title={creating ? '新建品种' : editing ? `编辑品种：${editing.name}` : '编辑品种'}
+        maxWidth="xl">
 
-                关闭
-              </button>
-            </div>
-            <div className={cx(styles.r_ea9f7a12, styles.r_92bf82f4, styles.r_c07e54fd)}>
-              <SpeciesEditForm
-              species={editing}
-              genera={genera}
-              onDone={done}
-              onCancel={close} />
+        <p className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_7b89cd85)}>保存后留在品种数据列表页</p>
+        <div className={styles.r_c07e54fd}>
+          <SpeciesEditForm
+            species={editing}
+            genera={genera}
+            onDone={done}
+            onCancel={close} />
 
-            </div>
-          </div>
         </div>
-      }
+      </Dialog>
 
       <ConfirmDialog
         open={Boolean(pendingDelete)}

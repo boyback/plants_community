@@ -1,0 +1,220 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.title {
+  margin: 0;
+  color: rgb(var(--ink-900));
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 700;
+}
+
+.desc {
+  margin: 4px 0 0;
+  color: rgb(var(--ink-600));
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.tablePreview {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border-radius: 8px;
+  background: rgb(var(--leaf-50) / 0.68);
+}
+
+.tablePreview img {
+  display: block;
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
+.tablePreview span {
+  color: rgb(var(--ink-400));
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.name {
+  color: rgb(var(--ink-900));
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 700;
+}
+
+.slug {
+  margin-top: 2px;
+  color: rgb(var(--ink-500));
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.unlockLabel {
+  color: rgb(var(--ink-800));
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+}
+
+.enabledBadge,
+.disabledBadge,
+.vipBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  border-radius: 999px;
+  padding: 0 8px;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+}
+
+.enabledBadge {
+  background: rgb(var(--leaf-50));
+  color: rgb(var(--leaf-700));
+}
+
+.disabledBadge {
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.vipBadge {
+  margin-left: 6px;
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.tableActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.dialogForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.formGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.horizontalFormRow {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 320px) 120px;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.horizontalFormLabel {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: 8px;
+  color: rgb(var(--ink-700));
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.horizontalFormControl {
+  min-width: 0;
+}
+
+.switchControl {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+}
+
+.requiredMark {
+  color: #dc2626;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.formMessage {
+  margin-top: 4px;
+  color: #dc2626;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.compactInputWrap {
+  width: 168px;
+  max-width: 100%;
+}
+
+.label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  color: rgb(var(--ink-600));
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  border: 1px solid rgb(var(--leaf-100));
+  border-radius: 6px;
+  background: #fff;
+  color: rgb(var(--ink-800));
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.input {
+  height: 34px;
+  padding: 0 10px;
+}
+
+.textarea {
+  min-height: 68px;
+  resize: vertical;
+  padding: 8px 10px;
+}
+
+.dialogActions {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 320px) 120px;
+  gap: 14px;
+}
+
+.dialogActionButtons {
+  display: flex;
+  grid-column: 2 / 3;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.deleteText {
+  margin: 0;
+  color: rgb(var(--ink-700));
+  font-size: 13px;
+  line-height: 20px;
+}

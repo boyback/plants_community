@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { handler, fail } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
+import { expirePendingOrder } from '@/lib/order-expiry';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,7 @@ function pickId(req: Request) {
 export const POST = handler(async (req) => {
   const me = await requireUser();
   const id = pickId(req);
+  await expirePendingOrder(id);
   const order = await prisma.order.findUnique({ where: { id } });
   if (!order) return fail(404, '订单不存在');
   if (order.buyerId !== me.id) return fail(403, '只能取消自己的订单');

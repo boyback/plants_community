@@ -7,6 +7,9 @@ import { handler, fail } from '@/lib/api';
 import { requireAdmin } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { logAdmin } from '@/lib/admin-log';
+import { processRichInput } from '@/lib/richtext';
+import { processSpeciesDescriptionTabs } from '@/lib/species-description-tabs.server';
+import { getSpeciesDescriptionTabs } from '@/lib/species-description-tabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +19,9 @@ const Body = z.object({
   name: z.string().min(1).max(80),
   latinName: z.string().min(1).max(120),
   alias: z.string().max(2000).default('[]'), // JSON array
-  description: z.string().max(2000),
+  description: z.string().max(12000).optional(),
+  descriptionJson: z.unknown().optional(),
+  descriptionTabs: z.unknown().optional(),
   cover: z.string().url(),
   gallery: z.string().max(12000).default('[]'), // JSON array or structured gallery object
   difficulty: z.number().int().min(1).max(5).default(2),
@@ -50,7 +55,37 @@ export const POST = handler(async (req) => {
   });
   if (dup) return fail(400, `slug "${body.slug}" 在该属下已存在`);
 
-  const row = await prisma.species.create({ data: body });
+  const { descriptionJson: rawDescriptionJson, descriptionTabs: rawDescriptionTabs, ...speciesData } = body;
+  const legacyDescription = processRichInput({
+    json: rawDescriptionJson,
+    html: body.description,
+    text: body.description,
+    textMaxLen: 1000,
+  });
+  const storedDescription = processSpeciesDescriptionTabs(
+    Array.isArray(rawDescriptionTabs)
+      ? rawDescriptionTabs
+      : getSpeciesDescriptionTabs(rawDescriptionTabs, {
+        description: legacyDescription.html,
+        descriptionJson: legacyDescription.json,
+        descriptionText: legacyDescription.text,
+      }),
+    Array.isArray(rawDescriptionTabs) ? undefined : {
+      description: legacyDescription.html,
+      descriptionJson: legacyDescription.json,
+      descriptionText: legacyDescription.text,
+    }
+  );
+
+  const row = await prisma.species.create({
+    data: {
+      ...speciesData,
+      description: storedDescription.description,
+      descriptionJson: storedDescription.descriptionJson,
+      descriptionText: storedDescription.descriptionText,
+      descriptionTabs: JSON.stringify(storedDescription.tabs),
+    },
+  });
   await logAdmin({
     actorId: me.id,
     action: 'species.create',

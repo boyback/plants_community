@@ -1102,7 +1102,7 @@ const aizoaceae: CategorySeed = {
 
 const asphodelaceae: CategorySeed = {
   slug: 'baihe',
-  name: '百合科',
+  name: '阿福花科',
   latinName: 'Asphodelaceae',
   description: '「十二卷」家族所在,玉露、寿、万象、硬叶鲨鱼剑都在这里。',
   cover: img('asphodelaceae'),
@@ -1112,7 +1112,7 @@ const asphodelaceae: CategorySeed = {
     /* ---- 十二卷属(软叶)Haworthia ---- */
     {
       slug: 'haworthia',
-      name: '十二卷属(软叶)',
+      name: '十二卷属',
       latinName: 'Haworthia',
       description: '叶片带透明「窗」,水晶感极强。玉露、寿是代表。',
       defaultLight: '散射光',

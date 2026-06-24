@@ -1,5 +1,13 @@
 /* Generated from src/components/post/CommentList.tsx. Keep component-local styles here. */.r_b6b02c0e{margin-top:4px}.r_bb0c4bfc{display:inline-block}.r_c0980a65{max-width:100%}.r_0c5e9137{border-radius:0}.r_d5eab218{padding-left:8px;padding-right:8px}.r_660d2eff{padding-top:4px;padding-bottom:4px}.r_438b2237{--tw-shadow:0 1px 2px 0 #0000000d;--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color)}.r_438b2237{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.r_52083e7d{display:inline-flex}.r_3960ffc2{align-items:center}.r_44ee8ba0{gap:4px}.r_f3c543ad{display:grid}.r_2cd02d11{overflow:hidden}.r_10ac69a1{transition-property:grid-template-rows,opacity,margin-top;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.r_625a4c3f{transition-duration:.2s}.r_d905a812{transition-timing-function:cubic-bezier(0,0,.2,1)}
 
+.commentBubble {
+  display: inline-block;
+  max-width: 100%;
+  border-radius: 18px;
+  padding: 2px 20px;
+  box-shadow: 0 1px 2px 0 #0000000d;
+}
+
 
 /* Recovered utility rules referenced by this CSS module. */
 .r_bcb611e1{max-height:384px}

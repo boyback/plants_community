@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { handler, fail, stringifyJson } from '@/lib/api';
 import { requireUser, getCurrentUser } from '@/lib/auth';
-import { serializePost, serializeSkin } from '@/lib/serializers';
+import { serializePost } from '@/lib/serializers';
 import { postInclude } from '@/lib/post-include';
 import type { Permission } from '@/lib/levels';
 import { hasUserPermission } from '@/lib/permissions';
@@ -14,6 +14,8 @@ import { sortPostsForPins, type PinSortTarget } from '@/lib/post-pins';
 import { incrementSpeciesDailyStat } from '@/lib/species-daily-stats';
 import { createUserPlantCode } from '@/lib/user-plant-code';
 import { AlbumSyncInput, collectAlbumSyncImages, syncPostImagesToAlbum } from '@/lib/album-sync';
+import { normalizeJournalStages, primaryJournalStage } from '@/lib/journal';
+import { withUserPendants } from '@/lib/user-pendants';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://plantcommunity.cn';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
@@ -99,47 +101,15 @@ export const GET = handler(async (req) => {
     })
   );
 
-  const authorPendants = await getAuthorPendants(list as any);
   const items = postsWithVoteStatus.map(({ post, userVoted }) =>
-    withAuthorPendant(
-      serializePost(post as any, userVoted, undefined, currentUser),
-      authorPendants
-    )
+    serializePost(post as any, userVoted, undefined, currentUser)
   );
 
   return {
-    items: sortPostsForPins(items, pinTargets),
+    items: await withUserPendants(sortPostsForPins(items, pinTargets), list),
     nextCursor,
   };
 });
-
-async function getAuthorPendants(postsRaw: Array<{ author?: { id: string; equipPendantId?: string | null } | null }>) {
-  const pairs = postsRaw
-    .map((post) => ({ authorId: post.author?.id, pendantId: post.author?.equipPendantId }))
-    .filter((item): item is { authorId: string; pendantId: string } => Boolean(item.authorId && item.pendantId));
-  if (pairs.length === 0) return new Map<string, ReturnType<typeof serializeSkin>>();
-
-  const skins = await prisma.skinItem.findMany({
-    where: { id: { in: [...new Set(pairs.map((item) => item.pendantId))] } },
-  });
-  const skinById = new Map(skins.map((skin) => [skin.id, serializeSkin(skin)]));
-  return new Map(
-    pairs
-      .map((item) => [item.authorId, skinById.get(item.pendantId)] as const)
-      .filter((item): item is readonly [string, NonNullable<ReturnType<typeof serializeSkin>>] => Boolean(item[1]))
-  );
-}
-
-function withAuthorPendant(
-  post: ReturnType<typeof serializePost>,
-  authorPendants: Map<string, ReturnType<typeof serializeSkin>>
-) {
-  const pendant = authorPendants.get(post.author.id);
-  if (pendant) {
-    post.author.equip = { ...(post.author.equip ?? {}), pendant };
-  }
-  return post;
-}
 
 /**
  * 发布新帖:支持三种板块定位方式:
@@ -201,24 +171,20 @@ async function resolvePinTargets({
 
 const JournalEntryInput = z.object({
   entryDate: z.string(), // ISO
-  stage: z
-    .enum([
-      'germinate',
-      'growing',
-      'flowering',
-      'fruiting',
-      'withering',
-      'repot',
-      'cutting',
-      'summer',
-      'winter',
-      'pest',
-      'watering',
-      'other',
-    ]),
+  stage: z.string().trim().max(50).optional(),
+  stages: z.array(z.string().trim().min(1).max(50)).max(12).optional(),
   stageLabel: z.string().trim().max(50).optional(),
   note: z.string().trim().min(1, '每条记录都需要填写心得').max(2000),
   images: z.array(z.string()).min(1, '每条记录都需要上传配图').max(9).default([]),
+}).superRefine((entry, ctx) => {
+  const stages = normalizeJournalStages(entry.stages, entry.stage);
+  if (stages.length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['stage'],
+      message: '每条记录都需要选择阶段',
+    });
+  }
 });
 
 const CreateBody = z
@@ -232,7 +198,7 @@ const CreateBody = z
     title: z.string().min(1).max(500),
     content: z.unknown().optional(),
     contentJson: z.unknown().optional(),
-    tags: z.array(z.string()).max(10).default([]),
+    tags: z.array(z.string()).default([]),
     cover: z.string().url().nullable().optional(),
     images: z.array(z.string()).max(50).optional(),
     videoUrl: z.string().url().optional(),
@@ -354,11 +320,11 @@ export const POST = handler(async (req) => {
   };
   const need = permMap[body.type];
   if (!(await hasUserPermission(me, need))) {
-    return fail(403, `当前等级不允许发布该类型帖子,开通大会员或升级即可解锁`);
+    return fail(403, `当前等级不允许发布该类型帖子,升级后即可解锁`);
   }
   if (body.cover || (body.images && body.images.length > 0)) {
     if (!(await hasUserPermission(me, 'post:image'))) {
-      return fail(403, '需要 Lv.4 以上才能在帖子里附图,开通大会员可解锁');
+      return fail(403, '需要 Lv.4 以上才能在帖子里附图');
     }
   }
 
@@ -410,7 +376,8 @@ export const POST = handler(async (req) => {
       const latestEntry = [...body.journal.entries].sort(
         (a, b) => new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime(),
       )[0];
-      const currentStage = latestEntry?.stage ?? 'growing';
+      const currentStages = normalizeJournalStages(latestEntry?.stages, latestEntry?.stage);
+      const currentStage = primaryJournalStage(currentStages, 'growing');
       const existingPlant = await tx.userPlant.findFirst({
         where: {
           ownerId: me.id,
@@ -425,7 +392,7 @@ export const POST = handler(async (req) => {
         ? await tx.userPlant.update({
             where: { id: existingPlant.id },
             data: {
-              currentStage,
+              currentStage: currentStage as any,
               currentStageLabel: currentStage === 'other' ? latestEntry?.stageLabel || null : null,
               cover: cover ?? species?.cover ?? null,
               note: latestEntry?.note || null,
@@ -439,7 +406,7 @@ export const POST = handler(async (req) => {
               code: await createUserPlantCode(tx, me.id, body.journal.subjectName, startDate),
               nickname: body.journal.subjectName,
               acquiredAt: startDate,
-              currentStage,
+              currentStage: currentStage as any,
               currentStageLabel: currentStage === 'other' ? latestEntry?.stageLabel || null : null,
               cover: cover ?? species?.cover ?? null,
               note: latestEntry?.note || null,
@@ -501,8 +468,9 @@ export const POST = handler(async (req) => {
               entries: {
                 create: body.journal.entries.map((e, i) => ({
                   entryDate: new Date(e.entryDate),
-                  stage: e.stage,
-                  stageLabel: e.stage === 'other' ? e.stageLabel || null : null,
+                  stage: primaryJournalStage(normalizeJournalStages(e.stages, e.stage)) as any,
+                  stages: stringifyJson(normalizeJournalStages(e.stages, e.stage)),
+                  stageLabel: e.stageLabel || null,
                   note: e.note,
                   images: stringifyJson(e.images),
                   orderIdx: i,
@@ -540,5 +508,5 @@ export const POST = handler(async (req) => {
     await incrementSpeciesDailyStat(finalIds.speciesId, 'posts');
   }
 
-  return serializePost(created);
+  return withUserPendants(serializePost(created), created);
 });

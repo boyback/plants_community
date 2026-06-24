@@ -117,7 +117,7 @@ const CreateBody = z.object({
 export const POST = handler(async (req) => {
   const me = await requireUser();
   if (!(await hasUserPermission(me, 'market:sell'))) {
-    return fail(403, '当前等级不允许在交易区出售,开通大会员或升级到 Lv.8 即可解锁');
+    return fail(403, '当前等级不允许在交易区出售,升级到 Lv.8 即可解锁');
   }
   const body = CreateBody.parse(await req.json());
 

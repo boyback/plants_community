@@ -53,7 +53,7 @@ export default async function AdminPermissionsPage() {
       </div>
 
       <div className={cx(styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_7ebecbb6, styles.r_8e63407b, styles.r_fc7473ca, styles.r_fa5fa43b)}>
-        权限最终计算顺序:角色显式收回优先，其次角色显式授予，然后是 VIP 权限，最后按功能标注的 Lv.X 默认解锁。
+        权限最终计算顺序:角色显式收回优先，其次角色显式授予，最后按功能标注的 Lv.X 默认解锁。
       </div>
 
       <LevelPermissionManager rows={levelPermissionConfigs} />

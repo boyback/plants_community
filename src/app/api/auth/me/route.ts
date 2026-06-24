@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/db';
 import { handler } from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth';
-import { isVipActive } from '@/lib/vip';
 import { serializeUser, serializeEquip } from '@/lib/serializers';
 import {
   expProgressConfigured,
@@ -80,11 +79,6 @@ export const GET = handler(async () => {
     privacy: {
       showFollowing: full.privacyShowFollowing,
       showFollowers: full.privacyShowFollowers,
-    },
-    vip: {
-      isVip: isVipActive(full),
-      lifetime: full.vipLifetime,
-      expireAt: full.vipExpireAt?.toISOString() ?? null,
     },
     equip,
   };

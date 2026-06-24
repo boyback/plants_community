@@ -67,7 +67,7 @@ export default function Page() {
           <div>
             <div className={cx(styles.r_65281709, styles.r_fc7473ca, styles.r_2689f395)}>最低上传等级</div>
             <p className={cx(styles.r_a77ed4d9, styles.r_359090c2, styles.r_69335b95)}>
-              低于该等级的用户无法上传(VIP 不受限,见下方开关)
+              低于该等级的用户无法上传现场照。
             </p>
             <Input
               type="number"
@@ -81,24 +81,6 @@ export default function Page() {
               onBlur={() => patch({ photoUploadMinLevel: cfg.photoUploadMinLevel })}
               disabled={busy} />
 
-          </div>
-
-          <div>
-            <label className={cx(styles.r_60fbb771, styles.r_34516836, styles.r_3960ffc2, styles.r_77a2a20e)}>
-              <input
-                type="checkbox"
-                className={cx(styles.r_11e59c6d, styles.r_dc7972eb, styles.r_5f66c7c0)}
-                checked={cfg.photoUploadVipOnly}
-                onChange={(e) => patch({ photoUploadVipOnly: e.target.checked })}
-                disabled={busy} />
-
-              <div>
-                <div className={cx(styles.r_fc7473ca, styles.r_2689f395)}>仅大会员可上传</div>
-                <div className={cx(styles.r_359090c2, styles.r_69335b95)}>
-                  开启后无视等级,只有 VIP 才能上传
-                </div>
-              </div>
-            </label>
           </div>
 
           <div>

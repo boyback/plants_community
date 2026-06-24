@@ -1,8 +1,12 @@
 import { z } from 'zod';
+import type { Prisma } from '@prisma/client';
 import { handler, fail } from '@/lib/api';
 import { requireAdmin } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { logAdmin } from '@/lib/admin-log';
+import { processRichInput } from '@/lib/richtext';
+import { processSpeciesDescriptionTabs } from '@/lib/species-description-tabs.server';
+import { getSpeciesDescriptionTabs } from '@/lib/species-description-tabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +16,10 @@ const Body = z.object({
   name: z.string().min(1).max(80).optional(),
   latinName: z.string().min(1).max(120).optional(),
   alias: z.string().max(2000).optional(),
-  description: z.string().max(2000).optional(),
+  description: z.string().max(12000).optional(),
+  descriptionJson: z.unknown().optional(),
+  descriptionText: z.string().optional(),
+  descriptionTabs: z.unknown().optional(),
   cover: z.string().url().optional(),
   gallery: z.string().max(12000).optional(),
   difficulty: z.number().int().min(1).max(5).optional(),
@@ -53,13 +60,55 @@ export const PATCH = handler(async (req) => {
     if (dup && dup.id !== id) return fail(400, `slug "${body.slug}" 在该属下已存在`);
   }
 
-  await prisma.species.update({ where: { id }, data: body });
+  const {
+    descriptionJson: rawDescriptionJson,
+    descriptionText: _descriptionText,
+    descriptionTabs: rawDescriptionTabs,
+    genusId,
+    ...bodyData
+  } = body;
+  const data: Prisma.SpeciesUpdateInput = { ...bodyData };
+  if (genusId) {
+    data.genus = { connect: { id: genusId } };
+  }
+  if (
+    body.descriptionTabs !== undefined ||
+    body.descriptionJson !== undefined ||
+    body.description !== undefined
+  ) {
+    const legacyDescription = processRichInput({
+      json: rawDescriptionJson,
+      html: body.description,
+      text: body.description ?? exists.descriptionText ?? exists.description,
+      textMaxLen: 1000,
+    });
+    const storedDescription = processSpeciesDescriptionTabs(
+      Array.isArray(rawDescriptionTabs)
+        ? rawDescriptionTabs
+        : getSpeciesDescriptionTabs(rawDescriptionTabs ?? exists.descriptionTabs, {
+          description: legacyDescription.html || exists.description,
+          descriptionJson: legacyDescription.json || exists.descriptionJson,
+          descriptionText: legacyDescription.text || exists.descriptionText,
+        }),
+      Array.isArray(rawDescriptionTabs) ? undefined : {
+        description: legacyDescription.html || exists.description,
+        descriptionJson: legacyDescription.json || exists.descriptionJson,
+        descriptionText: legacyDescription.text || exists.descriptionText,
+      }
+    );
+    data.description = storedDescription.description;
+    data.descriptionJson = storedDescription.descriptionJson;
+    data.descriptionText = storedDescription.descriptionText;
+    data.descriptionTabs = JSON.stringify(storedDescription.tabs);
+  }
+
+  await prisma.species.update({ where: { id }, data });
   await logAdmin({
     actorId: me.id,
     action: 'species.update',
     targetType: 'species',
     targetId: id,
-    meta: body,
+    meta: data,
   });
   return { ok: true };
 });

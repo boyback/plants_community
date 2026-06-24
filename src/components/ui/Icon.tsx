@@ -19,12 +19,15 @@ type IconName =
 'share' |
 'eye' |
 'menu' |
+'more-horizontal' |
 'close' |
 'user' |
 'logout' |
 'check' |
+"arrow-left" |
 "arrow-right" |
 "rotate-cw" |
+"sparkles" |
 'edit' |
 'trash' |
 'bookmark' |
@@ -69,12 +72,15 @@ const paths: Record<IconName, string> = {
   share: "M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7M16 6l-4-4-4 4M12 2v14",
   eye: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12Zm11 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
   menu: 'M4 6h16M4 12h16M4 18h16',
+  "more-horizontal": "M6 12h.01M12 12h.01M18 12h.01",
   close: 'M18 6 6 18M6 6l12 12',
   user: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z",
   logout: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
   check: "M20 6 9 17l-5-5",
+  "arrow-left": "M19 12H5M12 19l-7-7 7-7",
   "arrow-right": "M5 12h14M12 5l7 7-7 7",
   "rotate-cw": "M21 2v6h-6M21 13a9 9 0 1 1-3-6.7L21 8",
+  sparkles: "M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8L12 3Zm6 10 .9 2.1L21 16l-2.1.9L18 19l-.9-2.1L15 16l2.1-.9L18 13ZM5 14l1.1 2.6L9 18l-2.9 1.4L5 22l-1.1-2.6L1 18l2.9-1.4L5 14Z",
   edit: "M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z",
   trash: "M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14",
   bookmark: "M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z",

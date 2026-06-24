@@ -150,10 +150,8 @@
 .r_fb77735e{margin-top:20px}
 .r_49a47a82{--tw-gradient-from:rgb(var(--leaf-50)/1) var(--tw-gradient-from-position);--tw-gradient-to:rgb(var(--leaf-50)/0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}
 .r_0d13093a{--tw-gradient-to:#fff var(--tw-gradient-to-position)}
-.r_2cad2f15{margin-bottom:48px}
+.r_2cad2f15{margin-bottom:48px;grid-template-columns:repeat(4,minmax(0,1fr))}
 .r_0c3bc985{gap:16px}
-@media (min-width:768px){.r_e4d6f343{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (min-width:1280px){.r_a1de1eab{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .r_508ebf85{height:48px}
 .r_52083e7d{display:inline-flex}
 .r_8e83bd34{min-height:136px}

@@ -25,7 +25,7 @@ import { Input } from '@/components/ui/Input';
 
 export function ProductDetailClient({ product }: {product: Product;}) {
   const router = useRouter();
-  const { user, vip } = useAuth();
+  const { user } = useAuth();
   const { t } = useI18n();
 
   const [open, setOpen] = useState(false);
@@ -39,7 +39,6 @@ export function ProductDetailClient({ product }: {product: Product;}) {
     user ?
     {
       level: user.level,
-      isVip: vip.isVip,
       grantedPermissions: user.grantedPermissions as Permission[] | undefined,
       revokedPermissions: user.revokedPermissions as Permission[] | undefined
     } :
@@ -104,11 +103,8 @@ export function ProductDetailClient({ product }: {product: Product;}) {
               {t('market.buy.cannotBuy')}
             </Button>
             <div className={cx(styles.r_d058ca6d, styles.r_69335b95, styles.r_ca6bf630)}>
-              {t('market.buy.needLv5OrVip')}
+              需要 Lv.5 才能购买
             </div>
-            <ButtonLink href="/vip" variant="outline" size="sm" fullWidth className={styles.r_b6b02c0e}>
-              {t('market.buy.openVip')}
-            </ButtonLink>
           </div> :
 
         <Button

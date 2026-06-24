@@ -125,7 +125,7 @@ export function AppShell({
 
 function AppMobileNav({ open, onClose }: {open: boolean;onClose: () => void;}) {
   const router = useRouter();
-  const { user, logout, vip, equip } = useAuth();
+  const { user, logout, equip } = useAuth();
   useBodyScrollLock(open);
 
   return (
@@ -165,7 +165,7 @@ function AppMobileNav({ open, onClose }: {open: boolean;onClose: () => void;}) {
 
         {user &&
         <UserIdentity
-          user={{ ...user, equip, vip }}
+          user={{ ...user, equip }}
           size="md"
           variant="list"
           className={cx(styles.r_da019856, styles.r_60fbb771, styles.r_3960ffc2, styles.r_1004c0c3, styles.r_68f2db62, styles.r_7ebecbb6, styles.r_eb6e8b88)}
@@ -227,7 +227,7 @@ function TopBar({
 }: {onOpenMobile: () => void;hideOnScrollDown?: boolean;}) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, vip, equip } = useAuth();
+  const { user, equip } = useAuth();
   const { subscribe } = useRealtime();
   const [q, setQ] = useState('');
   const [unreadMsgs, setUnreadMsgs] = useState(0);
@@ -433,8 +433,7 @@ function TopBar({
           {user ?
           <AccountMenu
             user={user}
-            pendant={equip.pendant ?? null}
-            isVip={vip.isVip} /> :
+            pendant={equip.pendant ?? null} /> :
 
 
           <Link href="/login" className={cx(styles.r_a217b4ea, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_fc7473ca, styles.r_e83a7042, styles.r_e7eab4cb, styles.r_5756b7b4)}>
@@ -643,13 +642,12 @@ function NotificationBell({
 
 function AccountMenu({
   user,
-  pendant,
-  isVip
+  pendant
 
 
 
 
-}: {user: NonNullable<ReturnType<typeof useAuth>['user']>;pendant: SkinItem | null;isVip: boolean;}) {
+}: {user: NonNullable<ReturnType<typeof useAuth>['user']>;pendant: SkinItem | null;}) {
   const router = useRouter();
   const { logout } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -672,10 +670,11 @@ function AccountMenu({
             aria-label="打开用户菜单">
 
             <UserIdentity
-              user={{ ...user, equip: { pendant }, vip: { isVip } }}
+              user={{ ...user, equip: { pendant } }}
               size="md"
               variant="list"
               asLink={false}
+              avatarPendantLayout="compact"
               subtitle={`Lv.${user.level} 重生玩家`}
             />
           </button>
@@ -691,7 +690,7 @@ function AccountMenu({
             role="menuitem">
 
             <UserIdentity
-              user={{ ...user, equip: { pendant }, vip: { isVip } }}
+              user={{ ...user, equip: { pendant } }}
               size="md"
               variant="list"
               asLink={false}
@@ -702,7 +701,7 @@ function AccountMenu({
           <div className={styles.r_ec0091ee}>
             <AccountMenuLink href="/settings/profile" icon="settings" label="账号设置" />
             <AccountMenuLink href="/orders" icon="package" label="我的订单" />
-            <AccountMenuLink href="/points" icon="diamond" label="钻石与会员" />
+            <AccountMenuLink href="/points" icon="diamond" label="钻石与装扮" />
           </div>
 
           <div className={cx(styles.r_b950dda2, styles.r_38748e06, styles.r_cd009d7d)}>

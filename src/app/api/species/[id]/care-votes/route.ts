@@ -32,7 +32,7 @@ export const GET = handler(async (req) => {
       field: true,
       value: true,
       userId: true,
-      user: { select: { id: true, name: true, avatar: true } },
+      user: { select: { id: true, name: true, avatar: true, equipPendantId: true } },
     },
   });
 

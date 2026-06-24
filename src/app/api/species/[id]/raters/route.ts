@@ -30,7 +30,7 @@ export const GET = handler(async (req) => {
       orderBy: { createdAt: 'desc' },
       take: limit,
       include: {
-        user: { select: { id: true, name: true, avatar: true, level: true } },
+        user: { select: { id: true, name: true, avatar: true, equipPendantId: true, level: true } },
       },
     }),
     me

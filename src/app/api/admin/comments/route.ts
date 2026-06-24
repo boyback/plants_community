@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
+import { jsonWithUserPendants } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,7 +48,7 @@ export async function GET(req: Request) {
         createdAt: true,
         postId: true,
         author: {
-          select: { id: true, name: true, handle: true, avatar: true, level: true, role: true },
+          select: { id: true, name: true, handle: true, avatar: true, equipPendantId: true, level: true, role: true },
         },
         post: { select: { id: true, title: true } },
       },
@@ -55,7 +56,7 @@ export async function GET(req: Request) {
     prisma.comment.count({ where }),
   ]);
 
-  return NextResponse.json({
+  return jsonWithUserPendants({
     ok: true,
     data: { items, total, page, perPage: PER },
   });

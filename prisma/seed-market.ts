@@ -165,7 +165,6 @@ const skins = [
   { kind: 'bubble', slug: 'bubble-ocean',    name: '海洋蓝',       preview: '#a4dded', description: '清凉海洋色',                  pricePoints: 600,  rarity: 'rare',      meta: { bg: '#a4dded', color: '#0a3a5c' } },
   { kind: 'bubble', slug: 'bubble-aurora',   name: '极光紫',       preview: 'linear-gradient(135deg,#c4a4f2,#f4a4d0)', description: '炫彩极光渐变', pricePoints: 1200, rarity: 'epic', meta: { bg: 'linear-gradient(135deg,#c4a4f2,#f4a4d0)', color: '#fff' } },
   { kind: 'bubble', slug: 'bubble-galaxy',   name: '星河',         preview: 'linear-gradient(135deg,#0f1c4d,#5d3fd3)', description: '深邃星河气泡',  pricePoints: 2400, rarity: 'legendary', meta: { bg: 'linear-gradient(135deg,#0f1c4d,#5d3fd3)', color: '#fff' } },
-  { kind: 'bubble', slug: 'bubble-vip-gold', name: '会员金',       preview: 'linear-gradient(135deg,#fff2c4,#fbb03b)', description: '大会员限定·金色光泽', pricePoints: 0,  rarity: 'legendary', vipOnly: true, meta: { bg: 'linear-gradient(135deg,#fff2c4,#fbb03b)', color: '#5a3500', vip: true } },
   { kind: 'bubble', slug: 'bubble-leaf',     name: '叶脉绿',       preview: '#a8e6a3', description: '叶脉肌理质感',                pricePoints: 800,  rarity: 'rare',      meta: { bg: '#a8e6a3', color: '#1f4130' } },
 
   // 点赞按钮(reaction)
@@ -176,7 +175,6 @@ const skins = [
   { kind: 'reaction', slug: 'reaction-rainbow', name: '彩虹之心', preview: '🌈', description: '炫彩点赞',  pricePoints: 1000, rarity: 'epic', meta: { emoji: '🌈' } },
   { kind: 'reaction', slug: 'reaction-crown',   name: '皇冠点赞', preview: '👑', description: '王者归来',  pricePoints: 1800, rarity: 'epic', meta: { emoji: '👑' } },
   { kind: 'reaction', slug: 'reaction-cactus',  name: '仙人掌赞', preview: '🌵', description: '社区限定',  pricePoints: 2500, rarity: 'legendary', meta: { emoji: '🌵' } },
-  { kind: 'reaction', slug: 'reaction-vip-diamond', name: '钻石点赞', preview: '💎', description: '大会员限定', pricePoints: 0, rarity: 'legendary', vipOnly: true, meta: { emoji: '💎' } },
 
   // 表情包(sticker pack)— 每个包含 6 个表情
   { kind: 'sticker', slug: 'sticker-default',  name: '默认表情包',   preview: '🌱',  description: '系统自带 6 个常用表情',         pricePoints: 0,    rarity: 'normal',    meta: { stickers: ['🌱','🌿','🌵','🌷','🍀','🍃'] } },
@@ -186,17 +184,20 @@ const skins = [
   { kind: 'sticker', slug: 'sticker-plant',    name: '植物表情包',   preview: '🪴',  description: '社区限定多肉表情',             pricePoints: 1200, rarity: 'epic',      meta: { stickers: ['🌱','🌵','🪴','🌷','🌹','🌻'] } },
   { kind: 'sticker', slug: 'sticker-festival', name: '节日表情包',   preview: '🎉',  description: '过节专用',                     pricePoints: 1500, rarity: 'epic',      meta: { stickers: ['🎉','🎊','🎁','🎈','🥳','🍾'] } },
   { kind: 'sticker', slug: 'sticker-galaxy',   name: '宇宙表情包',   preview: '🌌',  description: '宇宙系列',                     pricePoints: 2000, rarity: 'legendary', meta: { stickers: ['🌌','✨','🪐','🌠','🛸','🌟'] } },
-  { kind: 'sticker', slug: 'sticker-vip-gold', name: '会员尊享表情', preview: '👑',  description: '大会员限定 6 个金色表情',       pricePoints: 0,    rarity: 'legendary', vipOnly: true, meta: { stickers: ['👑','💎','🏆','🎖️','✨','🥇'] } },
+];
 
-  // 头像挂件(pendant) — 头像框 / 装饰
-  { kind: 'pendant', slug: 'pendant-default',     name: '无挂件',     preview: '⭕', description: '不戴挂件',           pricePoints: 0,    rarity: 'normal',    meta: { ring: 'none' } },
-  { kind: 'pendant', slug: 'pendant-leaf-wreath', name: '叶冠挂件',   preview: '🌿', description: '叶子环绕的挂件',     pricePoints: 500,  rarity: 'normal',    meta: { ring: 'leaf', color: '#66b985' } },
-  { kind: 'pendant', slug: 'pendant-flower',      name: '花环挂件',   preview: '🌸', description: '粉色花朵环',         pricePoints: 800,  rarity: 'rare',      meta: { ring: 'flower', color: '#f4a4d0' } },
-  { kind: 'pendant', slug: 'pendant-cactus',      name: '仙人掌冠',   preview: '🌵', description: '仙人掌主题',         pricePoints: 1000, rarity: 'rare',      meta: { ring: 'cactus', color: '#459c67' } },
-  { kind: 'pendant', slug: 'pendant-fire',        name: '炽焰光环',   preview: '🔥', description: '燃烧的红色光环',     pricePoints: 1500, rarity: 'epic',      meta: { ring: 'fire', color: '#e34d2c' } },
-  { kind: 'pendant', slug: 'pendant-aurora',      name: '极光光环',   preview: '🌈', description: '炫彩极光',           pricePoints: 2000, rarity: 'epic',      meta: { ring: 'aurora', gradient: 'linear-gradient(135deg,#c4a4f2,#f4a4d0,#fbb03b)' } },
-  { kind: 'pendant', slug: 'pendant-stars',       name: '星辰光环',   preview: '✨', description: '星空环绕',           pricePoints: 2800, rarity: 'legendary', meta: { ring: 'stars', color: '#5d3fd3' } },
-  { kind: 'pendant', slug: 'pendant-vip-crown',   name: '会员皇冠',   preview: '👑', description: '大会员尊享皇冠',     pricePoints: 0,    rarity: 'legendary', vipOnly: true, meta: { ring: 'crown', color: '#fbb03b', vip: true } },
+const deprecatedPendantSlugs = [
+  'pendant-default',
+  'pendant-leaf-wreath',
+  'pendant-flower',
+  'pendant-cactus',
+  'pendant-fire',
+  'pendant-aurora',
+  'pendant-stars',
+  'pendant-vip-crown',
+  'bubble-vip-gold',
+  'reaction-vip-diamond',
+  'sticker-vip-gold',
 ];
 
 /* ============== 任务 ============== */
@@ -226,6 +227,12 @@ async function main() {
 
   /* ----- Skin ----- */
   console.log('• 皮肤');
+  await prisma.skinItem.deleteMany({
+    where: {
+      kind: 'pendant',
+      slug: { in: deprecatedPendantSlugs },
+    },
+  });
   const skinIdBySlug = new Map<string, string>();
   for (let i = 0; i < skins.length; i++) {
     const s = skins[i];
@@ -238,7 +245,6 @@ async function main() {
         description: s.description,
         pricePoints: s.pricePoints,
         rarity: s.rarity,
-        vipOnly: 'vipOnly' in s ? !!s.vipOnly : false,
         meta: JSON.stringify(s.meta ?? {}),
         orderIdx: i,
       },
@@ -250,7 +256,6 @@ async function main() {
         description: s.description,
         pricePoints: s.pricePoints,
         rarity: s.rarity,
-        vipOnly: 'vipOnly' in s ? !!s.vipOnly : false,
         meta: JSON.stringify(s.meta ?? {}),
         orderIdx: i,
       },

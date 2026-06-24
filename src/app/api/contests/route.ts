@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { jsonWithUserPendants } from '@/lib/api';
 
 export async function GET(req: NextRequest) {
   try {
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
               id: true,
               name: true,
               avatar: true,
+              equipPendantId: true,
             },
           },
           _count: {
@@ -51,7 +53,7 @@ export async function GET(req: NextRequest) {
       prisma.photoContest.count({ where }),
     ]);
 
-    return NextResponse.json({
+    return jsonWithUserPendants({
       items: contests,
       total,
       page,
@@ -112,12 +114,13 @@ export async function POST(req: NextRequest) {
             id: true,
             name: true,
             avatar: true,
+            equipPendantId: true,
           },
         },
       },
     });
 
-    return NextResponse.json(contest);
+    return jsonWithUserPendants(contest);
   } catch (error) {
     console.error('创建大赛失败:', error);
     return NextResponse.json({ error: '创建大赛失败' }, { status: 500 });

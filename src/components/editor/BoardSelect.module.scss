@@ -47,3 +47,39 @@
 .r_8ecebc9f{font-weight:400}
 .r_ac204c10{border-radius:9999px}
 .r_3353f144{color:rgb(var(--leaf-700)/.5)}
+
+.levelTag {
+  border: 1px solid rgb(var(--leaf-200));
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.selectedTagButton {
+  max-width: 100%;
+  border: 1px solid rgb(var(--leaf-200));
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.selectedTagButton:hover {
+  border-color: rgb(var(--leaf-300));
+  background: rgb(var(--leaf-50));
+  box-shadow: 0 2px 6px rgb(15 23 42 / 0.08);
+}
+
+.selectedTagButton:focus-visible {
+  outline: 2px solid rgb(var(--leaf-200));
+  outline-offset: 2px;
+}
+
+.selectedTagLabel {
+  min-width: 0;
+}
+
+.selectedTagRemove {
+  font-size: 12px;
+  line-height: 1;
+}

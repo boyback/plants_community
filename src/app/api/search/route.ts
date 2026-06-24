@@ -12,6 +12,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { REVIEW_FILTER_ENABLED } from '@/lib/feature-flags';
+import { jsonWithUserPendants } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,7 +53,7 @@ export async function GET(req: Request) {
             cover: true,
             createdAt: true,
             views: true,
-            author: { select: { id: true, name: true, handle: true, avatar: true } },
+            author: { select: { id: true, name: true, handle: true, avatar: true, equipPendantId: true } },
             _count: { select: { likes: true, comments: true } },
           },
           orderBy: [{ hotScore: 'desc' }, { createdAt: 'desc' }],
@@ -98,6 +99,7 @@ export async function GET(req: Request) {
             name: true,
             handle: true,
             avatar: true,
+            equipPendantId: true,
             bio: true,
             level: true,
             _count: { select: { posts: true, followers: true } },
@@ -108,7 +110,7 @@ export async function GET(req: Request) {
       : Promise.resolve([]),
   ]);
 
-  return NextResponse.json({
+  return jsonWithUserPendants({
     ok: true,
     data: {
       q,

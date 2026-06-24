@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db';
 import { serializeBadge, serializeUser, serializePost, serializeSkin } from '@/lib/serializers';
 import { postInclude } from "@/lib/post-include";
 import { getCurrentUser } from '@/lib/auth';
-import { isVipActive } from '@/lib/vip';
+import { withUserPendants } from '@/lib/user-pendants';
 import { UserPageClient } from './UserPageClient';
 import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
@@ -80,7 +80,7 @@ export default async function UserPage({
                     id: true,
                     title: true,
                     contentText: true,
-                    author: { select: { id: true, name: true, avatar: true } }
+                    author: { select: { id: true, name: true, avatar: true, equipPendantId: true } }
                   }
                 }
               }
@@ -102,7 +102,7 @@ export default async function UserPage({
             likeCount: true,
             imageCount: true,
             createdAt: true,
-            user: { select: { id: true, name: true, avatar: true } }
+            user: { select: { id: true, name: true, avatar: true, equipPendantId: true } }
           }
         }
       }
@@ -251,6 +251,7 @@ export default async function UserPage({
               id: true,
               name: true,
               avatar: true,
+              equipPendantId: true,
               level: true
             }
           },
@@ -262,6 +263,7 @@ export default async function UserPage({
                   id: true,
                   name: true,
                   avatar: true,
+                  equipPendantId: true,
                   level: true
                 }
               }
@@ -283,7 +285,7 @@ export default async function UserPage({
       status: { not: 'off_shelf' },
       listing: {
         sellerId: user.id,
-        status: { in: ['on_sale', 'sold_out'] }
+        status: { in: ['on_sale', 'trading', 'sold_out'] }
       }
     },
     take: 80,
@@ -314,11 +316,48 @@ export default async function UserPage({
     followed = !!f;
   }
 
-  const isVip = isVipActive(uRaw);
-  const daysLeft =
-  !uRaw.vipLifetime && uRaw.vipExpireAt ?
-  Math.max(0, Math.ceil((uRaw.vipExpireAt.getTime() - Date.now()) / 86400_000)) :
-  null;
+  const posts = await withUserPendants(
+    postsRaw.map((p: any) => serializePost(p, undefined, undefined, me)),
+    postsRaw
+  );
+  const comments = await withUserPendants(commentsRaw.map((comment) => ({
+    id: comment.id,
+    content: comment.content,
+    contentText: comment.contentText,
+    likes: comment.likes,
+    createdAt: comment.createdAt.toISOString(),
+    parentId: comment.parentId,
+    parent: comment.parent ? {
+      id: comment.parent.id,
+      content: comment.parent.content,
+      contentText: comment.parent.contentText,
+      deleted: comment.parent.deleted,
+      author: {
+        id: comment.parent.author.id,
+        name: comment.parent.author.name,
+        avatar: comment.parent.author.avatar,
+        equipPendantId: comment.parent.author.equipPendantId,
+        level: comment.parent.author.level
+      },
+      parent: comment.parent.parent ? {
+        id: comment.parent.parent.id,
+        author: {
+          id: comment.parent.parent.author.id,
+          name: comment.parent.parent.author.name,
+          avatar: comment.parent.parent.author.avatar,
+          equipPendantId: comment.parent.parent.author.equipPendantId,
+          level: comment.parent.parent.author.level
+        }
+      } : null
+    } : null,
+    post: {
+      id: comment.post.id,
+      title: comment.post.title,
+      contentText: comment.post.contentText
+    }
+  })), commentsRaw);
+  const likedItems = await withUserPendants(likedItemsRaw, likedItemsRaw);
+  const collectedItems = await withUserPendants(collectedItemsRaw, collectedItemsRaw);
 
   return (
     <AppShell showFloatingAi={false} className={cx(styles.r_d14dc4ed, styles.r_173fa8f0)}>
@@ -326,43 +365,10 @@ export default async function UserPage({
         user={user}
         isMe={me?.id === user.id}
         initialFollowed={followed}
-        posts={postsRaw.map((p: any) => serializePost(p, undefined, undefined, me))}
-        likedItems={likedItemsRaw}
-        collectedItems={collectedItemsRaw}
-        comments={commentsRaw.map((comment) => ({
-          id: comment.id,
-          content: comment.content,
-          contentText: comment.contentText,
-          likes: comment.likes,
-          createdAt: comment.createdAt.toISOString(),
-          parentId: comment.parentId,
-          parent: comment.parent ? {
-            id: comment.parent.id,
-            content: comment.parent.content,
-            contentText: comment.parent.contentText,
-            deleted: comment.parent.deleted,
-            author: {
-              id: comment.parent.author.id,
-              name: comment.parent.author.name,
-              avatar: comment.parent.author.avatar,
-              level: comment.parent.author.level
-            },
-            parent: comment.parent.parent ? {
-              id: comment.parent.parent.id,
-              author: {
-                id: comment.parent.parent.author.id,
-                name: comment.parent.parent.author.name,
-                avatar: comment.parent.parent.author.avatar,
-                level: comment.parent.parent.author.level
-              }
-            } : null
-          } : null,
-          post: {
-            id: comment.post.id,
-            title: comment.post.title,
-            contentText: comment.post.contentText
-          }
-        }))}
+        posts={posts}
+        likedItems={likedItems}
+        collectedItems={collectedItems}
+        comments={comments}
         products={marketProductsRaw.map((item) => {
           const images = parseJsonArray(item.images);
           return {
@@ -384,13 +390,7 @@ export default async function UserPage({
             taxons: item.listing.taxons
           };
         })}
-        exp={uRaw.exp}
-        vip={{
-          isVip,
-          lifetime: uRaw.vipLifetime,
-          expireAt: uRaw.vipExpireAt?.toISOString() ?? null
-        }}
-        daysLeft={daysLeft} />
+        exp={uRaw.exp} />
 
     </AppShell>);
 

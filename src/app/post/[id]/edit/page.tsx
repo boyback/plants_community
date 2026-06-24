@@ -3,6 +3,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { parseJsonArray } from '@/lib/api';
+import { normalizeJournalStages } from '@/lib/journal';
 import { PostComposer } from '@/components/editor/PostComposer';
 import type { PostType } from '@/lib/types';
 import styles from './page.module.scss';
@@ -95,6 +96,7 @@ export default async function PostEditPage({ params }: {params: {id: string;};})
               id: entry.id,
               entryDate: toDateInput(entry.entryDate),
               stage: entry.stage,
+              stages: normalizeJournalStages(parseJsonArray((entry as typeof entry & { stages?: string | null }).stages), entry.stage),
               stageLabel: entry.stageLabel ?? '',
               note: entry.note,
               images: parseJsonArray(entry.images)

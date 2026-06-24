@@ -74,6 +74,14 @@ body {
   line-height: inherit;
 }
 
+/* px-vw: off */
+@media (min-width: 769px) {
+  body {
+    min-width: 1280px;
+  }
+}
+/* px-vw: on */
+
 button,
 input,
 optgroup,
@@ -999,17 +1007,6 @@ body {
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/*
- * 防横向滚动:用 overflow-x: clip 而不是 hidden
- * - hidden 会创建滚动容器,导致内部 position:sticky 失效
- * - clip 仅裁剪不创建新滚动上下文,sticky 仍按 viewport 定位
- * 兼容性:Chrome 90+ / Safari 16+ / Firefox 81+
- */
-html,
-body {
-  overflow-x: clip;
-}
-
 /* 文字防溢出 */
 img, video, svg {
   max-width: 100%;
@@ -1207,8 +1204,10 @@ img, video, svg {
 
 /* 富文本帖子正文的基础排版 */
 .prose-article p {
+  margin: 0;
+}
+.prose-article p + p {
   margin-top: 12px;
-  margin-bottom: 12px;
 }
 .prose-article h1,
 .prose-article h2,
@@ -1619,7 +1618,10 @@ img, video, svg {
   outline: 2px solid rgb(var(--leaf-400));
 }
 .rich-editor.ProseMirror p {
-  margin: 8px 0;
+  margin: 0;
+}
+.rich-editor.ProseMirror p + p {
+  margin-top: 8px;
 }
 .rich-editor.ProseMirror :first-child {
   margin-top: 0;

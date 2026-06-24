@@ -25,7 +25,7 @@ export const GET = handler(async (req) => {
       take: limit,
       include: {
         user: {
-          select: { id: true, name: true, avatar: true },
+          select: { id: true, name: true, avatar: true, equipPendantId: true },
         },
         images: {
           orderBy: { orderIdx: 'asc' },

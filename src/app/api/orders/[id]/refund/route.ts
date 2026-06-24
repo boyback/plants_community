@@ -40,7 +40,22 @@ export const POST = handler(async (req) => {
     if (order.source === 'product' && order.productId) {
       await tx.product.update({
         where: { id: order.productId },
-        data: { stock: { increment: order.quantity } },
+        data: { stock: { increment: order.quantity }, status: 'on_sale' },
+      });
+    }
+    if (order.source === 'product' && order.listingItemId) {
+      const item = await tx.marketListingItem.update({
+        where: { id: order.listingItemId },
+        data: {
+          stock: { increment: order.quantity },
+          soldCount: { decrement: order.quantity },
+          status: 'on_sale',
+        },
+        select: { listingId: true },
+      });
+      await tx.marketListing.update({
+        where: { id: item.listingId },
+        data: { status: 'on_sale' },
       });
     }
     // 回收返利钻石(若已发放)

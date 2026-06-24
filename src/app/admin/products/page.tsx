@@ -157,6 +157,7 @@ export default async function AdminProductsPage({
 function StatusBadge({ s }: {s: string;}) {
   const map: Record<string, {label: string;cls: string;}> = {
     on_sale: { label: '销售中', cls: cx(styles.r_f2b23104, styles.r_5f6a59f1) },
+    trading: { label: '交易中', cls: cx(styles.r_67d2289d, styles.r_85d79ebf) },
     sold_out: { label: '售罄', cls: cx(styles.r_febec8f2, styles.r_02eb621e) },
     off_shelf: { label: '已下架', cls: cx(styles.r_e0467cf5, styles.r_b54428d1) },
     pending_review: { label: '待审核', cls: cx(styles.r_735dd972, styles.r_85d79ebf) }

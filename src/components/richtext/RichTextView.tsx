@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useRef } from 'react';
+'use client';
+
+import { useCallback, useEffect, useRef, type CSSProperties } from 'react';
 import { generateHTML } from '@tiptap/html';
 import { cn } from '@/lib/utils';
 import PhotoSwipe from 'photoswipe';
@@ -14,6 +16,7 @@ export function RichTextView({
   html,
   text,
   className,
+  style,
   size = 'md',
   withImageGalleryControls = false
 
@@ -23,7 +26,7 @@ export function RichTextView({
 
 
 
-}: {json?: unknown;html?: string;text?: string;className?: string;size?: 'sm' | 'md' | 'lg';withImageGalleryControls?: boolean;}) {
+}: {json?: unknown;html?: string;text?: string;className?: string;style?: CSSProperties;size?: 'sm' | 'md' | 'lg';withImageGalleryControls?: boolean;}) {
   const sizeCls =
   size === 'sm' ? cx(styles.r_fc7473ca, styles.r_18550d59) :
 
@@ -127,6 +130,7 @@ export function RichTextView({
     <div
       ref={containerRef}
       className={cn(cx("prose-article", styles.r_399e11a5), sizeCls, className)}
+      style={style}
       dangerouslySetInnerHTML={{ __html: content }} />);
 
 

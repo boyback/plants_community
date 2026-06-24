@@ -1,18 +1,24 @@
 'use client';
 
-import { forwardRef, useMemo, useState } from 'react';
-import { Select as RadixSelect } from "radix-ui";
-import { Icon } from '@/components/ui/Icon';
+import { forwardRef, useMemo } from 'react';
+import ReactSelect, {
+  type FormatOptionLabelMeta,
+  type MultiValue,
+  type SingleValue,
+  type StylesConfig,
+} from 'react-select';
+import CreatableSelect from 'react-select/creatable';
 import { cn } from '@/lib/utils';
 import styles from './Select.module.scss';
-import { cx } from '@/lib/style-utils';
-
-
 
 export interface SelectOption {
   label: string;
   value: string;
   isDisabled?: boolean;
+  id?: string;
+  count?: number;
+  custom?: boolean;
+  canDelete?: boolean;
 }
 
 export interface SelectProps {
@@ -32,132 +38,226 @@ export interface SelectProps {
   searchPlaceholder?: string;
 }
 
+export interface MultiSelectProps {
+  options: SelectOption[];
+  value?: string[];
+  defaultValue?: string[];
+  onValueChange?: (value: string[], options: SelectOption[]) => void;
+  onCreateOption?: (value: string) => void;
+  placeholder?: string;
+  error?: boolean;
+  className?: string;
+  wrapperClassName?: string;
+  disabled?: boolean;
+  isDisabled?: boolean;
+  name?: string;
+  required?: boolean;
+  searchable?: boolean;
+  creatable?: boolean;
+  compact?: boolean;
+  isLoading?: boolean;
+  noOptionsMessage?: string;
+  formatCreateLabel?: (input: string) => React.ReactNode;
+  formatOptionLabel?: (option: SelectOption, meta: FormatOptionLabelMeta<SelectOption>) => React.ReactNode;
+  isOptionDisabled?: (option: SelectOption) => boolean;
+}
+
+const menuPortalStyles: StylesConfig<SelectOption, false> = {
+  menuPortal: (base) => ({ ...base, zIndex: 80 }),
+};
+
+const multiMenuPortalStyles: StylesConfig<SelectOption, true> = {
+  menuPortal: (base) => ({ ...base, zIndex: 80 }),
+};
+
 function optionFromValue(options: SelectOption[], value: string | undefined) {
   if (value == null) return null;
   return options.find((option) => option.value === value) ?? null;
 }
 
-export const Select = forwardRef<HTMLButtonElement, SelectProps>(
+function optionsFromValues(options: SelectOption[], values: string[] | undefined) {
+  if (!values) return [];
+  return values.map((value) => optionFromValue(options, value) ?? { value, label: value, custom: true });
+}
+
+export const Select = forwardRef<HTMLDivElement, SelectProps>(
   (
-  {
-    className,
-    defaultValue,
-    disabled,
-    error,
-    isDisabled,
-    name,
-    onValueChange,
-    options,
-    placeholder = '请选择',
-    required,
-    searchable = false,
-    searchPlaceholder = '搜索',
-    value,
-    wrapperClassName
-  },
-  ref) =>
-  {
-    const [search, setSearch] = useState('');
-    const selectedOption = optionFromValue(options, value);
+    {
+      className,
+      defaultValue,
+      disabled,
+      error,
+      isDisabled,
+      name,
+      onValueChange,
+      options,
+      placeholder = '请选择',
+      required,
+      searchable = false,
+      value,
+      wrapperClassName,
+    },
+    ref
+  ) => {
+    const selectedOption = useMemo(() => optionFromValue(options, value), [options, value]);
+    const defaultOption = useMemo(() => optionFromValue(options, defaultValue), [defaultValue, options]);
     const resolvedDisabled = disabled || isDisabled;
-    const visibleOptions = useMemo(() => {
-      if (!searchable) return options;
-      const keyword = normalizeSearch(search);
-      if (!keyword) return options;
-      return options.filter((option) => fuzzyMatch(`${option.label} ${option.value}`, keyword));
-    }, [options, search, searchable]);
 
     return (
-      <div className={cn(styles.r_d89972fe, wrapperClassName)}>
-        <RadixSelect.Root
-          value={value}
-          defaultValue={defaultValue}
-          disabled={resolvedDisabled}
-          name={name}
-          required={required}
-          onOpenChange={(open) => {
-            if (!open) setSearch('');
+      <div ref={ref} className={cn(styles.root, wrapperClassName)}>
+        <ReactSelect<SelectOption, false>
+          className={styles.select}
+          classNames={{
+            control: (state) =>
+              cn(
+                styles.control,
+                state.isFocused && styles.controlFocused,
+                error && styles.controlError,
+                resolvedDisabled && styles.controlDisabled,
+                className
+              ),
+            valueContainer: () => styles.valueContainer,
+            placeholder: () => styles.placeholder,
+            singleValue: () => styles.singleValue,
+            input: () => styles.input,
+            indicatorsContainer: () => styles.indicators,
+            clearIndicator: () => styles.clearIndicator,
+            dropdownIndicator: () => styles.dropdownIndicator,
+            indicatorSeparator: () => styles.indicatorSeparator,
+            menu: () => styles.menu,
+            menuList: () => styles.menuList,
+            option: (state) =>
+              cn(
+                styles.option,
+                state.isFocused && styles.optionFocused,
+                state.isSelected && styles.optionSelected,
+                state.isDisabled && styles.optionDisabled
+              ),
+            noOptionsMessage: () => styles.noOptions,
           }}
-          onValueChange={(nextValue) => {
-            onValueChange?.(nextValue, optionFromValue(options, nextValue));
-          }}>
-
-          <RadixSelect.Trigger
-            ref={ref}
-            className={cn(cx(styles.r_60fbb771, styles.r_426b8b75, styles.r_6da6a3c3, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_77a2a20e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_19f7d7d6, styles.r_0e17f2bd, styles.r_2eba0d65, styles.r_fc7473ca, styles.r_399e11a5, styles.r_df37b1fd, styles.r_ceb69a6b, styles.r_a5c39c39, styles.r_74046e83, styles.r_608dd26c, styles.r_1491d072, styles.r_5f533b3a, styles.r_d463b664),
-
-            error ? cx(styles.r_3b7f9781, styles.r_fdae7b46) : styles.r_691861bc,
-            className
-            )}>
-
-            <RadixSelect.Value placeholder={placeholder}>
-              {selectedOption?.label}
-            </RadixSelect.Value>
-            <RadixSelect.Icon asChild>
-              <Icon name="arrow-right" size={14} className={cx(styles.r_012fbd12, styles.r_2fd32a11, styles.r_bb18baef)} />
-            </RadixSelect.Icon>
-          </RadixSelect.Trigger>
-
-          <RadixSelect.Portal>
-            <RadixSelect.Content
-              position="popper"
-              sideOffset={6}
-              className={cx(styles.r_ed7914c1, styles.r_ff4d2db0, styles.r_9b277f7a, styles.r_2cd02d11, styles.r_7c75ccbb, styles.r_ca6bcd4b, styles.r_691861bc, styles.r_19f7d7d6, styles.r_cd009d7d, styles.r_0e5688b0, styles.r_2089b774, styles.r_a9faa555, styles.r_0bc7c6cf, styles.r_33b203f5, styles.r_26698b65, styles.r_3424811d)}>
-
-              {searchable &&
-              <div className={styles.r_eb6a3cef}>
-                  <div className={styles.r_d89972fe}>
-                    <Icon name="search" size={14} className={cx(styles.r_da4dbfbc, styles.r_ecfeb742, styles.r_d694ba66, styles.r_36b381be, styles.r_66a36c90)} />
-                    <input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    onKeyDown={(event) => event.stopPropagation()}
-                    className={cx(styles.r_e7a768f9, styles.r_6da6a3c3, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_e4af8854, styles.r_fafb9e0b, styles.r_fc7473ca, styles.r_399e11a5, styles.r_df37b1fd, styles.r_56bf8ae8, styles.r_df4824ca, styles.r_608dd26c, styles.r_1491d072)}
-                    placeholder={searchPlaceholder} />
-
-                  </div>
-                </div>
-              }
-              <RadixSelect.Viewport>
-                {visibleOptions.map((option) =>
-                <RadixSelect.Item
-                  key={option.value}
-                  value={option.value}
-                  disabled={option.isDisabled}
-                  className={cx(styles.r_d89972fe, styles.r_60fbb771, styles.r_968a1e64, styles.r_34516836, styles.r_7f691228, styles.r_3960ffc2, styles.r_5f22e64f, styles.r_0e17f2bd, styles.r_dccaddb0, styles.r_fc7473ca, styles.r_399e11a5, styles.r_df37b1fd, styles.r_8e0c223b, styles.r_ff14edb2, styles.r_a9005ad9, styles.r_f69d3600, styles.r_db97fe0b, styles.r_bffebe50)}>
-
-                    <RadixSelect.ItemText>{option.label}</RadixSelect.ItemText>
-                    <RadixSelect.ItemIndicator className={cx(styles.r_da4dbfbc, styles.r_7b2d6393, styles.r_52083e7d, styles.r_3960ffc2, styles.r_5f6a59f1)}>
-                      <span className={styles.r_359090c2}>✓</span>
-                    </RadixSelect.ItemIndicator>
-                  </RadixSelect.Item>
-                )}
-                {visibleOptions.length === 0 &&
-                <div className={cx(styles.r_0e17f2bd, styles.r_940911bf, styles.r_ca6bf630, styles.r_359090c2, styles.r_66a36c90)}>没有匹配结果</div>
-                }
-              </RadixSelect.Viewport>
-            </RadixSelect.Content>
-          </RadixSelect.Portal>
-        </RadixSelect.Root>
-      </div>);
-
+          defaultValue={defaultOption}
+          isDisabled={resolvedDisabled}
+          isOptionDisabled={(option) => Boolean(option.isDisabled)}
+          isSearchable={searchable}
+          menuPortalTarget={typeof document === 'undefined' ? undefined : document.body}
+          menuPosition="fixed"
+          name={name}
+          noOptionsMessage={() => '没有匹配结果'}
+          onChange={(next: SingleValue<SelectOption>) => {
+            onValueChange?.(next?.value ?? '', next ?? null);
+          }}
+          options={options}
+          placeholder={placeholder}
+          required={required}
+          styles={menuPortalStyles}
+          unstyled
+          value={value === undefined ? undefined : selectedOption}
+        />
+      </div>
+    );
   }
 );
 
 Select.displayName = 'Select';
 
-function normalizeSearch(value: string) {
-  return value.trim().toLowerCase();
-}
+export const MultiSelect = forwardRef<HTMLDivElement, MultiSelectProps>(
+  (
+    {
+      className,
+      compact = false,
+      creatable = false,
+      defaultValue,
+      disabled,
+      error,
+      formatOptionLabel,
+      formatCreateLabel,
+      isDisabled,
+      isLoading,
+      isOptionDisabled,
+      name,
+      noOptionsMessage = '没有匹配结果',
+      onCreateOption,
+      onValueChange,
+      options,
+      placeholder = '请选择',
+      required,
+      searchable = true,
+      value,
+      wrapperClassName,
+    },
+    ref
+  ) => {
+    const selectedOptions = useMemo(() => optionsFromValues(options, value), [options, value]);
+    const defaultOptions = useMemo(() => optionsFromValues(options, defaultValue), [defaultValue, options]);
+    const resolvedDisabled = disabled || isDisabled;
+    const SelectComponent = creatable ? CreatableSelect : ReactSelect;
 
-function fuzzyMatch(source: string, keyword: string) {
-  const normalizedSource = normalizeSearch(source);
-  if (normalizedSource.includes(keyword)) return true;
-
-  let keywordIndex = 0;
-  for (const char of normalizedSource) {
-    if (char === keyword[keywordIndex]) keywordIndex += 1;
-    if (keywordIndex === keyword.length) return true;
+    return (
+      <div ref={ref} className={cn(styles.root, wrapperClassName)}>
+        <SelectComponent<SelectOption, true>
+          className={styles.select}
+          classNames={{
+            control: (state) =>
+              cn(
+                styles.control,
+                styles.multiControl,
+                compact && styles.compactMultiControl,
+                state.isFocused && styles.controlFocused,
+                error && styles.controlError,
+                resolvedDisabled && styles.controlDisabled,
+                className
+              ),
+            valueContainer: () => cn(styles.valueContainer, styles.multiValueContainer, compact && styles.compactMultiValueContainer),
+            placeholder: () => styles.placeholder,
+            multiValue: () => cn(styles.multiValue, compact && styles.compactMultiValue),
+            multiValueLabel: () => cn(styles.multiValueLabel, compact && styles.compactMultiValueLabel),
+            multiValueRemove: () => cn(styles.multiValueRemove, compact && styles.compactMultiValueRemove),
+            input: () => styles.input,
+            indicatorsContainer: () => styles.indicators,
+            clearIndicator: () => styles.clearIndicator,
+            dropdownIndicator: () => styles.dropdownIndicator,
+            indicatorSeparator: () => styles.indicatorSeparator,
+            menu: () => styles.menu,
+            menuList: () => styles.menuList,
+            option: (state) =>
+              cn(
+                styles.option,
+                state.isFocused && styles.optionFocused,
+                state.isSelected && styles.optionSelected,
+                state.isDisabled && styles.optionDisabled
+              ),
+            noOptionsMessage: () => styles.noOptions,
+            loadingMessage: () => styles.noOptions,
+          }}
+          closeMenuOnSelect={false}
+          defaultValue={defaultOptions}
+          formatCreateLabel={formatCreateLabel ?? ((input) => `创建 #${input.trim().replace(/^#/, '')}`)}
+          formatOptionLabel={formatOptionLabel}
+          isDisabled={resolvedDisabled}
+          isLoading={isLoading}
+          isMulti
+          isOptionDisabled={(option) => Boolean(option.isDisabled) || Boolean(isOptionDisabled?.(option))}
+          isSearchable={searchable}
+          menuPortalTarget={typeof document === 'undefined' ? undefined : document.body}
+          menuPosition="fixed"
+          name={name}
+          noOptionsMessage={() => noOptionsMessage}
+          loadingMessage={() => '加载中...'}
+          onChange={(next: MultiValue<SelectOption>) => {
+            const selected = [...next];
+            onValueChange?.(selected.map((option) => option.value), selected);
+          }}
+          onCreateOption={onCreateOption}
+          options={options}
+          placeholder={placeholder}
+          required={required}
+          styles={multiMenuPortalStyles}
+          unstyled
+          value={value === undefined ? undefined : selectedOptions}
+        />
+      </div>
+    );
   }
-  return false;
-}
+);
+
+MultiSelect.displayName = 'MultiSelect';

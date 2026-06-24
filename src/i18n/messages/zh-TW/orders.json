@@ -32,6 +32,7 @@
       "ship": "賣家出貨",
       "confirm": "確認收貨",
       "review": "評價",
+      "refund": "申請退款",
       "viewProduct": "查看商品",
       "viewAuction": "查看拍賣"
     },
@@ -40,6 +41,9 @@
     "inputTracking": "輸入物流單號(可選)",
     "reviewPlaceholder": "留點對商品的真實感受(可選)",
     "submitReview": "送出評價",
+    "refundReason": "退款原因",
+    "refundPlaceholder": "請簡單說明退款原因",
+    "submitRefund": "送出申請",
     "pickRating": "選擇評分",
     "confirmCancel": "確定要取消這筆訂單嗎?"
   }

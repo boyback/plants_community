@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import { handler } from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth';
 import { serializeSkin } from '@/lib/serializers';
+import { syncAvatarPendantUnlocks } from '@/lib/avatar-pendant-unlocks';
 import type { SkinKind } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -10,6 +11,7 @@ export const GET = handler(async (req) => {
   const url = new URL(req.url);
   const kind = url.searchParams.get('kind') as SkinKind | null;
   const me = await getCurrentUser();
+  if (me) await syncAvatarPendantUnlocks(me.id);
 
   const list = await prisma.skinItem.findMany({
     where: {

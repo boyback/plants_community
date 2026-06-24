@@ -10,12 +10,12 @@ import styles from './UserIdentity.module.scss';
 
 type IdentityUser = Pick<User, 'id' | 'name' | 'avatar'> & {
   level?: number;
-  vip?: { isVip?: boolean; lifetime?: boolean } | null;
   equip?: EquipState;
 };
 
 type UserIdentitySize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 type UserIdentityVariant = 'inline' | 'list' | 'card' | 'profile' | 'compact';
+type AvatarPendantLayout = 'reserve' | 'compact';
 
 const avatarSize: Record<UserIdentitySize, number> = {
   xs: 24,
@@ -41,13 +41,14 @@ export function UserIdentity({
   showAvatar = true,
   showName = true,
   showLevel = false,
-  showVip = true,
   avatarRing = true,
   subtitle,
   className,
   nameClassName,
   avatarClassName,
   textClassName,
+  avatarPendantLayout = 'reserve',
+  nameExtra,
 }: {
   user: IdentityUser;
   size?: UserIdentitySize;
@@ -56,13 +57,14 @@ export function UserIdentity({
   showAvatar?: boolean;
   showName?: boolean;
   showLevel?: boolean;
-  showVip?: boolean;
   avatarRing?: boolean;
   subtitle?: ReactNode;
   className?: string;
   nameClassName?: string;
   avatarClassName?: string;
   textClassName?: string;
+  avatarPendantLayout?: AvatarPendantLayout;
+  nameExtra?: ReactNode;
 }) {
   const content = (
     <>
@@ -73,19 +75,21 @@ export function UserIdentity({
           size={avatarSize[size]}
           ring={avatarRing}
           pendant={user.equip?.pendant ?? null}
-          isVip={!!user.vip?.isVip}
+          pendantLayout={avatarPendantLayout}
           className={avatarClassName}
         />
       )}
       {showName && (
         <span className={cn(styles.text, textClassName)}>
-          <UserName
-            user={user}
-            asLink={false}
-            size={nameSize[size]}
-            showVip={showVip}
-            className={nameClassName}
-          />
+          <span className={styles.nameLine}>
+            <UserName
+              user={user}
+              asLink={false}
+              size={nameSize[size]}
+              className={nameClassName}
+            />
+            {nameExtra}
+          </span>
           {showLevel && typeof user.level === 'number' && <span className={styles.level}>Lv.{user.level}</span>}
           {subtitle && <span className={styles.subtitle}>{subtitle}</span>}
         </span>

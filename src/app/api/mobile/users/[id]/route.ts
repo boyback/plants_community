@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/db';
 import { fail, handler } from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth';
-import { isVipActive } from '@/lib/vip';
 import { serializePost, serializeUser } from '@/lib/serializers';
 import { postInclude } from '@/lib/post-include';
 
@@ -45,11 +44,6 @@ export const GET = handler(async (req) => {
     isMe: me?.id === id,
     followed: Boolean(followed),
     exp: raw.exp,
-    vip: {
-      isVip: isVipActive(raw),
-      lifetime: raw.vipLifetime,
-      expireAt: raw.vipExpireAt?.toISOString() ?? null,
-    },
     posts: posts.map((post) => serializePost(post as any, undefined, undefined, me)),
   };
 });

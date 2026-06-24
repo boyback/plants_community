@@ -49,7 +49,7 @@ export const GET = handler(async (req) => {
       take: limit,
       include: {
         user: {
-          select: { id: true, name: true, avatar: true },
+          select: { id: true, name: true, avatar: true, equipPendantId: true },
         },
       },
     }),
@@ -97,7 +97,7 @@ export const POST = handler(async (req) => {
     },
     include: {
       user: {
-        select: { id: true, name: true, avatar: true },
+        select: { id: true, name: true, avatar: true, equipPendantId: true },
       },
     },
   });

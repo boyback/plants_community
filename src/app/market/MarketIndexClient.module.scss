@@ -103,6 +103,9 @@
 .r_58284b4e{gap:6px}
 .r_b85c981b{color:rgb(var(--ink-700)/.8)}
 
+.soldCardOverlay{position:absolute;inset:0;z-index:20;display:grid;place-items:center;pointer-events:none;background:rgb(15 23 42/.34);backdrop-filter:saturate(.85)}
+.soldCardText{display:inline-flex;align-items:center;justify-content:center;min-width:168px;height:44px;border:2px solid rgb(255 255 255/.78);border-radius:8px;background:rgb(255 255 255/.18);color:#fff;font-size:22px;font-weight:800;letter-spacing:0;line-height:1;box-shadow:0 12px 30px rgb(15 23 42/.22);transform:rotate(-18deg)}
+
 
 /* Recovered utility rules referenced by this CSS module. */
 .r_ce27a834{--tw-bg-opacity:1;background-color:rgb(249 250 251/var(--tw-bg-opacity))}

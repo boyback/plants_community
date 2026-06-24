@@ -13,7 +13,6 @@ import { api, ApiError } from "@/lib/client-api";
 import { toast } from '@/components/ui/Toast';
 import { cn, formatDateTime, formatPrice } from '@/lib/utils';
 import { usePullToRefresh, PullIndicator } from '@/lib/hooks/usePullToRefresh';
-import { useBodyScrollLock } from '@/lib/hooks/useBodyScrollLock';
 import { RichTextEditor } from '@/components/richtext/RichTextEditor';
 import { RichTextView } from '@/components/richtext/RichTextView';
 import type { Order, OrderStatus } from '@/lib/types';
@@ -21,6 +20,7 @@ import styles from './page.module.scss';
 import { cx } from '@/lib/style-utils';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
+import { Dialog } from '@/components/ui/Dialog';
 
 
 
@@ -336,7 +336,7 @@ function OrderRow({
           onClick={() => setShowRefund(true)}
         >
 
-              {t("orders.actions.review")}
+              {t("orders.actions.refund")}
             </Button>
         }
       </div>
@@ -363,13 +363,16 @@ function OrderRow({
       }
 
       {/* 弹窗们 */}
-      {showShip &&
-      <Modal title={t("orders.actions.ship")} onClose={() => setShowShip(false)}>
+      <Dialog open={showShip} title={t("orders.actions.ship")} onClose={() => setShowShip(false)}>
+          <label className={cx(styles.r_1bb88326, styles.r_d058ca6d, styles.r_69335b95)}>
+            {t("orders.inputTracking")}
+          </label>
           <Input
-          className="input"
           value={trackingNo}
           onChange={(e) => setTrackingNo(e.target.value)}
-          placeholder={t("orders.inputTracking")} />
+          placeholder={t("orders.inputTracking")}
+          maxLength={64}
+          autoFocus />
 
           <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_77c08e01, styles.r_77a2a20e)}>
             <Button type="button" variant="outline" size="sm" onClick={() => setShowShip(false)}>
@@ -388,11 +391,9 @@ function OrderRow({
               {t("orders.actions.ship")}
             </Button>
           </div>
-        </Modal>
-      }
+        </Dialog>
 
-      {showReview &&
-      <Modal title={t("orders.actions.review")} onClose={() => setShowReview(false)}>
+      <Dialog open={showReview} title={t("orders.actions.review")} onClose={() => setShowReview(false)}>
           <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_3febee09)}>
             {[1, 2, 3, 4, 5].map((n) =>
           <Button
@@ -439,17 +440,18 @@ function OrderRow({
               {t("orders.submitReview")}
             </Button>
           </div>
-        </Modal>
-      }
+        </Dialog>
 
-      {showRefund &&
-      <Modal title={t("orders.actions.review")} onClose={() => setShowRefund(false)}>
+      <Dialog open={showRefund} title={t("orders.actions.refund")} onClose={() => setShowRefund(false)}>
+          <label className={cx(styles.r_1bb88326, styles.r_d058ca6d, styles.r_69335b95)}>
+            {t("orders.refundReason")}
+          </label>
           <Textarea
           rows={3}
           className={styles.r_dd9ce2a7}
           value={refundReason}
           onChange={(e) => setRefundReason(e.target.value)}
-          placeholder={t("orders.reviewPlaceholder")} />
+          placeholder={t("orders.refundPlaceholder")} />
 
           <div className={cx(styles.r_eccd13ef, styles.r_60fbb771, styles.r_77c08e01, styles.r_77a2a20e)}>
             <Button type="button" variant="outline" size="sm" onClick={() => setShowRefund(false)}>
@@ -465,11 +467,10 @@ function OrderRow({
               setRefundReason('');
             }}>
 
-              提交申请
+              {t("orders.submitRefund")}
             </Button>
           </div>
-        </Modal>
-      }
+        </Dialog>
     </Card>);
 
 }
@@ -477,31 +478,4 @@ function OrderRow({
 function isReviewEmpty(json: unknown): boolean {
   const j = json as {content?: unknown[];} | null;
   return !j || !Array.isArray(j.content) || j.content.length === 0;
-}
-
-function Modal({
-  title,
-  onClose,
-  children
-
-
-
-
-}: {title: string;onClose: () => void;children: React.ReactNode;}) {
-  useBodyScrollLock(true);
-
-  return (
-    <div
-      className={cx(styles.r_7bc55599, styles.r_7b7df044, styles.r_181b2866, styles.r_f3c543ad, styles.r_67d66567, styles.r_094a9df0, styles.r_8e63407b)}
-      onClick={onClose}>
-
-      <div
-        className={cx(styles.r_6da6a3c3, styles.r_9794ab45, styles.r_c07e54fd)}
-        onClick={(e) => e.stopPropagation()}>
-
-        <div className={cx(styles.r_1bb88326, styles.r_4ee73492, styles.r_e83a7042)}>{title}</div>
-        {children}
-      </div>
-    </div>);
-
 }

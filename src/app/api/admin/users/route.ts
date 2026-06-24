@@ -44,7 +44,7 @@ export const GET = handler(async (req) => {
       skip: (page - 1) * pageSize,
       take: pageSize,
       select: {
-        id: true, name: true, avatar: true, level: true, exp: true,
+        id: true, name: true, avatar: true, equipPendantId: true, level: true, exp: true,
         role: true, bannedUntil: true, banReason: true,
         pointsBalance: true, joinedAt: true,
         _count: { select: { posts: true, comments: true } },

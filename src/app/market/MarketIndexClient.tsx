@@ -6,7 +6,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import { Empty } from '@/components/ui/Empty';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { cn, formatPrice } from '@/lib/utils';
+import type { EquipState } from '@/lib/types';
 import { useAuth } from '@/context/AuthContext';
 import { api, ApiError } from "@/lib/client-api";
 import styles from './MarketIndexClient.module.scss';
@@ -49,7 +51,7 @@ interface ListingItem {
   endAt?: string;
   url: string;
   shipFrom?: string | null;
-  seller?: {id: string;name: string;avatar: string;followed?: boolean;} | null;
+  seller?: {id: string;name: string;avatar: string;equip?: EquipState;followed?: boolean;} | null;
   tags?: string[];
   taxons?: {
     categorySlug: string;
@@ -73,6 +75,8 @@ interface ListingItem {
   genus?: {slug: string;name: string;cover?: string | null;} | null;
   views?: number;
   comments?: number;
+  status?: 'on_sale' | 'trading' | 'sold_out' | 'off_shelf';
+  listingStatus?: 'on_sale' | 'trading' | 'sold_out' | 'off_shelf' | 'pending_review';
 }
 
 const OTHER_KINDS = [
@@ -320,8 +324,9 @@ function DefaultCard({ item }: {item: ListingItem;}) {
   const tradeModes = normalizeTradeModes(item.tradeModes, item.tradeMode);
 
   if (!isAuction) {
+    const soldLabel = soldOverlayLabel(item);
     return (
-      <article className={cx(styles.r_60fbb771, styles.r_e3a0584f, styles.r_7e0b7cdf, styles.r_8dddea07, styles.r_2cd02d11, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_ceb69a6b, styles.r_a5c39c39, styles.r_ab1dd417)}>
+      <article className={cx(styles.r_d89972fe, styles.r_60fbb771, styles.r_e3a0584f, styles.r_7e0b7cdf, styles.r_8dddea07, styles.r_2cd02d11, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_ceb69a6b, styles.r_a5c39c39, styles.r_ab1dd417)}>
         <Link href={item.url} className={styles.r_0214b4b3}>
           <div className={cx(styles.r_d89972fe, styles.r_726bdf47, styles.r_7ebecbb6)}>
             <Image
@@ -361,17 +366,13 @@ function DefaultCard({ item }: {item: ListingItem;}) {
               href={`/user/${item.seller.id}?tab=products`}
               className={cx(styles.r_60fbb771, styles.r_7e0b7cdf, styles.r_36e579c0, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_ceb69a6b, styles.r_9825203a)}>
 
-                {item.seller.avatar ?
-              <img
-                src={item.seller.avatar}
-                alt={item.seller.name}
-                className={cx(styles.r_d0a52b31, styles.r_cbbf90f9, styles.r_ac204c10, styles.r_7d85d0c2)} /> :
-
-
-              <div className={cx(styles.r_60fbb771, styles.r_d0a52b31, styles.r_cbbf90f9, styles.r_3960ffc2, styles.r_86843cf1, styles.r_ac204c10, styles.r_f2b23104, styles.r_359090c2, styles.r_b17d6a13)}>
-                    {item.seller.name[0]}
-                  </div>
-              }
+                <UserAvatar
+                  src={item.seller.avatar || '/default-avatar.svg'}
+                  alt={item.seller.name}
+                  size={28}
+                  ring={false}
+                  pendant={item.seller.equip?.pendant ?? null}
+                />
                 <span className={cx(styles.r_7e0b7cdf, styles.r_36e579c0, styles.r_f283ea9b, styles.r_2689f395, styles.r_399e11a5)}>{item.seller.name}</span>
               </Link>
               <FollowSellerButton sellerId={item.seller.id} initialFollowed={!!item.seller.followed} />
@@ -434,6 +435,9 @@ function DefaultCard({ item }: {item: ListingItem;}) {
             </div>
           </div>
         </div>
+        {soldLabel &&
+        <SoldCardOverlay label={soldLabel} />
+        }
       </article>);
 
   }
@@ -469,17 +473,13 @@ function DefaultCard({ item }: {item: ListingItem;}) {
             href={`/user/${item.seller.id}?tab=products`}
             className={cx(styles.r_60fbb771, styles.r_7e0b7cdf, styles.r_36e579c0, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_ceb69a6b, styles.r_9825203a)}>
 
-              {item.seller.avatar ?
-            <img
-              src={item.seller.avatar}
-              alt={item.seller.name}
-              className={cx(styles.r_d0a52b31, styles.r_cbbf90f9, styles.r_ac204c10, styles.r_7d85d0c2)} /> :
-
-
-            <div className={cx(styles.r_60fbb771, styles.r_d0a52b31, styles.r_cbbf90f9, styles.r_3960ffc2, styles.r_86843cf1, styles.r_ac204c10, styles.r_f2b23104, styles.r_359090c2, styles.r_b17d6a13)}>
-                  {item.seller.name[0]}
-                </div>
-            }
+              <UserAvatar
+                src={item.seller.avatar || '/default-avatar.svg'}
+                alt={item.seller.name}
+                size={28}
+                ring={false}
+                pendant={item.seller.equip?.pendant ?? null}
+              />
               <span className={cx(styles.r_7e0b7cdf, styles.r_36e579c0, styles.r_f283ea9b, styles.r_2689f395, styles.r_399e11a5)}>{item.seller.name}</span>
             </Link>
             <FollowSellerButton sellerId={item.seller.id} initialFollowed={!!item.seller.followed} />
@@ -519,6 +519,20 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').trim();
 }
 
+function soldOverlayLabel(item: ListingItem) {
+  if (item.type === 'auction') return '';
+  if (item.status === 'trading' || item.listingStatus === 'trading') return '交易中';
+  if (item.status === 'sold_out' || item.listingStatus === 'sold_out' || item.stock === 0) return '已售罄';
+  return '';
+}
+
+function SoldCardOverlay({ label }: {label: string;}) {
+  return (
+    <div className={styles.soldCardOverlay} aria-hidden>
+      <span className={styles.soldCardText}>{label}</span>
+    </div>);
+}
+
 function fmtDate(iso: string): string {
   const d = new Date(iso);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -536,14 +550,15 @@ function formatDateTime(iso: string): string {
 }
 
 function normalizeTradeModes(modes: TradeMode[] | undefined, fallback: ListingItem['tradeMode']): TradeMode[] {
-  const allowed: TradeMode[] = ['platform_escrow', 'online_payment', 'external'];
   const selected = modes?.length ? modes : fallback ? [fallback] : [];
-  return Array.from(new Set(selected.filter((mode) => allowed.includes(mode))));
+  const normalized = selected.map((mode) => mode === 'platform_escrow' ? 'online_payment' : mode);
+  const allowed: TradeMode[] = ['online_payment', 'external'];
+  const result = normalized.filter((mode) => allowed.includes(mode));
+  return Array.from(new Set(['online_payment' as TradeMode, ...result]));
 }
 
 function tradeModeLabel(mode: TradeMode): string {
-  if (mode === 'platform_escrow') return '平台担保';
-  if (mode === 'online_payment') return '在线支付';
+  if (mode === 'platform_escrow' || mode === 'online_payment') return '平台担保交易';
   return '自行联系';
 }
 

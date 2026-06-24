@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
-import { handler, fail } from '@/lib/api';
+import { handler, fail, jsonWithUserPendants } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
 import { hasUserPermission } from '@/lib/permissions';
 import { emitNotification } from '@/lib/realtime/notify';
@@ -26,8 +26,7 @@ function serializeComment(comment: {
     avatar: string;
     level: number;
     role: string;
-    vipExpireAt: Date | null;
-    vipLifetime: boolean;
+    equipPendantId?: string | null;
     _count: { posts: number; followers: number; following: number };
   };
 }) {
@@ -39,10 +38,9 @@ function serializeComment(comment: {
       id: comment.author.id,
       name: comment.author.name,
       avatar: comment.author.avatar,
+      equipPendantId: comment.author.equipPendantId,
       level: comment.author.level,
       role: comment.author.role,
-      vipExpireAt: comment.author.vipExpireAt?.toISOString(),
-      vipLifetime: comment.author.vipLifetime,
       badges: [],
       postsCount: comment.author._count.posts,
       followersCount: comment.author._count.followers,
@@ -66,7 +64,7 @@ export async function GET(req: Request) {
     },
   });
 
-  return Response.json({ ok: true, data: { items: comments.map(serializeComment) } });
+  return jsonWithUserPendants({ ok: true, data: { items: comments.map(serializeComment) } });
 }
 
 export const POST = handler(async (req) => {

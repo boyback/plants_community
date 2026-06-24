@@ -3,7 +3,6 @@ import { handler, fail } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
 import {
   createOrderPayment,
-  createVipPayment,
   createDepositPayment,
   createAuctionBalancePayment,
   getPaymentPagePayUrl,
@@ -15,7 +14,7 @@ import { PaymentChannel } from '@prisma/client';
 export const dynamic = 'force-dynamic';
 
 const Body = z.object({
-  bizType: z.enum(['order', 'vip', 'deposit', 'auction_balance']),
+  bizType: z.enum(['order', 'deposit', 'auction_balance']),
   bizId: z.string(),
   channel: z.enum(['wechat', 'alipay']),
 });
@@ -47,14 +46,6 @@ export const POST = handler(async (req) => {
     if (o.buyerId !== me.id) return fail(403, '无权支付该订单');
     if (o.source !== 'auction') return fail(400, '该订单不是拍卖订单');
     const p = await createAuctionBalancePayment({ orderId: body.bizId, channel });
-    return serializeCreatedPayment(p);
-  }
-
-  if (body.bizType === 'vip') {
-    const vo = await prisma.vipOrder.findUnique({ where: { id: body.bizId } });
-    if (!vo) return fail(404, '订单不存在');
-    if (vo.userId !== me.id) return fail(403, '无权支付该订单');
-    const p = await createVipPayment({ vipOrderId: body.bizId, channel });
     return serializeCreatedPayment(p);
   }
 

@@ -32,6 +32,7 @@
       "ship": "Mark as shipped",
       "confirm": "Confirm delivery",
       "review": "Leave a review",
+      "refund": "Request refund",
       "viewProduct": "View product",
       "viewAuction": "View auction"
     },
@@ -40,6 +41,9 @@
     "inputTracking": "Tracking number (optional)",
     "reviewPlaceholder": "Share your honest thoughts (optional)",
     "submitReview": "Submit review",
+    "refundReason": "Refund reason",
+    "refundPlaceholder": "Briefly explain why you want a refund",
+    "submitRefund": "Submit request",
     "pickRating": "Pick a rating",
     "confirmCancel": "Cancel this order?"
   }

@@ -128,6 +128,19 @@
 .r_7971386c{left:4px}
 .r_c55dcda2{top:4px}
 .r_75fe048d{background-color:#ffffffd9}
+
+.sideCardHeading {
+  margin: 0;
+}
+
+.sideCardBodyFlush {
+  margin-top: 0;
+}
+
+.sideCardHeaderGap,
+.sideCardHeadingGap {
+  margin-bottom: 10px;
+}
 .r_45d82811{padding-left:6px;padding-right:6px}
 .r_68ecb30d{padding-top:0;padding-bottom:0}
 .r_e0988086{font-size:9px}
@@ -145,6 +158,180 @@
 .r_c2db4490:last-child{border-width:0}
 .r_dcd339c6:last-child{padding-bottom:0}
 .r_308fc069{text-align:right}
+
+.speciesPage {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.speciesLayout {
+  align-items: start;
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 0.92fr);
+}
+
+.speciesMain {
+  min-width: 0;
+}
+
+.speciesMain h1,
+.speciesMain h2,
+.speciesMain h3 {
+  margin: 0;
+}
+
+.taxonomyPanel {
+  border-color: rgb(var(--leaf-100) / 0.7);
+  box-shadow: 0 8px 28px rgb(15 82 91 / 0.05);
+}
+
+.taxonomyRows {
+  gap: 12px;
+}
+
+.taxonomyRow {
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.taxonomyLabel {
+  display: flex;
+  align-items: center;
+  margin-top: 0;
+  min-height: 28px;
+  color: rgb(var(--leaf-700) / 0.58);
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.taxonomyChips {
+  gap: 8px 10px;
+}
+
+.taxonomyChip {
+  min-height: 28px;
+  border: 1px solid transparent;
+  background-color: transparent;
+  color: rgb(var(--ink-700) / 0.76);
+}
+
+.taxonomyChip:hover {
+  border-color: rgb(var(--leaf-100));
+  background-color: rgb(var(--leaf-50) / 0.72);
+}
+
+.taxonomyChipActive {
+  border-color: rgb(var(--leaf-100));
+  background-color: rgb(var(--leaf-100) / 0.86) !important;
+  color: rgb(var(--leaf-800));
+}
+
+.heroCard,
+.sideCard {
+  border-color: rgb(var(--leaf-100) / 0.76);
+  box-shadow: 0 10px 30px rgb(15 82 91 / 0.05);
+}
+
+.heroCard {
+  background: rgb(var(--surface));
+}
+
+.heroStack {
+  display: grid;
+  gap: 16px;
+}
+
+.heroMedia {
+  min-height: 360px;
+}
+
+.heroOverlay {
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgb(8 20 25 / 0.02) 18%, rgb(8 20 25 / 0.22) 58%, rgb(8 20 25 / 0.82) 100%);
+}
+
+.galleryBlock {
+  padding: 22px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.descriptionText {
+  color: rgb(var(--ink-800));
+  font-size: 14px;
+  line-height: 1.85;
+}
+
+.descriptionText p {
+  margin: 0;
+}
+
+.descriptionText p + p {
+  margin-top: 12px;
+}
+
+.descriptionTabsCard {
+  border-color: rgb(var(--leaf-100) / 0.76);
+  box-shadow: 0 8px 24px rgb(15 82 91 / 0.045);
+}
+
+.descriptionTabsList {
+  padding: 6px 10px 0;
+}
+
+.descriptionTabsContent {
+  min-height: 96px;
+  padding: 18px 20px;
+}
+
+.sideRail {
+  top: 84px;
+}
+
+.sideCard {
+  background-color: rgb(var(--surface));
+}
+
+.infoGrid {
+  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.infoCard,
+.contentCard {
+  border-color: rgb(var(--leaf-100) / 0.74);
+  background-color: rgb(var(--surface));
+  box-shadow: 0 8px 26px rgb(15 82 91 / 0.045);
+}
+
+.infoRow {
+  min-height: 34px;
+  align-items: center;
+  border-color: rgb(var(--leaf-50));
+}
+
+.infoRow span:first-child {
+  color: rgb(var(--ink-500));
+}
+
+.infoRow span:last-child {
+  color: rgb(var(--ink-800));
+}
+
+.workCard {
+  border-color: rgb(var(--leaf-100) / 0.78);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.workCard:hover {
+  border-color: rgb(var(--leaf-200));
+  box-shadow: 0 10px 24px rgb(15 82 91 / 0.08);
+  transform: translateY(-1px);
+}
 @media (min-width:768px){.r_e4d6f343{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .r_52f53b18{background-color:rgb(var(--leaf-50)/.7)}
 .r_a77ed4d9{margin-bottom:8px}

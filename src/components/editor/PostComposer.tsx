@@ -1,16 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Form } from "radix-ui";
 import type { Board, Post, PostType, User } from "@/lib/types";
 import { PostCard } from "@/components/post/PostCard";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
-import { Select } from "@/components/ui/Select";
 import { UploadField } from "@/components/upload/UploadField";
 import { TagSelector } from "@/components/editor/TagSelector";
 import { BoardSelect, type BoardSelection } from "@/components/editor/BoardSelect";
@@ -23,8 +22,8 @@ import { PostTypeBadge } from "@/components/ui/PostTypeBadge";
 import { PostContentFields } from "@/components/editor/post-form/PostContentFields";
 import type { PostDraft } from "@/components/editor/post-form/types";
 import { AlbumImagePickerDialog } from "@/components/editor/AlbumImagePickerDialog";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/HoverCard";
 import { cn } from "@/lib/utils";
+import { normalizeJournalStages } from "@/lib/journal";
 import previewStyles from "@/components/editor/FeedPreview.module.scss";
 import styles from './PostComposer.module.scss';
 import { cx } from '@/lib/style-utils';
@@ -66,20 +65,12 @@ interface PostComposerProps {
 
 const typeOptions: Array<{type: PostType;label: string;icon: IconName;tip: string;fields: string;}> = [
 { type: "image", label: "图文贴", icon: "image", tip: "适合直接分享一组图片，标题可以写成较长说明。", fields: "标题、图片、板块、话题" },
-{ type: "rich", label: "长文贴", icon: "edit", tip: "适合写养护经验、教程、复盘这类结构化内容。", fields: "标题、富文本正文、封面、板块、话题" },
+{ type: "help", label: "求助帖", icon: "info", tip: "适合求助诊断、养护疑问和问题排查。", fields: "求助标题、求助描述、图片、板块、话题" },
 { type: "journal", label: "记录贴", icon: "event", tip: "适合持续记录同一棵植物的状态变化。", fields: "植物对象、日期、阶段、图片、心得" },
-{ type: "help", label: "提问帖", icon: "info", tip: "适合求助诊断、养护疑问和问题排查。", fields: "标题、问题描述、板块、话题" },
-{ type: "vote", label: "投票帖", icon: "vote", tip: "适合让大家在多个选项中投票做选择。", fields: "问题、选项、截止时间、板块、话题" },
+{ type: "rich", label: "长文贴", icon: "edit", tip: "适合写养护经验、教程、复盘这类结构化内容。", fields: "标题、富文本正文、板块、话题" },
 { type: "video", label: "视频", icon: "video", tip: "适合发布状态展示、开箱、养护过程等视频内容。", fields: "标题、视频、板块、话题" },
+{ type: "vote", label: "投票帖", icon: "vote", tip: "适合让大家在多个选项中投票做选择。", fields: "问题、选项、截止时间、板块、话题" },
 { type: "event", label: "活动帖", icon: "event", tip: "适合发布线下活动、团购组织、展会约看等信息。", fields: "标题、活动介绍、时间地点、板块、话题" }];
-
-
-const visibilityOptions = [
-{ value: "public", label: "公开（所有人可见）" },
-{ value: "private", label: "仅自己可见" }];
-
-
-const postTypeHasCover = (type: PostType) => type !== "image" && type !== "video";
 
 type AlbumSyncMode = "none" | "new" | "existing";
 
@@ -105,7 +96,7 @@ export function PostComposer({
   const { t } = useI18n();
   const isEdit = mode === "edit";
 
-  const [type, setType] = useState<PostType>(initialValue?.type ?? "rich");
+  const [type, setType] = useState<PostType>(initialValue?.type ?? "image");
   const [title, setTitle] = useState(initialValue?.title ?? "");
   const [content, setContent] = useState(initialValue?.content ?? "");
   const [contentJson, setContentJson] = useState<unknown>(
@@ -119,7 +110,6 @@ export function PostComposer({
   const [images, setImages] = useState<string[]>(initialValue?.images ?? []);
   const [videoUrl, setVideoUrl] = useState(initialValue?.videoUrl ?? "");
   const [cover, setCover] = useState(initialValue?.cover ?? "");
-  const [visibility, setVisibility] = useState("public");
   const [voteOptions, setVoteOptions] = useState<string[]>(initialValue?.voteOptions ?? ["", ""]);
   const [voteMulti, setVoteMulti] = useState(initialValue?.voteMulti ?? false);
   const [voteDeadline, setVoteDeadline] = useState(initialValue?.voteDeadline ?? "");
@@ -137,7 +127,6 @@ export function PostComposer({
   const [albumSyncAlbumId, setAlbumSyncAlbumId] = useState("");
   const [albumSyncTitle, setAlbumSyncTitle] = useState("");
   const [albumSyncDescription, setAlbumSyncDescription] = useState("");
-  const [syncCoverAsAlbumCover, setSyncCoverAsAlbumCover] = useState(false);
   const [mineAlbums, setMineAlbums] = useState<MineAlbumOption[]>([]);
   const [loadingMineAlbums, setLoadingMineAlbums] = useState(false);
   const [hasLoadedMineAlbums, setHasLoadedMineAlbums] = useState(false);
@@ -150,11 +139,6 @@ export function PostComposer({
     if (type === "journal") return journal.entries.reduce((sum, item) => sum + item.note.length, journal.subjectName.length);
     return content.length;
   }, [content, contentJson, images.length, journal, type]);
-  const visibilityLabel = useMemo(
-    () => visibilityOptions.find((option) => option.value === visibility)?.label ?? "公开（所有人可见）",
-    [visibility]
-  );
-
   useEffect(() => {
     const updateBottomState = () => {
       const doc = document.documentElement;
@@ -280,7 +264,7 @@ export function PostComposer({
     setEventLocation(p.eventLocation ?? "");
     setEventStartAt(p.eventStartAt ?? "");
     if (p.journal) setJournal(p.journal as JournalDraft);
-    setCover(postTypeHasCover(p.type as PostType ?? d.type) ? p.cover ?? "" : "");
+    setCover(p.cover ?? "");
     setDraftId(d.id);
     onLoadDraft?.(d);
   };
@@ -303,7 +287,6 @@ export function PostComposer({
     if ((type === "image" || type === "video") && title.length > 500) errors.add("title");
     if (!type) errors.add("type");
     if (!genusSlug && !categorySlug && !speciesSlug) errors.add("board");
-    if (tags.length === 0) errors.add("tags");
     if (type === "rich" && !hasRichContent()) errors.add("richContent");
     if (type === "image" && images.length === 0) errors.add("imageImages");
     if (type === "short" && !content.trim()) errors.add("shortContent");
@@ -326,9 +309,9 @@ export function PostComposer({
       if (!journal.entries.length) errors.add("journalEntries");
       journal.entries.forEach((entry, index) => {
         if (isEdit && entry.id) return;
+        const stages = normalizeJournalStages(entry.stages, entry.stage);
         if (!entry.entryDate) errors.add(`journalEntryDate:${index}`);
-        if (!entry.stage) errors.add(`journalEntryStage:${index}`);
-        if (entry.stage === "other" && !entry.stageLabel?.trim()) errors.add(`journalEntryStageLabel:${index}`);
+        if (stages.length === 0) errors.add(`journalEntryStage:${index}`);
         if (entry.images.length === 0) errors.add(`journalEntryImages:${index}`);
         if (!entry.note.trim()) errors.add(`journalEntryNote:${index}`);
       });
@@ -351,7 +334,7 @@ export function PostComposer({
     ["richContent", "长文贴需要填写正文"],
     ["imageImages", "图文贴需要至少上传一张图片"],
     ["shortContent", "纯文字帖需要填写正文内容"],
-    ["helpContent", "提问帖需要描述问题现象、环境或已尝试的方法"],
+    ["helpContent", "求助帖需要描述问题现象、环境或已尝试的方法"],
     ["videoUrl", t("editor.errors.videoUrlRequired")],
     ["voteContent", "投票帖需要填写投票说明"],
     ["voteOptions", t("editor.errors.voteOptionsMin")],
@@ -363,14 +346,12 @@ export function PostComposer({
     ["journalName", "请填写记录对象的植物昵称"],
     ["journalDate", "请选择记录贴的起始日期"],
     ["journalEntries", "请至少添加一条记录"],
-    ["board", t("editor.chooseBoard")],
-    ["tags", "请至少添加一个话题"]];
+    ["board", t("editor.chooseBoard")]];
 
     const exact = ordered.find(([key]) => errors.has(key));
     if (exact) return exact[1];
     if ([...errors].some((key) => key.startsWith("journalEntryDate:"))) return "请补全记录日期";
     if ([...errors].some((key) => key.startsWith("journalEntryStage:"))) return "请选择记录阶段";
-    if ([...errors].some((key) => key.startsWith("journalEntryStageLabel:"))) return "选择其他阶段时，请填写阶段名称";
     if ([...errors].some((key) => key.startsWith("journalEntryImages:"))) return "每条记录都需要上传配图";
     if ([...errors].some((key) => key.startsWith("journalEntryNote:"))) return "请填写记录心得";
     return null;
@@ -380,8 +361,8 @@ export function PostComposer({
     if (!validate()) return;
     const isRich = type === "rich" || type === "event";
     const isMediaOnly = type === "image" || type === "video";
-    const postImages = Array.from(new Set(type === "image" ? images : isRich ? contentImages : []));
-    const finalCover = postTypeHasCover(type) ? cover : "";
+    const postImages = Array.from(new Set(type === "image" || type === "help" ? images : isRich ? contentImages : []));
+    const finalCover = type === "rich" ? cover : "";
     const syncImages = Array.from(new Set([...(finalCover ? [finalCover] : []), ...postImages, ...getJournalImageUrls(journal)]));
     if (albumSyncMode !== "none") {
       if (syncImages.length === 0) {
@@ -400,7 +381,7 @@ export function PostComposer({
       title,
       ...(isRich ? { contentJson } : isMediaOnly ? { content: "" } : { content }),
       tags,
-      ...(!postTypeHasCover(type) ? { cover: null } : finalCover && { cover: finalCover }),
+      ...(type === "rich" ? { cover: finalCover || null } : {}),
       ...(postImages.length > 0 && { images: postImages }),
       ...(type === "video" && { videoUrl }),
       ...(type === "vote" && {
@@ -426,7 +407,8 @@ export function PostComposer({
             ...(e.id ? { id: e.id } : {}),
             entryDate: new Date(e.entryDate).toISOString(),
             stage: e.stage || undefined,
-            stageLabel: e.stage === "other" ? e.stageLabel?.trim() : undefined,
+            stages: normalizeJournalStages(e.stages, e.stage),
+            stageLabel: e.stageLabel?.trim() || undefined,
             note: e.note,
             images: e.images
           }))
@@ -439,8 +421,7 @@ export function PostComposer({
           ...(albumSyncMode === "new" && {
             title: albumSyncTitle.trim() || undefined,
             description: albumSyncDescription.trim() || undefined
-          }),
-          syncCoverAsAlbumCover
+          })
         }
       })
     };
@@ -531,7 +512,7 @@ export function PostComposer({
             </Form.Field>
             <Form.Field name="title" serverInvalid={validationErrors.has("title")} className={styles.r_fb77735e}>
               <Form.Label className={cx(styles.r_d7c1392c, styles.r_0214b4b3, styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>
-                <span className={styles.r_fa512798}>*</span> 帖子标题
+                <span className={styles.r_fa512798}>*</span> {type === "help" ? "求助标题" : "帖子标题"}
               </Form.Label>
               <Form.Control asChild>
                 {type === "image" ?
@@ -572,7 +553,7 @@ export function PostComposer({
                     setTitle(e.target.value);
                     if (e.target.value.trim()) clearValidationError("title");
                   }}
-                  placeholder="银冠玉养护记录 | 从单头到爆仔的 3 年变化"
+                  placeholder={type === "help" ? "例如：叶片发软发皱，是缺水还是烂根？" : "银冠玉养护记录 | 从单头到爆仔的 3 年变化"}
                   maxLength={50}
                   showCount />
 
@@ -641,15 +622,12 @@ export function PostComposer({
                 cover={cover}
                 onCoverChange={setCover}
                 onPickAlbumCover={() => setAlbumPickerMode("cover")}
-                showCover={postTypeHasCover(type)}
+                showCover={type === "rich"}
                 boardSelection={{ categorySlug, genusSlug, speciesSlug }}
                 onBoardChange={onBoardChange}
                 boardInvalid={validationErrors.has("board") && !categorySlug || validationErrors.has("journalSpecies")}
                 autoSelectFirst={!isEdit}
-                visibility={visibility}
-                onVisibilityChange={setVisibility}
                 tags={tags}
-                tagInvalid={validationErrors.has("tags")}
                 onTagsChange={onTagChange}
                 embedded />
 
@@ -663,10 +641,7 @@ export function PostComposer({
                 title={albumSyncTitle}
                 onTitleChange={setAlbumSyncTitle}
                 description={albumSyncDescription}
-                onDescriptionChange={setAlbumSyncDescription}
-                syncCoverAsAlbumCover={syncCoverAsAlbumCover}
-                onSyncCoverAsAlbumCoverChange={setSyncCoverAsAlbumCover}
-                showCoverOption={postTypeHasCover(type)} />
+                onDescriptionChange={setAlbumSyncDescription} />
 
             </div>
 
@@ -686,9 +661,9 @@ export function PostComposer({
             title={title}
             content={content}
             contentJson={contentJson}
-            images={type === "image" ? images : contentImages}
+            images={type === "image" || type === "help" ? images : contentImages}
             videoUrl={videoUrl}
-            cover={postTypeHasCover(type) ? cover : ""}
+            cover={type === "rich" ? cover : ""}
             tags={tags}
             boardLabel={boardLabel}
             boardSelection={{ categorySlug, genusSlug, speciesSlug }}
@@ -720,40 +695,44 @@ export function PostComposer({
           )}>
 
           <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_3960ffc2, styles.r_8ef2268e, styles.r_77a2a20e)}>
-            <button
+            <Button
               type="button"
               onClick={handlePrimaryBottomAction}
-              className={cx(styles.r_426b8b75, styles.r_86843cf1, styles.r_5e10cdb8, styles.r_23b4e5ed, styles.r_fc7473ca)}>
-
+              variant="outline"
+              size="md">
               <Icon
                 name={isAtPageBottom ? "arrow-right" : "settings"}
                 size={14}
                 className={isAtPageBottom ? styles.r_31c8b9f7 : undefined} />
 
               {isAtPageBottom ? "回到顶部" : "帖子设置"}
-            </button>
+            </Button>
             <div className={cx(styles.r_60fbb771, styles.r_1eb5c6df, styles.r_77c08e01, styles.r_77a2a20e)}>
               {!isEdit && onSaveDraft ?
-              <button type="button" onClick={saveDraft} className={cx(styles.r_426b8b75, styles.r_86843cf1, styles.r_5e10cdb8, styles.r_23b4e5ed, styles.r_fc7473ca)}>
+              <Button type="button" variant="outline" size="md" onClick={saveDraft}>
                   <Icon name="edit" size={14} />
                   保存草稿
-                </button> :
+                </Button> :
               initialValue?.id ?
-              <Link href={`/post/${initialValue.id}`} className={cx(styles.r_426b8b75, styles.r_86843cf1, styles.r_5e10cdb8, styles.r_23b4e5ed, styles.r_fc7473ca)}>
+              <ButtonLink href={`/post/${initialValue.id}`} variant="outline" size="md">
+                  <Icon name="arrow-left" size={14} />
                   取消
-                </Link> :
+                </ButtonLink> :
 
-              <button type="button" className={cx(styles.r_426b8b75, styles.r_86843cf1, styles.r_5e10cdb8, styles.r_23b4e5ed, styles.r_fc7473ca)} disabled>
+              <Button type="button" variant="outline" size="md" disabled>
+                  <Icon name="edit" size={14} />
                   保存草稿
-                </button>
+                </Button>
               }
-              <button type="button" className={cx(styles.r_426b8b75, styles.r_86843cf1, styles.r_5e10cdb8, styles.r_23b4e5ed, styles.r_fc7473ca)}>
+              <Button type="button" variant="outline" size="md">
                 <Icon name="eye" size={14} />
                 预览
-              </button>
-              <Form.Submit disabled={submitting} className={cx(styles.r_426b8b75, styles.r_86843cf1, styles.r_23b4e5ed, styles.r_fc7473ca)}>
-                <Icon name="send" size={14} />
-                {submitting ? t("editor.submitting") : isEdit ? "保存" : "发布帖子"}
+              </Button>
+              <Form.Submit asChild>
+                <Button type="submit" size="md" disabled={submitting}>
+                  <Icon name={isEdit ? "check" : "send"} size={14} />
+                  {submitting ? t("editor.submitting") : isEdit ? "保存" : "发布帖子"}
+                </Button>
               </Form.Submit>
             </div>
           </div>
@@ -774,6 +753,26 @@ function EditorTypePicker({
 
 
 }: {type: PostType;isEdit: boolean;invalid?: boolean;onChange: (type: PostType) => void;}) {
+  const [hoveredType, setHoveredType] = useState<PostType | null>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hint = typeOptions.find((item) => item.type === (hoveredType ?? type)) ?? typeOptions[0];
+
+  const clearHoverTimer = () => {
+    if (!hoverTimerRef.current) return;
+    clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = null;
+  };
+
+  const scheduleHoverHint = (nextType: PostType | null) => {
+    clearHoverTimer();
+    hoverTimerRef.current = setTimeout(() => {
+      setHoveredType(nextType);
+      hoverTimerRef.current = null;
+    }, 1000);
+  };
+
+  useEffect(() => clearHoverTimer, []);
+
   if (isEdit) {
     return (
       <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_9ac94195, styles.r_0e17f2bd, styles.r_03b4dd7f, styles.r_fc7473ca, styles.r_eb6abb1f)}>
@@ -784,37 +783,50 @@ function EditorTypePicker({
   }
 
   return (
-    <div className={cn(cx(styles.r_f3c543ad, styles.r_1004c0c3, styles.r_e00ad816, styles.r_a1de1eab, styles.r_97b1b320), invalid && cx(styles.r_5f22e64f, styles.r_16b1efa5, styles.r_6b7b677a))}>
-      {typeOptions.map((item) => {
-        const active = type === item.type;
-        return (
-          <HoverCard key={item.type}>
-            <HoverCardTrigger>
-              <button
-                type="button"
-                onClick={() => onChange(item.type)}
-                className={cn(cx(styles.r_52083e7d, styles.r_f82f0c25, styles.r_3960ffc2, styles.r_86843cf1, styles.r_77a2a20e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_0e17f2bd, styles.r_fc7473ca, styles.r_e83a7042, styles.r_56bf8ae8),
+    <div className={cn(styles.typePickerBlock, invalid && cx(styles.r_5f22e64f, styles.r_16b1efa5, styles.r_6b7b677a))}>
+      <div className={cx(styles.r_f3c543ad, styles.r_1004c0c3, styles.r_e00ad816, styles.r_a1de1eab, styles.r_97b1b320)}>
+        {typeOptions.map((item) => {
+          const active = type === item.type;
+          return (
+            <button
+              key={item.type}
+              type="button"
+              onClick={() => onChange(item.type)}
+              onMouseEnter={() => scheduleHoverHint(item.type)}
+              onMouseLeave={() => scheduleHoverHint(null)}
+              onFocus={() => {
+                clearHoverTimer();
+                setHoveredType(item.type);
+              }}
+              onBlur={() => {
+                clearHoverTimer();
+                setHoveredType(null);
+              }}
+              aria-describedby="post-type-hint"
+              className={cn(cx(styles.r_52083e7d, styles.r_f82f0c25, styles.r_3960ffc2, styles.r_86843cf1, styles.r_77a2a20e, styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_0e17f2bd, styles.r_fc7473ca, styles.r_e83a7042, styles.r_56bf8ae8),
 
-                active ? cx(styles.r_d3b27cd9, styles.r_7ebecbb6, styles.r_e7eab4cb, styles.r_438b2237) : cx(styles.r_88b684d2, styles.r_5e10cdb8, styles.r_eb6abb1f, styles.r_a5c39c39, styles.r_80751c7f)
+              active ? cx(styles.r_d3b27cd9, styles.r_7ebecbb6, styles.r_e7eab4cb, styles.r_438b2237) : cx(styles.r_88b684d2, styles.r_5e10cdb8, styles.r_eb6abb1f, styles.r_a5c39c39, styles.r_80751c7f)
 
 
-                )}>
+              )}>
 
-                <Icon name={item.icon} size={15} />
-                {item.label}
-              </button>
-            </HoverCardTrigger>
-            <HoverCardContent align="center" side="top" className={cx(styles.r_6ca62528, styles.r_eb6e8b88)}>
-              <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_fc7473ca, styles.r_e83a7042, styles.r_4ddaa618)}>
-                <Icon name={item.icon} size={15} className={styles.r_5f6a59f1} />
-                {item.label}
-              </div>
-              <p className={cx(styles.r_50d0d216, styles.r_359090c2, styles.r_7054e276, styles.r_02eb621e)}>{item.tip}</p>
-              <p className={cx(styles.r_50d0d216, styles.r_b950dda2, styles.r_88b684d2, styles.r_f46b61a9, styles.r_359090c2, styles.r_7054e276, styles.r_66a36c90)}>{item.fields}</p>
-            </HoverCardContent>
-          </HoverCard>);
+              <Icon name={item.icon} size={15} />
+              {item.label}
+            </button>);
 
-      })}
+        })}
+      </div>
+      <div id="post-type-hint" className={styles.typeHintLine}>
+        <span className={styles.typeHintBadge}>温馨提示</span>
+        <span key={hint.type} className={styles.typeHintContent}>
+          <span className={styles.typeHintTitle}>
+            <Icon name={hint.icon} size={14} />
+            {hint.label}
+          </span>
+          <span className={styles.typeHintText}>{hint.tip}</span>
+          <span className={styles.typeHintFields}>{hint.fields}</span>
+        </span>
+      </div>
     </div>);
 
 }
@@ -950,10 +962,7 @@ function PostSettingsCard({
   onBoardChange,
   boardInvalid,
   autoSelectFirst,
-  visibility,
-  onVisibilityChange,
   tags,
-  tagInvalid,
   onTagsChange,
   embedded = false
 
@@ -971,7 +980,7 @@ function PostSettingsCard({
 
 
 
-}: {cover: string;onCoverChange: (cover: string) => void;onPickAlbumCover: () => void;showCover: boolean;boardSelection: BoardSelection;onBoardChange: (selection: BoardSelection) => void;boardInvalid: boolean;autoSelectFirst: boolean;visibility: string;onVisibilityChange: (visibility: string) => void;tags: string[];tagInvalid: boolean;onTagsChange: (tags: string[]) => void;embedded?: boolean;}) {
+}: {cover: string;onCoverChange: (cover: string) => void;onPickAlbumCover: () => void;showCover: boolean;boardSelection: BoardSelection;onBoardChange: (selection: BoardSelection) => void;boardInvalid: boolean;autoSelectFirst: boolean;tags: string[];onTagsChange: (tags: string[]) => void;embedded?: boolean;}) {
   return (
     <section className={cn(!embedded && cx(styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_5e10cdb8, styles.r_8e63407b, styles.r_438b2237))}>
       <h2 className={cx(styles.r_4ee73492, styles.r_69450ef1, styles.r_4ddaa618)}>帖子设置</h2>
@@ -980,7 +989,7 @@ function PostSettingsCard({
         <div className={cx(styles.r_f3c543ad, styles.r_1004c0c3, styles.r_cb11fec3, styles.r_d38cfb50)}>
             <div>
               <div className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>封面图</div>
-              <div className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_7054e276, styles.r_7b89cd85)}>用于列表和分享预览。</div>
+              <div className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_7054e276, styles.r_7b89cd85)}>用于长文贴列表和分享预览。</div>
             </div>
             <div className={cx(styles.r_60fbb771, styles.r_7e0b7cdf, styles.r_8dddea07, styles.r_60541e1e, styles.r_77a2a20e)}>
               <UploadField
@@ -1036,49 +1045,25 @@ function PostSettingsCard({
           </div>
         </Form.Field>
 
-        <Form.Field name="tags" serverInvalid={tagInvalid} className={cx(styles.r_f3c543ad, styles.r_1004c0c3, styles.r_cb11fec3, styles.r_d38cfb50)}>
+        <Form.Field name="tags" className={cx(styles.r_f3c543ad, styles.r_1004c0c3, styles.r_cb11fec3, styles.r_d38cfb50)}>
           <div>
-            <Form.Label className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}><span className={styles.r_fa512798}>*</span> 话题</Form.Label>
-            <div className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_7054e276, styles.r_7b89cd85)}>最多 6 个，帮助同好发现内容。</div>
+            <Form.Label className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>话题</Form.Label>
+            <div className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_7054e276, styles.r_7b89cd85)}>帮助同好发现内容。</div>
           </div>
           <div>
             <Form.Control
               value={tags.join(",")}
-              required
               readOnly
               tabIndex={-1}
               aria-hidden
               className={styles.r_2daa8e5e} />
 
             <TagSelector
-              className={cx(styles.r_06950372, styles.r_c0980a65)}
-              controlClassName={tagInvalid ? cx(styles.r_3b7f9781, styles.r_fdae7b46) : undefined}
+              className={styles.r_6da6a3c3}
               value={tags}
-              onChange={onTagsChange}
-              max={6} />
-
-            <Form.Message
-              match="valueMissing"
-              forceMatch={tagInvalid}
-              className={cx(styles.r_aac62f0e, styles.r_0214b4b3, styles.r_359090c2, styles.r_595fceba)}>
-
-              请至少添加一个话题
-            </Form.Message>
+              onChange={onTagsChange} />
           </div>
         </Form.Field>
-
-        <div className={cx(styles.r_f3c543ad, styles.r_1004c0c3, styles.r_cb11fec3, styles.r_d38cfb50)}>
-          <div>
-            <div className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>可见范围</div>
-            <div className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_7054e276, styles.r_7b89cd85)}>控制帖子发布后的访问权限。</div>
-          </div>
-          <Select
-            value={visibility}
-            onValueChange={onVisibilityChange}
-            options={visibilityOptions}
-            wrapperClassName={cx(styles.r_06950372, styles.r_c0980a65)} />
-
-        </div>
 
       </div>
     </section>);
@@ -1095,10 +1080,7 @@ function AlbumSyncSettings({
   title,
   onTitleChange,
   description,
-  onDescriptionChange,
-  syncCoverAsAlbumCover,
-  onSyncCoverAsAlbumCoverChange,
-  showCoverOption
+  onDescriptionChange
 
 
 
@@ -1113,7 +1095,7 @@ function AlbumSyncSettings({
 
 
 
-}: {mode: AlbumSyncMode;onModeChange: (mode: AlbumSyncMode) => void;albums: MineAlbumOption[];loadingAlbums: boolean;albumId: string;onAlbumIdChange: (id: string) => void;title: string;onTitleChange: (title: string) => void;description: string;onDescriptionChange: (description: string) => void;syncCoverAsAlbumCover: boolean;onSyncCoverAsAlbumCoverChange: (value: boolean) => void;showCoverOption: boolean;}) {
+}: {mode: AlbumSyncMode;onModeChange: (mode: AlbumSyncMode) => void;albums: MineAlbumOption[];loadingAlbums: boolean;albumId: string;onAlbumIdChange: (id: string) => void;title: string;onTitleChange: (title: string) => void;description: string;onDescriptionChange: (description: string) => void;}) {
   const selectedAlbum = albums.find((album) => album.id === albumId) ?? null;
   const [albumSearch, setAlbumSearch] = useState("");
   const visibleAlbums = albums.filter((album) => {
@@ -1241,23 +1223,6 @@ function AlbumSyncSettings({
           </div>
         }
 
-        {mode !== "none" && showCoverOption &&
-        <label className={cx(styles.r_f3c543ad, styles.r_34516836, styles.r_1004c0c3, styles.r_cb11fec3, styles.r_d38cfb50)}>
-            <div>
-              <div className={cx(styles.r_fc7473ca, styles.r_e83a7042, styles.r_399e11a5)}>相册封面</div>
-              <div className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_7054e276, styles.r_7b89cd85)}>默认用同步图片中的第一张。</div>
-            </div>
-            <span className={cx(styles.r_52083e7d, styles.r_3960ffc2, styles.r_77a2a20e, styles.r_fc7473ca, styles.r_eb6abb1f)}>
-              <input
-              type="checkbox"
-              checked={syncCoverAsAlbumCover}
-              onChange={(event) => onSyncCoverAsAlbumCoverChange(event.target.checked)}
-              className={cx(styles.r_11e59c6d, styles.r_dc7972eb, styles.r_07389a77, styles.r_aea3b3b7)} />
-
-              同步使用帖子封面作为相册封面
-            </span>
-          </label>
-        }
       </div>
     </section>);
 
@@ -1374,7 +1339,8 @@ function buildPreviewPost({
         id: entry.id ?? `preview-journal-${index}`,
         entryDate: entry.entryDate ? new Date(entry.entryDate).toISOString() : now,
         stage: entry.stage || "other",
-        stageLabel: entry.stage === "other" ? entry.stageLabel?.trim() || undefined : undefined,
+        stages: normalizeJournalStages(entry.stages, entry.stage || "other"),
+        stageLabel: entry.stageLabel?.trim() || undefined,
         note: entry.note,
         images: entry.images,
         orderIdx: index,

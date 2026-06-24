@@ -50,7 +50,6 @@ export const namespaces = [
   'auction',
   'detail',
   'orders',
-  'vip',
   'board',
   'user',
   'tasks',

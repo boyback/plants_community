@@ -89,9 +89,9 @@ export function PostContentFields({
           }}
           max={9}
           className={styles.r_c79ccc8a}
-          gridClassName={cn(cx(styles.r_be2e831b, styles.r_a217b4ea, styles.r_ca6bcd4b, styles.r_88b684d2, styles.r_d17ef2d9, styles.r_898c0bcb, styles.r_76f32b53),
+          gridClassName={cn(cx(styles.r_be2e831b, styles.r_898c0bcb, styles.r_76f32b53),
 
-          invalid && cx(styles.r_959f4a9f, styles.r_fdae7b46, styles.r_16b1efa5, styles.r_6b7b677a)
+          invalid && cx(styles.r_a217b4ea, styles.r_959f4a9f, styles.r_fdae7b46, styles.r_16b1efa5, styles.r_6b7b677a)
           )}
           itemClassName={cx(styles.r_b59cd297, styles.r_421ac2be, styles.r_5e10cdb8)} />
 
@@ -154,23 +154,35 @@ export function PostContentFields({
   if (type === 'help') {
     const invalid = validationErrors.has('helpContent');
     return (
-      <PostFormField name="helpContent" label="问题描述" required invalid={invalid} message="请描述问题现象、养护环境或已尝试的方法">
-        <Form.Control asChild>
-          <Textarea
-            required
-            className={cx(styles.r_ee15a477, styles.r_ab3a6ebd, styles.r_7eff2faf)}
-            error={invalid}
-            placeholder="例如：叶片发软多久了、最近浇水/光照/通风情况、是否翻盆或用药。"
-            value={content}
-            onChange={(event) => {
-              onContentChange(event.target.value);
-              if (event.target.value.trim()) onClearValidationError('helpContent');
-            }}
-            maxLength={2000}
-            showCount />
+      <>
+        <PostFormField name="helpContent" label="求助描述（细节）" required invalid={invalid} message="请描述问题现象、养护环境或已尝试的方法">
+          <Form.Control asChild>
+            <Textarea
+              required
+              className={cx(styles.r_ee15a477, styles.r_ab3a6ebd, styles.r_7eff2faf)}
+              error={invalid}
+              placeholder="例如：叶片发软多久了、最近浇水/光照/通风情况、是否翻盆或用药。"
+              value={content}
+              onChange={(event) => {
+                onContentChange(event.target.value);
+                if (event.target.value.trim()) onClearValidationError('helpContent');
+              }}
+              maxLength={2000}
+              showCount />
 
-        </Form.Control>
-      </PostFormField>);
+          </Form.Control>
+        </PostFormField>
+        <PostFormField name="helpImages" label="上传图片">
+          <UploadField
+            kind="image"
+            value={images}
+            onChange={onImagesChange}
+            max={9}
+            className={styles.r_c79ccc8a}
+            gridClassName={cx(styles.r_be2e831b, styles.r_898c0bcb, styles.r_76f32b53)}
+            itemClassName={cx(styles.r_b59cd297, styles.r_421ac2be, styles.r_5e10cdb8)} />
+        </PostFormField>
+      </>);
 
   }
 

@@ -1,0 +1,41 @@
+.wrap {
+  overflow: hidden;
+  border: 1px solid rgb(var(--leaf-100));
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: rgb(var(--ink-800));
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.head {
+  height: 44px;
+  padding: 0 12px;
+  border-bottom: 1px solid rgb(var(--leaf-100));
+  background: rgb(var(--leaf-50) / 0.56);
+  color: rgb(var(--ink-500));
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.row {
+  border-bottom: 1px solid rgb(var(--leaf-100) / 0.68);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.cell {
+  padding: 12px;
+  vertical-align: middle;
+}

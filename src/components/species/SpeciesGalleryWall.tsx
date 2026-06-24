@@ -39,6 +39,7 @@ export function SpeciesGalleryWall({
       images={images}
       equalCells
       labels={labels}
+      maxVisible={6}
       className={styles.r_0ab86672}
       imageClassName={styles.r_c10ff8c0} />);
 

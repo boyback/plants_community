@@ -85,7 +85,7 @@ export function LevelPermissionManager({ rows }: {rows: LevelPermissionRow[];}) 
       <div className={styles.r_da019856}>
         <h2 className={cx(styles.r_4ee73492, styles.r_e83a7042, styles.r_399e11a5)}>等级默认权限</h2>
         <p className={cx(styles.r_b6b02c0e, styles.r_359090c2, styles.r_7b89cd85)}>
-          设置每个功能从哪个等级开始默认解锁。选择“不按等级解锁”后，只能通过角色授予或 VIP 规则获得。
+          设置每个功能从哪个等级开始默认解锁。选择“不按等级解锁”后，只能通过角色授予获得。
         </p>
       </div>
       <div className={cx(styles.r_f3c543ad, styles.r_77a2a20e, styles.r_e4d6f343, styles.r_b86f7f94)}>

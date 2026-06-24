@@ -27,7 +27,7 @@ const;
 type TabKey = (typeof TABS)[number]['key'];
 
 export default function AuctionPage() {
-  const { user, vip } = useAuth();
+  const { user } = useAuth();
   const { t } = useI18n();
   const [tab, setTab] = useState<TabKey>('live');
   const [list, setList] = useState<Auction[]>([]);
@@ -37,7 +37,6 @@ export default function AuctionPage() {
     user ?
     {
       level: user.level,
-      isVip: vip.isVip,
       grantedPermissions: user.grantedPermissions as Permission[] | undefined,
       revokedPermissions: user.revokedPermissions as Permission[] | undefined
     } :

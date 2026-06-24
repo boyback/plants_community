@@ -19,3 +19,16 @@
 .r_a4326536{pointer-events:none}
 .r_7f691228{-webkit-user-select:none;-moz-user-select:none;user-select:none}
 .r_eb821e60{--tw-drop-shadow:drop-shadow(0 1px 2px #0000001a) drop-shadow(0 1px 1px #0000000f);filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}
+
+.pendantAsset {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.pendantAssetImage {
+  object-fit: contain;
+}

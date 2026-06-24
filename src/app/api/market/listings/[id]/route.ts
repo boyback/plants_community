@@ -41,9 +41,9 @@ const UpdateBody = z.object({
   shipFrom: z.string().min(1, '请输入发货地').max(40),
   tags: z.array(z.string().min(1).max(20)).max(8).optional(),
   description: z.string().max(2000).optional(),
-  tradeMode: z.enum(['platform_escrow', 'online_payment', 'external']).default('platform_escrow'),
+  tradeMode: z.enum(['platform_escrow', 'online_payment', 'external']).default('online_payment'),
   tradeModes: z.array(z.enum(['platform_escrow', 'online_payment', 'external'])).min(1).max(3).optional(),
-  externalUrl: z.string().url().optional().or(z.literal('')),
+  externalUrl: z.string().max(500).optional().or(z.literal('')),
   contactNote: z.string().max(500).optional(),
   items: z.array(ItemBody).min(1).max(20),
 });
@@ -113,6 +113,7 @@ export const GET = handler(async (req) => {
       id: raw.seller.id,
       name: raw.seller.name,
       avatar: raw.seller.avatar,
+      equipPendantId: raw.seller.equipPendantId,
       bio: raw.seller.bio ?? undefined,
       level: raw.seller.level,
       exp: raw.seller.exp,
@@ -153,6 +154,7 @@ export const GET = handler(async (req) => {
         id: comment.author.id,
         name: comment.author.name,
         avatar: comment.author.avatar,
+        equipPendantId: comment.author.equipPendantId,
         level: comment.author.level,
         postsCount: comment.author._count.posts,
         followersCount: comment.author._count.followers,
@@ -252,7 +254,6 @@ export const PATCH = handler(async (req) => {
         cover: item.images[0],
         images: stringifyJson(item.images),
         description: item.description.trim(),
-        status: 'on_sale' as const,
       };
 
       if (item.id && existingIds.has(item.id)) {
@@ -267,6 +268,7 @@ export const PATCH = handler(async (req) => {
           data: {
             listingId: id,
             ...data,
+            status: 'on_sale' as const,
           },
           select: { id: true },
         });
@@ -292,9 +294,11 @@ function pickListingId(req: Request) {
 }
 
 function normalizeTradeModes(modes: MarketTradeMode[] | undefined, fallback: MarketTradeMode): MarketTradeMode[] {
-  const allowed: MarketTradeMode[] = ['platform_escrow', 'online_payment', 'external'];
-  const result = Array.from(new Set((modes?.length ? modes : [fallback]).filter((mode) => allowed.includes(mode))));
-  return result.length ? result : [fallback];
+  const allowed: MarketTradeMode[] = ['online_payment', 'external'];
+  const selected = modes?.length ? modes : [fallback];
+  const normalized = selected.map((mode) => mode === 'platform_escrow' ? 'online_payment' : mode);
+  const result = Array.from(new Set(normalized.filter((mode) => allowed.includes(mode))));
+  return Array.from(new Set(['online_payment' as MarketTradeMode, ...result]));
 }
 
 async function loadListingTradeModes(id: string, fallback: MarketTradeMode): Promise<MarketTradeMode[]> {

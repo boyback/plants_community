@@ -70,23 +70,27 @@ interface Props {
   initialValue?: MarketListingFormValue;
 }
 
-const TRADE_MODES: {key: TradeMode;title: string;desc: string;badge?: string;}[] = [
-{
-  key: 'platform_escrow',
-  title: '平台担保',
-  desc: '官方推荐，买家付款后平台协助担保，适合高价值交易。',
-  badge: '推荐'
-},
-{
+const REQUIRED_TRADE_MODE: {key: TradeMode;title: string;desc: string;badge: string;} = {
   key: 'online_payment',
-  title: '在线支付',
-  desc: '走支付宝在线下单，平台收取 1% 手续费。'
-},
+  title: '平台担保交易',
+  desc: '买家支付宝在线付款，确认收货后平台结算给卖家，平台收取 1% 手续费。',
+  badge: '必选'
+};
+
+const OPTIONAL_TRADE_MODES: {key: TradeMode;title: string;desc: string;}[] = [
 {
   key: 'external',
   title: '自行联系 / 三方平台',
   desc: '只展示联系方式或外部链接，不在站内生成订单。'
 }];
+
+function normalizeTradeModes(modes: TradeMode[] | undefined, fallback: TradeMode = 'online_payment'): TradeMode[] {
+  const selected = modes?.length ? modes : [fallback];
+  const normalized = selected.map((mode) => mode === 'platform_escrow' ? 'online_payment' : mode);
+  const allowed: TradeMode[] = ['online_payment', 'external'];
+  const result = Array.from(new Set(normalized.filter((mode) => allowed.includes(mode))));
+  return Array.from(new Set(['online_payment', ...result]));
+}
 
 
 function createClientId() {
@@ -153,7 +157,7 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   const [shipFrom, setShipFrom] = useState(initialValue?.shipFrom ?? '');
   const description = initialValue?.description ?? firstInitialProduct?.description ?? '';
   const [tradeModes, setTradeModes] = useState<TradeMode[]>(
-    initialValue?.tradeModes?.length ? initialValue.tradeModes : [initialValue?.tradeMode ?? 'platform_escrow']
+    normalizeTradeModes(initialValue?.tradeModes, initialValue?.tradeMode ?? 'online_payment')
   );
   const [externalUrl, setExternalUrl] = useState(initialValue?.externalUrl ?? '');
   const [contactNote, setContactNote] = useState(initialValue?.contactNote ?? '');
@@ -235,9 +239,10 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   };
 
   const toggleTradeMode = (mode: TradeMode) => {
+    if (mode === 'online_payment') return;
     setTradeModes((prev) => {
       if (prev.includes(mode)) {
-        return prev.length > 1 ? prev.filter((item) => item !== mode) : prev;
+        return prev.filter((item) => item !== mode);
       }
       return [...prev, mode];
     });
@@ -251,7 +256,6 @@ export function MarketListingForm({ mode, initialValue }: Props) {
   const getRequiredErrors = () => {
     const errors = new Set<ValidationKey>();
     if (!shipFrom.trim()) errors.add('shipFrom');
-    if (tradeModes.length === 0) errors.add('tradeModes');
     if (tradeModes.includes('external') && !externalUrl.trim() && !contactNote.trim()) {
       errors.add('externalContact');
     }
@@ -275,7 +279,6 @@ export function MarketListingForm({ mode, initialValue }: Props) {
     const errors = getRequiredErrors();
     setValidationErrors(errors);
     if (errors.has('shipFrom')) toast.error('请输入发货地');else
-    if (errors.has('tradeModes')) toast.error('请至少选择一种交易方式');else
     if (errors.has('externalContact')) toast.error('自行联系/三方平台交易请填写联系方式或外部链接');else
     if (errors.size > 0) toast.error('请完善商品必填信息');
     return errors.size === 0;
@@ -289,8 +292,8 @@ export function MarketListingForm({ mode, initialValue }: Props) {
     taxons: listingTaxons,
     shipFrom: shipFrom.trim(),
     description: products[0]?.description.trim() || description.trim() || undefined,
-    tradeMode: tradeModes[0] ?? 'platform_escrow',
-    tradeModes,
+    tradeMode: 'online_payment' as TradeMode,
+    tradeModes: normalizeTradeModes(tradeModes),
     externalUrl: externalUrl.trim() || undefined,
     contactNote: contactNote.trim() || undefined,
     tags: listingTags,
@@ -354,7 +357,7 @@ export function MarketListingForm({ mode, initialValue }: Props) {
     className={styles.r_3e7ce58d}>
 
       <section className={cx(styles.formCard, styles.r_3e7ce58d, styles.r_c07e54fd)}>
-        <SectionTitle title="交易方式" desc="官方推荐平台担保，也允许用户自行联系。" />
+        <SectionTitle title="交易方式" desc="平台担保交易为必选，自行联系/三方平台可作为补充入口。" />
         <Field
         name="tradeModes"
         label="交易方式"
@@ -364,7 +367,20 @@ export function MarketListingForm({ mode, initialValue }: Props) {
         hiddenValue={tradeModes.join(',')}>
 
           <div className={cx(styles.r_f3c543ad, styles.r_d7c83398, styles.r_1004c0c3, styles.r_9a638cfe)}>
-            {TRADE_MODES.map((modeItem) =>
+            <div
+            className={cn(cx(styles.r_5f22e64f, styles.r_ca6bcd4b, styles.r_8e63407b, styles.r_2eba0d65),
+            cx(styles.r_3883b0f9, styles.r_7ebecbb6, styles.r_16b1efa5, styles.r_52c47100)
+            )}>
+                <div className={cx(styles.r_60fbb771, styles.r_3960ffc2, styles.r_77a2a20e)}>
+                  <span className={cx(styles.r_e83a7042, styles.r_399e11a5)}>{REQUIRED_TRADE_MODE.title}</span>
+                  <span className={cx(styles.r_ac204c10, styles.r_6bceb016, styles.r_45d82811, styles.r_465609a2, styles.r_1dc571a3, styles.r_72a4c7cd)}>
+                    {REQUIRED_TRADE_MODE.badge}
+                  </span>
+                </div>
+                <p className={cx(styles.r_50d0d216, styles.r_359090c2, styles.r_7054e276, styles.r_69335b95)}>{REQUIRED_TRADE_MODE.desc}</p>
+              </div>
+
+            {OPTIONAL_TRADE_MODES.map((modeItem) =>
           <button
             key={modeItem.key}
             type="button"
@@ -389,11 +405,6 @@ export function MarketListingForm({ mode, initialValue }: Props) {
                     ✓
                   </span>
                   <span className={cx(styles.r_e83a7042, styles.r_399e11a5)}>{modeItem.title}</span>
-                  {modeItem.badge &&
-              <span className={cx(styles.r_ac204c10, styles.r_6bceb016, styles.r_45d82811, styles.r_465609a2, styles.r_1dc571a3, styles.r_72a4c7cd)}>
-                      {modeItem.badge}
-                    </span>
-              }
                 </div>
                 <p className={cx(styles.r_50d0d216, styles.r_359090c2, styles.r_7054e276, styles.r_69335b95)}>{modeItem.desc}</p>
               </button>
@@ -403,7 +414,7 @@ export function MarketListingForm({ mode, initialValue }: Props) {
 
         {tradeModes.includes('external') &&
       <div className={cx(styles.r_f3c543ad, styles.r_d7c83398, styles.r_0c3bc985, styles.r_e4d6f343)}>
-            <Field label="外部链接">
+            <Field label="站外信息">
               <Input
             value={externalUrl}
             error={validationErrors.has('externalContact')}
@@ -411,7 +422,8 @@ export function MarketListingForm({ mode, initialValue }: Props) {
               setExternalUrl(e.target.value);
               if (e.target.value.trim() || contactNote.trim()) clearValidationError('externalContact');
             }}
-            placeholder="可填写闲鱼、淘宝等链接" />
+            maxLength={500}
+            placeholder="可填写闲鱼口令、微信号、淘宝/闲鱼链接等" />
 
             </Field>
             <Field
@@ -419,7 +431,7 @@ export function MarketListingForm({ mode, initialValue }: Props) {
           label="联系方式 / 说明"
           required
           invalid={validationErrors.has('externalContact')}
-          message="请填写联系方式或外部链接"
+          message="请填写联系方式或站外信息"
           hiddenValue={externalUrl.trim() || contactNote.trim()}>
 
               <Input
@@ -433,6 +445,9 @@ export function MarketListingForm({ mode, initialValue }: Props) {
             placeholder="例如：私信我确认库存" />
 
             </Field>
+            <div className={cx(styles.r_50d0d216, styles.r_359090c2, styles.r_7054e276, styles.r_69335b95)}>
+              勾选自行联系即表示你承诺不冒充平台担保，不诱导买家误认平台托管站外资金。
+            </div>
           </div>
       }
       </section>
